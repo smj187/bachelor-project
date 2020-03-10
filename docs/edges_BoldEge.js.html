@@ -1,0 +1,281 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>
+      edges/BoldEge.js - Documentation
+  </title>
+
+  <link href="https://www.braintreepayments.com/images/favicon-ccda0b14.png" rel="icon" type="image/png">
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.7.0/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+
+  <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+  <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+  
+
+  
+
+  <!-- start Mixpanel -->
+  <script type="text/javascript">(function(e,a){if(!a.__SV){var b=window;try{var c,l,i,j=b.location,g=j.hash;c=function(a,b){return(l=a.match(RegExp(b+"=([^&]*)")))?l[1]:null};g&&c(g,"state")&&(i=JSON.parse(decodeURIComponent(c(g,"state"))),"mpeditor"===i.action&&(b.sessionStorage.setItem("_mpcehash",g),history.replaceState(i.desiredHash||"",e.title,j.pathname+j.search)))}catch(m){}var k,h;window.mixpanel=a;a._i=[];a.init=function(b,c,f){function e(b,a){var c=a.split(".");2==c.length&&(b=b[c[0]],a=c[1]);b[a]=function(){b.push([a].concat(Array.prototype.slice.call(arguments,
+  0)))}}var d=a;"undefined"!==typeof f?d=a[f]=[]:f="mixpanel";d.people=d.people||[];d.toString=function(b){var a="mixpanel";"mixpanel"!==f&&(a+="."+f);b||(a+=" (stub)");return a};d.people.toString=function(){return d.toString(1)+".people (stub)"};k="disable time_event track track_pageview track_links track_forms register register_once alias unregister identify name_tag set_config reset people.set people.set_once people.increment people.append people.union people.track_charge people.clear_charges people.delete_user".split(" ");
+  for(h=0;h<k.length;h++)e(d,k[h]);a._i.push([b,c,f])};a.__SV=1.2;b=e.createElement("script");b.type="text/javascript";b.async=!0;b.src="undefined"!==typeof MIXPANEL_CUSTOM_LIB_URL?MIXPANEL_CUSTOM_LIB_URL:"file:"===e.location.protocol&&"//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js".match(/^\/\//)?"https://cdn.mxpnl.com/libs/mixpanel-2-latest.min.js":"//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js";c=e.getElementsByTagName("script")[0];c.parentNode.insertBefore(b,c)}})(document,window.mixpanel||[]);
+  mixpanel.init("1919205b2da72e4da3b9b6639b444d59");</script>
+  <!-- end Mixpanel -->
+</head>
+
+<body>
+  <svg style="display: none;">
+    <defs>
+      <symbol id="linkIcon" fill="#706d77" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M0 0h24v24H0z" fill="none"/>
+          <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/>
+      </symbol>
+    </defs>
+  </svg>
+
+  <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+  <label for="nav-trigger" class="navicon-button x">
+    <div class="navicon"></div>
+  </label>
+
+  <label for="nav-trigger" class="overlay"></label>
+
+  <div class="top-nav-wrapper">
+    <ul>
+      <li >
+        <a href="index.html">
+          
+            <svg fill="#6D6D6D" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+              <path d="M0 0h24v24H0z" fill="none"/>
+            </svg>
+          
+          
+        </a>
+      </li>
+
+      
+
+    </ul>
+  </div>
+
+  <nav>
+    <h3 class="reference-title">
+      Graph visualization
+    </h3>
+
+    
+      <h3>
+        Resources
+      </h3>
+      
+        <a href="https://github.com/svgdotjs/svg.js">svgdotjs</a>
+      
+    
+
+    <h3>Classes</h3><ul><li id="AssetNode-nav"><a href="AssetNode.html">AssetNode</a><ul class='methods'><li data-type="method" id="AssetNode-renderAsMax-nav"><a href="AssetNode.html#renderAsMax">renderAsMax</a></li><li data-type="method" id="AssetNode-renderAsMin-nav"><a href="AssetNode.html#renderAsMin">renderAsMin</a></li><li data-type="method" id="AssetNode-transformToMax-nav"><a href="AssetNode.html#transformToMax">transformToMax</a></li><li data-type="method" id="AssetNode-transformToMin-nav"><a href="AssetNode.html#transformToMin">transformToMin</a></li></ul></li><li id="BaseEdge-nav"><a href="BaseEdge.html">BaseEdge</a></li><li id="BaseNode-nav"><a href="BaseNode.html">BaseNode</a><ul class='methods'><li data-type="method" id="BaseNode-createIcon-nav"><a href="BaseNode.html#createIcon">createIcon</a></li><li data-type="method" id="BaseNode-createLabel-nav"><a href="BaseNode.html#createLabel">createLabel</a></li><li data-type="method" id="BaseNode-createNode-nav"><a href="BaseNode.html#createNode">createNode</a></li><li data-type="method" id="BaseNode-createSVGElement-nav"><a href="BaseNode.html#createSVGElement">createSVGElement</a></li><li data-type="method" id="BaseNode-getConfig-nav"><a href="BaseNode.html#getConfig">getConfig</a></li><li data-type="method" id="BaseNode-setConfig-nav"><a href="BaseNode.html#setConfig">setConfig</a></li><li data-type="method" id="BaseNode-setFinalX-nav"><a href="BaseNode.html#setFinalX">setFinalX</a></li><li data-type="method" id="BaseNode-setFinalXY-nav"><a href="BaseNode.html#setFinalXY">setFinalXY</a></li><li data-type="method" id="BaseNode-setFinalY-nav"><a href="BaseNode.html#setFinalY">setFinalY</a></li><li data-type="method" id="BaseNode-setInitialX-nav"><a href="BaseNode.html#setInitialX">setInitialX</a></li><li data-type="method" id="BaseNode-setInitialXY-nav"><a href="BaseNode.html#setInitialXY">setInitialXY</a></li><li data-type="method" id="BaseNode-setInitialY-nav"><a href="BaseNode.html#setInitialY">setInitialY</a></li></ul></li><li id="ControlNode-nav"><a href="ControlNode.html">ControlNode</a><ul class='methods'><li data-type="method" id="ControlNode-renderAsMax-nav"><a href="ControlNode.html#renderAsMax">renderAsMax</a></li><li data-type="method" id="ControlNode-renderAsMin-nav"><a href="ControlNode.html#renderAsMin">renderAsMin</a></li><li data-type="method" id="ControlNode-transformToMax-nav"><a href="ControlNode.html#transformToMax">transformToMax</a></li><li data-type="method" id="ControlNode-transformToMin-nav"><a href="ControlNode.html#transformToMin">transformToMin</a></li></ul></li><li id="CustomNode-nav"><a href="CustomNode.html">CustomNode</a><ul class='methods'><li data-type="method" id="CustomNode-renderAsMax-nav"><a href="CustomNode.html#renderAsMax">renderAsMax</a></li><li data-type="method" id="CustomNode-renderAsMin-nav"><a href="CustomNode.html#renderAsMin">renderAsMin</a></li><li data-type="method" id="CustomNode-transformToMax-nav"><a href="CustomNode.html#transformToMax">transformToMax</a></li><li data-type="method" id="CustomNode-transformToMin-nav"><a href="CustomNode.html#transformToMin">transformToMin</a></li></ul></li><li id="EdgeFactory-nav"><a href="EdgeFactory.html">EdgeFactory</a></li><li id="NodeFactory-nav"><a href="NodeFactory.html">NodeFactory</a></li><li id="RequirementNode-nav"><a href="RequirementNode.html">RequirementNode</a><ul class='methods'><li data-type="method" id="RequirementNode-renderAsMax-nav"><a href="RequirementNode.html#renderAsMax">renderAsMax</a></li><li data-type="method" id="RequirementNode-renderAsMin-nav"><a href="RequirementNode.html#renderAsMin">renderAsMin</a></li><li data-type="method" id="RequirementNode-transformToMax-nav"><a href="RequirementNode.html#transformToMax">transformToMax</a></li><li data-type="method" id="RequirementNode-transformToMin-nav"><a href="RequirementNode.html#transformToMin">transformToMin</a></li></ul></li><li id="RiskNode-nav"><a href="RiskNode.html">RiskNode</a><ul class='methods'><li data-type="method" id="RiskNode-renderAsMax-nav"><a href="RiskNode.html#renderAsMax">renderAsMax</a></li><li data-type="method" id="RiskNode-renderAsMin-nav"><a href="RiskNode.html#renderAsMin">renderAsMin</a></li><li data-type="method" id="RiskNode-transformToMax-nav"><a href="RiskNode.html#transformToMax">transformToMax</a></li><li data-type="method" id="RiskNode-transformToMin-nav"><a href="RiskNode.html#transformToMin">transformToMin</a></li></ul></li><li id="Visualization-nav"><a href="Visualization.html">Visualization</a><ul class='methods'><li data-type="method" id="Visualization-getCanvas-nav"><a href="Visualization.html#getCanvas">getCanvas</a></li><li data-type="method" id="Visualization-setZoom-nav"><a href="Visualization.html#setZoom">setZoom</a></li></ul></li></ul><h3 id="global-nav"><a href="global.html">Global</a></h3>
+  </nav>
+
+  <div id="main">
+    
+      <h1 class="page-title">
+        edges/BoldEge.js
+      </h1>
+    
+
+    
+      
+
+<section>
+  <article>
+    <pre class="prettyprint source linenums"><code>import BaseEdge from "./BaseEdge"
+
+const BoldEdgeConfig = {
+  offset: 8,
+  animationSpeed: 300,
+
+  color1: "#555",
+  color2: "#555",
+
+  blockarrowLineWidth: 3,
+  blockarrowArrowWidth: 10,
+  blockarrowArrowLength: 5,
+
+
+  labelColor: "#222222",
+  labelFontFamily: "Montserrat",
+  labelFontSize: 16,
+  labelFontWeight: 600,
+  labelFontStyle: "normal",
+  labelBackground: "#ffffffcc",
+}
+
+class BoldEdge extends BaseEdge {
+  constructor(canvas, fromNode, toNode, customBoldEdgeConfig = {}) {
+    super(canvas, fromNode, toNode)
+
+
+    this.config = { ...BoldEdgeConfig, ...customBoldEdgeConfig }
+
+    this.calculate()
+  }
+
+
+  /**
+   * Creates the initial SVG element and adds hover effect
+   */
+  createSVGElement() {
+    const svg = this.canvas.group()
+    svg.css("cursor", "default")
+    svg.id(`edge#${this.fromNode.id}_${this.toNode.id}`)
+
+    svg.attr({ opacity: 0 })
+    this.svg = svg
+  }
+
+
+  /**
+   * Transform an edge to its final rendered position
+   */
+  transformToFinal() {
+    this
+      .svg
+      .attr({ opacity: 1 })
+
+
+    // create new elements
+    const lw = this.config.blockarrowLineWidth
+    const aw = this.config.blockarrowArrowWidth
+    const al = this.config.blockarrowArrowLength
+
+    const dx = this.finalToX - this.finalFromX
+    const dy = this.finalToY - this.finalFromY
+    const len = Math.sqrt(dx * dx + dy * dy)
+    const dW = aw - lw
+    const angle = (Math.atan2(dy, dx) * 180) / Math.PI
+    this.angle = angle
+
+    const svgPath = `
+      M 0,${-lw / 2}
+      h ${len - al}
+      v ${-dW / 2}
+      L ${len},0
+      L ${len - al},${aw / 2}
+      v ${-dW / 2}
+      H 0
+      Z
+    `
+
+    const path = this.canvas.path()
+    path.plot(svgPath)
+
+    const getColor = (where) => {
+      if (where.type === "requirement") {
+        return where.config.backgroundColor
+      }
+      return where.config.borderStrokeColor
+    }
+
+    const c1 = getColor(this.fromNode)
+    const c2 = getColor(this.toNode)
+    const gradient = this.canvas.gradient("linear", (add) => {
+      add.stop(0, c1)
+      add.stop(1, c2)
+    })
+    path.fill(gradient)
+    path.center(this.finalFromX, this.finalFromY)
+    path.rotate(angle)
+    path.scale(0.0001)
+    this.svg.add(path)
+
+    if (this.label !== null) {
+      const label = this.createLabel()
+      this.svg.add(label)
+    }
+
+
+    // put new elements into position
+    this
+      .svg
+      .get(0)
+      .attr({ opacity: 0 })
+      .animate({ duration: this.config.animationSpeed })
+      .transform({
+        scale: 1,
+        rotate: angle,
+        position: [(this.finalFromX + this.finalToX) / 2, (this.finalFromY + this.finalToY) / 2],
+      })
+
+      .attr({ opacity: 1 })
+
+    if (this.label) {
+      this
+        .svg
+        .get(1)
+        .attr({ opacity: 0 })
+        .animate({ duration: this.config.animationSpeed })
+        .center((this.finalFromX + this.finalToX) / 2, (this.finalFromY + this.finalToY) / 2)
+        .attr({ opacity: 1 })
+    }
+  }
+
+
+  /**
+   * Transform an edge from its visible position to its initial rendered position
+   * @param {Number} [X=finalFromX] The x-position the edge will be translated
+   * @param {Number} [Y=finalFromY] The y-position the edge will be translated
+   */
+  transformToInitial(X = this.finalFromX, Y = this.finalFromY) {
+    const blockArrow = this.svg.get(0)
+    const label = this.svg.get(1)
+
+    blockArrow
+      .attr({ opacity: 1 })
+      .animate({ duration: this.config.animationSpeed })
+      .transform({ position: [X, Y], scale: 0.0001, rotate: this.angle })
+      .attr({ opacity: 0 })
+      .after(() => blockArrow.remove())
+
+    if (this.label) {
+      label
+        .attr({ opacity: 1 })
+        .animate({ duration: this.config.animationSpeed })
+        .transform({ position: [X, Y], scale: 0.0001 })
+        .attr({ opacity: 0 })
+        .after(() => label.remove())
+    }
+  }
+}
+
+export default BoldEdge
+</code></pre>
+  </article>
+</section>
+
+    
+
+
+  </div>
+
+  <br class="clear">
+
+  <footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.3</a>
+  </footer>
+
+  <script src="scripts/linenumber.js"></script>
+  <script src="scripts/pagelocation.js"></script>
+
+  
+
+</body>
+</html>

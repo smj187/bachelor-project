@@ -1,0 +1,140 @@
+<!doctype html>
+<html>
+
+<head lang='en'>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<meta http-equiv="X-UA-Compatible" content="ie=edge" />
+	<title>Example</title>
+
+
+	<link href="https://fonts.googleapis.com/css?family=Montserrat&display=swap" rel="stylesheet">
+
+	<style>
+		* {
+			padding: 0;
+			margin: 0;
+			box-sizing: border-box;
+		}
+
+		body {
+			font-family: 'Montserrat', sans-serif;
+			/* background: #222 */
+		}
+
+		#tooltip {
+			background: cornsilk;
+			border: 1px solid black;
+			border-radius: 5px;
+			padding: 5px;
+		}
+	</style>
+</head>
+
+<body>
+	<script type="module">
+		import { Visualization, NodeFactory, EdgeFactory } from "./graphVisualization.js"
+
+
+		const data = [
+			{
+				id: 0,
+				label: "Asset 1",
+				type: "asset",
+				// tooltipText: "Asset with <br> tooltip",
+				description: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Quibusdam maxime cupiditate fugiat deserunt libero, ab temporibus delectus sunt et doloribus. Voluptate expedita dicta neque harum debitis laudantium molestias velit aut, quos impedit consequatur est libero aliquam enim quibusdam optio nisi aspernatur. Voluptates iure reiciendis, eos illo explicabo sequi architecto! Iure numquam officia temporibus et, mollitia, dolore quas eos non quibusdam quia hic dolores impedit debitis eligendi? Sequi a maxime provident tenetur eveniet modi animi consectetur vitae, nostrum amet ad iusto accusamus placeat, beatae saepe voluptatum! Veritatis architecto error cum eaque. Ipsam blanditiis ab, tenetur eveniet modi doloribus aspernatur aliquid dicta.",
+				keyValuePairs: [
+					{ key: "key 1", value: "key value pair: value 1" },
+					{ key: "key 2", value: "key value pair: value 2" },
+					{ key: "key 3", value: "key value pair: value 3" },
+					{ key: "key 4", value: "key value pair: value 4" },
+					{ key: "key 5", value: "key value pair: value 5" },
+					{ key: "key 6", value: "key value pair: value 6" },
+				],
+			},
+			{
+				id: 1,
+				label: "Control 1",
+				type: "control",
+				description: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Quibusdam maxime cupiditate fugiat deserunt libero, ab temporibus delectus sunt et doloribus. Voluptate expedita dicta neque harum debitis laudantium molestias velit aut, quos impedit consequatur est libero aliquam enim quibusdam optio nisi aspernatur. Voluptates iure reiciendis, eos illo explicabo sequi architecto! Iure numquam officia temporibus et, mollitia, dolore quas eos non quibusdam quia hic dolores impedit debitis eligendi? Sequi a maxime provident tenetur eveniet modi animi consectetur vitae, nostrum amet ad iusto accusamus placeat, beatae saepe voluptatum! Veritatis architecto error cum eaque. Ipsam blanditiis ab, tenetur eveniet modi doloribus aspernatur aliquid dicta.",
+			},
+			{
+				id: 2,
+				label: "Risk 1",
+				type: "risk",
+				description: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Quibusdam maxime cupiditate fugiat deserunt libero, ab temporibus delectus sunt et doloribus. Voluptate expedita dicta neque harum debitis laudantium molestias velit aut, quos impedit consequatur est libero aliquam enim quibusdam optio nisi aspernatur. Voluptates iure reiciendis, eos illo explicabo sequi architecto! Iure numquam officia temporibus et, mollitia, dolore quas eos non quibusdam quia hic dolores impedit debitis eligendi? Sequi a maxime provident tenetur eveniet modi animi consectetur vitae, nostrum amet ad iusto accusamus placeat, beatae saepe voluptatum! Veritatis architecto error cum eaque. Ipsam blanditiis ab, tenetur eveniet modi doloribus aspernatur aliquid dicta.",
+				state: "critical",
+			},
+			{
+				id: 3,
+				label: "Requirement 1",
+				description: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Quibusdam maxime cupiditate fugiat deserunt libero, ab temporibus delectus sunt et doloribus. Voluptate expedita dicta neque harum debitis laudantium molestias velit aut, quos impedit consequatur est libero aliquam enim quibusdam optio nisi aspernatur. Voluptates iure reiciendis, eos illo explicabo sequi architecto! Iure numquam officia temporibus et, mollitia, dolore quas eos non quibusdam quia hic dolores impedit debitis eligendi? Sequi a maxime provident tenetur eveniet modi animi consectetur vitae, nostrum amet ad iusto accusamus placeat, beatae saepe voluptatum! Veritatis architecto error cum eaque. Ipsam blanditiis ab, tenetur eveniet modi doloribus aspernatur aliquid dicta.",
+				type: "requirement",
+				state: "not-fulfilled",
+			},
+			{
+				id: 4,
+				label: "Custom 1",
+				type: "custom",
+				description: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Quibusdam maxime cupiditate fugiat deserunt libero, ab temporibus delectus sunt et doloribus. Voluptate expedita dicta neque harum debitis laudantium molestias velit aut, quos impedit consequatur est libero aliquam enim quibusdam optio nisi aspernatur. Voluptates iure reiciendis, eos illo explicabo sequi architecto! Iure numquam officia temporibus et, mollitia, dolore quas eos non quibusdam quia hic dolores impedit debitis eligendi? Sequi a maxime provident tenetur eveniet modi animi consectetur vitae, nostrum amet ad iusto accusamus placeat, beatae saepe voluptatum! Veritatis architecto error cum eaque. Ipsam blanditiis ab, tenetur eveniet modi doloribus aspernatur aliquid dicta.",
+				state: "some state i'm in",
+			}
+		]
+
+		const visualization = new Visualization()
+		const { canvas } = visualization
+
+
+		// edges example
+		/*
+				const risk1 = NodeFactory.create(data.find(d => d.type === "risk"), canvas)
+				risk1.setInitialXY(200, 100)
+				risk1.renderAsMin()
+
+
+				const control1 = NodeFactory.create(data.find(d => d.type === "control"), canvas)
+				control1.setInitialXY(700, 450)
+				control1.renderAsMin()
+
+				const edge1 = EdgeFactory.create(canvas, risk1, control1)
+				edge1.setLabel("sometext")
+				edge1.createSVGElement()
+				edge1.transformToFinal()
+
+				setTimeout(() => edge1.transformToInitial(), 1000)
+				setTimeout(() => edge1.transformToFinal(), 2000)
+
+
+				const requirement1 = NodeFactory.create(data.find(d => d.type === "requirement"), canvas)
+				requirement1.setInitialXY(200, 500)
+				requirement1.renderAsMax()
+
+				const edge2 = EdgeFactory.create(canvas, requirement1, risk1, { type: "bold" })
+				edge2.setLabel("boldtext")
+				edge2.createSVGElement()
+				edge2.transformToFinal()
+
+				setTimeout(() => edge2.transformToInitial(), 1000)
+				setTimeout(() => edge2.transformToFinal(), 2000)
+
+
+				const requirement2 = NodeFactory.create(data.find(d => d.type === "requirement"), canvas)
+				requirement2.setInitialXY(600, 100)
+				requirement2.renderAsMin()
+
+				const edge3 = EdgeFactory.create(canvas, requirement2, control1, { strokeColor: "orange", type: "dashed", strokeDasharray: "5 4 5" })
+				edge3.setLabel("loremasjfaoi")
+				edge3.createSVGElement()
+				edge3.transformToFinal()
+
+				setTimeout(() => edge3.transformToInitial(), 1000)
+				setTimeout(() => edge3.transformToFinal(), 2000)
+			*/
+
+				// end
+
+	</script>
+
+</body>
+
+</html>

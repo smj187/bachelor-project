@@ -1,0 +1,27 @@
+{
+    "source": {
+        "include": [
+            "./src"
+        ],
+        "includePattern": ".js$",
+        "excludePattern": "(node_modules/|docs)"
+    },
+    "plugins": [
+        "plugins/markdown"
+    ],
+    "templates": {
+        "referenceTitle": "Graph visualization",
+        "disableSort": false,
+        "resources": {
+            "svgdotjs": "https://github.com/svgdotjs/svg.js"
+        }
+    },
+    "opts": {
+        "encoding": "utf8",
+        "readme": "./readme.md",
+        "destination": "docs/",
+        "recurse": true,
+        "verbose": true,
+        "template": "node_modules/braintree-jsdoc-template/"
+    }
+}
