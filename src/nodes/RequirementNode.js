@@ -132,7 +132,7 @@ class RequirementNode extends BaseNode {
 
     // map color to respected state
     if (data.state !== null || data.state !== undefined) {
-      const state = this.config.states.find((s) => s.state === data.state)
+      const state = this.config.states.find((s) => s.state === data.state) || { color: "#84a8f2" }
       this.config = {
         ...this.config,
         borderStrokeColor: state.color,

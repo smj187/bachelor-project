@@ -33,54 +33,132 @@ class BaseEdge {
   }
 
 
-  /**
-   * Calculates two end points to create an edge
-   * @private
-   */
-  calculate() {
+  calculateEdge() {
+    const fx = this.fromNode.getFinalX()
+    const fy = this.fromNode.getFinalY()
+
+    const tx = this.toNode.getFinalX()
+    const ty = this.toNode.getFinalY()
+
+    // this.canvas.circle(5).fill("#75f").center(fx, fy)
+    // this.canvas.circle(5).fill("#000").center(tx, ty)
+
     const line = shape("line", {
-      x1: this.fromNode.currentX,
-      y1: this.fromNode.currentY,
-      x2: this.toNode.currentX,
-      y2: this.toNode.currentY,
+      x1: fx,
+      y1: fy,
+      x2: tx,
+      y2: ty,
     })
 
-    const borderWidthTo = this.toNode.config.borderStrokeWidth
-    const widthTo = this.toNode.currentWidth + borderWidthTo + this.config.offset
-    const heightTo = this.toNode.currentHeight + borderWidthTo + this.config.offset
-    const rectTo = shape("rect", {
-      x: this.toNode.currentX - widthTo / 2 - borderWidthTo / 2 - this.config.offset / 2,
-      y: this.toNode.currentY - heightTo / 2 - borderWidthTo / 2 - this.config.offset / 2,
-      width: widthTo + borderWidthTo + this.config.offset,
-      height: heightTo + borderWidthTo + this.config.offset,
-      rx: this.toNode.config.borderRadius,
-      ry: this.toNode.config.borderRadius,
-    })
 
-    const borderWidthFrom = this.fromNode.config.borderStrokeWidth
-
-    const widthFrom = this.fromNode.currentWidth + borderWidthFrom + this.config.offset
-    const heightFrom = this.fromNode.currentHeight + borderWidthFrom + this.config.offset
-    const rectFrom = shape("rect", {
-      x: this.fromNode.currentX - widthFrom / 2 - borderWidthFrom / 2 - this.config.offset / 2,
-      y: this.fromNode.currentY - heightFrom / 2 - borderWidthFrom / 2 - this.config.offset / 2,
-      width: widthFrom + borderWidthFrom + this.config.offset,
-      height: heightFrom + borderWidthFrom + this.config.offset,
+    // from intersection point calculation
+    const w2 = this.fromNode.getNodeSize() === "min" ? this.fromNode.config.minWidth : this.fromNode.config.maxWidth
+    const h2 = this.fromNode.getNodeSize() === "min" ? this.fromNode.config.minHeight : this.fromNode.config.maxHeight
+    const rect2 = shape("rect", {
+      x: fx - w2 / 2 - this.fromNode.config.borderStrokeWidth / 2 - this.config.offset / 2,
+      y: fy - h2 / 2 - this.fromNode.config.borderStrokeWidth / 2 - this.config.offset / 2,
+      width: w2 + this.fromNode.config.borderStrokeWidth + this.config.offset,
+      height: h2 + this.fromNode.config.borderStrokeWidth + this.config.offset,
       rx: this.fromNode.config.borderRadius,
       ry: this.fromNode.config.borderRadius,
     })
 
-
-    const { points: toPoints } = intersect(rectTo, line)
-    const { points: fromPoints } = intersect(rectFrom, line)
-    this.finalToX = toPoints[0].x
-    this.finalToY = toPoints[0].y
-    this.finalFromX = fromPoints[0].x
-    this.finalFromY = fromPoints[0].y
+    const fromPoints = intersect(rect2, line)
+    // console.log(fromPoints)
+    this.finalFromX = fromPoints.points[0].x
+    this.finalFromY = fromPoints.points[0].y
 
 
-    // this.canvas.circle(5).fill("#f75").center(this.finalToX, this.finalToY)
-    // this.canvas.circle(5).fill("#0f0").center(this.finalFromX, this.finalFromY)
+    // to intersection point calculation
+    const w1 = this.toNode.getNodeSize() === "min" ? this.toNode.config.minWidth : this.toNode.config.maxWidth
+    const h1 = this.toNode.getNodeSize() === "min" ? this.toNode.config.minHeight : this.toNode.config.maxHeight
+    const rect1 = shape("rect", {
+      x: tx - w1 / 2 - this.toNode.config.borderStrokeWidth / 2 - this.config.offset / 2,
+      y: ty - h1 / 2 - this.toNode.config.borderStrokeWidth / 2 - this.config.offset / 2,
+      width: w1 + this.toNode.config.borderStrokeWidth + this.config.offset,
+      height: h1 + this.toNode.config.borderStrokeWidth + this.config.offset,
+      rx: this.toNode.config.borderRadius,
+      ry: this.toNode.config.borderRadius,
+    })
+
+    const toPoints = intersect(rect1, line)
+    this.finalToX = toPoints.points[0].x
+    this.finalToY = toPoints.points[0].y
+
+
+    // this.canvas.circle(5).fill("#75f").center(this.finalFromX, this.finalFromY)
+    // this.canvas.circle(5).fill("#000").center(this.finalToX, this.finalToY)
+  }
+
+  updateEdgePosition() {
+    const fx = this.fromNode.getFinalX()
+    const fy = this.fromNode.getFinalY()
+
+    const tx = this.toNode.getFinalX()
+    const ty = this.toNode.getFinalY()
+
+    // this.canvas.circle(5).fill("#75f").center(fx, fy)
+    // this.canvas.circle(5).fill("#000").center(tx, ty)
+
+    const line = shape("line", {
+      x1: fx,
+      y1: fy,
+      x2: tx,
+      y2: ty,
+    })
+
+
+    // from intersection point calculation
+    const w2 = this.fromNode.getNodeSize() === "min" ? this.fromNode.config.minWidth : this.fromNode.config.maxWidth
+    const h2 = this.fromNode.getNodeSize() === "min" ? this.fromNode.config.minHeight : this.fromNode.config.maxHeight
+    const rect2 = shape("rect", {
+      x: fx - w2 / 2 - this.fromNode.config.borderStrokeWidth / 2 - this.config.offset / 2,
+      y: fy - h2 / 2 - this.fromNode.config.borderStrokeWidth / 2 - this.config.offset / 2,
+      width: w2 + this.fromNode.config.borderStrokeWidth + this.config.offset,
+      height: h2 + this.fromNode.config.borderStrokeWidth + this.config.offset,
+      rx: this.fromNode.config.borderRadius,
+      ry: this.fromNode.config.borderRadius,
+    })
+
+    const fromPoints = intersect(rect2, line)
+    // console.log(fromPoints)
+    this.finalFromX = fromPoints.points[0].x
+    this.finalFromY = fromPoints.points[0].y
+
+
+    // to intersection point calculation
+    const w1 = this.toNode.getNodeSize() === "min" ? this.toNode.config.minWidth : this.toNode.config.maxWidth
+    const h1 = this.toNode.getNodeSize() === "min" ? this.toNode.config.minHeight : this.toNode.config.maxHeight
+    const rect1 = shape("rect", {
+      x: tx - w1 / 2 - this.toNode.config.borderStrokeWidth / 2 - this.config.offset / 2,
+      y: ty - h2 / 2 - this.toNode.config.borderStrokeWidth / 2 - this.config.offset / 2,
+      width: w1 + this.toNode.config.borderStrokeWidth + this.config.offset,
+      height: h1 + this.toNode.config.borderStrokeWidth + this.config.offset,
+      rx: this.toNode.config.borderRadius,
+      ry: this.toNode.config.borderRadius,
+    })
+
+    const toPoints = intersect(rect1, line)
+    this.finalToX = toPoints.points[0].x
+    this.finalToY = toPoints.points[0].y
+
+
+    // this.canvas.circle(5).fill("#75f").center(this.finalFromX, this.finalFromY)
+    // this.canvas.circle(5).fill("#000").center(this.finalToX, this.finalToY)
+  }
+
+
+  removeEdge(X, Y) {
+    this
+      .svg
+      .attr({ opacity: 1 })
+      .animate({ duration: this.config.animationSpeed })
+      .transform({ scale: 0.001, position: [X, Y] })
+      .attr({ opacity: 0 })
+      .after(() => {
+        this.svg.remove()
+        this.svg = null
+      })
   }
 
 
@@ -95,7 +173,7 @@ class BaseEdge {
     background.style.background = this.config.labelBackground
     background.style.padding = `${this.config.offset / 2}px`
     background.style.textAlign = "center"
-    background.style.width = "fit-content" // uncomment this for more than one word
+    background.style.minWidth = "100px" // uncomment this for more than one word
 
     const label = document.createElement("p")
     label.innerText = this.label
@@ -118,7 +196,7 @@ class BaseEdge {
 
 
   setLabel(label) {
-    this.label = label
+    this.label = label || null
   }
 }
 

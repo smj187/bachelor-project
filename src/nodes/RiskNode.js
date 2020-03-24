@@ -216,7 +216,7 @@ class RiskNode extends BaseNode {
       status.style.fontFamily = this.config.labelFontFamily
       status.style.fontWeight = this.config.labelFontWeight
       status.style.fontStyle = this.config.labelFontStyle
-      status.style.fontStyle = "italic"
+      // status.style.fontStyle = "italic"
       status.style.marginTop = `${this.config.offset}px`
       status.style.height = "fit-content"
       status.style.gridRow = "1"

@@ -36,7 +36,7 @@ import BaseNode from "./BaseNode"
  * @param {Number} [minTextHeight=75] The minimal text height for the label
  * @param {Number} [minTextTranslateX=0] Moves the label horizontally
  * @param {Number} [minTextTranslateY=0] The the label vertically
- * @param {Number} [maxTextWidth=345] The maximal text width for the description
+ * @param {Number} [maxTextWidth=260] The maximal text width for the description
  * @param {Number} [maxTextHeight=220] The maximal text height for the description
  * @param {Number} [maxTextTranslateX=0] The the description horizontally
  * @param {Number} [maxTextTranslateY=0] The the description vertically
@@ -96,7 +96,7 @@ const CustomConfig = {
   minTextHeight: 75,
   minTextTranslateX: 0,
   minTextTranslateY: 0,
-  maxTextWidth: 345,
+  maxTextWidth: 260,
   maxTextHeight: 220,
   maxTextTranslateX: 0,
   maxTextTranslateY: 0,

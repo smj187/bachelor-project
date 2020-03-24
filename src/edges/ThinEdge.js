@@ -7,13 +7,13 @@ const ThinEdgeConfig = {
 
   // arrow
   strokeWidth: 2,
-  strokeColor: "#afd4ed",
-  strokeDasharray: "0",
-  marker: "M 0 0 L 8 4 L 0 8 z",
+  strokeColor: "#aaa",
+  strokeDasharray: "7 5",
+  marker: "M 0 0 L 6 3 L 0 6 z",
 
 
   // text
-  labelColor: "#222222",
+  labelColor: "#777",
   labelFontFamily: "Montserrat",
   labelFontSize: 16,
   labelFontWeight: 600,
@@ -26,33 +26,41 @@ class ThinEdge extends BaseEdge {
     super(canvas, fromNode, toNode)
 
     this.config = { ...ThinEdgeConfig, ...customThinEdgeConfig }
-
-
-    this.calculate()
   }
 
 
   /**
    * Creates the initial SVG element and adds hover effect
    */
-  createSVGElement() {
+  render(X, Y) {
     const svg = this.canvas.group() // .draggable()
     svg.css("cursor", "default")
     svg.id(`edge#${this.fromNode.id}_${this.toNode.id}`)
 
-
-    const line = `M${this.finalFromX},${this.finalFromY} L${this.finalFromX},${this.finalFromY}`
+    const line = `M${this.finalFromX},${this.finalFromY} L${this.finalToX},${this.finalToY}`
+    const dasharray = this.config.type === "dashed" ? this.config.strokeDasharray : "0"
     const path = this.canvas.path(line).stroke({
       width: this.config.strokeWidth,
       color: this.config.strokeColor,
-      dasharray: this.config.strokeDasharray,
+      dasharray,
     })
-    const marker = this.canvas.marker(14, 8, (add) => {
-      add.path(this.config.marker).fill(this.config.strokeColor).dx(1)
-    })
-    path.marker("end", marker)
-    svg.add(path)
 
+    // create a re-useable marker
+    const i = [...this.canvas.defs().node.childNodes].findIndex((d) => d.id === "defaultThinMarker")
+    if (i === -1) {
+      const marker = this.canvas.marker(12, 6, (add) => {
+        add.path(this.config.marker).fill(this.config.strokeColor).dx(1)
+      })
+      marker.id("defaultThinMarker")
+      this.canvas.defs().add(marker)
+      path.marker("end", marker)
+    } else {
+      const marker = this.canvas.defs().get(i)
+      path.marker("end", marker)
+    }
+
+
+    svg.add(path)
 
     if (this.label !== null) {
       const label = this.createLabel()
@@ -60,6 +68,7 @@ class ThinEdge extends BaseEdge {
     }
 
     svg.attr({ opacity: 0 })
+    svg.center(X, Y)
 
     this.svg = svg
   }
@@ -68,10 +77,19 @@ class ThinEdge extends BaseEdge {
   /**
    * Transform an edge to its final rendered position
    */
-  transformToFinal() {
+  transformToFinalPosition() {
     this
       .svg
+      .back()
+
+
+    this
+      .svg
+      .scale(0.001)
       .attr({ opacity: 1 })
+      .animate({ duration: this.config.animationSpeed })
+      .transform({ scale: 1 })
+
 
     this
       .svg
@@ -98,7 +116,11 @@ class ThinEdge extends BaseEdge {
    * @param {Number} [X=finalFromX] The x-position the edge will be translated
    * @param {Number} [Y=finalFromY] The y-position the edge will be translated
    */
-  transformToInitial(X = this.finalFromX, Y = this.finalFromY) {
+  transformToInitialPosition(X = this.finalFromX, Y = this.finalFromY) {
+    this
+      .svg
+      .back()
+
     this
       .svg
       .get(0)

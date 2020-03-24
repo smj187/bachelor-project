@@ -1,4 +1,4 @@
-import BoldEdge from "./BoldEge"
+import BoldEdge from "./BoldEdge"
 import ThinEdge from "./ThinEdge"
 
 
@@ -21,6 +21,7 @@ import ThinEdge from "./ThinEdge"
 class EdgeFactory {
   static create(canvas, fromNode, toNode, edgeConfig = {}) {
     let edge
+
     if (edgeConfig.type === "dashed") {
       edge = new ThinEdge(canvas, fromNode, toNode, { ...edgeConfig, type: "dashed" })
     } else if (edgeConfig.type === "bold") {

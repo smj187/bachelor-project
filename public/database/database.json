@@ -1,0 +1,810 @@
+{
+    "nodes": [
+        {
+            "id": 10,
+            "label": "Requirement 10",
+            "description": "leo rhoncus cursus etiam habitasse molestie velit blandit phasellus cursus lacinia ut est nulla lectus tristique rhoncus sollicitudin consectetur ligula proin nam eget duis ut imperdiet metus",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "tooltipText": null,
+            "parentId": null,
+            "childrenIds": [
+                11,
+                12,
+                13
+            ],
+            "config": null
+        },
+        {
+            "id": 11,
+            "label": "Requirement 11",
+            "description": "diam facilisis sodales est aliquet aliquet urna habitasse",
+            "type": "requirement",
+            "state": "NOT-FULFILLED",
+            "tooltipText": "Requirement's tooltip",
+            "parentId": 10,
+            "childrenIds": [
+                27,
+                28,
+                29,
+                30
+            ],
+            "config": null
+        },
+        {
+            "id": 12,
+            "label": "Requirement 12",
+            "description": "adipiscing eros tellus feugiat cursus porttitor dolor faucibus bibendum lobortis amet mi quam habitasse leo per aliquet vestibulum erat vehicula blandit",
+            "type": "requirement",
+            "state": "PARTIALLY-FULFILLED",
+            "tooltipText": "Requirement's tooltip",
+            "parentId": 10,
+            "childrenIds": [
+                24,
+                25,
+                26
+            ],
+            "config": null
+        },
+        {
+            "id": 13,
+            "label": "Requirement 13",
+            "description": "tellus litora molestie fusce litora auctor cubilia nulla accumsan donec amet aliquam aliquam amet dictum metus hac tempor ultrices maecenas",
+            "type": "requirement",
+            "state": "PARTIALLY-FULFILLED",
+            "tooltipText": null,
+            "parentId": 10,
+            "childrenIds": [
+                14,
+                15,
+                16,
+                17,
+                18,
+                19,
+                20,
+                21,
+                22,
+                23
+            ],
+            "config": null
+        },
+        {
+            "id": 14,
+            "label": "Requirement 14",
+            "description": "ante enim nibh tincidunt taciti justo ad",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "tooltipText": null,
+            "parentId": 13,
+            "childrenIds": [],
+            "config": null
+        },
+        {
+            "id": 15,
+            "label": "Requirement 15",
+            "description": "ante enim nibh tincidunt taciti justo ad",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "tooltipText": null,
+            "parentId": 13,
+            "childrenIds": [],
+            "config": null
+        },
+        {
+            "id": 16,
+            "label": "Requirement 16",
+            "description": "ante enim nibh tincidunt taciti justo ad",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "tooltipText": null,
+            "parentId": 13,
+            "childrenIds": [],
+            "config": null
+        },
+        {
+            "id": 17,
+            "label": "Requirement 17",
+            "description": "ante enim nibh tincidunt taciti justo ad",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "tooltipText": null,
+            "parentId": 13,
+            "childrenIds": [],
+            "config": null
+        },
+        {
+            "id": 18,
+            "label": "Requirement 18",
+            "description": "ante enim nibh tincidunt taciti justo ad",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "tooltipText": null,
+            "parentId": 13,
+            "childrenIds": [],
+            "config": null
+        },
+        {
+            "id": 19,
+            "label": "Requirement 19",
+            "description": "ante enim nibh tincidunt taciti justo ad",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "tooltipText": null,
+            "parentId": 13,
+            "childrenIds": [],
+            "config": null
+        },
+        {
+            "id": 20,
+            "label": "Requirement 20",
+            "description": "ante enim nibh tincidunt taciti justo ad",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "tooltipText": null,
+            "parentId": 13,
+            "childrenIds": [],
+            "config": null
+        },
+        {
+            "id": 21,
+            "label": "Requirement 21",
+            "description": "ante enim nibh tincidunt taciti justo ad",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "tooltipText": null,
+            "parentId": 13,
+            "childrenIds": [],
+            "config": null
+        },
+        {
+            "id": 22,
+            "label": "Requirement 22",
+            "description": "ante enim nibh tincidunt taciti justo ad",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "tooltipText": null,
+            "parentId": 13,
+            "childrenIds": [],
+            "config": null
+        },
+        {
+            "id": 23,
+            "label": "Requirement 23",
+            "description": "ante enim nibh tincidunt taciti justo ad",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "tooltipText": null,
+            "parentId": 13,
+            "childrenIds": [],
+            "config": null
+        },
+        {
+            "id": 24,
+            "label": "Requirement 24",
+            "description": "ante enim nibh tincidunt taciti justo ad",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "tooltipText": null,
+            "parentId": 12,
+            "childrenIds": [],
+            "config": null
+        },
+        {
+            "id": 25,
+            "label": "Requirement 25",
+            "description": "ante enim nibh tincidunt taciti justo ad",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "tooltipText": null,
+            "parentId": 12,
+            "childrenIds": [],
+            "config": null
+        },
+        {
+            "id": 26,
+            "label": "Requirement 26",
+            "description": "ante enim nibh tincidunt taciti justo ad",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "tooltipText": null,
+            "parentId": 12,
+            "childrenIds": [],
+            "config": null
+        },
+        {
+            "id": 27,
+            "label": "Requirement 27",
+            "description": "ante enim nibh tincidunt taciti justo ad",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "tooltipText": null,
+            "parentId": 11,
+            "childrenIds": [],
+            "config": null
+        },
+        {
+            "id": 28,
+            "label": "Requirement 28",
+            "description": "ante enim nibh tincidunt taciti justo ad",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "tooltipText": null,
+            "parentId": 11,
+            "childrenIds": [],
+            "config": null
+        },
+        {
+            "id": 29,
+            "label": "Requirement 29",
+            "description": "ante enim nibh tincidunt taciti justo ad",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "tooltipText": null,
+            "parentId": 11,
+            "childrenIds": [],
+            "config": null
+        },
+        {
+            "id": 30,
+            "label": "Requirement 30",
+            "description": "ante enim nibh tincidunt taciti justo ad",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "tooltipText": null,
+            "parentId": 11,
+            "childrenIds": [],
+            "config": null
+        },
+        {
+            "id": 100,
+            "label": "Control 100",
+            "description": "ante enim nibh tincidunt taciti justo ad",
+            "type": "control",
+            "tooltipText": null,
+            "parentId": null,
+            "childrenIds": [
+                101,
+                102,
+                103
+            ],
+            "config": null
+        },
+        {
+            "id": 101,
+            "label": "Control 101",
+            "description": "ante enim nibh tincidunt taciti justo ad",
+            "type": "control",
+            "tooltipText": null,
+            "parentId": 100,
+            "childrenIds": [
+                104,
+                105,
+                106
+            ],
+            "config": null
+        },
+        {
+            "id": 102,
+            "label": "Control 102",
+            "description": "ante enim nibh tincidunt taciti justo ad",
+            "type": "control",
+            "tooltipText": null,
+            "parentId": 100,
+            "childrenIds": [],
+            "config": null
+        },
+        {
+            "id": 103,
+            "label": "Control 103",
+            "description": "ante enim nibh tincidunt taciti justo ad",
+            "type": "control",
+            "tooltipText": null,
+            "parentId": 100,
+            "childrenIds": [],
+            "config": null
+        },
+        {
+            "id": 104,
+            "label": "Control 104",
+            "description": "ante enim nibh tincidunt taciti justo ad",
+            "type": "control",
+            "tooltipText": null,
+            "parentId": 101,
+            "childrenIds": [],
+            "config": null
+        },
+        {
+            "id": 105,
+            "label": "Control 105",
+            "description": "ante enim nibh tincidunt taciti justo ad",
+            "type": "control",
+            "tooltipText": null,
+            "parentId": 101,
+            "childrenIds": [],
+            "config": null
+        },
+        {
+            "id": 106,
+            "label": "Control 106",
+            "description": "ante enim nibh tincidunt taciti justo ad",
+            "type": "control",
+            "tooltipText": null,
+            "parentId": 101,
+            "childrenIds": [],
+            "config": null
+        },
+        {
+            "id": 200,
+            "label": "Asset 200",
+            "description": "Lorem ipsum dolor sit amet consectetur adipisicing elit. Quibusdam maxime cupiditate fugiat deserunt libero, ab temporibus delectus sunt et doloribus. Voluptate expedita dicta neque harum debitis laudantium molestias velit aut, quos impedit consequatur est libero aliquam enim quibusdam optio nisi aspernatur. Voluptates iure reiciendis, eos illo explicabo sequi architecto! Iure numquam officia temporibus et, mollitia, dolore quas eos non quibusdam quia hic dolores impedit debitis eligendi? Sequi a maxime provident tenetur eveniet modi animi consectetur vitae, nostrum amet ad iusto accusamus placeat, beatae saepe voluptatum! Veritatis architecto error cum eaque. Ipsam blanditiis ab, tenetur eveniet modi doloribus aspernatur aliquid dicta.",
+            "type": "asset",
+            "keyValuePairs": [
+                {
+                    "key": "key 1",
+                    "value": "key value pair: value 1"
+                },
+                {
+                    "key": "key 2",
+                    "value": "key value pair: value 2"
+                },
+                {
+                    "key": "key 3",
+                    "value": "key value pair: value 3"
+                },
+                {
+                    "key": "key 4",
+                    "value": "key value pair: value 4"
+                },
+                {
+                    "key": "key 5",
+                    "value": "key value pair: value 5"
+                },
+                {
+                    "key": "key 6",
+                    "value": "key value pair: value 6"
+                }
+            ],
+            "tooltipText": "Asset with <br> tooltip",
+            "parentId": null,
+            "childrenIds": [],
+            "config": null
+        },
+        {
+            "id": 201,
+            "label": "Asset 201",
+            "description": "Lorem ipsum dolor sit amet consectetur adipisicing elit. ",
+            "type": "asset",
+            "keyValuePairs": [
+                {
+                    "key": "key 1",
+                    "value": "key value pair: value 1"
+                },
+                {
+                    "key": "key 2",
+                    "value": "key value pair: value 2"
+                },
+                {
+                    "key": "key 3",
+                    "value": "key value pair: value 3"
+                }
+            ],
+            "tooltipText": null,
+            "parentId": null,
+            "childrenIds": [],
+            "config": null
+        },
+        {
+            "id": 202,
+            "label": "Asset 202",
+            "description": "Lorem ipsum dolor sit amet consectetur adipisicing elit. ",
+            "type": "asset",
+            "keyValuePairs": [
+                {
+                    "key": "key 1",
+                    "value": "key value pair: value 1"
+                },
+                {
+                    "key": "key 2",
+                    "value": "key value pair: value 2"
+                }
+            ],
+            "tooltipText": null,
+            "parentId": null,
+            "childrenIds": [],
+            "config": null
+        },
+        {
+            "id": 203,
+            "label": "Asset 203",
+            "description": "Lorem ipsum dolor sit amet consectetur adipisicing elit. Lorem ipsum dolor sit amet consectetur adipisicing elit. Lorem ipsum dolor sit amet consectetur adipisicing elit. ",
+            "type": "asset",
+            "keyValuePairs": [
+                {
+                    "key": "key 1",
+                    "value": "key value pair: value 1"
+                },
+                {
+                    "key": "key 2",
+                    "value": "key value pair: value 2"
+                },
+                {
+                    "key": "key 3",
+                    "value": "key value pair: value 3"
+                },
+                {
+                    "key": "key 4",
+                    "value": "key value pair: value 4"
+                },
+                {
+                    "key": "key 5",
+                    "value": "key value pair: value 5"
+                }
+            ],
+            "tooltipText": null,
+            "parentId": null,
+            "childrenIds": [],
+            "config": null
+        },
+        {
+            "id": 204,
+            "label": "Asset 204",
+            "description": "Lorem ipsum dolor sit amet consectetur adipisicing elit.",
+            "type": "asset",
+            "keyValuePairs": [
+                {
+                    "key": "key 1",
+                    "value": "key value pair: value 1"
+                }
+            ],
+            "tooltipText": null,
+            "parentId": null,
+            "childrenIds": [],
+            "config": null
+        },
+        {
+            "id": 205,
+            "label": "Asset 205",
+            "description": "Lorem ipsum.",
+            "type": "asset",
+            "keyValuePairs": [],
+            "tooltipText": null,
+            "parentId": null,
+            "childrenIds": [],
+            "config": null
+        },
+        {
+            "id": 300,
+            "label": "Risk 300",
+            "description": "Voluptate expedita dicta neque harum debitis laudantium molestias velit aut",
+            "type": "risk",
+            "state": "critical",
+            "tooltipText": null,
+            "parentId": null,
+            "childrenIds": [],
+            "config": null,
+            "controls": [
+                100,
+                103,
+                105
+            ],
+            "assets": [
+                205
+            ]
+        },
+        {
+            "id": 301,
+            "label": "Risk 301",
+            "description": "Voluptate expedita dicta neque harum debitis laudantium molestias velit aut",
+            "type": "risk",
+            "state": "critical",
+            "tooltipText": null,
+            "parentId": null,
+            "childrenIds": [],
+            "config": null,
+            "controls": [
+                100,
+                106
+            ],
+            "assets": [
+                204
+            ]
+        },
+        {
+            "id": 302,
+            "label": "Risk 302",
+            "description": "Voluptate expedita dicta neque harum debitis laudantium molestias velit aut",
+            "type": "risk",
+            "state": "critical",
+            "tooltipText": null,
+            "parentId": null,
+            "childrenIds": [],
+            "config": null,
+            "controls": [
+                100,
+                104,
+                105,
+                106
+            ],
+            "assets": [
+                203
+            ]
+        },
+        {
+            "id": 303,
+            "label": "Risk 303",
+            "description": "Voluptate expedita dicta neque harum debitis laudantium molestias velit aut",
+            "type": "risk",
+            "state": "critical",
+            "tooltipText": null,
+            "parentId": null,
+            "childrenIds": [],
+            "config": null,
+            "controls": [
+                100,
+                102
+            ],
+            "assets": [
+                200
+            ]
+        },
+        {
+            "id": 304,
+            "label": "Risk 304",
+            "description": "Voluptate expedita dicta neque harum debitis laudantium molestias velit aut",
+            "type": "risk",
+            "state": "critical",
+            "tooltipText": null,
+            "parentId": null,
+            "childrenIds": [],
+            "config": null,
+            "controls": [
+                100,
+                104,
+                105
+            ],
+            "assets": [
+                201
+            ]
+        },
+        {
+            "id": 305,
+            "label": "Risk 305",
+            "description": "Voluptate expedita dicta neque harum debitis laudantium molestias velit aut",
+            "type": "risk",
+            "state": "critical",
+            "tooltipText": null,
+            "parentId": null,
+            "childrenIds": [],
+            "config": null,
+            "controls": [
+                100,
+                103,
+                105,
+                106
+            ],
+            "assets": [
+                201
+            ]
+        },
+        {
+            "id": 306,
+            "label": "Risk 306",
+            "description": "Voluptate expedita dicta neque harum debitis laudantium molestias velit aut",
+            "type": "risk",
+            "state": "critical",
+            "tooltipText": null,
+            "parentId": null,
+            "childrenIds": [],
+            "config": null,
+            "controls": [
+                100,
+                103,
+                105
+            ],
+            "assets": [
+                205
+            ]
+        },
+        {
+            "id": 307,
+            "label": "Risk 307",
+            "description": "Voluptate expedita dicta neque harum debitis laudantium molestias velit aut",
+            "type": "risk",
+            "state": "critical",
+            "tooltipText": null,
+            "parentId": null,
+            "childrenIds": [],
+            "config": null,
+            "controls": [
+                100,
+                101,
+                103
+            ],
+            "assets": [
+                204
+            ]
+        },
+        {
+            "id": 308,
+            "label": "Risk 308",
+            "description": "Voluptate expedita dicta neque harum debitis laudantium molestias velit aut",
+            "type": "risk",
+            "state": "critical",
+            "tooltipText": null,
+            "parentId": null,
+            "childrenIds": [],
+            "config": null,
+            "controls": [
+                100,
+                103,
+                104,
+                105,
+                106
+            ],
+            "assets": [
+                203
+            ]
+        },
+        {
+            "id": 309,
+            "label": "Risk 309",
+            "description": "Voluptate expedita dicta neque harum debitis laudantium molestias velit aut",
+            "type": "risk",
+            "state": "critical",
+            "tooltipText": null,
+            "parentId": null,
+            "childrenIds": [],
+            "config": null,
+            "controls": [
+                101,
+                102,
+                103,
+                104,
+                106
+            ],
+            "assets": [
+                204
+            ]
+        },
+        {
+            "id": 310,
+            "label": "Risk 310",
+            "description": "Voluptate expedita dicta neque harum debitis laudantium molestias velit aut",
+            "type": "risk",
+            "state": "critical",
+            "tooltipText": null,
+            "parentId": null,
+            "childrenIds": [],
+            "config": null,
+            "controls": [
+                106
+            ],
+            "assets": [
+                200
+            ]
+        }
+    ],
+    "edges": [
+        {
+            "id": 0,
+            "label": "protects",
+            "type": "solid",
+            "startNodeId": 11,
+            "endNodeId": 10
+        },
+        {
+            "id": 1,
+            "type": "solid",
+            "startNodeId": 12,
+            "endNodeId": 10
+        },
+        {
+            "id": 2,
+            "type": "solid",
+            "startNodeId": 13,
+            "endNodeId": 10
+        },
+        {
+            "id": 3,
+            "type": "solid",
+            "startNodeId": 24,
+            "endNodeId": 12
+        },
+        {
+            "id": 4,
+            "type": "solid",
+            "startNodeId": 25,
+            "endNodeId": 12
+        },
+        {
+            "id": 5,
+            "type": "solid",
+            "startNodeId": 26,
+            "endNodeId": 12
+        },
+        {
+            "id": 6,
+            "type": "solid",
+            "startNodeId": 14,
+            "endNodeId": 13
+        },
+        {
+            "id": 7,
+            "type": "solid",
+            "startNodeId": 15,
+            "endNodeId": 13
+        },
+        {
+            "id": 8,
+            "type": "solid",
+            "startNodeId": 16,
+            "endNodeId": 13
+        },
+        {
+            "id": 9,
+            "type": "solid",
+            "startNodeId": 17,
+            "endNodeId": 13
+        },
+        {
+            "id": 10,
+            "type": "solid",
+            "startNodeId": 18,
+            "endNodeId": 13
+        },
+        {
+            "id": 11,
+            "type": "solid",
+            "startNodeId": 19,
+            "endNodeId": 13
+        },
+        {
+            "id": 12,
+            "type": "solid",
+            "startNodeId": 20,
+            "endNodeId": 13
+        },
+        {
+            "id": 13,
+            "type": "solid",
+            "startNodeId": 21,
+            "endNodeId": 13
+        },
+        {
+            "id": 14,
+            "type": "solid",
+            "startNodeId": 22,
+            "endNodeId": 13
+        },
+        {
+            "id": 15,
+            "type": "solid",
+            "startNodeId": 23,
+            "endNodeId": 13
+        },
+        {
+            "id": 16,
+            "type": "solid",
+            "startNodeId": 27,
+            "endNodeId": 11
+        },
+        {
+            "id": 17,
+            "type": "solid",
+            "startNodeId": 28,
+            "endNodeId": 11
+        },
+        {
+            "id": 18,
+            "type": "solid",
+            "startNodeId": 29,
+            "endNodeId": 11
+        },
+        {
+            "id": 19,
+            "type": "solid",
+            "startNodeId": 30,
+            "endNodeId": 11
+        }
+    ]
+}

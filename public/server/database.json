@@ -1,0 +1,270 @@
+{
+  "data": [
+    [
+      {
+        "id": 0,
+        "test": 0,
+        "label": "Risk",
+        "description": "torquent leo quisque nec sem dictum eu habitasse metus molestie etiam nulla lacus eros consequat cras posuere aliquam massa posuere enim praesent ut nisl bibendum nulla in litora vel tempor et maecenas",
+        "type": "risk",
+        "state": "medium",
+        "tooltipText": "Risk's tooltip",
+        "parentIds": [],
+        "childrenIds": [],
+        "config": null
+      },
+      {
+        "id": 1,
+        "test": 1,
+        "label": "Risk",
+        "description": "eu ut tortor feugiat purus egestas tortor etiam",
+        "type": "risk",
+        "state": "critical",
+        "tooltipText": "Risk's tooltip",
+        "parentIds": [],
+        "childrenIds": [],
+        "config": null
+      },
+      {
+        "id": 2,
+        "test": 2,
+        "label": "Risk",
+        "description": "neque purus luctus netus tempor bibendum vivamus venenatis sollicitudin fringilla litora litora fringilla vel laoreet odio enim quisque justo dui leo ut pellentesque luctus velit scelerisque vel fringilla a est id nisi torquent ornare nostra dictum cursus phasellus scelerisque lorem",
+        "type": "risk",
+        "state": "low",
+        "tooltipText": null,
+        "parentIds": [],
+        "childrenIds": [],
+        "config": null
+      },
+      {
+        "id": 3,
+        "test": 3,
+        "label": "Risk",
+        "description": "proin vestibulum magna metus sem tincidunt ultrices maecenas convallis neque sed iaculis lacus quisque imperdiet placerat purus nibh magna justo nam sodales tortor mauris cras diam lorem potenti sem cras magna ultrices fames",
+        "type": "risk",
+        "state": null,
+        "tooltipText": "Risk's tooltip",
+        "parentIds": [],
+        "childrenIds": [],
+        "config": null
+      },
+      {
+        "id": 4,
+        "test": 4,
+        "label": "Risk",
+        "description": "purus tortor congue suscipit luctus tempus senectus etiam leo porttitor elit ut sodales bibendum nam auctor porta hac dolor vel",
+        "type": "risk",
+        "state": null,
+        "tooltipText": "Risk's tooltip",
+        "parentIds": [],
+        "childrenIds": [],
+        "config": null
+      }
+    ],
+    [
+      {
+        "id": 5,
+        "test": 5,
+        "label": "Asset",
+        "description": "mattis malesuada pretium est neque velit non",
+        "type": "asset",
+        "state": null,
+        "tooltipText": null,
+        "parentIds": [
+          1
+        ],
+        "childrenIds": [],
+        "config": null
+      },
+      {
+        "id": 6,
+        "test": 6,
+        "label": "Asset",
+        "description": "tempor class orci imperdiet tincidunt adipiscing fermentum ornare fermentum velit leo tincidunt lectus consectetur quisque ornare a sodales ornare id commodo faucibus fermentum adipiscing tortor eget porta sagittis etiam interdum blandit habitasse tempor turpis porta libero class eleifend maecenas malesuada congue sollicitudin lacinia porttitor ultrices aliquam",
+        "type": "asset",
+        "state": null,
+        "tooltipText": null,
+        "parentIds": [],
+        "childrenIds": [],
+        "config": null
+      },
+      {
+        "id": 7,
+        "test": 7,
+        "label": "Asset",
+        "description": "fermentum in vel congue mauris ante vitae senectus auctor viverra lobortis quis suspendisse ipsum vestibulum eu enim et scelerisque adipiscing venenatis eget nulla tincidunt nostra sollicitudin et suspendisse porttitor lacus semper mattis neque velit consectetur himenaeos leo tincidunt quam sollicitudin",
+        "type": "asset",
+        "state": null,
+        "tooltipText": null,
+        "parentIds": [],
+        "childrenIds": [],
+        "config": null
+      },
+      {
+        "id": 8,
+        "test": 8,
+        "label": "Asset",
+        "description": "curabitur ultricies lobortis curae dui lobortis fermentum morbi",
+        "type": "asset",
+        "state": null,
+        "tooltipText": "Asset's tooltip",
+        "parentIds": [
+          1
+        ],
+        "childrenIds": [],
+        "config": null
+      },
+      {
+        "id": 9,
+        "test": 9,
+        "label": "Asset",
+        "description": "est dui fusce laoreet massa facilisis leo ultricies elementum cras integer iaculis nunc dui luctus etiam odio hendrerit tortor magna augue praesent ut dui dictum pellentesque imperdiet",
+        "type": "asset",
+        "state": null,
+        "tooltipText": "Asset's tooltip",
+        "parentIds": [],
+        "childrenIds": [],
+        "config": null
+      }
+    ],
+    [
+      {
+        "id": 10,
+        "test": 10,
+        "label": "Requirement",
+        "description": "leo rhoncus cursus etiam habitasse molestie velit blandit phasellus cursus lacinia ut est nulla lectus tristique rhoncus sollicitudin consectetur ligula proin nam eget duis ut imperdiet metus",
+        "type": "requirement",
+        "state": "FULFILLED",
+        "tooltipText": null,
+        "parentIds": [
+          5
+        ],
+        "childrenIds": [],
+        "config": null
+      },
+      {
+        "id": 11,
+        "test": 11,
+        "label": "Requirement",
+        "description": "diam facilisis sodales est aliquet aliquet urna habitasse",
+        "type": "requirement",
+        "state": "NOT-FULFILLED",
+        "tooltipText": "Requirement's tooltip",
+        "parentIds": [
+          6
+        ],
+        "childrenIds": [],
+        "config": null
+      },
+      {
+        "id": 12,
+        "test": 12,
+        "label": "Requirement",
+        "description": "adipiscing eros tellus feugiat cursus porttitor dolor faucibus bibendum lobortis amet mi quam habitasse leo per aliquet vestibulum erat vehicula blandit",
+        "type": "requirement",
+        "state": "PARTIALLY-FULFILLED",
+        "tooltipText": "Requirement's tooltip",
+        "parentIds": [
+          1
+        ],
+        "childrenIds": [],
+        "config": null
+      },
+      {
+        "id": 13,
+        "test": 13,
+        "label": "Requirement",
+        "description": "tellus litora molestie fusce litora auctor cubilia nulla accumsan donec amet aliquam aliquam amet dictum metus hac tempor ultrices maecenas",
+        "type": "requirement",
+        "state": "PARTIALLY-FULFILLED",
+        "tooltipText": null,
+        "parentIds": [],
+        "childrenIds": [],
+        "config": null
+      },
+      {
+        "id": 14,
+        "test": 14,
+        "label": "Requirement",
+        "description": "ante enim nibh tincidunt taciti justo ad",
+        "type": "requirement",
+        "state": "FULFILLED",
+        "tooltipText": null,
+        "parentIds": [
+          4
+        ],
+        "childrenIds": [],
+        "config": null
+      }
+    ],
+    [
+      {
+        "id": 15,
+        "test": 15,
+        "label": "Control",
+        "description": "nibh ligula nullam sed dictum tristique tincidunt nullam congue consectetur suscipit gravida curabitur nibh dapibus convallis ultrices bibendum accumsan velit ultricies felis nam ultricies laoreet purus urna rhoncus rutrum risus eu dictumst imperdiet ut fames non iaculis",
+        "type": "control",
+        "state": null,
+        "tooltipText": "Control's tooltip",
+        "parentIds": [
+          7
+        ],
+        "childrenIds": [],
+        "config": null
+      },
+      {
+        "id": 16,
+        "test": 16,
+        "label": "Control",
+        "description": "in auctor egestas potenti donec aenean placerat morbi molestie inceptos imperdiet tellus conubia elementum tempus curae ultricies curae aptent erat auctor habitant magna dapibus",
+        "type": "control",
+        "state": null,
+        "tooltipText": "Control's tooltip",
+        "parentIds": [],
+        "childrenIds": [],
+        "config": null
+      },
+      {
+        "id": 17,
+        "test": 17,
+        "label": "Control",
+        "description": "diam neque cursus eleifend nisi luctus iaculis",
+        "type": "control",
+        "state": null,
+        "tooltipText": null,
+        "parentIds": [
+          8
+        ],
+        "childrenIds": [],
+        "config": null
+      },
+      {
+        "id": 18,
+        "test": 18,
+        "label": "Control",
+        "description": "metus fusce curabitur ipsum ultricies sollicitudin nunc libero malesuada adipiscing placerat vitae tellus at nec tempus eget mauris nam eu sit elementum primis praesent tincidunt consequat sociosqu iaculis fermentum velit hendrerit volutpat lobortis per habitasse augue urna primis sit",
+        "type": "control",
+        "state": null,
+        "tooltipText": null,
+        "parentIds": [],
+        "childrenIds": [],
+        "config": null
+      },
+      {
+        "id": 19,
+        "test": 19,
+        "label": "Control",
+        "description": "luctus mollis cubilia cras ultrices convallis augue sem lectus himenaeos diam praesent mollis suscipit id convallis ligula dolor nisi cursus aliquet sociosqu dolor lorem habitasse amet potenti potenti porta rhoncus risus suspendisse",
+        "type": "control",
+        "state": null,
+        "tooltipText": null,
+        "parentIds": [
+          7
+        ],
+        "childrenIds": [],
+        "config": null
+      }
+    ]
+  ]
+}

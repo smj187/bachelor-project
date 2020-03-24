@@ -30,13 +30,26 @@ class BaseNode {
     this.config = {} // set by class
 
     // node data
-    this.id = data.id || -1
+    this.id = data.id || 0
     this.label = data.label || ""
     this.type = data.type || "unkown"
     this.tooltipText = data.tooltipText || null
     this.description = data.description || null
     this.keyValuePairs = data.keyValuePairs || []
     this.state = data.state || null
+    this.attributes = new Map() // TODO: key value paired map
+
+
+    // layout data
+    this.depth = 0
+    this.parent = null
+    this.parentId = data.parentId || null
+
+    this.children = []
+    this.childrenIds = data.childrenIds || []
+    this.prevSibling = data.prevSibling || null
+    this.modifier = 0
+    this.mod = 0
 
 
     // node position
@@ -47,27 +60,228 @@ class BaseNode {
     this.currentX = 0
     this.currentY = 0
 
+
+    this.x = 0
+    this.y = 0
+
+
     // node info
     this.nodeSize = "min" // minimal or maximal representation
     this.opacity = 1
     this.isHidden = false
     this.currentWidth = 0
     this.currentHeight = 0
+
+
+    // events
+    this.events = []
+    this.outgoingEdges = []
+    this.incomingEdges = []
   }
+
+  isLeaf() {
+    return this.children.length === 0
+  }
+
+  isLeftMost() {
+    if (this.parent === null || this.parent === undefined) {
+      return true
+    }
+
+    return this.parent.children[0] === this
+  }
+
+  isRightMost() {
+    if (this.parent === null || this.parent === undefined) {
+      return true
+    }
+    return this.parent.children[this.children.length - 1] === this
+  }
+
+  getLeftMostChild() {
+    if (this.children.length === 0) {
+      return null
+    }
+    return this.children[0]
+  }
+
+  getRightMostChild() {
+    if (this.children.length === 0) {
+      return null
+    }
+    return this.children[this.children.length - 1]
+  }
+
+  getPrevSibling() {
+    if (this.parent === null || this.parent === undefined || this.isLeftMost()) {
+      return null
+    }
+    return this.parent.children[this.parent.children.indexOf(this) - 1]
+  }
+
+  setPrevSibling(prevSibling) {
+    this.prevSibling = prevSibling
+  }
+
+  getNextSibling() {
+    if (this.parent === null || this.isRightMost()) {
+      return null
+    }
+    return this.parent.children[this.parent.children.indexOf(this) + 1]
+  }
+
+  getLeftMostSibling() {
+    if (this.parent === null) {
+      return null
+    }
+    if (this.isLeftMost()) {
+      return this
+    }
+    return this.parent.children[0]
+  }
+
+  getRightMostSibling() {
+    if (this.children.length === 0) {
+      return null
+    }
+    return this.children[this.children.length - 1]
+  }
+
+  setModifier(modifier) {
+    this.modifier = modifier
+  }
+
+  getModifier() {
+    return this.modifier
+  }
+
+
+  addIncomingEdge(incomingEdge) {
+    this.incomingEdges.push(incomingEdge)
+  }
+
+  addOutgoingEdge(outgoingEdge) {
+    this.outgoingEdges.push(outgoingEdge)
+  }
+
+  transformToPosition(X = this.initialX, Y = this.initialY) {
+    this
+      .svg
+      .animate({ duration: this.config.animationSpeed })
+      .transform({ position: [X, Y] })
+  }
+
+  transformToFinalPosition() {
+    this
+      .svg
+      .attr({ opacity: 1 })
+      .animate({ duration: this.config.animationSpeed })
+      .transform({ position: [this.finalX, this.finalY] })
+      .attr({ opacity: 1 })
+  }
+
+  transformToInitialPosition() {
+    this.svg.back()
+    this
+      .svg
+      .attr({ opacity: 1 })
+      .animate({ duration: this.config.animationSpeed })
+      .transform({ position: [this.initialX, this.initialY] })
+      .attr({ opacity: 1 })
+  }
+
+  isRendered() {
+    return this.svg !== null
+  }
+
+  removeNode(X = this.initialX, Y = this.initialY) {
+    if (this.svg !== null) {
+      this
+        .svg
+        .animate({ duration: this.config.animationSpeed })
+        .transform({ scale: 0.001, position: [X, Y] })
+        .after(() => {
+          this.svg.remove()
+          this.svg = null
+        })
+    }
+  }
+
+
+  getNodeSize() {
+    return this.nodeSize
+  }
+
+  isRoot() {
+    return this.parentId === null
+  }
+
+  getChildren() {
+    return this.children
+  }
+
+  setChildren(children) {
+    this.children = children
+  }
+
+
+  setNodeSize(nodeSize) {
+    this.nodeSize = nodeSize
+  }
+
+  getParent() {
+    return this.parent
+  }
+
+  setParent(parent) {
+    this.parent = parent
+  }
+
+  setDepth(depth) {
+    this.depth = depth
+  }
+
+  getDepth() {
+    return this.depth
+  }
+
+  moveToFront() {
+    this.svg.front()
+  }
+
+  moveToBack() {
+    this.svg.back()
+  }
+
+  getId() {
+    return this.id
+  }
+
+  addEvent(event, func) {
+    // this.svg.on(event, func)
+    // console.log(this.svg)
+    this.events = [...this.events, { event, func }]
+    // console.log(this.getNodeSize())
+  }
+
+
+  // TODO: add event listener (mouse events)
+  // TODO: maybe before creation: pass config which to override mouse events
 
 
   /**
    * Creates the initial SVG element and adds hover effect
    */
   createSVGElement() {
-    const svg = this.canvas.group() // .draggable()
+    const svg = this.canvas.group().draggable()
+    // const svg = this.canvas.group()
     svg.css("cursor", "pointer")
     svg.id(`node#${this.id}`)
 
     svg.on("mouseover", () => {
       svg.front()
 
-      if (this.tooltipText !== null) {
+      if (this.tooltipText !== null && this.nodeSize === "min") {
         svg.on("mousemove", (ev) => {
         // show tooltip
           const tooltip = document.getElementById("tooltip")
@@ -122,6 +336,12 @@ class BaseNode {
       const filter = this.canvas.defs().get(i)
       node.filterWith(filter)
     })
+
+    this.events.forEach(({ event, func }) => {
+      svg.on(event, func)
+    })
+
+
     return svg
   }
 
@@ -155,7 +375,7 @@ class BaseNode {
       node.radius(this.config.borderRadius)
     }
 
-    // add light color highlight
+    // add a re-usable light and color highlight
     const i = [...this.canvas.defs().node.childNodes].findIndex((d) => d.id === "defaultNodeBorderFilter")
     if (i === -1) {
       const filter = new Filter()
@@ -209,7 +429,7 @@ class BaseNode {
    * @param {Number} height the label height
    * @param {String} textAlign how to align the label, default is center
    */
-  createLabel(textAlign = "center") {
+  createLabel(textAlign = "center") { // FIXME: html text gets highlighted way to often
     const fobj = this.canvas.foreignObject(this.config.minTextWidth, 0)
 
     const background = document.createElement("div")
@@ -229,8 +449,6 @@ class BaseNode {
 
     background.appendChild(label)
     fobj.add(background)
-
-    // fobj.height(label.clientHeight + this.config.offset) // TODO: remove this
 
     fobj.dmove(this.config.borderStrokeWidth, this.config.borderStrokeWidth)
 
@@ -252,6 +470,22 @@ class BaseNode {
    */
   getConfig() {
     return this.config
+  }
+
+
+  /**
+   * Returns the current final X position
+   */
+  getFinalX() {
+    return this.finalX
+  }
+
+
+  /**
+   * Returns the current final Y position
+   */
+  getFinalY() {
+    return this.finalY
   }
 
 
@@ -285,6 +519,22 @@ class BaseNode {
 
 
   /**
+   * Returns the current initial X position
+   */
+  getInitialX() {
+    return this.initialX
+  }
+
+
+  /**
+   * Returns the current final Y position
+   */
+  getInitialY() {
+    return this.initialY
+  }
+
+
+  /**
    * Sets the initial X position
    * @param {Number} initialX the initial X position
    */
@@ -310,6 +560,22 @@ class BaseNode {
   setInitialXY(initialX, initialY) {
     this.initialX = initialX
     this.initialY = initialY
+  }
+
+
+  /**
+   * Returns the current node width
+   */
+  getCurrentWidth() {
+    return this.currentWidth
+  }
+
+
+  /**
+   * Returns the current node height
+   */
+  getCurrentHeight() {
+    return this.currentHeight
   }
 }
 

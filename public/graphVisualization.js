@@ -1,3 +1,776 @@
+var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
+
+function createCommonjsModule(fn, module) {
+	return module = { exports: {} }, fn(module, module.exports), module.exports;
+}
+
+var runtime_1 = createCommonjsModule(function (module) {
+/**
+ * Copyright (c) 2014-present, Facebook, Inc.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+var runtime = (function (exports) {
+
+  var Op = Object.prototype;
+  var hasOwn = Op.hasOwnProperty;
+  var undefined$1; // More compressible than void 0.
+  var $Symbol = typeof Symbol === "function" ? Symbol : {};
+  var iteratorSymbol = $Symbol.iterator || "@@iterator";
+  var asyncIteratorSymbol = $Symbol.asyncIterator || "@@asyncIterator";
+  var toStringTagSymbol = $Symbol.toStringTag || "@@toStringTag";
+
+  function wrap(innerFn, outerFn, self, tryLocsList) {
+    // If outerFn provided and outerFn.prototype is a Generator, then outerFn.prototype instanceof Generator.
+    var protoGenerator = outerFn && outerFn.prototype instanceof Generator ? outerFn : Generator;
+    var generator = Object.create(protoGenerator.prototype);
+    var context = new Context(tryLocsList || []);
+
+    // The ._invoke method unifies the implementations of the .next,
+    // .throw, and .return methods.
+    generator._invoke = makeInvokeMethod(innerFn, self, context);
+
+    return generator;
+  }
+  exports.wrap = wrap;
+
+  // Try/catch helper to minimize deoptimizations. Returns a completion
+  // record like context.tryEntries[i].completion. This interface could
+  // have been (and was previously) designed to take a closure to be
+  // invoked without arguments, but in all the cases we care about we
+  // already have an existing method we want to call, so there's no need
+  // to create a new function object. We can even get away with assuming
+  // the method takes exactly one argument, since that happens to be true
+  // in every case, so we don't have to touch the arguments object. The
+  // only additional allocation required is the completion record, which
+  // has a stable shape and so hopefully should be cheap to allocate.
+  function tryCatch(fn, obj, arg) {
+    try {
+      return { type: "normal", arg: fn.call(obj, arg) };
+    } catch (err) {
+      return { type: "throw", arg: err };
+    }
+  }
+
+  var GenStateSuspendedStart = "suspendedStart";
+  var GenStateSuspendedYield = "suspendedYield";
+  var GenStateExecuting = "executing";
+  var GenStateCompleted = "completed";
+
+  // Returning this object from the innerFn has the same effect as
+  // breaking out of the dispatch switch statement.
+  var ContinueSentinel = {};
+
+  // Dummy constructor functions that we use as the .constructor and
+  // .constructor.prototype properties for functions that return Generator
+  // objects. For full spec compliance, you may wish to configure your
+  // minifier not to mangle the names of these two functions.
+  function Generator() {}
+  function GeneratorFunction() {}
+  function GeneratorFunctionPrototype() {}
+
+  // This is a polyfill for %IteratorPrototype% for environments that
+  // don't natively support it.
+  var IteratorPrototype = {};
+  IteratorPrototype[iteratorSymbol] = function () {
+    return this;
+  };
+
+  var getProto = Object.getPrototypeOf;
+  var NativeIteratorPrototype = getProto && getProto(getProto(values([])));
+  if (NativeIteratorPrototype &&
+      NativeIteratorPrototype !== Op &&
+      hasOwn.call(NativeIteratorPrototype, iteratorSymbol)) {
+    // This environment has a native %IteratorPrototype%; use it instead
+    // of the polyfill.
+    IteratorPrototype = NativeIteratorPrototype;
+  }
+
+  var Gp = GeneratorFunctionPrototype.prototype =
+    Generator.prototype = Object.create(IteratorPrototype);
+  GeneratorFunction.prototype = Gp.constructor = GeneratorFunctionPrototype;
+  GeneratorFunctionPrototype.constructor = GeneratorFunction;
+  GeneratorFunctionPrototype[toStringTagSymbol] =
+    GeneratorFunction.displayName = "GeneratorFunction";
+
+  // Helper for defining the .next, .throw, and .return methods of the
+  // Iterator interface in terms of a single ._invoke method.
+  function defineIteratorMethods(prototype) {
+    ["next", "throw", "return"].forEach(function(method) {
+      prototype[method] = function(arg) {
+        return this._invoke(method, arg);
+      };
+    });
+  }
+
+  exports.isGeneratorFunction = function(genFun) {
+    var ctor = typeof genFun === "function" && genFun.constructor;
+    return ctor
+      ? ctor === GeneratorFunction ||
+        // For the native GeneratorFunction constructor, the best we can
+        // do is to check its .name property.
+        (ctor.displayName || ctor.name) === "GeneratorFunction"
+      : false;
+  };
+
+  exports.mark = function(genFun) {
+    if (Object.setPrototypeOf) {
+      Object.setPrototypeOf(genFun, GeneratorFunctionPrototype);
+    } else {
+      genFun.__proto__ = GeneratorFunctionPrototype;
+      if (!(toStringTagSymbol in genFun)) {
+        genFun[toStringTagSymbol] = "GeneratorFunction";
+      }
+    }
+    genFun.prototype = Object.create(Gp);
+    return genFun;
+  };
+
+  // Within the body of any async function, `await x` is transformed to
+  // `yield regeneratorRuntime.awrap(x)`, so that the runtime can test
+  // `hasOwn.call(value, "__await")` to determine if the yielded value is
+  // meant to be awaited.
+  exports.awrap = function(arg) {
+    return { __await: arg };
+  };
+
+  function AsyncIterator(generator, PromiseImpl) {
+    function invoke(method, arg, resolve, reject) {
+      var record = tryCatch(generator[method], generator, arg);
+      if (record.type === "throw") {
+        reject(record.arg);
+      } else {
+        var result = record.arg;
+        var value = result.value;
+        if (value &&
+            typeof value === "object" &&
+            hasOwn.call(value, "__await")) {
+          return PromiseImpl.resolve(value.__await).then(function(value) {
+            invoke("next", value, resolve, reject);
+          }, function(err) {
+            invoke("throw", err, resolve, reject);
+          });
+        }
+
+        return PromiseImpl.resolve(value).then(function(unwrapped) {
+          // When a yielded Promise is resolved, its final value becomes
+          // the .value of the Promise<{value,done}> result for the
+          // current iteration.
+          result.value = unwrapped;
+          resolve(result);
+        }, function(error) {
+          // If a rejected Promise was yielded, throw the rejection back
+          // into the async generator function so it can be handled there.
+          return invoke("throw", error, resolve, reject);
+        });
+      }
+    }
+
+    var previousPromise;
+
+    function enqueue(method, arg) {
+      function callInvokeWithMethodAndArg() {
+        return new PromiseImpl(function(resolve, reject) {
+          invoke(method, arg, resolve, reject);
+        });
+      }
+
+      return previousPromise =
+        // If enqueue has been called before, then we want to wait until
+        // all previous Promises have been resolved before calling invoke,
+        // so that results are always delivered in the correct order. If
+        // enqueue has not been called before, then it is important to
+        // call invoke immediately, without waiting on a callback to fire,
+        // so that the async generator function has the opportunity to do
+        // any necessary setup in a predictable way. This predictability
+        // is why the Promise constructor synchronously invokes its
+        // executor callback, and why async functions synchronously
+        // execute code before the first await. Since we implement simple
+        // async functions in terms of async generators, it is especially
+        // important to get this right, even though it requires care.
+        previousPromise ? previousPromise.then(
+          callInvokeWithMethodAndArg,
+          // Avoid propagating failures to Promises returned by later
+          // invocations of the iterator.
+          callInvokeWithMethodAndArg
+        ) : callInvokeWithMethodAndArg();
+    }
+
+    // Define the unified helper method that is used to implement .next,
+    // .throw, and .return (see defineIteratorMethods).
+    this._invoke = enqueue;
+  }
+
+  defineIteratorMethods(AsyncIterator.prototype);
+  AsyncIterator.prototype[asyncIteratorSymbol] = function () {
+    return this;
+  };
+  exports.AsyncIterator = AsyncIterator;
+
+  // Note that simple async functions are implemented on top of
+  // AsyncIterator objects; they just return a Promise for the value of
+  // the final result produced by the iterator.
+  exports.async = function(innerFn, outerFn, self, tryLocsList, PromiseImpl) {
+    if (PromiseImpl === void 0) PromiseImpl = Promise;
+
+    var iter = new AsyncIterator(
+      wrap(innerFn, outerFn, self, tryLocsList),
+      PromiseImpl
+    );
+
+    return exports.isGeneratorFunction(outerFn)
+      ? iter // If outerFn is a generator, return the full iterator.
+      : iter.next().then(function(result) {
+          return result.done ? result.value : iter.next();
+        });
+  };
+
+  function makeInvokeMethod(innerFn, self, context) {
+    var state = GenStateSuspendedStart;
+
+    return function invoke(method, arg) {
+      if (state === GenStateExecuting) {
+        throw new Error("Generator is already running");
+      }
+
+      if (state === GenStateCompleted) {
+        if (method === "throw") {
+          throw arg;
+        }
+
+        // Be forgiving, per 25.3.3.3.3 of the spec:
+        // https://people.mozilla.org/~jorendorff/es6-draft.html#sec-generatorresume
+        return doneResult();
+      }
+
+      context.method = method;
+      context.arg = arg;
+
+      while (true) {
+        var delegate = context.delegate;
+        if (delegate) {
+          var delegateResult = maybeInvokeDelegate(delegate, context);
+          if (delegateResult) {
+            if (delegateResult === ContinueSentinel) continue;
+            return delegateResult;
+          }
+        }
+
+        if (context.method === "next") {
+          // Setting context._sent for legacy support of Babel's
+          // function.sent implementation.
+          context.sent = context._sent = context.arg;
+
+        } else if (context.method === "throw") {
+          if (state === GenStateSuspendedStart) {
+            state = GenStateCompleted;
+            throw context.arg;
+          }
+
+          context.dispatchException(context.arg);
+
+        } else if (context.method === "return") {
+          context.abrupt("return", context.arg);
+        }
+
+        state = GenStateExecuting;
+
+        var record = tryCatch(innerFn, self, context);
+        if (record.type === "normal") {
+          // If an exception is thrown from innerFn, we leave state ===
+          // GenStateExecuting and loop back for another invocation.
+          state = context.done
+            ? GenStateCompleted
+            : GenStateSuspendedYield;
+
+          if (record.arg === ContinueSentinel) {
+            continue;
+          }
+
+          return {
+            value: record.arg,
+            done: context.done
+          };
+
+        } else if (record.type === "throw") {
+          state = GenStateCompleted;
+          // Dispatch the exception by looping back around to the
+          // context.dispatchException(context.arg) call above.
+          context.method = "throw";
+          context.arg = record.arg;
+        }
+      }
+    };
+  }
+
+  // Call delegate.iterator[context.method](context.arg) and handle the
+  // result, either by returning a { value, done } result from the
+  // delegate iterator, or by modifying context.method and context.arg,
+  // setting context.delegate to null, and returning the ContinueSentinel.
+  function maybeInvokeDelegate(delegate, context) {
+    var method = delegate.iterator[context.method];
+    if (method === undefined$1) {
+      // A .throw or .return when the delegate iterator has no .throw
+      // method always terminates the yield* loop.
+      context.delegate = null;
+
+      if (context.method === "throw") {
+        // Note: ["return"] must be used for ES3 parsing compatibility.
+        if (delegate.iterator["return"]) {
+          // If the delegate iterator has a return method, give it a
+          // chance to clean up.
+          context.method = "return";
+          context.arg = undefined$1;
+          maybeInvokeDelegate(delegate, context);
+
+          if (context.method === "throw") {
+            // If maybeInvokeDelegate(context) changed context.method from
+            // "return" to "throw", let that override the TypeError below.
+            return ContinueSentinel;
+          }
+        }
+
+        context.method = "throw";
+        context.arg = new TypeError(
+          "The iterator does not provide a 'throw' method");
+      }
+
+      return ContinueSentinel;
+    }
+
+    var record = tryCatch(method, delegate.iterator, context.arg);
+
+    if (record.type === "throw") {
+      context.method = "throw";
+      context.arg = record.arg;
+      context.delegate = null;
+      return ContinueSentinel;
+    }
+
+    var info = record.arg;
+
+    if (! info) {
+      context.method = "throw";
+      context.arg = new TypeError("iterator result is not an object");
+      context.delegate = null;
+      return ContinueSentinel;
+    }
+
+    if (info.done) {
+      // Assign the result of the finished delegate to the temporary
+      // variable specified by delegate.resultName (see delegateYield).
+      context[delegate.resultName] = info.value;
+
+      // Resume execution at the desired location (see delegateYield).
+      context.next = delegate.nextLoc;
+
+      // If context.method was "throw" but the delegate handled the
+      // exception, let the outer generator proceed normally. If
+      // context.method was "next", forget context.arg since it has been
+      // "consumed" by the delegate iterator. If context.method was
+      // "return", allow the original .return call to continue in the
+      // outer generator.
+      if (context.method !== "return") {
+        context.method = "next";
+        context.arg = undefined$1;
+      }
+
+    } else {
+      // Re-yield the result returned by the delegate method.
+      return info;
+    }
+
+    // The delegate iterator is finished, so forget it and continue with
+    // the outer generator.
+    context.delegate = null;
+    return ContinueSentinel;
+  }
+
+  // Define Generator.prototype.{next,throw,return} in terms of the
+  // unified ._invoke helper method.
+  defineIteratorMethods(Gp);
+
+  Gp[toStringTagSymbol] = "Generator";
+
+  // A Generator should always return itself as the iterator object when the
+  // @@iterator function is called on it. Some browsers' implementations of the
+  // iterator prototype chain incorrectly implement this, causing the Generator
+  // object to not be returned from this call. This ensures that doesn't happen.
+  // See https://github.com/facebook/regenerator/issues/274 for more details.
+  Gp[iteratorSymbol] = function() {
+    return this;
+  };
+
+  Gp.toString = function() {
+    return "[object Generator]";
+  };
+
+  function pushTryEntry(locs) {
+    var entry = { tryLoc: locs[0] };
+
+    if (1 in locs) {
+      entry.catchLoc = locs[1];
+    }
+
+    if (2 in locs) {
+      entry.finallyLoc = locs[2];
+      entry.afterLoc = locs[3];
+    }
+
+    this.tryEntries.push(entry);
+  }
+
+  function resetTryEntry(entry) {
+    var record = entry.completion || {};
+    record.type = "normal";
+    delete record.arg;
+    entry.completion = record;
+  }
+
+  function Context(tryLocsList) {
+    // The root entry object (effectively a try statement without a catch
+    // or a finally block) gives us a place to store values thrown from
+    // locations where there is no enclosing try statement.
+    this.tryEntries = [{ tryLoc: "root" }];
+    tryLocsList.forEach(pushTryEntry, this);
+    this.reset(true);
+  }
+
+  exports.keys = function(object) {
+    var keys = [];
+    for (var key in object) {
+      keys.push(key);
+    }
+    keys.reverse();
+
+    // Rather than returning an object with a next method, we keep
+    // things simple and return the next function itself.
+    return function next() {
+      while (keys.length) {
+        var key = keys.pop();
+        if (key in object) {
+          next.value = key;
+          next.done = false;
+          return next;
+        }
+      }
+
+      // To avoid creating an additional object, we just hang the .value
+      // and .done properties off the next function object itself. This
+      // also ensures that the minifier will not anonymize the function.
+      next.done = true;
+      return next;
+    };
+  };
+
+  function values(iterable) {
+    if (iterable) {
+      var iteratorMethod = iterable[iteratorSymbol];
+      if (iteratorMethod) {
+        return iteratorMethod.call(iterable);
+      }
+
+      if (typeof iterable.next === "function") {
+        return iterable;
+      }
+
+      if (!isNaN(iterable.length)) {
+        var i = -1, next = function next() {
+          while (++i < iterable.length) {
+            if (hasOwn.call(iterable, i)) {
+              next.value = iterable[i];
+              next.done = false;
+              return next;
+            }
+          }
+
+          next.value = undefined$1;
+          next.done = true;
+
+          return next;
+        };
+
+        return next.next = next;
+      }
+    }
+
+    // Return an iterator with no values.
+    return { next: doneResult };
+  }
+  exports.values = values;
+
+  function doneResult() {
+    return { value: undefined$1, done: true };
+  }
+
+  Context.prototype = {
+    constructor: Context,
+
+    reset: function(skipTempReset) {
+      this.prev = 0;
+      this.next = 0;
+      // Resetting context._sent for legacy support of Babel's
+      // function.sent implementation.
+      this.sent = this._sent = undefined$1;
+      this.done = false;
+      this.delegate = null;
+
+      this.method = "next";
+      this.arg = undefined$1;
+
+      this.tryEntries.forEach(resetTryEntry);
+
+      if (!skipTempReset) {
+        for (var name in this) {
+          // Not sure about the optimal order of these conditions:
+          if (name.charAt(0) === "t" &&
+              hasOwn.call(this, name) &&
+              !isNaN(+name.slice(1))) {
+            this[name] = undefined$1;
+          }
+        }
+      }
+    },
+
+    stop: function() {
+      this.done = true;
+
+      var rootEntry = this.tryEntries[0];
+      var rootRecord = rootEntry.completion;
+      if (rootRecord.type === "throw") {
+        throw rootRecord.arg;
+      }
+
+      return this.rval;
+    },
+
+    dispatchException: function(exception) {
+      if (this.done) {
+        throw exception;
+      }
+
+      var context = this;
+      function handle(loc, caught) {
+        record.type = "throw";
+        record.arg = exception;
+        context.next = loc;
+
+        if (caught) {
+          // If the dispatched exception was caught by a catch block,
+          // then let that catch block handle the exception normally.
+          context.method = "next";
+          context.arg = undefined$1;
+        }
+
+        return !! caught;
+      }
+
+      for (var i = this.tryEntries.length - 1; i >= 0; --i) {
+        var entry = this.tryEntries[i];
+        var record = entry.completion;
+
+        if (entry.tryLoc === "root") {
+          // Exception thrown outside of any try block that could handle
+          // it, so set the completion value of the entire function to
+          // throw the exception.
+          return handle("end");
+        }
+
+        if (entry.tryLoc <= this.prev) {
+          var hasCatch = hasOwn.call(entry, "catchLoc");
+          var hasFinally = hasOwn.call(entry, "finallyLoc");
+
+          if (hasCatch && hasFinally) {
+            if (this.prev < entry.catchLoc) {
+              return handle(entry.catchLoc, true);
+            } else if (this.prev < entry.finallyLoc) {
+              return handle(entry.finallyLoc);
+            }
+
+          } else if (hasCatch) {
+            if (this.prev < entry.catchLoc) {
+              return handle(entry.catchLoc, true);
+            }
+
+          } else if (hasFinally) {
+            if (this.prev < entry.finallyLoc) {
+              return handle(entry.finallyLoc);
+            }
+
+          } else {
+            throw new Error("try statement without catch or finally");
+          }
+        }
+      }
+    },
+
+    abrupt: function(type, arg) {
+      for (var i = this.tryEntries.length - 1; i >= 0; --i) {
+        var entry = this.tryEntries[i];
+        if (entry.tryLoc <= this.prev &&
+            hasOwn.call(entry, "finallyLoc") &&
+            this.prev < entry.finallyLoc) {
+          var finallyEntry = entry;
+          break;
+        }
+      }
+
+      if (finallyEntry &&
+          (type === "break" ||
+           type === "continue") &&
+          finallyEntry.tryLoc <= arg &&
+          arg <= finallyEntry.finallyLoc) {
+        // Ignore the finally entry if control is not jumping to a
+        // location outside the try/catch block.
+        finallyEntry = null;
+      }
+
+      var record = finallyEntry ? finallyEntry.completion : {};
+      record.type = type;
+      record.arg = arg;
+
+      if (finallyEntry) {
+        this.method = "next";
+        this.next = finallyEntry.finallyLoc;
+        return ContinueSentinel;
+      }
+
+      return this.complete(record);
+    },
+
+    complete: function(record, afterLoc) {
+      if (record.type === "throw") {
+        throw record.arg;
+      }
+
+      if (record.type === "break" ||
+          record.type === "continue") {
+        this.next = record.arg;
+      } else if (record.type === "return") {
+        this.rval = this.arg = record.arg;
+        this.method = "return";
+        this.next = "end";
+      } else if (record.type === "normal" && afterLoc) {
+        this.next = afterLoc;
+      }
+
+      return ContinueSentinel;
+    },
+
+    finish: function(finallyLoc) {
+      for (var i = this.tryEntries.length - 1; i >= 0; --i) {
+        var entry = this.tryEntries[i];
+        if (entry.finallyLoc === finallyLoc) {
+          this.complete(entry.completion, entry.afterLoc);
+          resetTryEntry(entry);
+          return ContinueSentinel;
+        }
+      }
+    },
+
+    "catch": function(tryLoc) {
+      for (var i = this.tryEntries.length - 1; i >= 0; --i) {
+        var entry = this.tryEntries[i];
+        if (entry.tryLoc === tryLoc) {
+          var record = entry.completion;
+          if (record.type === "throw") {
+            var thrown = record.arg;
+            resetTryEntry(entry);
+          }
+          return thrown;
+        }
+      }
+
+      // The context.catch method must only be called with a location
+      // argument that corresponds to a known catch block.
+      throw new Error("illegal catch attempt");
+    },
+
+    delegateYield: function(iterable, resultName, nextLoc) {
+      this.delegate = {
+        iterator: values(iterable),
+        resultName: resultName,
+        nextLoc: nextLoc
+      };
+
+      if (this.method === "next") {
+        // Deliberately forget the last sent value so that we don't
+        // accidentally pass it on to the delegate.
+        this.arg = undefined$1;
+      }
+
+      return ContinueSentinel;
+    }
+  };
+
+  // Regardless of whether this script is executing as a CommonJS module
+  // or not, return the runtime object so that we can declare the variable
+  // regeneratorRuntime in the outer scope, which allows this module to be
+  // injected easily by `bin/regenerator --include-runtime script.js`.
+  return exports;
+
+}(
+  // If this script is executing as a CommonJS module, use module.exports
+  // as the regeneratorRuntime namespace. Otherwise create a new empty
+  // object. Either way, the resulting object will be used to initialize
+  // the regeneratorRuntime variable at the top of this file.
+   module.exports 
+));
+
+try {
+  regeneratorRuntime = runtime;
+} catch (accidentalStrictMode) {
+  // This module should not be running in strict mode, so the above
+  // assignment should always work unless something is misconfigured. Just
+  // in case runtime.js accidentally runs in strict mode, we can escape
+  // strict mode using a global Function call. This could conceivably fail
+  // if a Content Security Policy forbids using Function, but in that case
+  // the proper solution is to fix the accidental strict mode problem. If
+  // you've misconfigured your bundler to force strict mode and applied a
+  // CSP to forbid Function, and you're not willing to fix either of those
+  // problems, please detail your unique predicament in a GitHub issue.
+  Function("r", "regeneratorRuntime = r")(runtime);
+}
+});
+
+function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) {
+  try {
+    var info = gen[key](arg);
+    var value = info.value;
+  } catch (error) {
+    reject(error);
+    return;
+  }
+
+  if (info.done) {
+    resolve(value);
+  } else {
+    Promise.resolve(value).then(_next, _throw);
+  }
+}
+
+function _asyncToGenerator(fn) {
+  return function () {
+    var self = this,
+        args = arguments;
+    return new Promise(function (resolve, reject) {
+      var gen = fn.apply(self, args);
+
+      function _next(value) {
+        asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value);
+      }
+
+      function _throw(err) {
+        asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err);
+      }
+
+      _next(undefined);
+    });
+  };
+}
+
 function _classCallCheck(instance, Constructor) {
   if (!(instance instanceof Constructor)) {
     throw new TypeError("Cannot call a class as a function");
@@ -3281,15 +4054,15 @@ function height (height) {
 }
 
 var circled = /*#__PURE__*/Object.freeze({
-  __proto__: null,
-  rx: rx,
-  ry: ry,
-  x: x,
-  y: y$1,
-  cx: cx,
-  cy: cy,
-  width: width,
-  height: height
+	__proto__: null,
+	rx: rx,
+	ry: ry,
+	x: x,
+	y: y$1,
+	cx: cx,
+	cy: cy,
+	width: width,
+	height: height
 });
 
 class Shape extends Element {}
@@ -3443,9 +4216,9 @@ function to (x, y) {
 }
 
 var gradiented = /*#__PURE__*/Object.freeze({
-  __proto__: null,
-  from: from,
-  to: to
+	__proto__: null,
+	from: from,
+	to: to
 });
 
 class Gradient extends Container {
@@ -3808,12 +4581,12 @@ function height$1 (height) {
 }
 
 var pointed = /*#__PURE__*/Object.freeze({
-  __proto__: null,
-  MorphArray: MorphArray,
-  x: x$1,
-  y: y$2,
-  width: width$1,
-  height: height$1
+	__proto__: null,
+	MorphArray: MorphArray,
+	x: x$1,
+	y: y$2,
+	width: width$1,
+	height: height$1
 });
 
 class Line extends Shape {
@@ -4876,12 +5649,12 @@ function size (width, height) {
 }
 
 var poly = /*#__PURE__*/Object.freeze({
-  __proto__: null,
-  array: array,
-  plot: plot,
-  clear: clear,
-  move: move,
-  size: size
+	__proto__: null,
+	array: array,
+	plot: plot,
+	clear: clear,
+	move: move,
+	size: size
 });
 
 class Polygon extends Shape {
@@ -6522,9 +7295,9 @@ function length () {
 }
 
 var textable = /*#__PURE__*/Object.freeze({
-  __proto__: null,
-  plain: plain,
-  length: length
+	__proto__: null,
+	plain: plain,
+	length: length
 });
 
 class Text extends Shape {
@@ -7395,12 +8168,6 @@ var descriptors = !fails(function () {
   return Object.defineProperty({}, 1, { get: function () { return 7; } })[1] != 7;
 });
 
-var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
-
-function createCommonjsModule(fn, module) {
-	return module = { exports: {} }, fn(module, module.exports), module.exports;
-}
-
 var check = function (it) {
   return it && it.Math == Math && it;
 };
@@ -8145,89 +8912,6 @@ extend(Svg, {
   }
 });
 
-/**
- * The canvas element where all svgs are held
- * @typedef {Canvas} Canvas
- *
- * @see https://svgjs.com/docs/3.0/container-elements/#svg-svg
- */
-
-/**
- * The raw data object to create a node
- * @typedef {Data} Data
- *
- * @property {Number} id the node id
- * @property {String} label the node label
- * @property {String} type the node type (asset, control, risk requirement, custom)
- * @property {String} tooltipText the tooltip text that is shown while hovering a specific node
- */
-
-/**
- * Creates and handles all vizualization operations
- *
- * @example
- * const visualization = new Visualization()
- * const { canvas } = visualization
- */
-
-var Visualization = /*#__PURE__*/function () {
-  function Visualization() {
-    _classCallCheck(this, Visualization);
-
-    // create the main canvas element dom element
-    var element = document.createElement("div");
-    element.setAttribute("id", "canvas");
-    element.style.position = "relative";
-    document.body.appendChild(element); // create the tooltip dom element
-
-    var tooltip = document.createElement("div");
-    tooltip.setAttribute("id", "tooltip");
-    tooltip.style.display = "none";
-    tooltip.style.position = "absolute";
-    tooltip.style.background = "#333";
-    tooltip.style.border = "0px";
-    tooltip.style.boxShadow = "0 5px 15px -5px rgba(0, 0, 0, .65)";
-    tooltip.style.color = "#eee";
-    tooltip.style.padding = "0.4rem 0.6rem";
-    tooltip.style.fontSize = "0.85rem";
-    tooltip.style.fontWeight = "400";
-    tooltip.style.fontStyle = "normal";
-    element.appendChild(tooltip); // canvas set up
-
-    this.zoomLevel = 1;
-    this.canvas = SVG().addTo(element).size(window.innerWidth - 10, window.innerHeight - 10).viewbox(0, 0, window.innerWidth - 10, window.innerHeight - 10); // .panZoom({ zoomMin: 0.25, zoomMax: 10, zoomFactor: 0.25 })
-  }
-  /**
-   * Change the current zoom level
-   * @param {Number} zoom zoom level between 0.25 and 10
-   * @param {Object} [zoomOptions]
-   * @param {Number} [zoomOptions.x] zoom into specified point
-   * @param {Number} [zoomOptions.y] zoom into specified point
-   *
-   * @example
-   * visualization.setZoom(2, {x: 100, y: 100})
-   */
-
-
-  _createClass(Visualization, [{
-    key: "setZoom",
-    value: function setZoom(zoom, opts) {
-      this.canvas.zoom(zoom, opts);
-    }
-    /**
-     * Returns the current canvas element
-     */
-
-  }, {
-    key: "getCanvas",
-    value: function getCanvas() {
-      return this.canvas;
-    }
-  }]);
-
-  return Visualization;
-}();
-
 var f$4 = Object.getOwnPropertySymbols;
 
 var objectGetOwnPropertySymbols = {
@@ -8305,18 +8989,6 @@ var _export = function (options, source) {
   }
 };
 
-var nativeSymbol = !!Object.getOwnPropertySymbols && !fails(function () {
-  // Chrome 38 Symbol has incorrect toString conversion
-  // eslint-disable-next-line no-undef
-  return !String(Symbol());
-});
-
-var useSymbolAsUid = nativeSymbol
-  // eslint-disable-next-line no-undef
-  && !Symbol.sham
-  // eslint-disable-next-line no-undef
-  && typeof Symbol.iterator == 'symbol';
-
 // `IsArray` abstract operation
 // https://tc39.github.io/ecma262/#sec-isarray
 var isArray = Array.isArray || function isArray(arg) {
@@ -8329,31 +9001,23 @@ var toObject = function (argument) {
   return Object(requireObjectCoercible(argument));
 };
 
-var nativeGetOwnPropertyNames = objectGetOwnPropertyNames.f;
-
-var toString$1 = {}.toString;
-
-var windowNames = typeof window == 'object' && window && Object.getOwnPropertyNames
-  ? Object.getOwnPropertyNames(window) : [];
-
-var getWindowNames = function (it) {
-  try {
-    return nativeGetOwnPropertyNames(it);
-  } catch (error) {
-    return windowNames.slice();
-  }
+var createProperty = function (object, key, value) {
+  var propertyKey = toPrimitive(key);
+  if (propertyKey in object) objectDefineProperty.f(object, propertyKey, createPropertyDescriptor(0, value));
+  else object[propertyKey] = value;
 };
 
-// fallback for IE11 buggy Object.getOwnPropertyNames with iframe and window
-var f$5 = function getOwnPropertyNames(it) {
-  return windowNames && toString$1.call(it) == '[object Window]'
-    ? getWindowNames(it)
-    : nativeGetOwnPropertyNames(toIndexedObject(it));
-};
+var nativeSymbol = !!Object.getOwnPropertySymbols && !fails(function () {
+  // Chrome 38 Symbol has incorrect toString conversion
+  // eslint-disable-next-line no-undef
+  return !String(Symbol());
+});
 
-var objectGetOwnPropertyNamesExternal = {
-	f: f$5
-};
+var useSymbolAsUid = nativeSymbol
+  // eslint-disable-next-line no-undef
+  && !Symbol.sham
+  // eslint-disable-next-line no-undef
+  && typeof Symbol.iterator == 'symbol';
 
 var WellKnownSymbolsStore = shared('wks');
 var Symbol$2 = global_1.Symbol;
@@ -8366,32 +9030,106 @@ var wellKnownSymbol = function (name) {
   } return WellKnownSymbolsStore[name];
 };
 
-var f$6 = wellKnownSymbol;
+var SPECIES = wellKnownSymbol('species');
 
-var wellKnownSymbolWrapped = {
-	f: f$6
+// `ArraySpeciesCreate` abstract operation
+// https://tc39.github.io/ecma262/#sec-arrayspeciescreate
+var arraySpeciesCreate = function (originalArray, length) {
+  var C;
+  if (isArray(originalArray)) {
+    C = originalArray.constructor;
+    // cross-realm fallback
+    if (typeof C == 'function' && (C === Array || isArray(C.prototype))) C = undefined;
+    else if (isObject(C)) {
+      C = C[SPECIES];
+      if (C === null) C = undefined;
+    }
+  } return new (C === undefined ? Array : C)(length === 0 ? 0 : length);
 };
 
-var defineProperty$1 = objectDefineProperty.f;
+var engineUserAgent = getBuiltIn('navigator', 'userAgent') || '';
 
-var defineWellKnownSymbol = function (NAME) {
-  var Symbol = path.Symbol || (path.Symbol = {});
-  if (!has(Symbol, NAME)) defineProperty$1(Symbol, NAME, {
-    value: wellKnownSymbolWrapped.f(NAME)
+var process = global_1.process;
+var versions = process && process.versions;
+var v8 = versions && versions.v8;
+var match, version;
+
+if (v8) {
+  match = v8.split('.');
+  version = match[0] + match[1];
+} else if (engineUserAgent) {
+  match = engineUserAgent.match(/Edge\/(\d+)/);
+  if (!match || match[1] >= 74) {
+    match = engineUserAgent.match(/Chrome\/(\d+)/);
+    if (match) version = match[1];
+  }
+}
+
+var engineV8Version = version && +version;
+
+var SPECIES$1 = wellKnownSymbol('species');
+
+var arrayMethodHasSpeciesSupport = function (METHOD_NAME) {
+  // We can't use this feature detection in V8 since it causes
+  // deoptimization and serious performance degradation
+  // https://github.com/zloirock/core-js/issues/677
+  return engineV8Version >= 51 || !fails(function () {
+    var array = [];
+    var constructor = array.constructor = {};
+    constructor[SPECIES$1] = function () {
+      return { foo: 1 };
+    };
+    return array[METHOD_NAME](Boolean).foo !== 1;
   });
 };
 
-var defineProperty$2 = objectDefineProperty.f;
+var IS_CONCAT_SPREADABLE = wellKnownSymbol('isConcatSpreadable');
+var MAX_SAFE_INTEGER = 0x1FFFFFFFFFFFFF;
+var MAXIMUM_ALLOWED_INDEX_EXCEEDED = 'Maximum allowed index exceeded';
 
+// We can't use this feature detection in V8 since it causes
+// deoptimization and serious performance degradation
+// https://github.com/zloirock/core-js/issues/679
+var IS_CONCAT_SPREADABLE_SUPPORT = engineV8Version >= 51 || !fails(function () {
+  var array = [];
+  array[IS_CONCAT_SPREADABLE] = false;
+  return array.concat()[0] !== array;
+});
 
+var SPECIES_SUPPORT = arrayMethodHasSpeciesSupport('concat');
 
-var TO_STRING_TAG = wellKnownSymbol('toStringTag');
-
-var setToStringTag = function (it, TAG, STATIC) {
-  if (it && !has(it = STATIC ? it : it.prototype, TO_STRING_TAG)) {
-    defineProperty$2(it, TO_STRING_TAG, { configurable: true, value: TAG });
-  }
+var isConcatSpreadable = function (O) {
+  if (!isObject(O)) return false;
+  var spreadable = O[IS_CONCAT_SPREADABLE];
+  return spreadable !== undefined ? !!spreadable : isArray(O);
 };
+
+var FORCED = !IS_CONCAT_SPREADABLE_SUPPORT || !SPECIES_SUPPORT;
+
+// `Array.prototype.concat` method
+// https://tc39.github.io/ecma262/#sec-array.prototype.concat
+// with adding support of @@isConcatSpreadable and @@species
+_export({ target: 'Array', proto: true, forced: FORCED }, {
+  concat: function concat(arg) { // eslint-disable-line no-unused-vars
+    var O = toObject(this);
+    var A = arraySpeciesCreate(O, 0);
+    var n = 0;
+    var i, k, length, len, E;
+    for (i = -1, length = arguments.length; i < length; i++) {
+      E = i === -1 ? O : arguments[i];
+      if (isConcatSpreadable(E)) {
+        len = toLength(E.length);
+        if (n + len > MAX_SAFE_INTEGER) throw TypeError(MAXIMUM_ALLOWED_INDEX_EXCEEDED);
+        for (k = 0; k < len; k++, n++) if (k in E) createProperty(A, n, E[k]);
+      } else {
+        if (n >= MAX_SAFE_INTEGER) throw TypeError(MAXIMUM_ALLOWED_INDEX_EXCEEDED);
+        createProperty(A, n++, E);
+      }
+    }
+    A.length = n;
+    return A;
+  }
+});
 
 var aFunction$1 = function (it) {
   if (typeof it != 'function') {
@@ -8420,23 +9158,6 @@ var functionBindContext = function (fn, that, length) {
   return function (/* ...args */) {
     return fn.apply(that, arguments);
   };
-};
-
-var SPECIES = wellKnownSymbol('species');
-
-// `ArraySpeciesCreate` abstract operation
-// https://tc39.github.io/ecma262/#sec-arrayspeciescreate
-var arraySpeciesCreate = function (originalArray, length) {
-  var C;
-  if (isArray(originalArray)) {
-    C = originalArray.constructor;
-    // cross-realm fallback
-    if (typeof C == 'function' && (C === Array || isArray(C.prototype))) C = undefined;
-    else if (isObject(C)) {
-      C = C[SPECIES];
-      if (C === null) C = undefined;
-    }
-  } return new (C === undefined ? Array : C)(length === 0 ? 0 : length);
 };
 
 var push = [].push;
@@ -8499,15 +9220,1775 @@ var arrayIteration = {
   findIndex: createMethod$2(6)
 };
 
+var arrayMethodIsStrict = function (METHOD_NAME, argument) {
+  var method = [][METHOD_NAME];
+  return !!method && fails(function () {
+    // eslint-disable-next-line no-useless-call,no-throw-literal
+    method.call(null, argument || function () { throw 1; }, 1);
+  });
+};
+
+var defineProperty$1 = Object.defineProperty;
+var cache = {};
+
+var thrower = function (it) { throw it; };
+
+var arrayMethodUsesToLength = function (METHOD_NAME, options) {
+  if (has(cache, METHOD_NAME)) return cache[METHOD_NAME];
+  if (!options) options = {};
+  var method = [][METHOD_NAME];
+  var ACCESSORS = has(options, 'ACCESSORS') ? options.ACCESSORS : false;
+  var argument0 = has(options, 0) ? options[0] : thrower;
+  var argument1 = has(options, 1) ? options[1] : undefined;
+
+  return cache[METHOD_NAME] = !!method && !fails(function () {
+    if (ACCESSORS && !descriptors) return true;
+    var O = { length: -1 };
+
+    if (ACCESSORS) defineProperty$1(O, 1, { enumerable: true, get: thrower });
+    else O[1] = 1;
+
+    method.call(O, argument0, argument1);
+  });
+};
+
 var $forEach = arrayIteration.forEach;
+
+
+
+var STRICT_METHOD = arrayMethodIsStrict('forEach');
+var USES_TO_LENGTH = arrayMethodUsesToLength('forEach');
+
+// `Array.prototype.forEach` method implementation
+// https://tc39.github.io/ecma262/#sec-array.prototype.foreach
+var arrayForEach = (!STRICT_METHOD || !USES_TO_LENGTH) ? function forEach(callbackfn /* , thisArg */) {
+  return $forEach(this, callbackfn, arguments.length > 1 ? arguments[1] : undefined);
+} : [].forEach;
+
+// `Array.prototype.forEach` method
+// https://tc39.github.io/ecma262/#sec-array.prototype.foreach
+_export({ target: 'Array', proto: true, forced: [].forEach != arrayForEach }, {
+  forEach: arrayForEach
+});
+
+// iterable DOM collections
+// flag - `iterable` interface - 'entries', 'keys', 'values', 'forEach' methods
+var domIterables = {
+  CSSRuleList: 0,
+  CSSStyleDeclaration: 0,
+  CSSValueList: 0,
+  ClientRectList: 0,
+  DOMRectList: 0,
+  DOMStringList: 0,
+  DOMTokenList: 1,
+  DataTransferItemList: 0,
+  FileList: 0,
+  HTMLAllCollection: 0,
+  HTMLCollection: 0,
+  HTMLFormElement: 0,
+  HTMLSelectElement: 0,
+  MediaList: 0,
+  MimeTypeArray: 0,
+  NamedNodeMap: 0,
+  NodeList: 1,
+  PaintRequestList: 0,
+  Plugin: 0,
+  PluginArray: 0,
+  SVGLengthList: 0,
+  SVGNumberList: 0,
+  SVGPathSegList: 0,
+  SVGPointList: 0,
+  SVGStringList: 0,
+  SVGTransformList: 0,
+  SourceBufferList: 0,
+  StyleSheetList: 0,
+  TextTrackCueList: 0,
+  TextTrackList: 0,
+  TouchList: 0
+};
+
+for (var COLLECTION_NAME in domIterables) {
+  var Collection = global_1[COLLECTION_NAME];
+  var CollectionPrototype = Collection && Collection.prototype;
+  // some Chrome versions have non-configurable methods on DOMTokenList
+  if (CollectionPrototype && CollectionPrototype.forEach !== arrayForEach) try {
+    createNonEnumerableProperty(CollectionPrototype, 'forEach', arrayForEach);
+  } catch (error) {
+    CollectionPrototype.forEach = arrayForEach;
+  }
+}
+
+var $filter = arrayIteration.filter;
+
+
+
+var HAS_SPECIES_SUPPORT = arrayMethodHasSpeciesSupport('filter');
+// Edge 14- issue
+var USES_TO_LENGTH$1 = arrayMethodUsesToLength('filter');
+
+// `Array.prototype.filter` method
+// https://tc39.github.io/ecma262/#sec-array.prototype.filter
+// with adding support of @@species
+_export({ target: 'Array', proto: true, forced: !HAS_SPECIES_SUPPORT || !USES_TO_LENGTH$1 }, {
+  filter: function filter(callbackfn /* , thisArg */) {
+    return $filter(this, callbackfn, arguments.length > 1 ? arguments[1] : undefined);
+  }
+});
+
+var UNSCOPABLES = wellKnownSymbol('unscopables');
+var ArrayPrototype = Array.prototype;
+
+// Array.prototype[@@unscopables]
+// https://tc39.github.io/ecma262/#sec-array.prototype-@@unscopables
+if (ArrayPrototype[UNSCOPABLES] == undefined) {
+  objectDefineProperty.f(ArrayPrototype, UNSCOPABLES, {
+    configurable: true,
+    value: objectCreate(null)
+  });
+}
+
+// add a key to Array.prototype[@@unscopables]
+var addToUnscopables = function (key) {
+  ArrayPrototype[UNSCOPABLES][key] = true;
+};
+
+var $find = arrayIteration.find;
+
+
+
+var FIND = 'find';
+var SKIPS_HOLES = true;
+
+var USES_TO_LENGTH$2 = arrayMethodUsesToLength(FIND);
+
+// Shouldn't skip holes
+if (FIND in []) Array(1)[FIND](function () { SKIPS_HOLES = false; });
+
+// `Array.prototype.find` method
+// https://tc39.github.io/ecma262/#sec-array.prototype.find
+_export({ target: 'Array', proto: true, forced: SKIPS_HOLES || !USES_TO_LENGTH$2 }, {
+  find: function find(callbackfn /* , that = undefined */) {
+    return $find(this, callbackfn, arguments.length > 1 ? arguments[1] : undefined);
+  }
+});
+
+// https://tc39.github.io/ecma262/#sec-array.prototype-@@unscopables
+addToUnscopables(FIND);
+
+// `FlattenIntoArray` abstract operation
+// https://tc39.github.io/proposal-flatMap/#sec-FlattenIntoArray
+var flattenIntoArray = function (target, original, source, sourceLen, start, depth, mapper, thisArg) {
+  var targetIndex = start;
+  var sourceIndex = 0;
+  var mapFn = mapper ? functionBindContext(mapper, thisArg, 3) : false;
+  var element;
+
+  while (sourceIndex < sourceLen) {
+    if (sourceIndex in source) {
+      element = mapFn ? mapFn(source[sourceIndex], sourceIndex, original) : source[sourceIndex];
+
+      if (depth > 0 && isArray(element)) {
+        targetIndex = flattenIntoArray(target, original, element, toLength(element.length), targetIndex, depth - 1) - 1;
+      } else {
+        if (targetIndex >= 0x1FFFFFFFFFFFFF) throw TypeError('Exceed the acceptable array length');
+        target[targetIndex] = element;
+      }
+
+      targetIndex++;
+    }
+    sourceIndex++;
+  }
+  return targetIndex;
+};
+
+var flattenIntoArray_1 = flattenIntoArray;
+
+// `Array.prototype.flat` method
+// https://github.com/tc39/proposal-flatMap
+_export({ target: 'Array', proto: true }, {
+  flat: function flat(/* depthArg = 1 */) {
+    var depthArg = arguments.length ? arguments[0] : undefined;
+    var O = toObject(this);
+    var sourceLen = toLength(O.length);
+    var A = arraySpeciesCreate(O, 0);
+    A.length = flattenIntoArray_1(A, O, O, sourceLen, 0, depthArg === undefined ? 1 : toInteger(depthArg));
+    return A;
+  }
+});
+
+var $includes = arrayIncludes.includes;
+
+
+
+var USES_TO_LENGTH$3 = arrayMethodUsesToLength('indexOf', { ACCESSORS: true, 1: 0 });
+
+// `Array.prototype.includes` method
+// https://tc39.github.io/ecma262/#sec-array.prototype.includes
+_export({ target: 'Array', proto: true, forced: !USES_TO_LENGTH$3 }, {
+  includes: function includes(el /* , fromIndex = 0 */) {
+    return $includes(this, el, arguments.length > 1 ? arguments[1] : undefined);
+  }
+});
+
+// https://tc39.github.io/ecma262/#sec-array.prototype-@@unscopables
+addToUnscopables('includes');
+
+var iterators = {};
+
+var correctPrototypeGetter = !fails(function () {
+  function F() { /* empty */ }
+  F.prototype.constructor = null;
+  return Object.getPrototypeOf(new F()) !== F.prototype;
+});
+
+var IE_PROTO$1 = sharedKey('IE_PROTO');
+var ObjectPrototype = Object.prototype;
+
+// `Object.getPrototypeOf` method
+// https://tc39.github.io/ecma262/#sec-object.getprototypeof
+var objectGetPrototypeOf = correctPrototypeGetter ? Object.getPrototypeOf : function (O) {
+  O = toObject(O);
+  if (has(O, IE_PROTO$1)) return O[IE_PROTO$1];
+  if (typeof O.constructor == 'function' && O instanceof O.constructor) {
+    return O.constructor.prototype;
+  } return O instanceof Object ? ObjectPrototype : null;
+};
+
+var ITERATOR = wellKnownSymbol('iterator');
+var BUGGY_SAFARI_ITERATORS = false;
+
+var returnThis = function () { return this; };
+
+// `%IteratorPrototype%` object
+// https://tc39.github.io/ecma262/#sec-%iteratorprototype%-object
+var IteratorPrototype, PrototypeOfArrayIteratorPrototype, arrayIterator;
+
+if ([].keys) {
+  arrayIterator = [].keys();
+  // Safari 8 has buggy iterators w/o `next`
+  if (!('next' in arrayIterator)) BUGGY_SAFARI_ITERATORS = true;
+  else {
+    PrototypeOfArrayIteratorPrototype = objectGetPrototypeOf(objectGetPrototypeOf(arrayIterator));
+    if (PrototypeOfArrayIteratorPrototype !== Object.prototype) IteratorPrototype = PrototypeOfArrayIteratorPrototype;
+  }
+}
+
+if (IteratorPrototype == undefined) IteratorPrototype = {};
+
+// 25.1.2.1.1 %IteratorPrototype%[@@iterator]()
+if ( !has(IteratorPrototype, ITERATOR)) {
+  createNonEnumerableProperty(IteratorPrototype, ITERATOR, returnThis);
+}
+
+var iteratorsCore = {
+  IteratorPrototype: IteratorPrototype,
+  BUGGY_SAFARI_ITERATORS: BUGGY_SAFARI_ITERATORS
+};
+
+var defineProperty$2 = objectDefineProperty.f;
+
+
+
+var TO_STRING_TAG = wellKnownSymbol('toStringTag');
+
+var setToStringTag = function (it, TAG, STATIC) {
+  if (it && !has(it = STATIC ? it : it.prototype, TO_STRING_TAG)) {
+    defineProperty$2(it, TO_STRING_TAG, { configurable: true, value: TAG });
+  }
+};
+
+var IteratorPrototype$1 = iteratorsCore.IteratorPrototype;
+
+
+
+
+
+var returnThis$1 = function () { return this; };
+
+var createIteratorConstructor = function (IteratorConstructor, NAME, next) {
+  var TO_STRING_TAG = NAME + ' Iterator';
+  IteratorConstructor.prototype = objectCreate(IteratorPrototype$1, { next: createPropertyDescriptor(1, next) });
+  setToStringTag(IteratorConstructor, TO_STRING_TAG, false);
+  iterators[TO_STRING_TAG] = returnThis$1;
+  return IteratorConstructor;
+};
+
+var IteratorPrototype$2 = iteratorsCore.IteratorPrototype;
+var BUGGY_SAFARI_ITERATORS$1 = iteratorsCore.BUGGY_SAFARI_ITERATORS;
+var ITERATOR$1 = wellKnownSymbol('iterator');
+var KEYS = 'keys';
+var VALUES = 'values';
+var ENTRIES = 'entries';
+
+var returnThis$2 = function () { return this; };
+
+var defineIterator = function (Iterable, NAME, IteratorConstructor, next, DEFAULT, IS_SET, FORCED) {
+  createIteratorConstructor(IteratorConstructor, NAME, next);
+
+  var getIterationMethod = function (KIND) {
+    if (KIND === DEFAULT && defaultIterator) return defaultIterator;
+    if (!BUGGY_SAFARI_ITERATORS$1 && KIND in IterablePrototype) return IterablePrototype[KIND];
+    switch (KIND) {
+      case KEYS: return function keys() { return new IteratorConstructor(this, KIND); };
+      case VALUES: return function values() { return new IteratorConstructor(this, KIND); };
+      case ENTRIES: return function entries() { return new IteratorConstructor(this, KIND); };
+    } return function () { return new IteratorConstructor(this); };
+  };
+
+  var TO_STRING_TAG = NAME + ' Iterator';
+  var INCORRECT_VALUES_NAME = false;
+  var IterablePrototype = Iterable.prototype;
+  var nativeIterator = IterablePrototype[ITERATOR$1]
+    || IterablePrototype['@@iterator']
+    || DEFAULT && IterablePrototype[DEFAULT];
+  var defaultIterator = !BUGGY_SAFARI_ITERATORS$1 && nativeIterator || getIterationMethod(DEFAULT);
+  var anyNativeIterator = NAME == 'Array' ? IterablePrototype.entries || nativeIterator : nativeIterator;
+  var CurrentIteratorPrototype, methods, KEY;
+
+  // fix native
+  if (anyNativeIterator) {
+    CurrentIteratorPrototype = objectGetPrototypeOf(anyNativeIterator.call(new Iterable()));
+    if (IteratorPrototype$2 !== Object.prototype && CurrentIteratorPrototype.next) {
+      if ( objectGetPrototypeOf(CurrentIteratorPrototype) !== IteratorPrototype$2) {
+        if (objectSetPrototypeOf) {
+          objectSetPrototypeOf(CurrentIteratorPrototype, IteratorPrototype$2);
+        } else if (typeof CurrentIteratorPrototype[ITERATOR$1] != 'function') {
+          createNonEnumerableProperty(CurrentIteratorPrototype, ITERATOR$1, returnThis$2);
+        }
+      }
+      // Set @@toStringTag to native iterators
+      setToStringTag(CurrentIteratorPrototype, TO_STRING_TAG, true);
+    }
+  }
+
+  // fix Array#{values, @@iterator}.name in V8 / FF
+  if (DEFAULT == VALUES && nativeIterator && nativeIterator.name !== VALUES) {
+    INCORRECT_VALUES_NAME = true;
+    defaultIterator = function values() { return nativeIterator.call(this); };
+  }
+
+  // define iterator
+  if ( IterablePrototype[ITERATOR$1] !== defaultIterator) {
+    createNonEnumerableProperty(IterablePrototype, ITERATOR$1, defaultIterator);
+  }
+  iterators[NAME] = defaultIterator;
+
+  // export additional methods
+  if (DEFAULT) {
+    methods = {
+      values: getIterationMethod(VALUES),
+      keys: IS_SET ? defaultIterator : getIterationMethod(KEYS),
+      entries: getIterationMethod(ENTRIES)
+    };
+    if (FORCED) for (KEY in methods) {
+      if (BUGGY_SAFARI_ITERATORS$1 || INCORRECT_VALUES_NAME || !(KEY in IterablePrototype)) {
+        redefine(IterablePrototype, KEY, methods[KEY]);
+      }
+    } else _export({ target: NAME, proto: true, forced: BUGGY_SAFARI_ITERATORS$1 || INCORRECT_VALUES_NAME }, methods);
+  }
+
+  return methods;
+};
+
+var ARRAY_ITERATOR = 'Array Iterator';
+var setInternalState = internalState.set;
+var getInternalState = internalState.getterFor(ARRAY_ITERATOR);
+
+// `Array.prototype.entries` method
+// https://tc39.github.io/ecma262/#sec-array.prototype.entries
+// `Array.prototype.keys` method
+// https://tc39.github.io/ecma262/#sec-array.prototype.keys
+// `Array.prototype.values` method
+// https://tc39.github.io/ecma262/#sec-array.prototype.values
+// `Array.prototype[@@iterator]` method
+// https://tc39.github.io/ecma262/#sec-array.prototype-@@iterator
+// `CreateArrayIterator` internal method
+// https://tc39.github.io/ecma262/#sec-createarrayiterator
+var es_array_iterator = defineIterator(Array, 'Array', function (iterated, kind) {
+  setInternalState(this, {
+    type: ARRAY_ITERATOR,
+    target: toIndexedObject(iterated), // target
+    index: 0,                          // next index
+    kind: kind                         // kind
+  });
+// `%ArrayIteratorPrototype%.next` method
+// https://tc39.github.io/ecma262/#sec-%arrayiteratorprototype%.next
+}, function () {
+  var state = getInternalState(this);
+  var target = state.target;
+  var kind = state.kind;
+  var index = state.index++;
+  if (!target || index >= target.length) {
+    state.target = undefined;
+    return { value: undefined, done: true };
+  }
+  if (kind == 'keys') return { value: index, done: false };
+  if (kind == 'values') return { value: target[index], done: false };
+  return { value: [index, target[index]], done: false };
+}, 'values');
+
+// argumentsList[@@iterator] is %ArrayProto_values%
+// https://tc39.github.io/ecma262/#sec-createunmappedargumentsobject
+// https://tc39.github.io/ecma262/#sec-createmappedargumentsobject
+iterators.Arguments = iterators.Array;
+
+// https://tc39.github.io/ecma262/#sec-array.prototype-@@unscopables
+addToUnscopables('keys');
+addToUnscopables('values');
+addToUnscopables('entries');
+
+var nativeJoin = [].join;
+
+var ES3_STRINGS = indexedObject != Object;
+var STRICT_METHOD$1 = arrayMethodIsStrict('join', ',');
+
+// `Array.prototype.join` method
+// https://tc39.github.io/ecma262/#sec-array.prototype.join
+_export({ target: 'Array', proto: true, forced: ES3_STRINGS || !STRICT_METHOD$1 }, {
+  join: function join(separator) {
+    return nativeJoin.call(toIndexedObject(this), separator === undefined ? ',' : separator);
+  }
+});
+
+var $map = arrayIteration.map;
+
+
+
+var HAS_SPECIES_SUPPORT$1 = arrayMethodHasSpeciesSupport('map');
+// FF49- issue
+var USES_TO_LENGTH$4 = arrayMethodUsesToLength('map');
+
+// `Array.prototype.map` method
+// https://tc39.github.io/ecma262/#sec-array.prototype.map
+// with adding support of @@species
+_export({ target: 'Array', proto: true, forced: !HAS_SPECIES_SUPPORT$1 || !USES_TO_LENGTH$4 }, {
+  map: function map(callbackfn /* , thisArg */) {
+    return $map(this, callbackfn, arguments.length > 1 ? arguments[1] : undefined);
+  }
+});
+
+var HAS_SPECIES_SUPPORT$2 = arrayMethodHasSpeciesSupport('slice');
+var USES_TO_LENGTH$5 = arrayMethodUsesToLength('slice', { ACCESSORS: true, 0: 0, 1: 2 });
+
+var SPECIES$2 = wellKnownSymbol('species');
+var nativeSlice = [].slice;
+var max$1 = Math.max;
+
+// `Array.prototype.slice` method
+// https://tc39.github.io/ecma262/#sec-array.prototype.slice
+// fallback for not array-like ES3 strings and DOM objects
+_export({ target: 'Array', proto: true, forced: !HAS_SPECIES_SUPPORT$2 || !USES_TO_LENGTH$5 }, {
+  slice: function slice(start, end) {
+    var O = toIndexedObject(this);
+    var length = toLength(O.length);
+    var k = toAbsoluteIndex(start, length);
+    var fin = toAbsoluteIndex(end === undefined ? length : end, length);
+    // inline `ArraySpeciesCreate` for usage native `Array#slice` where it's possible
+    var Constructor, result, n;
+    if (isArray(O)) {
+      Constructor = O.constructor;
+      // cross-realm fallback
+      if (typeof Constructor == 'function' && (Constructor === Array || isArray(Constructor.prototype))) {
+        Constructor = undefined;
+      } else if (isObject(Constructor)) {
+        Constructor = Constructor[SPECIES$2];
+        if (Constructor === null) Constructor = undefined;
+      }
+      if (Constructor === Array || Constructor === undefined) {
+        return nativeSlice.call(O, k, fin);
+      }
+    }
+    result = new (Constructor === undefined ? Array : Constructor)(max$1(fin - k, 0));
+    for (n = 0; k < fin; k++, n++) if (k in O) createProperty(result, n, O[k]);
+    result.length = n;
+    return result;
+  }
+});
+
+// this method was added to unscopables after implementation
+// in popular engines, so it's moved to a separate module
+
+
+addToUnscopables('flat');
+
+var TO_STRING_TAG$1 = wellKnownSymbol('toStringTag');
+var test = {};
+
+test[TO_STRING_TAG$1] = 'z';
+
+var toStringTagSupport = String(test) === '[object z]';
+
+var TO_STRING_TAG$2 = wellKnownSymbol('toStringTag');
+// ES3 wrong here
+var CORRECT_ARGUMENTS = classofRaw(function () { return arguments; }()) == 'Arguments';
+
+// fallback for IE11 Script Access Denied error
+var tryGet = function (it, key) {
+  try {
+    return it[key];
+  } catch (error) { /* empty */ }
+};
+
+// getting tag from ES6+ `Object.prototype.toString`
+var classof = toStringTagSupport ? classofRaw : function (it) {
+  var O, tag, result;
+  return it === undefined ? 'Undefined' : it === null ? 'Null'
+    // @@toStringTag case
+    : typeof (tag = tryGet(O = Object(it), TO_STRING_TAG$2)) == 'string' ? tag
+    // builtinTag case
+    : CORRECT_ARGUMENTS ? classofRaw(O)
+    // ES3 arguments fallback
+    : (result = classofRaw(O)) == 'Object' && typeof O.callee == 'function' ? 'Arguments' : result;
+};
+
+// `Object.prototype.toString` method implementation
+// https://tc39.github.io/ecma262/#sec-object.prototype.tostring
+var objectToString = toStringTagSupport ? {}.toString : function toString() {
+  return '[object ' + classof(this) + ']';
+};
+
+// `Object.prototype.toString` method
+// https://tc39.github.io/ecma262/#sec-object.prototype.tostring
+if (!toStringTagSupport) {
+  redefine(Object.prototype, 'toString', objectToString, { unsafe: true });
+}
+
+var nativePromiseConstructor = global_1.Promise;
+
+var redefineAll = function (target, src, options) {
+  for (var key in src) redefine(target, key, src[key], options);
+  return target;
+};
+
+var SPECIES$3 = wellKnownSymbol('species');
+
+var setSpecies = function (CONSTRUCTOR_NAME) {
+  var Constructor = getBuiltIn(CONSTRUCTOR_NAME);
+  var defineProperty = objectDefineProperty.f;
+
+  if (descriptors && Constructor && !Constructor[SPECIES$3]) {
+    defineProperty(Constructor, SPECIES$3, {
+      configurable: true,
+      get: function () { return this; }
+    });
+  }
+};
+
+var anInstance = function (it, Constructor, name) {
+  if (!(it instanceof Constructor)) {
+    throw TypeError('Incorrect ' + (name ? name + ' ' : '') + 'invocation');
+  } return it;
+};
+
+var ITERATOR$2 = wellKnownSymbol('iterator');
+var ArrayPrototype$1 = Array.prototype;
+
+// check on default Array iterator
+var isArrayIteratorMethod = function (it) {
+  return it !== undefined && (iterators.Array === it || ArrayPrototype$1[ITERATOR$2] === it);
+};
+
+var ITERATOR$3 = wellKnownSymbol('iterator');
+
+var getIteratorMethod = function (it) {
+  if (it != undefined) return it[ITERATOR$3]
+    || it['@@iterator']
+    || iterators[classof(it)];
+};
+
+// call something on iterator step with safe closing on error
+var callWithSafeIterationClosing = function (iterator, fn, value, ENTRIES) {
+  try {
+    return ENTRIES ? fn(anObject(value)[0], value[1]) : fn(value);
+  // 7.4.6 IteratorClose(iterator, completion)
+  } catch (error) {
+    var returnMethod = iterator['return'];
+    if (returnMethod !== undefined) anObject(returnMethod.call(iterator));
+    throw error;
+  }
+};
+
+var iterate_1 = createCommonjsModule(function (module) {
+var Result = function (stopped, result) {
+  this.stopped = stopped;
+  this.result = result;
+};
+
+var iterate = module.exports = function (iterable, fn, that, AS_ENTRIES, IS_ITERATOR) {
+  var boundFunction = functionBindContext(fn, that, AS_ENTRIES ? 2 : 1);
+  var iterator, iterFn, index, length, result, next, step;
+
+  if (IS_ITERATOR) {
+    iterator = iterable;
+  } else {
+    iterFn = getIteratorMethod(iterable);
+    if (typeof iterFn != 'function') throw TypeError('Target is not iterable');
+    // optimisation for array iterators
+    if (isArrayIteratorMethod(iterFn)) {
+      for (index = 0, length = toLength(iterable.length); length > index; index++) {
+        result = AS_ENTRIES
+          ? boundFunction(anObject(step = iterable[index])[0], step[1])
+          : boundFunction(iterable[index]);
+        if (result && result instanceof Result) return result;
+      } return new Result(false);
+    }
+    iterator = iterFn.call(iterable);
+  }
+
+  next = iterator.next;
+  while (!(step = next.call(iterator)).done) {
+    result = callWithSafeIterationClosing(iterator, boundFunction, step.value, AS_ENTRIES);
+    if (typeof result == 'object' && result && result instanceof Result) return result;
+  } return new Result(false);
+};
+
+iterate.stop = function (result) {
+  return new Result(true, result);
+};
+});
+
+var ITERATOR$4 = wellKnownSymbol('iterator');
+var SAFE_CLOSING = false;
+
+try {
+  var called = 0;
+  var iteratorWithReturn = {
+    next: function () {
+      return { done: !!called++ };
+    },
+    'return': function () {
+      SAFE_CLOSING = true;
+    }
+  };
+  iteratorWithReturn[ITERATOR$4] = function () {
+    return this;
+  };
+  // eslint-disable-next-line no-throw-literal
+  Array.from(iteratorWithReturn, function () { throw 2; });
+} catch (error) { /* empty */ }
+
+var checkCorrectnessOfIteration = function (exec, SKIP_CLOSING) {
+  if (!SKIP_CLOSING && !SAFE_CLOSING) return false;
+  var ITERATION_SUPPORT = false;
+  try {
+    var object = {};
+    object[ITERATOR$4] = function () {
+      return {
+        next: function () {
+          return { done: ITERATION_SUPPORT = true };
+        }
+      };
+    };
+    exec(object);
+  } catch (error) { /* empty */ }
+  return ITERATION_SUPPORT;
+};
+
+var SPECIES$4 = wellKnownSymbol('species');
+
+// `SpeciesConstructor` abstract operation
+// https://tc39.github.io/ecma262/#sec-speciesconstructor
+var speciesConstructor = function (O, defaultConstructor) {
+  var C = anObject(O).constructor;
+  var S;
+  return C === undefined || (S = anObject(C)[SPECIES$4]) == undefined ? defaultConstructor : aFunction$1(S);
+};
+
+var engineIsIos = /(iphone|ipod|ipad).*applewebkit/i.test(engineUserAgent);
+
+var location = global_1.location;
+var set$1 = global_1.setImmediate;
+var clear$1 = global_1.clearImmediate;
+var process$1 = global_1.process;
+var MessageChannel = global_1.MessageChannel;
+var Dispatch = global_1.Dispatch;
+var counter = 0;
+var queue = {};
+var ONREADYSTATECHANGE = 'onreadystatechange';
+var defer, channel, port;
+
+var run = function (id) {
+  // eslint-disable-next-line no-prototype-builtins
+  if (queue.hasOwnProperty(id)) {
+    var fn = queue[id];
+    delete queue[id];
+    fn();
+  }
+};
+
+var runner = function (id) {
+  return function () {
+    run(id);
+  };
+};
+
+var listener = function (event) {
+  run(event.data);
+};
+
+var post = function (id) {
+  // old engines have not location.origin
+  global_1.postMessage(id + '', location.protocol + '//' + location.host);
+};
+
+// Node.js 0.9+ & IE10+ has setImmediate, otherwise:
+if (!set$1 || !clear$1) {
+  set$1 = function setImmediate(fn) {
+    var args = [];
+    var i = 1;
+    while (arguments.length > i) args.push(arguments[i++]);
+    queue[++counter] = function () {
+      // eslint-disable-next-line no-new-func
+      (typeof fn == 'function' ? fn : Function(fn)).apply(undefined, args);
+    };
+    defer(counter);
+    return counter;
+  };
+  clear$1 = function clearImmediate(id) {
+    delete queue[id];
+  };
+  // Node.js 0.8-
+  if (classofRaw(process$1) == 'process') {
+    defer = function (id) {
+      process$1.nextTick(runner(id));
+    };
+  // Sphere (JS game engine) Dispatch API
+  } else if (Dispatch && Dispatch.now) {
+    defer = function (id) {
+      Dispatch.now(runner(id));
+    };
+  // Browsers with MessageChannel, includes WebWorkers
+  // except iOS - https://github.com/zloirock/core-js/issues/624
+  } else if (MessageChannel && !engineIsIos) {
+    channel = new MessageChannel();
+    port = channel.port2;
+    channel.port1.onmessage = listener;
+    defer = functionBindContext(port.postMessage, port, 1);
+  // Browsers with postMessage, skip WebWorkers
+  // IE8 has postMessage, but it's sync & typeof its postMessage is 'object'
+  } else if (global_1.addEventListener && typeof postMessage == 'function' && !global_1.importScripts && !fails(post)) {
+    defer = post;
+    global_1.addEventListener('message', listener, false);
+  // IE8-
+  } else if (ONREADYSTATECHANGE in documentCreateElement('script')) {
+    defer = function (id) {
+      html.appendChild(documentCreateElement('script'))[ONREADYSTATECHANGE] = function () {
+        html.removeChild(this);
+        run(id);
+      };
+    };
+  // Rest old browsers
+  } else {
+    defer = function (id) {
+      setTimeout(runner(id), 0);
+    };
+  }
+}
+
+var task = {
+  set: set$1,
+  clear: clear$1
+};
+
+var getOwnPropertyDescriptor$3 = objectGetOwnPropertyDescriptor.f;
+
+var macrotask = task.set;
+
+
+var MutationObserver = global_1.MutationObserver || global_1.WebKitMutationObserver;
+var process$2 = global_1.process;
+var Promise$1 = global_1.Promise;
+var IS_NODE = classofRaw(process$2) == 'process';
+// Node.js 11 shows ExperimentalWarning on getting `queueMicrotask`
+var queueMicrotaskDescriptor = getOwnPropertyDescriptor$3(global_1, 'queueMicrotask');
+var queueMicrotask = queueMicrotaskDescriptor && queueMicrotaskDescriptor.value;
+
+var flush, head, last, notify, toggle, node, promise, then;
+
+// modern engines have queueMicrotask method
+if (!queueMicrotask) {
+  flush = function () {
+    var parent, fn;
+    if (IS_NODE && (parent = process$2.domain)) parent.exit();
+    while (head) {
+      fn = head.fn;
+      head = head.next;
+      try {
+        fn();
+      } catch (error) {
+        if (head) notify();
+        else last = undefined;
+        throw error;
+      }
+    } last = undefined;
+    if (parent) parent.enter();
+  };
+
+  // Node.js
+  if (IS_NODE) {
+    notify = function () {
+      process$2.nextTick(flush);
+    };
+  // browsers with MutationObserver, except iOS - https://github.com/zloirock/core-js/issues/339
+  } else if (MutationObserver && !engineIsIos) {
+    toggle = true;
+    node = document.createTextNode('');
+    new MutationObserver(flush).observe(node, { characterData: true });
+    notify = function () {
+      node.data = toggle = !toggle;
+    };
+  // environments with maybe non-completely correct, but existent Promise
+  } else if (Promise$1 && Promise$1.resolve) {
+    // Promise.resolve without an argument throws an error in LG WebOS 2
+    promise = Promise$1.resolve(undefined);
+    then = promise.then;
+    notify = function () {
+      then.call(promise, flush);
+    };
+  // for other environments - macrotask based on:
+  // - setImmediate
+  // - MessageChannel
+  // - window.postMessag
+  // - onreadystatechange
+  // - setTimeout
+  } else {
+    notify = function () {
+      // strange IE + webpack dev server bug - use .call(global)
+      macrotask.call(global_1, flush);
+    };
+  }
+}
+
+var microtask = queueMicrotask || function (fn) {
+  var task = { fn: fn, next: undefined };
+  if (last) last.next = task;
+  if (!head) {
+    head = task;
+    notify();
+  } last = task;
+};
+
+var PromiseCapability = function (C) {
+  var resolve, reject;
+  this.promise = new C(function ($$resolve, $$reject) {
+    if (resolve !== undefined || reject !== undefined) throw TypeError('Bad Promise constructor');
+    resolve = $$resolve;
+    reject = $$reject;
+  });
+  this.resolve = aFunction$1(resolve);
+  this.reject = aFunction$1(reject);
+};
+
+// 25.4.1.5 NewPromiseCapability(C)
+var f$5 = function (C) {
+  return new PromiseCapability(C);
+};
+
+var newPromiseCapability = {
+	f: f$5
+};
+
+var promiseResolve = function (C, x) {
+  anObject(C);
+  if (isObject(x) && x.constructor === C) return x;
+  var promiseCapability = newPromiseCapability.f(C);
+  var resolve = promiseCapability.resolve;
+  resolve(x);
+  return promiseCapability.promise;
+};
+
+var hostReportErrors = function (a, b) {
+  var console = global_1.console;
+  if (console && console.error) {
+    arguments.length === 1 ? console.error(a) : console.error(a, b);
+  }
+};
+
+var perform = function (exec) {
+  try {
+    return { error: false, value: exec() };
+  } catch (error) {
+    return { error: true, value: error };
+  }
+};
+
+var task$1 = task.set;
+
+
+
+
+
+
+
+
+
+
+var SPECIES$5 = wellKnownSymbol('species');
+var PROMISE = 'Promise';
+var getInternalState$1 = internalState.get;
+var setInternalState$1 = internalState.set;
+var getInternalPromiseState = internalState.getterFor(PROMISE);
+var PromiseConstructor = nativePromiseConstructor;
+var TypeError$1 = global_1.TypeError;
+var document$2 = global_1.document;
+var process$3 = global_1.process;
+var $fetch = getBuiltIn('fetch');
+var newPromiseCapability$1 = newPromiseCapability.f;
+var newGenericPromiseCapability = newPromiseCapability$1;
+var IS_NODE$1 = classofRaw(process$3) == 'process';
+var DISPATCH_EVENT = !!(document$2 && document$2.createEvent && global_1.dispatchEvent);
+var UNHANDLED_REJECTION = 'unhandledrejection';
+var REJECTION_HANDLED = 'rejectionhandled';
+var PENDING = 0;
+var FULFILLED = 1;
+var REJECTED = 2;
+var HANDLED = 1;
+var UNHANDLED = 2;
+var Internal, OwnPromiseCapability, PromiseWrapper, nativeThen;
+
+var FORCED$1 = isForced_1(PROMISE, function () {
+  var GLOBAL_CORE_JS_PROMISE = inspectSource(PromiseConstructor) !== String(PromiseConstructor);
+  if (!GLOBAL_CORE_JS_PROMISE) {
+    // V8 6.6 (Node 10 and Chrome 66) have a bug with resolving custom thenables
+    // https://bugs.chromium.org/p/chromium/issues/detail?id=830565
+    // We can't detect it synchronously, so just check versions
+    if (engineV8Version === 66) return true;
+    // Unhandled rejections tracking support, NodeJS Promise without it fails @@species test
+    if (!IS_NODE$1 && typeof PromiseRejectionEvent != 'function') return true;
+  }
+  // We can't use @@species feature detection in V8 since it causes
+  // deoptimization and performance degradation
+  // https://github.com/zloirock/core-js/issues/679
+  if (engineV8Version >= 51 && /native code/.test(PromiseConstructor)) return false;
+  // Detect correctness of subclassing with @@species support
+  var promise = PromiseConstructor.resolve(1);
+  var FakePromise = function (exec) {
+    exec(function () { /* empty */ }, function () { /* empty */ });
+  };
+  var constructor = promise.constructor = {};
+  constructor[SPECIES$5] = FakePromise;
+  return !(promise.then(function () { /* empty */ }) instanceof FakePromise);
+});
+
+var INCORRECT_ITERATION = FORCED$1 || !checkCorrectnessOfIteration(function (iterable) {
+  PromiseConstructor.all(iterable)['catch'](function () { /* empty */ });
+});
+
+// helpers
+var isThenable = function (it) {
+  var then;
+  return isObject(it) && typeof (then = it.then) == 'function' ? then : false;
+};
+
+var notify$1 = function (promise, state, isReject) {
+  if (state.notified) return;
+  state.notified = true;
+  var chain = state.reactions;
+  microtask(function () {
+    var value = state.value;
+    var ok = state.state == FULFILLED;
+    var index = 0;
+    // variable length - can't use forEach
+    while (chain.length > index) {
+      var reaction = chain[index++];
+      var handler = ok ? reaction.ok : reaction.fail;
+      var resolve = reaction.resolve;
+      var reject = reaction.reject;
+      var domain = reaction.domain;
+      var result, then, exited;
+      try {
+        if (handler) {
+          if (!ok) {
+            if (state.rejection === UNHANDLED) onHandleUnhandled(promise, state);
+            state.rejection = HANDLED;
+          }
+          if (handler === true) result = value;
+          else {
+            if (domain) domain.enter();
+            result = handler(value); // can throw
+            if (domain) {
+              domain.exit();
+              exited = true;
+            }
+          }
+          if (result === reaction.promise) {
+            reject(TypeError$1('Promise-chain cycle'));
+          } else if (then = isThenable(result)) {
+            then.call(result, resolve, reject);
+          } else resolve(result);
+        } else reject(value);
+      } catch (error) {
+        if (domain && !exited) domain.exit();
+        reject(error);
+      }
+    }
+    state.reactions = [];
+    state.notified = false;
+    if (isReject && !state.rejection) onUnhandled(promise, state);
+  });
+};
+
+var dispatchEvent = function (name, promise, reason) {
+  var event, handler;
+  if (DISPATCH_EVENT) {
+    event = document$2.createEvent('Event');
+    event.promise = promise;
+    event.reason = reason;
+    event.initEvent(name, false, true);
+    global_1.dispatchEvent(event);
+  } else event = { promise: promise, reason: reason };
+  if (handler = global_1['on' + name]) handler(event);
+  else if (name === UNHANDLED_REJECTION) hostReportErrors('Unhandled promise rejection', reason);
+};
+
+var onUnhandled = function (promise, state) {
+  task$1.call(global_1, function () {
+    var value = state.value;
+    var IS_UNHANDLED = isUnhandled(state);
+    var result;
+    if (IS_UNHANDLED) {
+      result = perform(function () {
+        if (IS_NODE$1) {
+          process$3.emit('unhandledRejection', value, promise);
+        } else dispatchEvent(UNHANDLED_REJECTION, promise, value);
+      });
+      // Browsers should not trigger `rejectionHandled` event if it was handled here, NodeJS - should
+      state.rejection = IS_NODE$1 || isUnhandled(state) ? UNHANDLED : HANDLED;
+      if (result.error) throw result.value;
+    }
+  });
+};
+
+var isUnhandled = function (state) {
+  return state.rejection !== HANDLED && !state.parent;
+};
+
+var onHandleUnhandled = function (promise, state) {
+  task$1.call(global_1, function () {
+    if (IS_NODE$1) {
+      process$3.emit('rejectionHandled', promise);
+    } else dispatchEvent(REJECTION_HANDLED, promise, state.value);
+  });
+};
+
+var bind = function (fn, promise, state, unwrap) {
+  return function (value) {
+    fn(promise, state, value, unwrap);
+  };
+};
+
+var internalReject = function (promise, state, value, unwrap) {
+  if (state.done) return;
+  state.done = true;
+  if (unwrap) state = unwrap;
+  state.value = value;
+  state.state = REJECTED;
+  notify$1(promise, state, true);
+};
+
+var internalResolve = function (promise, state, value, unwrap) {
+  if (state.done) return;
+  state.done = true;
+  if (unwrap) state = unwrap;
+  try {
+    if (promise === value) throw TypeError$1("Promise can't be resolved itself");
+    var then = isThenable(value);
+    if (then) {
+      microtask(function () {
+        var wrapper = { done: false };
+        try {
+          then.call(value,
+            bind(internalResolve, promise, wrapper, state),
+            bind(internalReject, promise, wrapper, state)
+          );
+        } catch (error) {
+          internalReject(promise, wrapper, error, state);
+        }
+      });
+    } else {
+      state.value = value;
+      state.state = FULFILLED;
+      notify$1(promise, state, false);
+    }
+  } catch (error) {
+    internalReject(promise, { done: false }, error, state);
+  }
+};
+
+// constructor polyfill
+if (FORCED$1) {
+  // 25.4.3.1 Promise(executor)
+  PromiseConstructor = function Promise(executor) {
+    anInstance(this, PromiseConstructor, PROMISE);
+    aFunction$1(executor);
+    Internal.call(this);
+    var state = getInternalState$1(this);
+    try {
+      executor(bind(internalResolve, this, state), bind(internalReject, this, state));
+    } catch (error) {
+      internalReject(this, state, error);
+    }
+  };
+  // eslint-disable-next-line no-unused-vars
+  Internal = function Promise(executor) {
+    setInternalState$1(this, {
+      type: PROMISE,
+      done: false,
+      notified: false,
+      parent: false,
+      reactions: [],
+      rejection: false,
+      state: PENDING,
+      value: undefined
+    });
+  };
+  Internal.prototype = redefineAll(PromiseConstructor.prototype, {
+    // `Promise.prototype.then` method
+    // https://tc39.github.io/ecma262/#sec-promise.prototype.then
+    then: function then(onFulfilled, onRejected) {
+      var state = getInternalPromiseState(this);
+      var reaction = newPromiseCapability$1(speciesConstructor(this, PromiseConstructor));
+      reaction.ok = typeof onFulfilled == 'function' ? onFulfilled : true;
+      reaction.fail = typeof onRejected == 'function' && onRejected;
+      reaction.domain = IS_NODE$1 ? process$3.domain : undefined;
+      state.parent = true;
+      state.reactions.push(reaction);
+      if (state.state != PENDING) notify$1(this, state, false);
+      return reaction.promise;
+    },
+    // `Promise.prototype.catch` method
+    // https://tc39.github.io/ecma262/#sec-promise.prototype.catch
+    'catch': function (onRejected) {
+      return this.then(undefined, onRejected);
+    }
+  });
+  OwnPromiseCapability = function () {
+    var promise = new Internal();
+    var state = getInternalState$1(promise);
+    this.promise = promise;
+    this.resolve = bind(internalResolve, promise, state);
+    this.reject = bind(internalReject, promise, state);
+  };
+  newPromiseCapability.f = newPromiseCapability$1 = function (C) {
+    return C === PromiseConstructor || C === PromiseWrapper
+      ? new OwnPromiseCapability(C)
+      : newGenericPromiseCapability(C);
+  };
+
+  if ( typeof nativePromiseConstructor == 'function') {
+    nativeThen = nativePromiseConstructor.prototype.then;
+
+    // wrap native Promise#then for native async functions
+    redefine(nativePromiseConstructor.prototype, 'then', function then(onFulfilled, onRejected) {
+      var that = this;
+      return new PromiseConstructor(function (resolve, reject) {
+        nativeThen.call(that, resolve, reject);
+      }).then(onFulfilled, onRejected);
+    // https://github.com/zloirock/core-js/issues/640
+    }, { unsafe: true });
+
+    // wrap fetch result
+    if (typeof $fetch == 'function') _export({ global: true, enumerable: true, forced: true }, {
+      // eslint-disable-next-line no-unused-vars
+      fetch: function fetch(input /* , init */) {
+        return promiseResolve(PromiseConstructor, $fetch.apply(global_1, arguments));
+      }
+    });
+  }
+}
+
+_export({ global: true, wrap: true, forced: FORCED$1 }, {
+  Promise: PromiseConstructor
+});
+
+setToStringTag(PromiseConstructor, PROMISE, false);
+setSpecies(PROMISE);
+
+PromiseWrapper = getBuiltIn(PROMISE);
+
+// statics
+_export({ target: PROMISE, stat: true, forced: FORCED$1 }, {
+  // `Promise.reject` method
+  // https://tc39.github.io/ecma262/#sec-promise.reject
+  reject: function reject(r) {
+    var capability = newPromiseCapability$1(this);
+    capability.reject.call(undefined, r);
+    return capability.promise;
+  }
+});
+
+_export({ target: PROMISE, stat: true, forced:  FORCED$1 }, {
+  // `Promise.resolve` method
+  // https://tc39.github.io/ecma262/#sec-promise.resolve
+  resolve: function resolve(x) {
+    return promiseResolve( this, x);
+  }
+});
+
+_export({ target: PROMISE, stat: true, forced: INCORRECT_ITERATION }, {
+  // `Promise.all` method
+  // https://tc39.github.io/ecma262/#sec-promise.all
+  all: function all(iterable) {
+    var C = this;
+    var capability = newPromiseCapability$1(C);
+    var resolve = capability.resolve;
+    var reject = capability.reject;
+    var result = perform(function () {
+      var $promiseResolve = aFunction$1(C.resolve);
+      var values = [];
+      var counter = 0;
+      var remaining = 1;
+      iterate_1(iterable, function (promise) {
+        var index = counter++;
+        var alreadyCalled = false;
+        values.push(undefined);
+        remaining++;
+        $promiseResolve.call(C, promise).then(function (value) {
+          if (alreadyCalled) return;
+          alreadyCalled = true;
+          values[index] = value;
+          --remaining || resolve(values);
+        }, reject);
+      });
+      --remaining || resolve(values);
+    });
+    if (result.error) reject(result.value);
+    return capability.promise;
+  },
+  // `Promise.race` method
+  // https://tc39.github.io/ecma262/#sec-promise.race
+  race: function race(iterable) {
+    var C = this;
+    var capability = newPromiseCapability$1(C);
+    var reject = capability.reject;
+    var result = perform(function () {
+      var $promiseResolve = aFunction$1(C.resolve);
+      iterate_1(iterable, function (promise) {
+        $promiseResolve.call(C, promise).then(capability.resolve, reject);
+      });
+    });
+    if (result.error) reject(result.value);
+    return capability.promise;
+  }
+});
+
+var freezing = !fails(function () {
+  return Object.isExtensible(Object.preventExtensions({}));
+});
+
+var internalMetadata = createCommonjsModule(function (module) {
+var defineProperty = objectDefineProperty.f;
+
+
+
+var METADATA = uid('meta');
+var id = 0;
+
+var isExtensible = Object.isExtensible || function () {
+  return true;
+};
+
+var setMetadata = function (it) {
+  defineProperty(it, METADATA, { value: {
+    objectID: 'O' + ++id, // object ID
+    weakData: {}          // weak collections IDs
+  } });
+};
+
+var fastKey = function (it, create) {
+  // return a primitive with prefix
+  if (!isObject(it)) return typeof it == 'symbol' ? it : (typeof it == 'string' ? 'S' : 'P') + it;
+  if (!has(it, METADATA)) {
+    // can't set metadata to uncaught frozen object
+    if (!isExtensible(it)) return 'F';
+    // not necessary to add metadata
+    if (!create) return 'E';
+    // add missing metadata
+    setMetadata(it);
+  // return object ID
+  } return it[METADATA].objectID;
+};
+
+var getWeakData = function (it, create) {
+  if (!has(it, METADATA)) {
+    // can't set metadata to uncaught frozen object
+    if (!isExtensible(it)) return true;
+    // not necessary to add metadata
+    if (!create) return false;
+    // add missing metadata
+    setMetadata(it);
+  // return the store of weak collections IDs
+  } return it[METADATA].weakData;
+};
+
+// add metadata on freeze-family methods calling
+var onFreeze = function (it) {
+  if (freezing && meta.REQUIRED && isExtensible(it) && !has(it, METADATA)) setMetadata(it);
+  return it;
+};
+
+var meta = module.exports = {
+  REQUIRED: false,
+  fastKey: fastKey,
+  getWeakData: getWeakData,
+  onFreeze: onFreeze
+};
+
+hiddenKeys[METADATA] = true;
+});
+var internalMetadata_1 = internalMetadata.REQUIRED;
+var internalMetadata_2 = internalMetadata.fastKey;
+var internalMetadata_3 = internalMetadata.getWeakData;
+var internalMetadata_4 = internalMetadata.onFreeze;
+
+var collection = function (CONSTRUCTOR_NAME, wrapper, common) {
+  var IS_MAP = CONSTRUCTOR_NAME.indexOf('Map') !== -1;
+  var IS_WEAK = CONSTRUCTOR_NAME.indexOf('Weak') !== -1;
+  var ADDER = IS_MAP ? 'set' : 'add';
+  var NativeConstructor = global_1[CONSTRUCTOR_NAME];
+  var NativePrototype = NativeConstructor && NativeConstructor.prototype;
+  var Constructor = NativeConstructor;
+  var exported = {};
+
+  var fixMethod = function (KEY) {
+    var nativeMethod = NativePrototype[KEY];
+    redefine(NativePrototype, KEY,
+      KEY == 'add' ? function add(value) {
+        nativeMethod.call(this, value === 0 ? 0 : value);
+        return this;
+      } : KEY == 'delete' ? function (key) {
+        return IS_WEAK && !isObject(key) ? false : nativeMethod.call(this, key === 0 ? 0 : key);
+      } : KEY == 'get' ? function get(key) {
+        return IS_WEAK && !isObject(key) ? undefined : nativeMethod.call(this, key === 0 ? 0 : key);
+      } : KEY == 'has' ? function has(key) {
+        return IS_WEAK && !isObject(key) ? false : nativeMethod.call(this, key === 0 ? 0 : key);
+      } : function set(key, value) {
+        nativeMethod.call(this, key === 0 ? 0 : key, value);
+        return this;
+      }
+    );
+  };
+
+  // eslint-disable-next-line max-len
+  if (isForced_1(CONSTRUCTOR_NAME, typeof NativeConstructor != 'function' || !(IS_WEAK || NativePrototype.forEach && !fails(function () {
+    new NativeConstructor().entries().next();
+  })))) {
+    // create collection constructor
+    Constructor = common.getConstructor(wrapper, CONSTRUCTOR_NAME, IS_MAP, ADDER);
+    internalMetadata.REQUIRED = true;
+  } else if (isForced_1(CONSTRUCTOR_NAME, true)) {
+    var instance = new Constructor();
+    // early implementations not supports chaining
+    var HASNT_CHAINING = instance[ADDER](IS_WEAK ? {} : -0, 1) != instance;
+    // V8 ~ Chromium 40- weak-collections throws on primitives, but should return false
+    var THROWS_ON_PRIMITIVES = fails(function () { instance.has(1); });
+    // most early implementations doesn't supports iterables, most modern - not close it correctly
+    // eslint-disable-next-line no-new
+    var ACCEPT_ITERABLES = checkCorrectnessOfIteration(function (iterable) { new NativeConstructor(iterable); });
+    // for early implementations -0 and +0 not the same
+    var BUGGY_ZERO = !IS_WEAK && fails(function () {
+      // V8 ~ Chromium 42- fails only with 5+ elements
+      var $instance = new NativeConstructor();
+      var index = 5;
+      while (index--) $instance[ADDER](index, index);
+      return !$instance.has(-0);
+    });
+
+    if (!ACCEPT_ITERABLES) {
+      Constructor = wrapper(function (dummy, iterable) {
+        anInstance(dummy, Constructor, CONSTRUCTOR_NAME);
+        var that = inheritIfRequired(new NativeConstructor(), dummy, Constructor);
+        if (iterable != undefined) iterate_1(iterable, that[ADDER], that, IS_MAP);
+        return that;
+      });
+      Constructor.prototype = NativePrototype;
+      NativePrototype.constructor = Constructor;
+    }
+
+    if (THROWS_ON_PRIMITIVES || BUGGY_ZERO) {
+      fixMethod('delete');
+      fixMethod('has');
+      IS_MAP && fixMethod('get');
+    }
+
+    if (BUGGY_ZERO || HASNT_CHAINING) fixMethod(ADDER);
+
+    // weak collections should not contains .clear method
+    if (IS_WEAK && NativePrototype.clear) delete NativePrototype.clear;
+  }
+
+  exported[CONSTRUCTOR_NAME] = Constructor;
+  _export({ global: true, forced: Constructor != NativeConstructor }, exported);
+
+  setToStringTag(Constructor, CONSTRUCTOR_NAME);
+
+  if (!IS_WEAK) common.setStrong(Constructor, CONSTRUCTOR_NAME, IS_MAP);
+
+  return Constructor;
+};
+
+var defineProperty$3 = objectDefineProperty.f;
+
+
+
+
+
+
+
+
+var fastKey = internalMetadata.fastKey;
+
+
+var setInternalState$2 = internalState.set;
+var internalStateGetterFor = internalState.getterFor;
+
+var collectionStrong = {
+  getConstructor: function (wrapper, CONSTRUCTOR_NAME, IS_MAP, ADDER) {
+    var C = wrapper(function (that, iterable) {
+      anInstance(that, C, CONSTRUCTOR_NAME);
+      setInternalState$2(that, {
+        type: CONSTRUCTOR_NAME,
+        index: objectCreate(null),
+        first: undefined,
+        last: undefined,
+        size: 0
+      });
+      if (!descriptors) that.size = 0;
+      if (iterable != undefined) iterate_1(iterable, that[ADDER], that, IS_MAP);
+    });
+
+    var getInternalState = internalStateGetterFor(CONSTRUCTOR_NAME);
+
+    var define = function (that, key, value) {
+      var state = getInternalState(that);
+      var entry = getEntry(that, key);
+      var previous, index;
+      // change existing entry
+      if (entry) {
+        entry.value = value;
+      // create new entry
+      } else {
+        state.last = entry = {
+          index: index = fastKey(key, true),
+          key: key,
+          value: value,
+          previous: previous = state.last,
+          next: undefined,
+          removed: false
+        };
+        if (!state.first) state.first = entry;
+        if (previous) previous.next = entry;
+        if (descriptors) state.size++;
+        else that.size++;
+        // add to index
+        if (index !== 'F') state.index[index] = entry;
+      } return that;
+    };
+
+    var getEntry = function (that, key) {
+      var state = getInternalState(that);
+      // fast case
+      var index = fastKey(key);
+      var entry;
+      if (index !== 'F') return state.index[index];
+      // frozen object case
+      for (entry = state.first; entry; entry = entry.next) {
+        if (entry.key == key) return entry;
+      }
+    };
+
+    redefineAll(C.prototype, {
+      // 23.1.3.1 Map.prototype.clear()
+      // 23.2.3.2 Set.prototype.clear()
+      clear: function clear() {
+        var that = this;
+        var state = getInternalState(that);
+        var data = state.index;
+        var entry = state.first;
+        while (entry) {
+          entry.removed = true;
+          if (entry.previous) entry.previous = entry.previous.next = undefined;
+          delete data[entry.index];
+          entry = entry.next;
+        }
+        state.first = state.last = undefined;
+        if (descriptors) state.size = 0;
+        else that.size = 0;
+      },
+      // 23.1.3.3 Map.prototype.delete(key)
+      // 23.2.3.4 Set.prototype.delete(value)
+      'delete': function (key) {
+        var that = this;
+        var state = getInternalState(that);
+        var entry = getEntry(that, key);
+        if (entry) {
+          var next = entry.next;
+          var prev = entry.previous;
+          delete state.index[entry.index];
+          entry.removed = true;
+          if (prev) prev.next = next;
+          if (next) next.previous = prev;
+          if (state.first == entry) state.first = next;
+          if (state.last == entry) state.last = prev;
+          if (descriptors) state.size--;
+          else that.size--;
+        } return !!entry;
+      },
+      // 23.2.3.6 Set.prototype.forEach(callbackfn, thisArg = undefined)
+      // 23.1.3.5 Map.prototype.forEach(callbackfn, thisArg = undefined)
+      forEach: function forEach(callbackfn /* , that = undefined */) {
+        var state = getInternalState(this);
+        var boundFunction = functionBindContext(callbackfn, arguments.length > 1 ? arguments[1] : undefined, 3);
+        var entry;
+        while (entry = entry ? entry.next : state.first) {
+          boundFunction(entry.value, entry.key, this);
+          // revert to the last existing entry
+          while (entry && entry.removed) entry = entry.previous;
+        }
+      },
+      // 23.1.3.7 Map.prototype.has(key)
+      // 23.2.3.7 Set.prototype.has(value)
+      has: function has(key) {
+        return !!getEntry(this, key);
+      }
+    });
+
+    redefineAll(C.prototype, IS_MAP ? {
+      // 23.1.3.6 Map.prototype.get(key)
+      get: function get(key) {
+        var entry = getEntry(this, key);
+        return entry && entry.value;
+      },
+      // 23.1.3.9 Map.prototype.set(key, value)
+      set: function set(key, value) {
+        return define(this, key === 0 ? 0 : key, value);
+      }
+    } : {
+      // 23.2.3.1 Set.prototype.add(value)
+      add: function add(value) {
+        return define(this, value = value === 0 ? 0 : value, value);
+      }
+    });
+    if (descriptors) defineProperty$3(C.prototype, 'size', {
+      get: function () {
+        return getInternalState(this).size;
+      }
+    });
+    return C;
+  },
+  setStrong: function (C, CONSTRUCTOR_NAME, IS_MAP) {
+    var ITERATOR_NAME = CONSTRUCTOR_NAME + ' Iterator';
+    var getInternalCollectionState = internalStateGetterFor(CONSTRUCTOR_NAME);
+    var getInternalIteratorState = internalStateGetterFor(ITERATOR_NAME);
+    // add .keys, .values, .entries, [@@iterator]
+    // 23.1.3.4, 23.1.3.8, 23.1.3.11, 23.1.3.12, 23.2.3.5, 23.2.3.8, 23.2.3.10, 23.2.3.11
+    defineIterator(C, CONSTRUCTOR_NAME, function (iterated, kind) {
+      setInternalState$2(this, {
+        type: ITERATOR_NAME,
+        target: iterated,
+        state: getInternalCollectionState(iterated),
+        kind: kind,
+        last: undefined
+      });
+    }, function () {
+      var state = getInternalIteratorState(this);
+      var kind = state.kind;
+      var entry = state.last;
+      // revert to the last existing entry
+      while (entry && entry.removed) entry = entry.previous;
+      // get next entry
+      if (!state.target || !(state.last = entry = entry ? entry.next : state.state.first)) {
+        // or finish the iteration
+        state.target = undefined;
+        return { value: undefined, done: true };
+      }
+      // return step by kind
+      if (kind == 'keys') return { value: entry.key, done: false };
+      if (kind == 'values') return { value: entry.value, done: false };
+      return { value: [entry.key, entry.value], done: false };
+    }, IS_MAP ? 'entries' : 'values', !IS_MAP, true);
+
+    // add [@@species], 23.1.2.2, 23.2.2.2
+    setSpecies(CONSTRUCTOR_NAME);
+  }
+};
+
+// `Set` constructor
+// https://tc39.github.io/ecma262/#sec-set-objects
+var es_set = collection('Set', function (init) {
+  return function Set() { return init(this, arguments.length ? arguments[0] : undefined); };
+}, collectionStrong);
+
+var MATCH = wellKnownSymbol('match');
+
+// `IsRegExp` abstract operation
+// https://tc39.github.io/ecma262/#sec-isregexp
+var isRegexp = function (it) {
+  var isRegExp;
+  return isObject(it) && ((isRegExp = it[MATCH]) !== undefined ? !!isRegExp : classofRaw(it) == 'RegExp');
+};
+
+var notARegexp = function (it) {
+  if (isRegexp(it)) {
+    throw TypeError("The method doesn't accept regular expressions");
+  } return it;
+};
+
+var MATCH$1 = wellKnownSymbol('match');
+
+var correctIsRegexpLogic = function (METHOD_NAME) {
+  var regexp = /./;
+  try {
+    '/./'[METHOD_NAME](regexp);
+  } catch (e) {
+    try {
+      regexp[MATCH$1] = false;
+      return '/./'[METHOD_NAME](regexp);
+    } catch (f) { /* empty */ }
+  } return false;
+};
+
+// `String.prototype.includes` method
+// https://tc39.github.io/ecma262/#sec-string.prototype.includes
+_export({ target: 'String', proto: true, forced: !correctIsRegexpLogic('includes') }, {
+  includes: function includes(searchString /* , position = 0 */) {
+    return !!~String(requireObjectCoercible(this))
+      .indexOf(notARegexp(searchString), arguments.length > 1 ? arguments[1] : undefined);
+  }
+});
+
+// `String.prototype.{ codePointAt, at }` methods implementation
+var createMethod$3 = function (CONVERT_TO_STRING) {
+  return function ($this, pos) {
+    var S = String(requireObjectCoercible($this));
+    var position = toInteger(pos);
+    var size = S.length;
+    var first, second;
+    if (position < 0 || position >= size) return CONVERT_TO_STRING ? '' : undefined;
+    first = S.charCodeAt(position);
+    return first < 0xD800 || first > 0xDBFF || position + 1 === size
+      || (second = S.charCodeAt(position + 1)) < 0xDC00 || second > 0xDFFF
+        ? CONVERT_TO_STRING ? S.charAt(position) : first
+        : CONVERT_TO_STRING ? S.slice(position, position + 2) : (first - 0xD800 << 10) + (second - 0xDC00) + 0x10000;
+  };
+};
+
+var stringMultibyte = {
+  // `String.prototype.codePointAt` method
+  // https://tc39.github.io/ecma262/#sec-string.prototype.codepointat
+  codeAt: createMethod$3(false),
+  // `String.prototype.at` method
+  // https://github.com/mathiasbynens/String.prototype.at
+  charAt: createMethod$3(true)
+};
+
+var charAt = stringMultibyte.charAt;
+
+
+
+var STRING_ITERATOR = 'String Iterator';
+var setInternalState$3 = internalState.set;
+var getInternalState$2 = internalState.getterFor(STRING_ITERATOR);
+
+// `String.prototype[@@iterator]` method
+// https://tc39.github.io/ecma262/#sec-string.prototype-@@iterator
+defineIterator(String, 'String', function (iterated) {
+  setInternalState$3(this, {
+    type: STRING_ITERATOR,
+    string: String(iterated),
+    index: 0
+  });
+// `%StringIteratorPrototype%.next` method
+// https://tc39.github.io/ecma262/#sec-%stringiteratorprototype%.next
+}, function next() {
+  var state = getInternalState$2(this);
+  var string = state.string;
+  var index = state.index;
+  var point;
+  if (index >= string.length) return { value: undefined, done: true };
+  point = charAt(string, index);
+  state.index += point.length;
+  return { value: point, done: false };
+});
+
+var ITERATOR$5 = wellKnownSymbol('iterator');
+var TO_STRING_TAG$3 = wellKnownSymbol('toStringTag');
+var ArrayValues = es_array_iterator.values;
+
+for (var COLLECTION_NAME$1 in domIterables) {
+  var Collection$1 = global_1[COLLECTION_NAME$1];
+  var CollectionPrototype$1 = Collection$1 && Collection$1.prototype;
+  if (CollectionPrototype$1) {
+    // some Chrome versions have non-configurable methods on DOMTokenList
+    if (CollectionPrototype$1[ITERATOR$5] !== ArrayValues) try {
+      createNonEnumerableProperty(CollectionPrototype$1, ITERATOR$5, ArrayValues);
+    } catch (error) {
+      CollectionPrototype$1[ITERATOR$5] = ArrayValues;
+    }
+    if (!CollectionPrototype$1[TO_STRING_TAG$3]) {
+      createNonEnumerableProperty(CollectionPrototype$1, TO_STRING_TAG$3, COLLECTION_NAME$1);
+    }
+    if (domIterables[COLLECTION_NAME$1]) for (var METHOD_NAME in es_array_iterator) {
+      // some Chrome versions have non-configurable methods on DOMTokenList
+      if (CollectionPrototype$1[METHOD_NAME] !== es_array_iterator[METHOD_NAME]) try {
+        createNonEnumerableProperty(CollectionPrototype$1, METHOD_NAME, es_array_iterator[METHOD_NAME]);
+      } catch (error) {
+        CollectionPrototype$1[METHOD_NAME] = es_array_iterator[METHOD_NAME];
+      }
+    }
+  }
+}
+
+var nativeGetOwnPropertyNames = objectGetOwnPropertyNames.f;
+
+var toString$1 = {}.toString;
+
+var windowNames = typeof window == 'object' && window && Object.getOwnPropertyNames
+  ? Object.getOwnPropertyNames(window) : [];
+
+var getWindowNames = function (it) {
+  try {
+    return nativeGetOwnPropertyNames(it);
+  } catch (error) {
+    return windowNames.slice();
+  }
+};
+
+// fallback for IE11 buggy Object.getOwnPropertyNames with iframe and window
+var f$6 = function getOwnPropertyNames(it) {
+  return windowNames && toString$1.call(it) == '[object Window]'
+    ? getWindowNames(it)
+    : nativeGetOwnPropertyNames(toIndexedObject(it));
+};
+
+var objectGetOwnPropertyNamesExternal = {
+	f: f$6
+};
+
+var f$7 = wellKnownSymbol;
+
+var wellKnownSymbolWrapped = {
+	f: f$7
+};
+
+var defineProperty$4 = objectDefineProperty.f;
+
+var defineWellKnownSymbol = function (NAME) {
+  var Symbol = path.Symbol || (path.Symbol = {});
+  if (!has(Symbol, NAME)) defineProperty$4(Symbol, NAME, {
+    value: wellKnownSymbolWrapped.f(NAME)
+  });
+};
+
+var $forEach$1 = arrayIteration.forEach;
 
 var HIDDEN = sharedKey('hidden');
 var SYMBOL = 'Symbol';
 var PROTOTYPE$1 = 'prototype';
 var TO_PRIMITIVE = wellKnownSymbol('toPrimitive');
-var setInternalState = internalState.set;
-var getInternalState = internalState.getterFor(SYMBOL);
-var ObjectPrototype = Object[PROTOTYPE$1];
+var setInternalState$4 = internalState.set;
+var getInternalState$3 = internalState.getterFor(SYMBOL);
+var ObjectPrototype$1 = Object[PROTOTYPE$1];
 var $Symbol = global_1.Symbol;
 var $stringify = getBuiltIn('JSON', 'stringify');
 var nativeGetOwnPropertyDescriptor$1 = objectGetOwnPropertyDescriptor.f;
@@ -8529,17 +11010,17 @@ var setSymbolDescriptor = descriptors && fails(function () {
     get: function () { return nativeDefineProperty$1(this, 'a', { value: 7 }).a; }
   })).a != 7;
 }) ? function (O, P, Attributes) {
-  var ObjectPrototypeDescriptor = nativeGetOwnPropertyDescriptor$1(ObjectPrototype, P);
-  if (ObjectPrototypeDescriptor) delete ObjectPrototype[P];
+  var ObjectPrototypeDescriptor = nativeGetOwnPropertyDescriptor$1(ObjectPrototype$1, P);
+  if (ObjectPrototypeDescriptor) delete ObjectPrototype$1[P];
   nativeDefineProperty$1(O, P, Attributes);
-  if (ObjectPrototypeDescriptor && O !== ObjectPrototype) {
-    nativeDefineProperty$1(ObjectPrototype, P, ObjectPrototypeDescriptor);
+  if (ObjectPrototypeDescriptor && O !== ObjectPrototype$1) {
+    nativeDefineProperty$1(ObjectPrototype$1, P, ObjectPrototypeDescriptor);
   }
 } : nativeDefineProperty$1;
 
 var wrap = function (tag, description) {
   var symbol = AllSymbols[tag] = objectCreate($Symbol[PROTOTYPE$1]);
-  setInternalState(symbol, {
+  setInternalState$4(symbol, {
     type: SYMBOL,
     tag: tag,
     description: description
@@ -8555,7 +11036,7 @@ var isSymbol = useSymbolAsUid ? function (it) {
 };
 
 var $defineProperty = function defineProperty(O, P, Attributes) {
-  if (O === ObjectPrototype) $defineProperty(ObjectPrototypeSymbols, P, Attributes);
+  if (O === ObjectPrototype$1) $defineProperty(ObjectPrototypeSymbols, P, Attributes);
   anObject(O);
   var key = toPrimitive(P, true);
   anObject(Attributes);
@@ -8574,7 +11055,7 @@ var $defineProperties = function defineProperties(O, Properties) {
   anObject(O);
   var properties = toIndexedObject(Properties);
   var keys = objectKeys(properties).concat($getOwnPropertySymbols(properties));
-  $forEach(keys, function (key) {
+  $forEach$1(keys, function (key) {
     if (!descriptors || $propertyIsEnumerable.call(properties, key)) $defineProperty(O, key, properties[key]);
   });
   return O;
@@ -8587,14 +11068,14 @@ var $create = function create(O, Properties) {
 var $propertyIsEnumerable = function propertyIsEnumerable(V) {
   var P = toPrimitive(V, true);
   var enumerable = nativePropertyIsEnumerable$1.call(this, P);
-  if (this === ObjectPrototype && has(AllSymbols, P) && !has(ObjectPrototypeSymbols, P)) return false;
+  if (this === ObjectPrototype$1 && has(AllSymbols, P) && !has(ObjectPrototypeSymbols, P)) return false;
   return enumerable || !has(this, P) || !has(AllSymbols, P) || has(this, HIDDEN) && this[HIDDEN][P] ? enumerable : true;
 };
 
 var $getOwnPropertyDescriptor = function getOwnPropertyDescriptor(O, P) {
   var it = toIndexedObject(O);
   var key = toPrimitive(P, true);
-  if (it === ObjectPrototype && has(AllSymbols, key) && !has(ObjectPrototypeSymbols, key)) return;
+  if (it === ObjectPrototype$1 && has(AllSymbols, key) && !has(ObjectPrototypeSymbols, key)) return;
   var descriptor = nativeGetOwnPropertyDescriptor$1(it, key);
   if (descriptor && has(AllSymbols, key) && !(has(it, HIDDEN) && it[HIDDEN][key])) {
     descriptor.enumerable = true;
@@ -8605,18 +11086,18 @@ var $getOwnPropertyDescriptor = function getOwnPropertyDescriptor(O, P) {
 var $getOwnPropertyNames = function getOwnPropertyNames(O) {
   var names = nativeGetOwnPropertyNames$1(toIndexedObject(O));
   var result = [];
-  $forEach(names, function (key) {
+  $forEach$1(names, function (key) {
     if (!has(AllSymbols, key) && !has(hiddenKeys, key)) result.push(key);
   });
   return result;
 };
 
 var $getOwnPropertySymbols = function getOwnPropertySymbols(O) {
-  var IS_OBJECT_PROTOTYPE = O === ObjectPrototype;
+  var IS_OBJECT_PROTOTYPE = O === ObjectPrototype$1;
   var names = nativeGetOwnPropertyNames$1(IS_OBJECT_PROTOTYPE ? ObjectPrototypeSymbols : toIndexedObject(O));
   var result = [];
-  $forEach(names, function (key) {
-    if (has(AllSymbols, key) && (!IS_OBJECT_PROTOTYPE || has(ObjectPrototype, key))) {
+  $forEach$1(names, function (key) {
+    if (has(AllSymbols, key) && (!IS_OBJECT_PROTOTYPE || has(ObjectPrototype$1, key))) {
       result.push(AllSymbols[key]);
     }
   });
@@ -8631,16 +11112,16 @@ if (!nativeSymbol) {
     var description = !arguments.length || arguments[0] === undefined ? undefined : String(arguments[0]);
     var tag = uid(description);
     var setter = function (value) {
-      if (this === ObjectPrototype) setter.call(ObjectPrototypeSymbols, value);
+      if (this === ObjectPrototype$1) setter.call(ObjectPrototypeSymbols, value);
       if (has(this, HIDDEN) && has(this[HIDDEN], tag)) this[HIDDEN][tag] = false;
       setSymbolDescriptor(this, tag, createPropertyDescriptor(1, value));
     };
-    if (descriptors && USE_SETTER) setSymbolDescriptor(ObjectPrototype, tag, { configurable: true, set: setter });
+    if (descriptors && USE_SETTER) setSymbolDescriptor(ObjectPrototype$1, tag, { configurable: true, set: setter });
     return wrap(tag, description);
   };
 
   redefine($Symbol[PROTOTYPE$1], 'toString', function toString() {
-    return getInternalState(this).tag;
+    return getInternalState$3(this).tag;
   });
 
   redefine($Symbol, 'withoutSetter', function (description) {
@@ -8662,11 +11143,11 @@ if (!nativeSymbol) {
     nativeDefineProperty$1($Symbol[PROTOTYPE$1], 'description', {
       configurable: true,
       get: function description() {
-        return getInternalState(this).description;
+        return getInternalState$3(this).description;
       }
     });
     {
-      redefine(ObjectPrototype, 'propertyIsEnumerable', $propertyIsEnumerable, { unsafe: true });
+      redefine(ObjectPrototype$1, 'propertyIsEnumerable', $propertyIsEnumerable, { unsafe: true });
     }
   }
 }
@@ -8675,7 +11156,7 @@ _export({ global: true, wrap: true, forced: !nativeSymbol, sham: !nativeSymbol }
   Symbol: $Symbol
 });
 
-$forEach(objectKeys(WellKnownSymbolsStore$1), function (name) {
+$forEach$1(objectKeys(WellKnownSymbolsStore$1), function (name) {
   defineWellKnownSymbol(name);
 });
 
@@ -8775,7 +11256,7 @@ setToStringTag($Symbol, SYMBOL);
 
 hiddenKeys[HIDDEN] = true;
 
-var defineProperty$3 = objectDefineProperty.f;
+var defineProperty$5 = objectDefineProperty.f;
 
 
 var NativeSymbol = global_1.Symbol;
@@ -8802,7 +11283,7 @@ if (descriptors && typeof NativeSymbol == 'function' && (!('description' in Nati
   var symbolToString = symbolPrototype.toString;
   var native = String(NativeSymbol('test')) == 'Symbol(test)';
   var regexp = /^Symbol\((.*)\)[^)]+$/;
-  defineProperty$3(symbolPrototype, 'description', {
+  defineProperty$5(symbolPrototype, 'description', {
     configurable: true,
     get: function description() {
       var symbol = isObject(this) ? this.valueOf() : this;
@@ -8816,194 +11297,6 @@ if (descriptors && typeof NativeSymbol == 'function' && (!('description' in Nati
   _export({ global: true, forced: true }, {
     Symbol: SymbolWrapper
   });
-}
-
-var createProperty = function (object, key, value) {
-  var propertyKey = toPrimitive(key);
-  if (propertyKey in object) objectDefineProperty.f(object, propertyKey, createPropertyDescriptor(0, value));
-  else object[propertyKey] = value;
-};
-
-var engineUserAgent = getBuiltIn('navigator', 'userAgent') || '';
-
-var process = global_1.process;
-var versions = process && process.versions;
-var v8 = versions && versions.v8;
-var match, version;
-
-if (v8) {
-  match = v8.split('.');
-  version = match[0] + match[1];
-} else if (engineUserAgent) {
-  match = engineUserAgent.match(/Edge\/(\d+)/);
-  if (!match || match[1] >= 74) {
-    match = engineUserAgent.match(/Chrome\/(\d+)/);
-    if (match) version = match[1];
-  }
-}
-
-var engineV8Version = version && +version;
-
-var SPECIES$1 = wellKnownSymbol('species');
-
-var arrayMethodHasSpeciesSupport = function (METHOD_NAME) {
-  // We can't use this feature detection in V8 since it causes
-  // deoptimization and serious performance degradation
-  // https://github.com/zloirock/core-js/issues/677
-  return engineV8Version >= 51 || !fails(function () {
-    var array = [];
-    var constructor = array.constructor = {};
-    constructor[SPECIES$1] = function () {
-      return { foo: 1 };
-    };
-    return array[METHOD_NAME](Boolean).foo !== 1;
-  });
-};
-
-var IS_CONCAT_SPREADABLE = wellKnownSymbol('isConcatSpreadable');
-var MAX_SAFE_INTEGER = 0x1FFFFFFFFFFFFF;
-var MAXIMUM_ALLOWED_INDEX_EXCEEDED = 'Maximum allowed index exceeded';
-
-// We can't use this feature detection in V8 since it causes
-// deoptimization and serious performance degradation
-// https://github.com/zloirock/core-js/issues/679
-var IS_CONCAT_SPREADABLE_SUPPORT = engineV8Version >= 51 || !fails(function () {
-  var array = [];
-  array[IS_CONCAT_SPREADABLE] = false;
-  return array.concat()[0] !== array;
-});
-
-var SPECIES_SUPPORT = arrayMethodHasSpeciesSupport('concat');
-
-var isConcatSpreadable = function (O) {
-  if (!isObject(O)) return false;
-  var spreadable = O[IS_CONCAT_SPREADABLE];
-  return spreadable !== undefined ? !!spreadable : isArray(O);
-};
-
-var FORCED = !IS_CONCAT_SPREADABLE_SUPPORT || !SPECIES_SUPPORT;
-
-// `Array.prototype.concat` method
-// https://tc39.github.io/ecma262/#sec-array.prototype.concat
-// with adding support of @@isConcatSpreadable and @@species
-_export({ target: 'Array', proto: true, forced: FORCED }, {
-  concat: function concat(arg) { // eslint-disable-line no-unused-vars
-    var O = toObject(this);
-    var A = arraySpeciesCreate(O, 0);
-    var n = 0;
-    var i, k, length, len, E;
-    for (i = -1, length = arguments.length; i < length; i++) {
-      E = i === -1 ? O : arguments[i];
-      if (isConcatSpreadable(E)) {
-        len = toLength(E.length);
-        if (n + len > MAX_SAFE_INTEGER) throw TypeError(MAXIMUM_ALLOWED_INDEX_EXCEEDED);
-        for (k = 0; k < len; k++, n++) if (k in E) createProperty(A, n, E[k]);
-      } else {
-        if (n >= MAX_SAFE_INTEGER) throw TypeError(MAXIMUM_ALLOWED_INDEX_EXCEEDED);
-        createProperty(A, n++, E);
-      }
-    }
-    A.length = n;
-    return A;
-  }
-});
-
-var arrayMethodIsStrict = function (METHOD_NAME, argument) {
-  var method = [][METHOD_NAME];
-  return !!method && fails(function () {
-    // eslint-disable-next-line no-useless-call,no-throw-literal
-    method.call(null, argument || function () { throw 1; }, 1);
-  });
-};
-
-var defineProperty$4 = Object.defineProperty;
-var cache = {};
-
-var thrower = function (it) { throw it; };
-
-var arrayMethodUsesToLength = function (METHOD_NAME, options) {
-  if (has(cache, METHOD_NAME)) return cache[METHOD_NAME];
-  if (!options) options = {};
-  var method = [][METHOD_NAME];
-  var ACCESSORS = has(options, 'ACCESSORS') ? options.ACCESSORS : false;
-  var argument0 = has(options, 0) ? options[0] : thrower;
-  var argument1 = has(options, 1) ? options[1] : undefined;
-
-  return cache[METHOD_NAME] = !!method && !fails(function () {
-    if (ACCESSORS && !descriptors) return true;
-    var O = { length: -1 };
-
-    if (ACCESSORS) defineProperty$4(O, 1, { enumerable: true, get: thrower });
-    else O[1] = 1;
-
-    method.call(O, argument0, argument1);
-  });
-};
-
-var $forEach$1 = arrayIteration.forEach;
-
-
-
-var STRICT_METHOD = arrayMethodIsStrict('forEach');
-var USES_TO_LENGTH = arrayMethodUsesToLength('forEach');
-
-// `Array.prototype.forEach` method implementation
-// https://tc39.github.io/ecma262/#sec-array.prototype.foreach
-var arrayForEach = (!STRICT_METHOD || !USES_TO_LENGTH) ? function forEach(callbackfn /* , thisArg */) {
-  return $forEach$1(this, callbackfn, arguments.length > 1 ? arguments[1] : undefined);
-} : [].forEach;
-
-// `Array.prototype.forEach` method
-// https://tc39.github.io/ecma262/#sec-array.prototype.foreach
-_export({ target: 'Array', proto: true, forced: [].forEach != arrayForEach }, {
-  forEach: arrayForEach
-});
-
-// iterable DOM collections
-// flag - `iterable` interface - 'entries', 'keys', 'values', 'forEach' methods
-var domIterables = {
-  CSSRuleList: 0,
-  CSSStyleDeclaration: 0,
-  CSSValueList: 0,
-  ClientRectList: 0,
-  DOMRectList: 0,
-  DOMStringList: 0,
-  DOMTokenList: 1,
-  DataTransferItemList: 0,
-  FileList: 0,
-  HTMLAllCollection: 0,
-  HTMLCollection: 0,
-  HTMLFormElement: 0,
-  HTMLSelectElement: 0,
-  MediaList: 0,
-  MimeTypeArray: 0,
-  NamedNodeMap: 0,
-  NodeList: 1,
-  PaintRequestList: 0,
-  Plugin: 0,
-  PluginArray: 0,
-  SVGLengthList: 0,
-  SVGNumberList: 0,
-  SVGPathSegList: 0,
-  SVGPointList: 0,
-  SVGStringList: 0,
-  SVGTransformList: 0,
-  SourceBufferList: 0,
-  StyleSheetList: 0,
-  TextTrackCueList: 0,
-  TextTrackList: 0,
-  TouchList: 0
-};
-
-for (var COLLECTION_NAME in domIterables) {
-  var Collection = global_1[COLLECTION_NAME];
-  var CollectionPrototype = Collection && Collection.prototype;
-  // some Chrome versions have non-configurable methods on DOMTokenList
-  if (CollectionPrototype && CollectionPrototype.forEach !== arrayForEach) try {
-    createNonEnumerableProperty(CollectionPrototype, 'forEach', arrayForEach);
-  } catch (error) {
-    CollectionPrototype.forEach = arrayForEach;
-  }
 }
 
 var clamp = createCommonjsModule(function (module, exports) {
@@ -9286,23 +11579,6 @@ var arrayFill = function fill(value /* , start = 0, end = @length */) {
   return O;
 };
 
-var UNSCOPABLES = wellKnownSymbol('unscopables');
-var ArrayPrototype = Array.prototype;
-
-// Array.prototype[@@unscopables]
-// https://tc39.github.io/ecma262/#sec-array.prototype-@@unscopables
-if (ArrayPrototype[UNSCOPABLES] == undefined) {
-  objectDefineProperty.f(ArrayPrototype, UNSCOPABLES, {
-    configurable: true,
-    value: objectCreate(null)
-  });
-}
-
-// add a key to Array.prototype[@@unscopables]
-var addToUnscopables = function (key) {
-  ArrayPrototype[UNSCOPABLES][key] = true;
-};
-
 // `Array.prototype.fill` method
 // https://tc39.github.io/ecma262/#sec-array.prototype.fill
 _export({ target: 'Array', proto: true }, {
@@ -9317,16 +11593,16 @@ var $findIndex = arrayIteration.findIndex;
 
 
 var FIND_INDEX = 'findIndex';
-var SKIPS_HOLES = true;
+var SKIPS_HOLES$1 = true;
 
-var USES_TO_LENGTH$1 = arrayMethodUsesToLength(FIND_INDEX);
+var USES_TO_LENGTH$6 = arrayMethodUsesToLength(FIND_INDEX);
 
 // Shouldn't skip holes
-if (FIND_INDEX in []) Array(1)[FIND_INDEX](function () { SKIPS_HOLES = false; });
+if (FIND_INDEX in []) Array(1)[FIND_INDEX](function () { SKIPS_HOLES$1 = false; });
 
 // `Array.prototype.findIndex` method
 // https://tc39.github.io/ecma262/#sec-array.prototype.findindex
-_export({ target: 'Array', proto: true, forced: SKIPS_HOLES || !USES_TO_LENGTH$1 }, {
+_export({ target: 'Array', proto: true, forced: SKIPS_HOLES$1 || !USES_TO_LENGTH$6 }, {
   findIndex: function findIndex(callbackfn /* , that = undefined */) {
     return $findIndex(this, callbackfn, arguments.length > 1 ? arguments[1] : undefined);
   }
@@ -9335,47 +11611,32 @@ _export({ target: 'Array', proto: true, forced: SKIPS_HOLES || !USES_TO_LENGTH$1
 // https://tc39.github.io/ecma262/#sec-array.prototype-@@unscopables
 addToUnscopables(FIND_INDEX);
 
-var TO_STRING_TAG$1 = wellKnownSymbol('toStringTag');
-var test = {};
+var $indexOf = arrayIncludes.indexOf;
 
-test[TO_STRING_TAG$1] = 'z';
 
-var toStringTagSupport = String(test) === '[object z]';
 
-var TO_STRING_TAG$2 = wellKnownSymbol('toStringTag');
-// ES3 wrong here
-var CORRECT_ARGUMENTS = classofRaw(function () { return arguments; }()) == 'Arguments';
+var nativeIndexOf = [].indexOf;
 
-// fallback for IE11 Script Access Denied error
-var tryGet = function (it, key) {
-  try {
-    return it[key];
-  } catch (error) { /* empty */ }
-};
+var NEGATIVE_ZERO = !!nativeIndexOf && 1 / [1].indexOf(1, -0) < 0;
+var STRICT_METHOD$2 = arrayMethodIsStrict('indexOf');
+var USES_TO_LENGTH$7 = arrayMethodUsesToLength('indexOf', { ACCESSORS: true, 1: 0 });
 
-// getting tag from ES6+ `Object.prototype.toString`
-var classof = toStringTagSupport ? classofRaw : function (it) {
-  var O, tag, result;
-  return it === undefined ? 'Undefined' : it === null ? 'Null'
-    // @@toStringTag case
-    : typeof (tag = tryGet(O = Object(it), TO_STRING_TAG$2)) == 'string' ? tag
-    // builtinTag case
-    : CORRECT_ARGUMENTS ? classofRaw(O)
-    // ES3 arguments fallback
-    : (result = classofRaw(O)) == 'Object' && typeof O.callee == 'function' ? 'Arguments' : result;
-};
+// `Array.prototype.indexOf` method
+// https://tc39.github.io/ecma262/#sec-array.prototype.indexof
+_export({ target: 'Array', proto: true, forced: NEGATIVE_ZERO || !STRICT_METHOD$2 || !USES_TO_LENGTH$7 }, {
+  indexOf: function indexOf(searchElement /* , fromIndex = 0 */) {
+    return NEGATIVE_ZERO
+      // convert -0 to +0
+      ? nativeIndexOf.apply(this, arguments) || 0
+      : $indexOf(this, searchElement, arguments.length > 1 ? arguments[1] : undefined);
+  }
+});
 
-// `Object.prototype.toString` method implementation
-// https://tc39.github.io/ecma262/#sec-object.prototype.tostring
-var objectToString = toStringTagSupport ? {}.toString : function toString() {
-  return '[object ' + classof(this) + ']';
-};
-
-// `Object.prototype.toString` method
-// https://tc39.github.io/ecma262/#sec-object.prototype.tostring
-if (!toStringTagSupport) {
-  redefine(Object.prototype, 'toString', objectToString, { unsafe: true });
-}
+// `Map` constructor
+// https://tc39.github.io/ecma262/#sec-map-objects
+var es_map = collection('Map', function (init) {
+  return function Map() { return init(this, arguments.length ? arguments[0] : undefined); };
+}, collectionStrong);
 
 // `RegExp.prototype.flags` getter implementation
 // https://tc39.github.io/ecma262/#sec-get-regexp.prototype.flags
@@ -9887,50 +12148,309 @@ var BaseNode = /*#__PURE__*/function () {
     this.config = {}; // set by class
     // node data
 
-    this.id = data.id || -1;
+    this.id = data.id || 0;
     this.label = data.label || "";
     this.type = data.type || "unkown";
     this.tooltipText = data.tooltipText || null;
     this.description = data.description || null;
     this.keyValuePairs = data.keyValuePairs || [];
-    this.state = data.state || null; // node position
+    this.state = data.state || null;
+    this.attributes = new Map(); // TODO: key value paired map
+    // layout data
+
+    this.depth = 0;
+    this.parent = null;
+    this.parentId = data.parentId || null;
+    this.children = [];
+    this.childrenIds = data.childrenIds || [];
+    this.prevSibling = data.prevSibling || null;
+    this.modifier = 0;
+    this.mod = 0; // node position
 
     this.initialX = 0;
     this.initialY = 0;
     this.finalX = 0;
     this.finalY = 0;
     this.currentX = 0;
-    this.currentY = 0; // node info
+    this.currentY = 0;
+    this.x = 0;
+    this.y = 0; // node info
 
     this.nodeSize = "min"; // minimal or maximal representation
 
     this.opacity = 1;
     this.isHidden = false;
     this.currentWidth = 0;
-    this.currentHeight = 0;
-  }
-  /**
-   * Creates the initial SVG element and adds hover effect
-   */
+    this.currentHeight = 0; // events
 
+    this.events = [];
+    this.outgoingEdges = [];
+    this.incomingEdges = [];
+  }
 
   _createClass(BaseNode, [{
-    key: "createSVGElement",
-    value: function createSVGElement() {
+    key: "isLeaf",
+    value: function isLeaf() {
+      return this.children.length === 0;
+    }
+  }, {
+    key: "isLeftMost",
+    value: function isLeftMost() {
+      if (this.parent === null || this.parent === undefined) {
+        return true;
+      }
+
+      return this.parent.children[0] === this;
+    }
+  }, {
+    key: "isRightMost",
+    value: function isRightMost() {
+      if (this.parent === null || this.parent === undefined) {
+        return true;
+      }
+
+      return this.parent.children[this.children.length - 1] === this;
+    }
+  }, {
+    key: "getLeftMostChild",
+    value: function getLeftMostChild() {
+      if (this.children.length === 0) {
+        return null;
+      }
+
+      return this.children[0];
+    }
+  }, {
+    key: "getRightMostChild",
+    value: function getRightMostChild() {
+      if (this.children.length === 0) {
+        return null;
+      }
+
+      return this.children[this.children.length - 1];
+    }
+  }, {
+    key: "getPrevSibling",
+    value: function getPrevSibling() {
+      if (this.parent === null || this.parent === undefined || this.isLeftMost()) {
+        return null;
+      }
+
+      return this.parent.children[this.parent.children.indexOf(this) - 1];
+    }
+  }, {
+    key: "setPrevSibling",
+    value: function setPrevSibling(prevSibling) {
+      this.prevSibling = prevSibling;
+    }
+  }, {
+    key: "getNextSibling",
+    value: function getNextSibling() {
+      if (this.parent === null || this.isRightMost()) {
+        return null;
+      }
+
+      return this.parent.children[this.parent.children.indexOf(this) + 1];
+    }
+  }, {
+    key: "getLeftMostSibling",
+    value: function getLeftMostSibling() {
+      if (this.parent === null) {
+        return null;
+      }
+
+      if (this.isLeftMost()) {
+        return this;
+      }
+
+      return this.parent.children[0];
+    }
+  }, {
+    key: "getRightMostSibling",
+    value: function getRightMostSibling() {
+      if (this.children.length === 0) {
+        return null;
+      }
+
+      return this.children[this.children.length - 1];
+    }
+  }, {
+    key: "setModifier",
+    value: function setModifier(modifier) {
+      this.modifier = modifier;
+    }
+  }, {
+    key: "getModifier",
+    value: function getModifier() {
+      return this.modifier;
+    }
+  }, {
+    key: "addIncomingEdge",
+    value: function addIncomingEdge(incomingEdge) {
+      this.incomingEdges.push(incomingEdge);
+    }
+  }, {
+    key: "addOutgoingEdge",
+    value: function addOutgoingEdge(outgoingEdge) {
+      this.outgoingEdges.push(outgoingEdge);
+    }
+  }, {
+    key: "transformToPosition",
+    value: function transformToPosition() {
+      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.initialX;
+      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.initialY;
+      this.svg.animate({
+        duration: this.config.animationSpeed
+      }).transform({
+        position: [X, Y]
+      });
+    }
+  }, {
+    key: "transformToFinalPosition",
+    value: function transformToFinalPosition() {
+      this.svg.attr({
+        opacity: 1
+      }).animate({
+        duration: this.config.animationSpeed
+      }).transform({
+        position: [this.finalX, this.finalY]
+      }).attr({
+        opacity: 1
+      });
+    }
+  }, {
+    key: "transformToInitialPosition",
+    value: function transformToInitialPosition() {
+      this.svg.back();
+      this.svg.attr({
+        opacity: 1
+      }).animate({
+        duration: this.config.animationSpeed
+      }).transform({
+        position: [this.initialX, this.initialY]
+      }).attr({
+        opacity: 1
+      });
+    }
+  }, {
+    key: "isRendered",
+    value: function isRendered() {
+      return this.svg !== null;
+    }
+  }, {
+    key: "removeNode",
+    value: function removeNode() {
       var _this = this;
 
-      var svg = this.canvas.group(); // .draggable()
+      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.initialX;
+      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.initialY;
+
+      if (this.svg !== null) {
+        this.svg.animate({
+          duration: this.config.animationSpeed
+        }).transform({
+          scale: 0.001,
+          position: [X, Y]
+        }).after(function () {
+          _this.svg.remove();
+
+          _this.svg = null;
+        });
+      }
+    }
+  }, {
+    key: "getNodeSize",
+    value: function getNodeSize() {
+      return this.nodeSize;
+    }
+  }, {
+    key: "isRoot",
+    value: function isRoot() {
+      return this.parentId === null;
+    }
+  }, {
+    key: "getChildren",
+    value: function getChildren() {
+      return this.children;
+    }
+  }, {
+    key: "setChildren",
+    value: function setChildren(children) {
+      this.children = children;
+    }
+  }, {
+    key: "setNodeSize",
+    value: function setNodeSize(nodeSize) {
+      this.nodeSize = nodeSize;
+    }
+  }, {
+    key: "getParent",
+    value: function getParent() {
+      return this.parent;
+    }
+  }, {
+    key: "setParent",
+    value: function setParent(parent) {
+      this.parent = parent;
+    }
+  }, {
+    key: "setDepth",
+    value: function setDepth(depth) {
+      this.depth = depth;
+    }
+  }, {
+    key: "getDepth",
+    value: function getDepth() {
+      return this.depth;
+    }
+  }, {
+    key: "moveToFront",
+    value: function moveToFront() {
+      this.svg.front();
+    }
+  }, {
+    key: "moveToBack",
+    value: function moveToBack() {
+      this.svg.back();
+    }
+  }, {
+    key: "getId",
+    value: function getId() {
+      return this.id;
+    }
+  }, {
+    key: "addEvent",
+    value: function addEvent(event, func) {
+      // this.svg.on(event, func)
+      // console.log(this.svg)
+      this.events = [].concat(_toConsumableArray(this.events), [{
+        event: event,
+        func: func
+      }]); // console.log(this.getNodeSize())
+    } // TODO: add event listener (mouse events)
+    // TODO: maybe before creation: pass config which to override mouse events
+
+    /**
+     * Creates the initial SVG element and adds hover effect
+     */
+
+  }, {
+    key: "createSVGElement",
+    value: function createSVGElement() {
+      var _this2 = this;
+
+      var svg = this.canvas.group().draggable(); // const svg = this.canvas.group()
 
       svg.css("cursor", "pointer");
       svg.id("node#".concat(this.id));
       svg.on("mouseover", function () {
         svg.front();
 
-        if (_this.tooltipText !== null) {
+        if (_this2.tooltipText !== null && _this2.nodeSize === "min") {
           svg.on("mousemove", function (ev) {
             // show tooltip
             var tooltip = document.getElementById("tooltip");
-            tooltip.innerHTML = _this.tooltipText;
+            tooltip.innerHTML = _this2.tooltipText;
             tooltip.style.display = "block";
             tooltip.style.left = "".concat(ev.clientX - tooltip.clientWidth / 2, "px");
             tooltip.style.top = "".concat(ev.clientY - tooltip.clientHeight - 15, "px");
@@ -9938,18 +12458,18 @@ var BaseNode = /*#__PURE__*/function () {
         } // remove border dasharray
 
 
-        var node = _this.svg.get(0);
+        var node = _this2.svg.get(0);
 
         node.stroke({
-          width: _this.config.borderStrokeWidth,
-          color: _this.config.borderStrokeColor,
+          width: _this2.config.borderStrokeWidth,
+          color: _this2.config.borderStrokeColor,
           dasharray: 0
         }); // add hover highlight
 
-        var toDark = _this.config.borderStrokeColor.substr(1);
+        var toDark = _this2.config.borderStrokeColor.substr(1);
 
-        if (_this.type === "requirement") {
-          toDark = _this.config.backgroundColor.substr(1);
+        if (_this2.type === "requirement") {
+          toDark = _this2.config.backgroundColor.substr(1);
         }
 
         node.filterWith(function (add) {
@@ -9960,12 +12480,12 @@ var BaseNode = /*#__PURE__*/function () {
       });
       svg.on("mouseout", function () {
         // reset border stroke
-        var node = _this.svg.get(0);
+        var node = _this2.svg.get(0);
 
         node.stroke({
-          width: _this.config.borderStrokeWidth,
-          color: _this.config.borderStrokeColor,
-          dasharray: _this.config.borderStrokeDasharray
+          width: _this2.config.borderStrokeWidth,
+          color: _this2.config.borderStrokeColor,
+          dasharray: _this2.config.borderStrokeDasharray
         });
         svg.off("mousemove", null); // remove the tooltip
 
@@ -9974,13 +12494,18 @@ var BaseNode = /*#__PURE__*/function () {
 
         node.filterer().remove();
 
-        var i = _toConsumableArray(_this.canvas.defs().node.childNodes).findIndex(function (d) {
+        var i = _toConsumableArray(_this2.canvas.defs().node.childNodes).findIndex(function (d) {
           return d.id === "defaultNodeBorderFilter";
         });
 
-        var filter = _this.canvas.defs().get(i);
+        var filter = _this2.canvas.defs().get(i);
 
         node.filterWith(filter);
+      });
+      this.events.forEach(function (_ref) {
+        var event = _ref.event,
+            func = _ref.func;
+        svg.on(event, func);
       });
       return svg;
     }
@@ -10018,7 +12543,7 @@ var BaseNode = /*#__PURE__*/function () {
 
       if (this.config.nodeType !== "path") {
         node.radius(this.config.borderRadius);
-      } // add light color highlight
+      } // add a re-usable light and color highlight
 
 
       var i = _toConsumableArray(this.canvas.defs().node.childNodes).findIndex(function (d) {
@@ -10086,6 +12611,7 @@ var BaseNode = /*#__PURE__*/function () {
     key: "createLabel",
     value: function createLabel() {
       var textAlign = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "center";
+      // FIXME: html text gets highlighted way to often
       var fobj = this.canvas.foreignObject(this.config.minTextWidth, 0);
       var background = document.createElement("div");
       background.style.background = this.config.labelBackground;
@@ -10103,8 +12629,7 @@ var BaseNode = /*#__PURE__*/function () {
         clamp: 2
       });
       background.appendChild(label);
-      fobj.add(background); // fobj.height(label.clientHeight + this.config.offset) // TODO: remove this
-
+      fobj.add(background);
       fobj.dmove(this.config.borderStrokeWidth, this.config.borderStrokeWidth);
       return fobj;
     }
@@ -10126,6 +12651,24 @@ var BaseNode = /*#__PURE__*/function () {
     key: "getConfig",
     value: function getConfig() {
       return this.config;
+    }
+    /**
+     * Returns the current final X position
+     */
+
+  }, {
+    key: "getFinalX",
+    value: function getFinalX() {
+      return this.finalX;
+    }
+    /**
+     * Returns the current final Y position
+     */
+
+  }, {
+    key: "getFinalY",
+    value: function getFinalY() {
+      return this.finalY;
     }
     /**
      * Sets the final X position
@@ -10160,6 +12703,24 @@ var BaseNode = /*#__PURE__*/function () {
       this.finalY = finalY;
     }
     /**
+     * Returns the current initial X position
+     */
+
+  }, {
+    key: "getInitialX",
+    value: function getInitialX() {
+      return this.initialX;
+    }
+    /**
+     * Returns the current final Y position
+     */
+
+  }, {
+    key: "getInitialY",
+    value: function getInitialY() {
+      return this.initialY;
+    }
+    /**
      * Sets the initial X position
      * @param {Number} initialX the initial X position
      */
@@ -10191,10 +12752,450 @@ var BaseNode = /*#__PURE__*/function () {
       this.initialX = initialX;
       this.initialY = initialY;
     }
+    /**
+     * Returns the current node width
+     */
+
+  }, {
+    key: "getCurrentWidth",
+    value: function getCurrentWidth() {
+      return this.currentWidth;
+    }
+    /**
+     * Returns the current node height
+     */
+
+  }, {
+    key: "getCurrentHeight",
+    value: function getCurrentHeight() {
+      return this.currentHeight;
+    }
   }]);
 
   return BaseNode;
 }();
+
+/**
+ * Default configuration for risk nodes
+ * @typedef {RiskConfig} RiskConfig
+ *
+ * @param {Number} [maxWidth=300] The nodes maximal width
+ * @param {Number} [maxHeight=150] The nodes maximal height
+ * @param {Number} [minWidth=150] The nodes minimal width
+ * @param {Number} [minHeight=50] The nodes minimal height
+ *
+ * @param {String} [iconUrl=null] The path to the image icon (if this value is null, the default icon is used)
+ * @param {Number} [minIconOpacity=0.6] The basic visibility of the icon
+ * @param {Number} [minIconSize=35] The width and height for the image icon
+ * @param {Number} [minIconTranslateX=-50] Moves the icon horizontally
+ * @param {Number} [minIconTranslateY=0] Moves the icon vertically
+ * @param {Number} [maxIconOpacity=0.75] The basic visibility of the icon
+ * @param {Number} [maxIconSize=30] The width and height for the image icon
+ * @param {Number} [maxIconTranslateX=-120] Moves the icon horizontally
+ * @param {Number} [maxIconTranslateY=-55] Moves the icon vertically
+ *
+ * @param {Number} [offset=8] The spacing used by padding and margin
+ * @param {Number} [animationSpeed=300] The animation in milliseconds
+ * @param {Number} [borderRadius=4] The border radius
+ * @param {Number} [borderStrokeWidth=1] The border stroke width
+ * @param {String} [borderStrokeColor="#F26A7C"] The border color
+ * @param {String} [borderStrokeDasharray="5 10"] Gaps inside border
+ * @param {String} [backgroundColor="#ffffff"] The background color for the rendered node
+ *
+ * @param {Number} [minTextWidth=100] The minimal text width for the label
+ * @param {Number} [minTextHeight=45] The minimal text height for the label
+ * @param {Number} [minTextTranslateX=22] Moves the label horizontally
+ * @param {Number} [minTextTranslateY=0] The the label vertically
+ * @param {Number} [maxTextWidth=295] The maximal text width for the description
+ * @param {Number} [maxTextHeight=145] The maximal text height for the description
+ * @param {Number} [maxTextTranslateX=0] The the description horizontally
+ * @param {Number} [maxTextTranslateY=0] The the description vertically
+ * @param {String} [labelColor="#ff8e9e"] The label text color
+ * @param {String} [labelFontFamily="Montserrat"] The label font family
+ * @param {Number} [labelFontSize=14] The label font size
+ * @param {Number} [labelFontWeight=600] The label font weight
+ * @param {String} [labelFontStyle="normal"] The label font style
+ * @param {String} [labelBackground="transparent"] The label background color
+ * @param {String} [detailsColor="#ff8e9e"] The details text color
+ * @param {String} [detailsFontFamily="Montserrat"] The details family
+ * @param {Number} [detailsFontSize=12] The details font size
+ * @param {Number} [detailsFontWeight=600] The details font weight
+ * @param {String} [detailsFontStyle="normal"] The details font style
+ * @param {String} [detailsBackground="transparent"] The details text background color
+ */
+
+var RiskConfig = {
+  // large node
+  maxWidth: 300,
+  maxHeight: 150,
+  // small node
+  minWidth: 150,
+  minHeight: 50,
+  // icon
+  iconUrl: null,
+  minIconOpacity: 0.6,
+  minIconSize: 35,
+  minIconTranslateX: -50,
+  minIconTranslateY: 0,
+  maxIconOpacity: 0.75,
+  maxIconSize: 30,
+  maxIconTranslateX: -120,
+  maxIconTranslateY: -55,
+  // node
+  offset: 8,
+  animationSpeed: 300,
+  borderRadius: 4,
+  borderStrokeWidth: 1,
+  borderStrokeColor: "#F26A7C",
+  borderStrokeDasharray: "5 10",
+  backgroundColor: "#ffffff",
+  // text
+  minTextWidth: 100,
+  minTextHeight: 45,
+  minTextTranslateX: 22,
+  minTextTranslateY: 0,
+  maxTextWidth: 295,
+  maxTextHeight: 145,
+  maxTextTranslateX: 0,
+  maxTextTranslateY: 0,
+  labelColor: "#ff8e9e",
+  labelFontFamily: "Montserrat",
+  labelFontSize: 14,
+  labelFontWeight: 600,
+  labelFontStyle: "normal",
+  labelBackground: "transparent",
+  detailsColor: "#ff8e9e",
+  detailsFontFamily: "Montserrat",
+  detailsFontSize: 12,
+  detailsFontWeight: 600,
+  detailsFontStyle: "normal",
+  detailsBackground: "transparent"
+};
+/**
+ * Class representing the visualization of risks
+ * @param {Data} data the raw node data
+ * @param {Canvas} canvas the canvas to render the node on
+ * @param {RiskConfig} customRiskConfig custom config to override default values
+ *
+ * @example
+ * const risk1 = NodeFactory.create(data.find(d => d.type === "risk"), canvas)
+ * risk1.setInitialXY(200, 100)
+ * risk1.renderAsMin()
+ *
+ * const risk2 = NodeFactory.create(data.find(d => d.type === "risk"), canvas)
+ * risk2.setInitialXY(200, 400)
+ * risk2.renderAsMax()
+ *
+ * setTimeout(() => risk1.transformToMax(200, 200), 500)
+ * setTimeout(() => risk2.transformToMin(200, 350), 500)
+ *
+ */
+
+var RiskNode = /*#__PURE__*/function (_BaseNode) {
+  _inherits(RiskNode, _BaseNode);
+
+  function RiskNode(data, canvas, customRiskConfig) {
+    var _this;
+
+    _classCallCheck(this, RiskNode);
+
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(RiskNode).call(this, data, canvas));
+    _this.config = _objectSpread2({}, RiskConfig, {}, customRiskConfig);
+    return _this;
+  }
+  /**
+   * Creates the risk details description
+   * @private
+   */
+
+
+  _createClass(RiskNode, [{
+    key: "createRiskDetails",
+    value: function createRiskDetails() {
+      // create svg obj to store html
+      var text = this.canvas.foreignObject(this.config.maxTextWidth, this.config.maxTextHeight);
+      var background = document.createElement("div");
+      background.style.width = "".concat(this.config.maxTextWidth, "px");
+      background.style.height = "".concat(this.config.maxTextHeight, "px");
+      background.style.display = "grid";
+      background.style.alignItems = "center";
+      background.style.gridTemplateColumns = "auto 10px auto";
+      background.style.gridTemplateRows = "".concat(this.config.labelFontSize + 4 + this.config.offset * 2, "px auto");
+      text.add(background); // create label
+
+      var label = document.createElement("p");
+      label.innerText = this.label;
+      label.style.background = this.config.labelBackground;
+      label.style.padding = "\n      ".concat(this.config.offset, "px \n      ").concat(this.config.offset / 2, "px \n      ").concat(this.config.offset / 1.5, "px \n      ").concat(this.config.offset / 2, "px\n    ");
+      label.style.color = this.config.labelColor;
+      label.style.fontSize = "".concat(this.config.labelFontSize + 4, "px");
+      label.style.fontFamily = this.config.labelFontFamily;
+      label.style.fontWeight = this.config.labelFontWeight;
+      label.style.fontStyle = this.config.labelFontStyle;
+
+      if (this.state !== null) {
+        label.style.textAlign = "right";
+      } else {
+        label.style.width = "inherit";
+        label.style.textAlign = "center";
+      }
+
+      label.style.marginTop = "".concat(this.config.offset, "px");
+      label.style.height = "fit-content";
+      label.style.gridRow = "1";
+      label.style.gridColumn = "1";
+      background.appendChild(label); // create status, if any exists
+
+      if (this.state !== null) {
+        var seperator = document.createElement("p");
+        seperator.innerText = "•";
+        seperator.style.background = this.config.labelBackground;
+        seperator.style.padding = "\n        ".concat(this.config.offset, "px \n        ").concat(this.config.offset / 2, "px \n        ").concat(this.config.offset / 1.5, "px \n        ").concat(this.config.offset / 2, "px\n      ");
+        seperator.style.color = this.config.labelColor;
+        seperator.style.fontSize = "".concat(this.config.labelFontSize + 4, "px");
+        seperator.style.fontFamily = this.config.labelFontFamily;
+        seperator.style.fontWeight = "900";
+        seperator.style.fontStyle = this.config.labelFontStyle;
+        seperator.style.marginTop = "".concat(this.config.offset, "px");
+        seperator.style.height = "fit-content";
+        seperator.style.gridRow = "1";
+        seperator.style.gridColumn = "2";
+        background.appendChild(seperator);
+        var status = document.createElement("p");
+        status.innerText = this.state;
+        status.style.background = this.config.labelBackground;
+        status.style.padding = "\n        ".concat(this.config.offset, "px \n        ").concat(this.config.offset / 2, "px \n        ").concat(this.config.offset / 1.5, "px \n        ").concat(this.config.offset / 2, "px\n      ");
+        status.style.color = this.config.labelColor;
+        status.style.fontSize = "".concat(this.config.labelFontSize + 4, "px");
+        status.style.fontFamily = this.config.labelFontFamily;
+        status.style.fontWeight = this.config.labelFontWeight;
+        status.style.fontStyle = this.config.labelFontStyle; // status.style.fontStyle = "italic"
+
+        status.style.marginTop = "".concat(this.config.offset, "px");
+        status.style.height = "fit-content";
+        status.style.gridRow = "1";
+        status.style.gridColumn = "3";
+        background.appendChild(status);
+      } // create description
+
+
+      var descriptionBg = document.createElement("div");
+      descriptionBg.style.gridRow = "2";
+      descriptionBg.style.gridColumn = "1 / 4";
+      descriptionBg.style.width = "fit-content";
+      background.appendChild(descriptionBg);
+      var description = document.createElement("p");
+      description.innerText = this.description;
+      description.style.background = this.config.detailsBackground;
+      description.style.height = "".concat(this.config.maxTextHeight - label.clientHeight - this.config.offset * 2, "px");
+      description.style.padding = "0 ".concat(this.config.offset * 1.5, "px");
+      description.style.color = this.config.detailsColor;
+      description.style.fontSize = "".concat(this.config.detailsFontSize, "px");
+      description.style.fontFamily = this.config.detailsFontFamily;
+      description.style.fontWeight = this.config.detailsFontWeight;
+      description.style.fontStyle = this.config.detailsFontStyle;
+      descriptionBg.appendChild(description);
+      clamp(description, {
+        clamp: "".concat(this.config.maxTextHeight - label.clientHeight - this.config.offset * 2, "px")
+      });
+      return text;
+    }
+    /**
+     * Renders a risk node in minimal version
+     * @param {Number} [X=initialX] the initial X render position
+     * @param {Number} [Y=initialY] the initial Y render position
+     */
+
+  }, {
+    key: "renderAsMin",
+    value: function renderAsMin() {
+      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.initialX;
+      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.initialY;
+      // create svg elements
+      var svg = this.createSVGElement();
+      var node = this.createNode();
+      var icon = this.createIcon();
+      var text = this.createLabel();
+      svg.add(node);
+      svg.add(icon);
+      svg.add(text); // animate new elements into position
+
+      svg.center(X, Y);
+      node.center(X, Y).animate({
+        duration: this.config.animationSpeed
+      }).width(this.config.minWidth).height(this.config.minHeight).dmove(-this.config.minWidth / 2, -this.config.minHeight / 2);
+      icon.center(X, Y).attr({
+        opacity: 0
+      }).animate({
+        duration: this.config.animationSpeed
+      }).attr({
+        opacity: this.config.minIconOpacity
+      }).size(this.config.minIconSize, this.config.minIconSize).dx(-this.config.minIconSize / 2 + this.config.minIconTranslateX).dy(-this.config.minIconSize / 2 + this.config.minIconTranslateY);
+      text.size(this.config.minTextWidth, text.children()[0].node.clientHeight).center(X, Y).scale(0.001).attr({
+        opacity: 0
+      }).animate({
+        duration: this.config.animationSpeed
+      }).attr({
+        opacity: 1
+      }).transform({
+        scale: 1,
+        translate: [this.config.minTextTranslateX, this.config.minTextTranslateY]
+      });
+      this.currentWidth = this.config.minWidth;
+      this.currentHeight = this.config.minHeight;
+      this.nodeSize = "min";
+      this.currentX = X;
+      this.currentY = Y;
+      this.opacity = 1;
+      this.isHidden = false;
+      this.svg = svg;
+    }
+    /**
+     * Renders a risk node in maximal version
+     * @param {Number} [X=initialX] the initial X render position
+     * @param {Number} [Y=initialY] the initial Y render position
+     */
+
+  }, {
+    key: "renderAsMax",
+    value: function renderAsMax() {
+      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.initialX;
+      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.initialY;
+      // create svg elements
+      var svg = this.createSVGElement();
+      var node = this.createNode();
+      var icon = this.createIcon();
+      var text = this.createRiskDetails();
+      svg.add(node);
+      svg.add(icon);
+      svg.add(text); // animate new elements into position
+
+      svg.center(X, Y);
+      node.center(X, Y).animate({
+        duration: this.config.animationSpeed
+      }).width(this.config.maxWidth).height(this.config.maxHeight).dmove(-this.config.maxWidth / 2, -this.config.maxHeight / 2);
+      icon.center(X, Y).attr({
+        opacity: 0
+      }).animate({
+        duration: this.config.animationSpeed
+      }).attr({
+        opacity: this.config.maxIconOpacity
+      }).size(this.config.maxIconSize, this.config.maxIconSize).dx(-this.config.maxIconSize / 2 + this.config.maxIconTranslateX).dy(-this.config.maxIconSize / 2 + this.config.maxIconTranslateY);
+      text.center(X, Y).scale(0.001).attr({
+        opacity: 0
+      }).animate({
+        duration: this.config.animationSpeed
+      }).attr({
+        opacity: 1
+      }).transform({
+        scale: 1,
+        translate: [this.config.maxTextTranslateX, this.config.maxTextTranslateY]
+      });
+      this.currentWidth = this.config.maxWidth;
+      this.currentHeight = this.config.maxHeight;
+      this.nodeSize = "max";
+      this.currentX = X;
+      this.currentY = Y;
+      this.opacity = 1;
+      this.isHidden = false;
+      this.svg = svg;
+    }
+    /**
+     * Transforms a node from minimal version to maximal version
+     * @param {Number} [X=finalX] the final X render position
+     * @param {Number} [Y=finaY] the final Y render position
+     */
+
+  }, {
+    key: "transformToMax",
+    value: function transformToMax() {
+      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.finalX;
+      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.finalY;
+      // update current elements
+      this.svg.get(0).animate({
+        duration: this.config.animationSpeed
+      }).width(this.config.maxWidth).height(this.config.maxHeight).center(X, Y);
+      this.svg.get(2).remove();
+      this.svg.get(1).remove(); // create new elements
+
+      var icon = this.createIcon();
+      var text = this.createRiskDetails();
+      this.svg.add(icon);
+      this.svg.add(text); // put new elements into position
+
+      icon.center(this.initialX, this.initialY).attr({
+        opacity: 0
+      }).animate({
+        duration: this.config.animationSpeed
+      }).attr({
+        opacity: this.config.maxIconOpacity
+      }).size(this.config.maxIconSize, this.config.maxIconSize).cx(X - this.config.maxIconSize / 2 + this.config.maxIconTranslateX + this.config.maxIconSize / 2).cy(Y - this.config.maxIconSize / 2 + this.config.maxIconTranslateY + this.config.maxIconSize / 2);
+      text.center(this.initialX, this.initialY).scale(0.001).attr({
+        opacity: 0
+      }).animate({
+        duration: this.config.animationSpeed
+      }).attr({
+        opacity: 1
+      }).transform({
+        scale: 1,
+        translate: [this.config.maxTextTranslateX, this.config.maxTextTranslateY]
+      }).center(X, Y);
+      this.currentWidth = this.config.minWidth;
+      this.currentHeight = this.config.minHeight;
+      this.nodeSize = "max";
+      this.currentX = X;
+      this.currentY = Y;
+    }
+    /**
+     * Transforms a node from maximal version to minimal version
+     * @param {Number} [X=finalX] the final X render position
+     * @param {Number} [Y=finaY] the final Y render position
+     */
+
+  }, {
+    key: "transformToMin",
+    value: function transformToMin() {
+      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.finalX;
+      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.finalY;
+      // update current elements
+      this.svg.get(0).animate({
+        duration: this.config.animationSpeed
+      }).width(this.config.minWidth).height(this.config.minHeight).center(X, Y);
+      this.svg.get(2).remove();
+      this.svg.get(1).remove(); // create new elements
+
+      var icon = this.createIcon();
+      var text = this.createLabel();
+      this.svg.add(icon);
+      this.svg.add(text); // put new elements into position
+
+      icon.center(X, Y).attr({
+        opacity: 0
+      }).animate({
+        duration: this.config.animationSpeed
+      }).attr({
+        opacity: this.config.minIconOpacity
+      }).size(this.config.minIconSize, this.config.minIconSize).dx(-this.config.minIconSize / 2 + this.config.minIconTranslateX).dy(-this.config.minIconSize / 2 + this.config.minIconTranslateY);
+      text.size(this.config.minTextWidth, text.children()[0].node.clientHeight).center(X, Y).scale(0.001).attr({
+        opacity: 0
+      }).animate({
+        duration: this.config.animationSpeed
+      }).attr({
+        opacity: 1
+      }).transform({
+        scale: 1,
+        translate: [this.config.minTextTranslateX, this.config.minTextTranslateY]
+      });
+      this.currentWidth = this.config.minWidth;
+      this.currentHeight = this.config.minHeight;
+      this.nodeSize = "min";
+      this.currentX = X;
+      this.currentY = Y;
+    }
+  }]);
+
+  return RiskNode;
+}(BaseNode);
 
 /**
  * Default configuration for asset nodes
@@ -10611,6 +13612,853 @@ var AssetNode = /*#__PURE__*/function (_BaseNode) {
   return AssetNode;
 }(BaseNode);
 
+var defineProperty$6 = objectDefineProperty.f;
+
+var FunctionPrototype = Function.prototype;
+var FunctionPrototypeToString = FunctionPrototype.toString;
+var nameRE = /^\s*function ([^ (]*)/;
+var NAME = 'name';
+
+// Function instances `.name` property
+// https://tc39.github.io/ecma262/#sec-function-instances-name
+if (descriptors && !(NAME in FunctionPrototype)) {
+  defineProperty$6(FunctionPrototype, NAME, {
+    configurable: true,
+    get: function () {
+      try {
+        return FunctionPrototypeToString.call(this).match(nameRE)[1];
+      } catch (error) {
+        return '';
+      }
+    }
+  });
+}
+
+/**
+ * @typedef
+ */
+
+/**
+ * Default configuration for requirement nodes
+ * @typedef {RequirementConfig} RequirementConfig
+ *
+ * @param {Number} [maxWidth=370] The nodes maximal width
+ * @param {Number} [maxHeight=200] The nodes maximal height
+ * @param {Number} [minWidth=155] The nodes minimal width
+ * @param {Number} [minHeight=50] The nodes minimal height
+ *
+ * @param {Object} state // TODO: create a proper type
+ * @param {String} state.state A specific requirement state
+ * @param {String} state.name The display name of a specific requirement state
+ * @param {String} state.color The color attached to a specifc state
+ * @param {Array} [states=Array[state]] An array of aviable requirement states
+ *
+ * @param {Number} [offset=8] The spacing used by padding and margin
+ * @param {Number} [animationSpeed=300] The animation in milliseconds
+ * @param {Number} [borderRadius=8] The border radius
+ * @param {Number} [borderStrokeWidth=1] The border stroke width
+ * @param {String} [borderStrokeColor="#666666"] The border color
+ * @param {String} [borderStrokeDasharray="0"] Gaps inside border
+ * @param {String} [backgroundColor="#ffffff"] The background color for the rendered node
+ *
+ * @param {Number} [minTextWidth=150] The minimal text width for the label
+ * @param {Number} [minTextHeight=45] The minimal text height for the label
+ * @param {Number} [minTextTranslateX=0] Moves the label horizontally
+ * @param {Number} [minTextTranslateY=0] The the label vertically
+ * @param {Number} [maxTextWidth=365] The maximal text width for the description
+ * @param {Number} [maxTextHeight=195] The maximal text height for the description
+ * @param {Number} [maxTextTranslateX=0] The the description horizontally
+ * @param {Number} [maxTextTranslateY=0] The the description vertically
+ * @param {String} [labelColor="#222222"] The label text color for details
+ * @param {String} [labelColor="#ffffff"] The label text color for minimal nodes
+ * @param {String} [labelFontFamily="Montserrat"] The label font family
+ * @param {Number} [labelFontSize=14] The label font size
+ * @param {Number} [labelFontWeight=600] The label font weight
+ * @param {String} [labelFontStyle="normal"] The label font style
+ * @param {String} [labelBackground="none"] The label background color
+ * @param {String} [detailsColor="#222222"] The details text color
+ * @param {String} [detailsFontFamily="Montserrat"] The details family
+ * @param {Number} [detailsFontSize=12] The details font size
+ * @param {Number} [detailsFontWeight=600] The details font weight
+ * @param {String} [detailsFontStyle="normal"] The details font style
+ * @param {String} [detailsBackground="none"] The details text background color
+ */
+
+var RequirementConfig = {
+  // large node
+  maxWidth: 370,
+  maxHeight: 200,
+  // small node
+  minWidth: 155,
+  minHeight: 50,
+  // available node states
+  states: [{
+    state: "fulfilled",
+    name: "Fulfilled",
+    color: "#7ed167"
+  }, {
+    state: "partially-fulfilled",
+    name: "Partially Fulfilled",
+    color: "#ffc453"
+  }, {
+    state: "not-fulfilled",
+    name: "Not Fulfilled",
+    color: "#ff6655"
+  }, {
+    state: "Unknown State",
+    name: "Unknown State",
+    color: "#84a8f2"
+  }],
+  // node
+  offset: 8,
+  animationSpeed: 300,
+  borderRadius: 8,
+  borderStrokeWidth: 1,
+  borderStrokeColor: "#666666",
+  borderStrokeDasharray: "0",
+  backgroundColor: "#ffffff",
+  // text
+  minTextWidth: 150,
+  minTextHeight: 45,
+  minTextTranslateX: 0,
+  minTextTranslateY: 0,
+  maxTextWidth: 365,
+  maxTextHeight: 195,
+  maxTextTranslateX: 0,
+  maxTextTranslateY: 0,
+  maxLabelColor: "#222222",
+  labelColor: "#ffffff",
+  labelFontFamily: "Montserrat",
+  labelFontSize: 14,
+  labelFontWeight: 600,
+  labelFontStyle: "normal",
+  labelBackground: "none",
+  detailsColor: "#222222",
+  detailsFontFamily: "Montserrat",
+  detailsFontSize: 12,
+  detailsFontWeight: 600,
+  detailsFontStyle: "normal",
+  detailsBackground: "none"
+};
+/**
+ * Class representing the visualization of requirements
+ * @param {Data} data the raw node data
+ * @param {Canvas} canvas the canvas to render the node on
+ * @param {RequirementConfig} customRequirementConfig custom config to override the default values
+ *
+ * @example
+ * const requirement1 = NodeFactory.create(data.find(d => d.type === "requirement"), canvas)
+ * requirement1.setInitialXY(200, 100)
+ * requirement1.renderAsMin()
+ *
+ * const requirement2 = NodeFactory.create(data.find(d => d.type === "requirement"), canvas)
+ * requirement2.setInitialXY(200, 400)
+ * requirement2.renderAsMax()
+ *
+ * setTimeout(() => requirement1.transformToMax(200, 200), 500)
+ * setTimeout(() => requirement2.transformToMin(200, 350), 500)
+ */
+
+var RequirementNode = /*#__PURE__*/function (_BaseNode) {
+  _inherits(RequirementNode, _BaseNode);
+
+  function RequirementNode(data, canvas, customRequirementConfig) {
+    var _this;
+
+    _classCallCheck(this, RequirementNode);
+
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(RequirementNode).call(this, data, canvas));
+    _this.config = _objectSpread2({}, RequirementConfig, {}, customRequirementConfig); // map color to respected state
+
+    if (data.state !== null || data.state !== undefined) {
+      var state = _this.config.states.find(function (s) {
+        return s.state === data.state;
+      }) || {
+        color: "#84a8f2"
+      };
+      _this.config = _objectSpread2({}, _this.config, {
+        borderStrokeColor: state.color,
+        backgroundColor: state.color
+      });
+    }
+
+    return _this;
+  }
+  /**
+   * Creates the requirements details description
+   * @private
+   */
+
+
+  _createClass(RequirementNode, [{
+    key: "createRequirementDetails",
+    value: function createRequirementDetails() {
+      var _this2 = this;
+
+      var text = this.canvas.foreignObject(this.config.maxTextWidth, this.config.maxTextHeight);
+      var background = document.createElement("div");
+      background.style.display = "flex";
+      background.style.flexDirection = "column";
+      background.style.alignItems = "center";
+      text.add(background); // create label
+
+      var label = document.createElement("p");
+      label.innerHTML = this.label;
+      label.style.textAlign = "center";
+      label.style.background = this.config.labelBackground;
+      label.style.marginTop = "".concat(this.config.offset, "px");
+      label.style.color = this.config.maxLabelColor;
+      label.style.fontSize = "".concat(this.config.labelFontSize + 4, "px");
+      label.style.fontFamily = this.config.labelFontFamily;
+      label.style.fontWeight = this.config.labelFontWeight;
+      label.style.fontStyle = this.config.labelFontStyle;
+      background.appendChild(label); // create status, if any exists
+
+      var status = document.createElement("p");
+
+      if (this.state !== null) {
+        status.innerHTML = this.config.states.find(function (s) {
+          return s.state.toLowerCase() === _this2.state.toLowerCase();
+        }).name;
+        status.style.background = "#222";
+        status.style.color = "#fff";
+        status.style.fontSize = "".concat(this.config.labelFontSize + 2, "px");
+        status.style.fontFamily = this.config.labelFontFamily;
+        status.style.fontWeight = "normal";
+        status.style.textAlign = "center";
+        status.style.width = "fit-content";
+        status.style.padding = "".concat(this.config.offset / 2, "px ").concat(this.config.offset / 1.5, "px");
+        status.style.borderRadius = "".concat(this.config.borderRadius / 2, "px");
+        status.style.margin = "".concat(this.config.offset, "px ").concat(this.config.offset, "px");
+        background.appendChild(status);
+      } // create description
+
+
+      var descriptionBg = document.createElement("div");
+      background.appendChild(descriptionBg);
+      var description = document.createElement("p");
+      description.style.background = this.config.detailsBackground;
+      description.style.padding = "0 ".concat(this.config.offset, "px");
+      description.style.margin = "0 ".concat(this.config.offset, "px ").concat(this.config.offset, "px ").concat(this.config.offset, "px");
+
+      if (this.state === null) {
+        description.style.marginTop = "".concat(this.config.offset, "px");
+      }
+
+      description.style.color = this.config.detailsColor;
+      description.style.fontSize = "".concat(this.config.detailsFontSize, "px");
+      description.style.fontFamily = this.config.detailsFontFamily;
+      description.style.fontWeight = this.config.detailsFontWeight;
+      description.style.fontStyle = this.config.detailsFontStyle;
+      description.innerText = this.description;
+      descriptionBg.appendChild(description);
+      var h = this.config.maxTextHeight - label.clientHeight - status.clientHeight - this.config.offset * 3.5;
+      clamp(description, {
+        clamp: "".concat(h, "px")
+      });
+      return text;
+    }
+    /**
+     * Renders a requirement node in minimal version
+     * @param {Number} [X=initialX] the initial X render position
+     * @param {Number} [Y=initialY] the initial Y render position
+     */
+
+  }, {
+    key: "renderAsMin",
+    value: function renderAsMin() {
+      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.initialX;
+      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.initialY;
+      // create svg elements
+      var svg = this.createSVGElement();
+      var node = this.createNode();
+      var text = this.createLabel();
+      svg.add(node);
+      svg.add(text); // animate new elements into position
+
+      svg.center(X, Y);
+      node.center(X, Y).animate({
+        duration: this.config.animationSpeed
+      }).width(this.config.minWidth).height(this.config.minHeight).dmove(-this.config.minWidth / 2, -this.config.minHeight / 2);
+      text.size(this.config.minTextWidth, text.children()[0].node.clientHeight).center(X, Y).scale(0.001).attr({
+        opacity: 0
+      }).animate({
+        duration: this.config.animationSpeed
+      }).attr({
+        opacity: 1
+      }).transform({
+        scale: 1,
+        translate: [this.config.minTextTranslateX, this.config.minTextTranslateY]
+      });
+      this.currentWidth = this.config.minWidth;
+      this.currentHeight = this.config.minHeight;
+      this.nodeSize = "min";
+      this.currentX = X;
+      this.currentY = Y;
+      this.opacity = 1;
+      this.isHidden = false;
+      this.svg = svg;
+    }
+    /**
+     * Renders a requirement node in maximal version
+     * @param {Number} [X=initialX] the initial X render position
+     * @param {Number} [Y=initialY] the initial Y render position
+     */
+
+  }, {
+    key: "renderAsMax",
+    value: function renderAsMax() {
+      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.initialX;
+      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.initialY;
+      // create svg elements
+      var svg = this.createSVGElement();
+      var node = this.createNode();
+      var text = this.createRequirementDetails();
+      svg.add(node);
+      svg.add(text); // animate new elements into position
+
+      svg.center(X, Y);
+      node.center(X, Y).animate({
+        duration: this.config.animationSpeed
+      }).width(this.config.maxWidth).height(this.config.maxHeight).dmove(-this.config.maxWidth / 2, -this.config.maxHeight / 2);
+      text.center(X, Y).scale(0.001).attr({
+        opacity: 0
+      }).animate({
+        duration: this.config.animationSpeed
+      }).attr({
+        opacity: 1
+      }).transform({
+        scale: 1,
+        translate: [this.config.maxTextTranslateX, this.config.maxTextTranslateY]
+      });
+      this.currentWidth = this.config.maxWidth;
+      this.currentHeight = this.config.maxHeight;
+      this.nodeSize = "max";
+      this.currentX = X;
+      this.currentY = Y;
+      this.opacity = 1;
+      this.isHidden = false;
+      this.svg = svg;
+    }
+    /**
+     * Transforms a node from minimal version to maximal version
+     * @param {Number} [X=finalX] the final X render position
+     * @param {Number} [Y=finaY] the final Y render position
+     */
+
+  }, {
+    key: "transformToMax",
+    value: function transformToMax() {
+      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.finalX;
+      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.finalY;
+      // update current elements
+      this.svg.get(0).animate({
+        duration: this.config.animationSpeed
+      }).width(this.config.maxWidth).height(this.config.maxHeight).center(X, Y);
+      this.svg.get(1).remove(); // create new elements
+
+      var text = this.createRequirementDetails();
+      this.svg.add(text); // put new elements into position
+
+      text.center(X, Y).scale(0.001).attr({
+        opacity: 0
+      }).animate({
+        duration: this.config.animationSpeed
+      }).attr({
+        opacity: 1
+      }).transform({
+        scale: 1,
+        translate: [this.config.maxTextTranslateX, this.config.maxTextTranslateY]
+      });
+      this.currentWidth = this.config.minWidth;
+      this.currentHeight = this.config.minHeight;
+      this.nodeSize = "max";
+      this.currentX = X;
+      this.currentY = Y;
+    }
+    /**
+     * Transforms a node from maximal version to minimal version
+     * @param {Number} [X=finalX] the final X render position
+     * @param {Number} [Y=finaY] the final Y render position
+     */
+
+  }, {
+    key: "transformToMin",
+    value: function transformToMin() {
+      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.finalX;
+      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.finalY;
+      // update current elements
+      this.svg.get(0).animate({
+        duration: this.config.animationSpeed
+      }).width(this.config.minWidth).height(this.config.minHeight).center(X, Y);
+      this.svg.get(1).remove(); // create new elements
+
+      var text = this.createLabel();
+      this.svg.add(text); // put new elements into position
+
+      text.size(this.config.minTextWidth, text.children()[0].node.clientHeight).center(X, Y).scale(0.001).attr({
+        opacity: 0
+      }).animate({
+        duration: this.config.animationSpeed
+      }).attr({
+        opacity: 1
+      }).transform({
+        scale: 1,
+        translate: [this.config.minTextTranslateX, this.config.minTextTranslateY]
+      });
+      this.currentWidth = this.config.minWidth;
+      this.currentHeight = this.config.minHeight;
+      this.nodeSize = "min";
+      this.currentX = X;
+      this.currentY = Y;
+    }
+  }]);
+
+  return RequirementNode;
+}(BaseNode);
+
+/**
+ * Default configuration for asset nodes
+ * @typedef {CustomConfig} CustomConfig
+ *
+ * @param {String} [nodeType="rect"] The form the node is rendered. "path" for a custom SVG element
+ * @param {String} [svg=null] The custom SVG path that is rendered as node if nodeType is set to "path"
+ *
+ * @param {Number} [maxWidth=275] The nodes maximal width
+ * @param {Number} [maxHeight=175] The nodes maximal height
+ * @param {Number} [minWidth=150] The nodes minimal width
+ * @param {Number} [minHeight=80] The nodes minimal height
+ *
+ * @param {String} [iconUrl=null] The path to the image icon (if this value is null, the default icon is used)
+ * @param {Number} [minIconOpacity=0.3] The basic visibility of the icon
+ * @param {Number} [minIconSize=70] The width and height for the image icon
+ * @param {Number} [minIconTranslateX=0] Moves the icon horizontally
+ * @param {Number} [minIconTranslateY=0] Moves the icon vertically
+ * @param {Number} [maxIconOpacity=0.4] The basic visibility of the icon
+ * @param {Number} [maxIconSize=200] The width and height for the image icon
+ * @param {Number} [maxIconTranslateX=0] Moves the icon horizontally
+ * @param {Number} [maxIconTranslateY=0] Moves the icon vertically
+ *
+ * @param {Number} [offset=8] The spacing used by padding and margin
+ * @param {Number} [animationSpeed=300] The animation in milliseconds
+ * @param {Number} [borderRadius=5] The border radius
+ * @param {Number} [borderStrokeWidth=1] The border stroke width
+ * @param {String} [borderStrokeColor="#222222"] The border color
+ * @param {String} [borderStrokeDasharray="0"] Gaps inside border
+ * @param {String} [backgroundColor="#ffffff"] The background color for the rendered node
+ *
+ * @param {Number} [minTextWidth=145] The minimal text width for the label
+ * @param {Number} [minTextHeight=75] The minimal text height for the label
+ * @param {Number} [minTextTranslateX=0] Moves the label horizontally
+ * @param {Number} [minTextTranslateY=0] The the label vertically
+ * @param {Number} [maxTextWidth=260] The maximal text width for the description
+ * @param {Number} [maxTextHeight=220] The maximal text height for the description
+ * @param {Number} [maxTextTranslateX=0] The the description horizontally
+ * @param {Number} [maxTextTranslateY=0] The the description vertically
+ * @param {String} [labelColor="#444444"] The label text color
+ * @param {String} [labelFontFamily="Montserrat"] The label font family
+ * @param {Number} [labelFontSize=16] The label font size
+ * @param {Number} [labelFontWeight=600] The label font weight
+ * @param {String} [labelFontStyle="normal"] The label font style
+ * @param {String} [labelBackground="#ffffffcc"] The label background color
+ * @param {String} [detailsColor="#444444"] The details text color
+ * @param {String} [detailsFontFamily="Montserrat"] The details family
+ * @param {Number} [detailsFontSize=12] The details font size
+ * @param {Number} [detailsFontWeight=600] The details font weight
+ * @param {String} [detailsFontStyle="normal"] The details font style
+ * @param {String} [detailsBackground="#ffffff"] The details text background color
+ *
+ */
+
+var CustomConfig = {
+  nodeType: "rect",
+  // rect or path
+  svg: null,
+  // large node
+  maxWidth: 275,
+  maxHeight: 175,
+  // small node
+  minWidth: 150,
+  minHeight: 80,
+  // icon
+  iconUrl: null,
+  minIconOpacity: 0.3,
+  minIconSize: 70,
+  minIconTranslateX: 0,
+  minIconTranslateY: 0,
+  maxIconOpacity: 0.4,
+  maxIconSize: 200,
+  maxIconTranslateX: 0,
+  maxIconTranslateY: 0,
+  // node
+  offset: 8,
+  animationSpeed: 300,
+  borderRadius: 5,
+  borderStrokeWidth: 1,
+  borderStrokeColor: "#222222",
+  borderStrokeDasharray: "0",
+  backgroundColor: "#ffffff",
+  // text
+  minTextWidth: 145,
+  minTextHeight: 75,
+  minTextTranslateX: 0,
+  minTextTranslateY: 0,
+  maxTextWidth: 260,
+  maxTextHeight: 220,
+  maxTextTranslateX: 0,
+  maxTextTranslateY: 0,
+  labelColor: "#444444",
+  labelFontFamily: "Montserrat",
+  labelFontSize: 16,
+  labelFontWeight: 600,
+  labelFontStyle: "normal",
+  labelBackground: "#ffffffcc",
+  detailsColor: "#444444",
+  detailsFontFamily: "Montserrat",
+  detailsFontSize: 12,
+  detailsFontWeight: 600,
+  detailsFontStyle: "normal",
+  detailsBackground: "#ffffffcc"
+};
+/**
+ * Class representing the visualization of custom elements
+ * @param {Data} data the raw node data
+ * @param {Canvas} canvas the canvas to render the node on
+ * @param {CustomConfig} customConfig custom config to override the default values
+ *
+ * @example
+ * // a custom node with a given svg shape
+ * const config1 = {
+ *    nodeType: "path",
+ *    svg: "M 0, 0 m -75, 0 a 75,75 0 1,0 150,0 a 75,75 0 1,0 -150,0",
+ *    minTextWidth: 145,
+ *    minIconSize: 100,
+ *    minWidth: 150,
+ *    minHeight: 150,
+ *    maxTextWidth: 250,
+ *    maxIconSize: 200,
+ *    maxWidth: 300,
+ *    maxHeight: 300,
+ *    maxTextTranslateX: 5,
+ *    maxTextTranslateY: -20
+ * }
+ * const custom1 = NodeFactory.create(data.find(d => d.type === "custom"), canvas)
+ * custom1.setConfig(config1)
+ * custom1.setInitialXY(200, 90)
+ * custom1.renderAsMin()
+ *
+ * const custom2 = NodeFactory.create(data.find(d => d.type === "custom"), canvas)
+ * custom2.setConfig(config1)
+ * custom2.setInitialXY(200, 350)
+ * custom2.renderAsMax()
+ *
+ * setTimeout(() => custom1.transformToMax(200, 350), 500)
+ * setTimeout(() => custom2.transformToMin(200, 90), 500)
+ *
+ *
+ * // or a normal custom node
+ * const config2 = {
+ *    maxWidth: 275,
+ *    maxHeight: 175,
+ *    maxIconSize: 150,
+ *    maxTextWidth: 260,
+ *    maxTextHeight: 175,
+ *    maxTextTranslateX: 5,
+ *    maxTextTranslateY: 2
+ * }
+ * const custom3 = NodeFactory.create(data.find(d => d.type === "custom"), canvas)
+ * custom3.setConfig(config2)
+ * custom3.setInitialXY(550, 110)
+ * custom3.renderAsMax()
+ *
+ * const custom4 = NodeFactory.create(data.find(d => d.type === "custom"), canvas)
+ * custom4.setConfig(config2)
+ * custom4.setInitialXY(550, 350)
+ * custom4.renderAsMin()
+ *
+ * setTimeout(() => custom4.transformToMax(550, 110), 500)
+ * setTimeout(() => custom3.transformToMin(550, 350), 500)
+ */
+
+var CustomNode = /*#__PURE__*/function (_BaseNode) {
+  _inherits(CustomNode, _BaseNode);
+
+  function CustomNode(data, canvas, customConfig) {
+    var _this;
+
+    _classCallCheck(this, CustomNode);
+
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(CustomNode).call(this, data, canvas));
+    _this.config = _objectSpread2({}, CustomConfig, {}, customConfig);
+    return _this;
+  }
+  /**
+   * Creates the custom details description
+   * @private
+   */
+
+
+  _createClass(CustomNode, [{
+    key: "createCustomDetails",
+    value: function createCustomDetails() {
+      var text = this.canvas.foreignObject(this.config.maxTextWidth, this.config.maxTextHeight);
+      var background = document.createElement("div");
+      background.style.width = "".concat(this.config.maxTextWidth, "px");
+      background.style.height = "".concat(this.config.maxTextHeight, "px");
+      background.style.display = "flex";
+      background.style.flexDirection = "column";
+      background.style.justifyContent = "center";
+      background.style.alignItems = "center";
+      text.add(background); // add label
+
+      var label = document.createElement("p");
+      label.innerText = this.label;
+      label.style.padding = "".concat(this.config.offset * 1.5, "px ").concat(this.config.offset / 2, "px ").concat(this.config.offset / 2, "px 0px");
+      label.style.color = this.config.labelColor;
+      label.style.fontSize = "".concat(this.config.labelFontSize + 4, "px");
+      label.style.fontFamily = this.config.labelFontFamily;
+      label.style.fontWeight = this.config.labelFontWeight;
+      label.style.fontStyle = this.config.labelFontStyle;
+      label.style.textAlign = "center";
+      label.style.background = this.config.detailsBackground;
+      label.style.width = "fit-content";
+      background.appendChild(label); // add description
+
+      var descriptionBg = document.createElement("div");
+      descriptionBg.style.overflow = "hidden";
+      descriptionBg.style.margin = "".concat(this.config.offset, "px ").concat(this.config.offset, "px ").concat(this.config.offset, "px 0");
+      background.appendChild(descriptionBg);
+      var description = document.createElement("p");
+      description.innerText = this.description;
+      description.style.color = this.config.detailsColor;
+      description.style.fontSize = "".concat(this.config.detailsFontSize, "px");
+      description.style.fontFamily = this.config.detailsFontFamily;
+      description.style.fontWeight = this.config.detailsFontWeight;
+      description.style.fontStyle = this.config.detailsFontStyle;
+      description.style.background = this.config.detailsBackground;
+      description.style.width = "fit-content";
+      descriptionBg.appendChild(description); // fix overflow text
+
+      clamp(description, {
+        clamp: "".concat(this.config.maxTextHeight - label.clientHeight - this.config.offset * 2.5, "px")
+      });
+      return text;
+    }
+    /**
+     * Renders a custom node in minimal version
+     * @param {Number} X the initial X position
+     * @param {Number} Y the initial Y position
+     */
+
+  }, {
+    key: "renderAsMin",
+    value: function renderAsMin() {
+      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.initialX;
+      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.initialY;
+      // create svg elements
+      var svg = this.createSVGElement();
+      var node = this.createNode();
+      var icon = this.createIcon();
+      var text = this.createLabel();
+      svg.add(node);
+      svg.add(icon);
+      svg.add(text); // animate new elements into position
+
+      svg.center(X, Y);
+
+      if (this.config.nodeType === "path") {
+        node.scale(0.001).center(X, Y).animate({
+          duration: this.config.animationSpeed
+        }).transform({
+          scale: 1
+        });
+      } else {
+        node.center(X, Y).animate({
+          duration: this.config.animationSpeed
+        }).width(this.config.minWidth).height(this.config.minHeight).dmove(-this.config.minWidth / 2, -this.config.minHeight / 2);
+      }
+
+      icon.size(0, 0).center(X, Y).attr({
+        opacity: 0
+      }).animate({
+        duration: this.config.animationSpeed
+      }).attr({
+        opacity: this.config.minIconOpacity
+      }).size(this.config.minIconSize, this.config.minIconSize).dx(-this.config.minIconSize / 2 + this.config.minIconTranslateX).dy(-this.config.minIconSize / 2 + this.config.minIconTranslateY);
+      text.size(this.config.minTextWidth, text.children()[0].node.clientHeight).center(X, Y).scale(0.001).attr({
+        opacity: 0
+      }).animate({
+        duration: this.config.animationSpeed
+      }).attr({
+        opacity: 1
+      }).transform({
+        scale: 1,
+        translate: [this.config.minTextTranslateX, this.config.minTextTranslateY]
+      });
+      this.currentWidth = this.config.minWidth;
+      this.currentHeight = this.config.minHeight;
+      this.nodeSize = "min";
+      this.currentX = X;
+      this.currentY = Y;
+      this.opacity = 1;
+      this.isHidden = false;
+      this.svg = svg;
+    }
+    /**
+     * Renders a custom node in maximal version
+     * @param {Number} X the initial X position
+     * @param {Number} Y the initial Y position
+     */
+
+  }, {
+    key: "renderAsMax",
+    value: function renderAsMax() {
+      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.initialX;
+      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.initialY;
+      // create svg elements
+      var svg = this.createSVGElement();
+      var node = this.createNode();
+      var icon = this.createIcon();
+      var text = this.createCustomDetails();
+      svg.add(node);
+      svg.add(icon);
+      svg.add(text); // animate new elements into position
+
+      svg.center(X, Y);
+
+      if (this.config.nodeType === "path") {
+        node.center(X, Y).animate({
+          duration: this.config.animationSpeed
+        }).width(this.config.maxWidth).height(this.config.maxHeight).dmove(-this.config.maxWidth / 4, -this.config.maxHeight / 4);
+      } else {
+        node.center(X, Y).animate({
+          duration: this.config.animationSpeed
+        }).width(this.config.maxWidth).height(this.config.maxHeight).dmove(-this.config.maxWidth / 2, -this.config.maxHeight / 2);
+      }
+
+      icon.size(0, 0).center(X, Y).attr({
+        opacity: 0
+      }).animate({
+        duration: this.config.animationSpeed
+      }).attr({
+        opacity: this.config.maxIconOpacity
+      }).size(this.config.maxIconSize, this.config.maxIconSize).dx(-this.config.maxIconSize / 2 + this.config.maxIconTranslateX).dy(-this.config.maxIconSize / 2 + this.config.maxIconTranslateY);
+      text.size(this.config.maxTextWidth, text.children()[0].node.clientHeight).center(X, Y).scale(0.001).attr({
+        opacity: 0
+      }).animate({
+        duration: this.config.animationSpeed
+      }).attr({
+        opacity: 1
+      }).transform({
+        scale: 1,
+        translate: [this.config.maxTextTranslateX, this.config.maxTextTranslateY]
+      });
+      this.currentWidth = this.config.maxWidth;
+      this.currentHeight = this.config.maxHeight;
+      this.nodeSize = "max";
+      this.currentX = X;
+      this.currentY = Y;
+      this.opacity = 1;
+      this.isHidden = false;
+      this.svg = svg;
+    }
+    /**
+     * Transforms a node from minimal version to maximal version
+     * @param {Number} X the final X position
+     * @param {Number} Y the final Y position
+     */
+
+  }, {
+    key: "transformToMax",
+    value: function transformToMax() {
+      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.finalX;
+      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.finalY;
+      // update current elements
+      this.svg.get(0).animate({
+        duration: this.config.animationSpeed
+      }).width(this.config.maxWidth).height(this.config.maxHeight).center(X, Y);
+      this.svg.get(2).remove();
+      this.svg.get(1).remove(); // create new elements
+
+      var icon = this.createIcon();
+      var text = this.createCustomDetails();
+      this.svg.add(icon);
+      this.svg.add(text); // put new elements into position
+
+      icon.size(0, 0).center(this.initialX, this.initialY).attr({
+        opacity: 0
+      }).animate({
+        duration: this.config.animationSpeed
+      }).attr({
+        opacity: this.config.maxIconOpacity
+      }).size(this.config.maxIconSize, this.config.maxIconSize).cx(X - this.config.maxIconSize / 2 + this.config.maxIconTranslateX + this.config.maxIconSize / 2).cy(Y - this.config.maxIconSize / 2 + this.config.maxIconTranslateY + this.config.maxIconSize / 2);
+      text.center(this.initialX, this.initialY).scale(0.001).attr({
+        opacity: 0
+      }).animate({
+        duration: this.config.animationSpeed
+      }).attr({
+        opacity: 1
+      }).transform({
+        scale: 1,
+        translate: [this.config.maxTextTranslateX, this.config.maxTextTranslateY]
+      }).center(X, Y);
+      this.currentWidth = this.config.minWidth;
+      this.currentHeight = this.config.minHeight;
+      this.nodeSize = "max";
+      this.currentX = X;
+      this.currentY = Y;
+    }
+    /**
+     * Transforms a node from maximal version to minimal version
+     * @param {Number} X the final X position
+     * @param {Number} Y the final Y position
+     */
+
+  }, {
+    key: "transformToMin",
+    value: function transformToMin() {
+      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.finalX;
+      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.finalY;
+      // update current elements
+      this.svg.get(0).animate({
+        duration: this.config.animationSpeed
+      }).width(this.config.minWidth).height(this.config.minHeight).center(X, Y);
+      this.svg.get(2).remove();
+      this.svg.get(1).remove(); // create new elements
+
+      var icon = this.createIcon();
+      var text = this.createLabel();
+      this.svg.add(icon);
+      this.svg.add(text); // put new elements into position
+
+      icon.center(this.initialX, this.initialY).attr({
+        opacity: 0
+      }).animate({
+        duration: this.config.animationSpeed
+      }).attr({
+        opacity: this.config.minIconOpacity
+      }).size(this.config.minIconSize, this.config.minIconSize).dx(-this.config.minIconSize / 2 + this.config.minIconTranslateX).dy(-this.config.minIconSize / 2 + this.config.minIconTranslateY).center(X, Y);
+      text.center(this.initialX, this.initialY).size(this.config.minTextWidth, text.children()[0].node.clientHeight).scale(0.001).attr({
+        opacity: 0
+      }).animate({
+        duration: this.config.animationSpeed
+      }).attr({
+        opacity: 1
+      }).transform({
+        scale: 1,
+        translate: [this.config.minTextTranslateX, this.config.minTextTranslateY]
+      }).center(X, Y);
+      this.currentWidth = this.config.minWidth;
+      this.currentHeight = this.config.minHeight;
+      this.nodeSize = "min";
+      this.currentX = X;
+      this.currentY = Y;
+    }
+  }]);
+
+  return CustomNode;
+}(BaseNode);
+
 /**
  * Default configuration for asset nodes
  * @typedef {ControlConfig} ControlConfig
@@ -10979,1386 +14827,6 @@ var ControlNode = /*#__PURE__*/function (_BaseNode) {
 
   return ControlNode;
 }(BaseNode);
-
-/**
- * Default configuration for asset nodes
- * @typedef {CustomConfig} CustomConfig
- *
- * @param {String} [nodeType="rect"] The form the node is rendered. "path" for a custom SVG element
- * @param {String} [svg=null] The custom SVG path that is rendered as node if nodeType is set to "path"
- *
- * @param {Number} [maxWidth=275] The nodes maximal width
- * @param {Number} [maxHeight=175] The nodes maximal height
- * @param {Number} [minWidth=150] The nodes minimal width
- * @param {Number} [minHeight=80] The nodes minimal height
- *
- * @param {String} [iconUrl=null] The path to the image icon (if this value is null, the default icon is used)
- * @param {Number} [minIconOpacity=0.3] The basic visibility of the icon
- * @param {Number} [minIconSize=70] The width and height for the image icon
- * @param {Number} [minIconTranslateX=0] Moves the icon horizontally
- * @param {Number} [minIconTranslateY=0] Moves the icon vertically
- * @param {Number} [maxIconOpacity=0.4] The basic visibility of the icon
- * @param {Number} [maxIconSize=200] The width and height for the image icon
- * @param {Number} [maxIconTranslateX=0] Moves the icon horizontally
- * @param {Number} [maxIconTranslateY=0] Moves the icon vertically
- *
- * @param {Number} [offset=8] The spacing used by padding and margin
- * @param {Number} [animationSpeed=300] The animation in milliseconds
- * @param {Number} [borderRadius=5] The border radius
- * @param {Number} [borderStrokeWidth=1] The border stroke width
- * @param {String} [borderStrokeColor="#222222"] The border color
- * @param {String} [borderStrokeDasharray="0"] Gaps inside border
- * @param {String} [backgroundColor="#ffffff"] The background color for the rendered node
- *
- * @param {Number} [minTextWidth=145] The minimal text width for the label
- * @param {Number} [minTextHeight=75] The minimal text height for the label
- * @param {Number} [minTextTranslateX=0] Moves the label horizontally
- * @param {Number} [minTextTranslateY=0] The the label vertically
- * @param {Number} [maxTextWidth=345] The maximal text width for the description
- * @param {Number} [maxTextHeight=220] The maximal text height for the description
- * @param {Number} [maxTextTranslateX=0] The the description horizontally
- * @param {Number} [maxTextTranslateY=0] The the description vertically
- * @param {String} [labelColor="#444444"] The label text color
- * @param {String} [labelFontFamily="Montserrat"] The label font family
- * @param {Number} [labelFontSize=16] The label font size
- * @param {Number} [labelFontWeight=600] The label font weight
- * @param {String} [labelFontStyle="normal"] The label font style
- * @param {String} [labelBackground="#ffffffcc"] The label background color
- * @param {String} [detailsColor="#444444"] The details text color
- * @param {String} [detailsFontFamily="Montserrat"] The details family
- * @param {Number} [detailsFontSize=12] The details font size
- * @param {Number} [detailsFontWeight=600] The details font weight
- * @param {String} [detailsFontStyle="normal"] The details font style
- * @param {String} [detailsBackground="#ffffff"] The details text background color
- *
- */
-
-var CustomConfig = {
-  nodeType: "rect",
-  // rect or path
-  svg: null,
-  // large node
-  maxWidth: 275,
-  maxHeight: 175,
-  // small node
-  minWidth: 150,
-  minHeight: 80,
-  // icon
-  iconUrl: null,
-  minIconOpacity: 0.3,
-  minIconSize: 70,
-  minIconTranslateX: 0,
-  minIconTranslateY: 0,
-  maxIconOpacity: 0.4,
-  maxIconSize: 200,
-  maxIconTranslateX: 0,
-  maxIconTranslateY: 0,
-  // node
-  offset: 8,
-  animationSpeed: 300,
-  borderRadius: 5,
-  borderStrokeWidth: 1,
-  borderStrokeColor: "#222222",
-  borderStrokeDasharray: "0",
-  backgroundColor: "#ffffff",
-  // text
-  minTextWidth: 145,
-  minTextHeight: 75,
-  minTextTranslateX: 0,
-  minTextTranslateY: 0,
-  maxTextWidth: 345,
-  maxTextHeight: 220,
-  maxTextTranslateX: 0,
-  maxTextTranslateY: 0,
-  labelColor: "#444444",
-  labelFontFamily: "Montserrat",
-  labelFontSize: 16,
-  labelFontWeight: 600,
-  labelFontStyle: "normal",
-  labelBackground: "#ffffffcc",
-  detailsColor: "#444444",
-  detailsFontFamily: "Montserrat",
-  detailsFontSize: 12,
-  detailsFontWeight: 600,
-  detailsFontStyle: "normal",
-  detailsBackground: "#ffffffcc"
-};
-/**
- * Class representing the visualization of custom elements
- * @param {Data} data the raw node data
- * @param {Canvas} canvas the canvas to render the node on
- * @param {CustomConfig} customConfig custom config to override the default values
- *
- * @example
- * // a custom node with a given svg shape
- * const config1 = {
- *    nodeType: "path",
- *    svg: "M 0, 0 m -75, 0 a 75,75 0 1,0 150,0 a 75,75 0 1,0 -150,0",
- *    minTextWidth: 145,
- *    minIconSize: 100,
- *    minWidth: 150,
- *    minHeight: 150,
- *    maxTextWidth: 250,
- *    maxIconSize: 200,
- *    maxWidth: 300,
- *    maxHeight: 300,
- *    maxTextTranslateX: 5,
- *    maxTextTranslateY: -20
- * }
- * const custom1 = NodeFactory.create(data.find(d => d.type === "custom"), canvas)
- * custom1.setConfig(config1)
- * custom1.setInitialXY(200, 90)
- * custom1.renderAsMin()
- *
- * const custom2 = NodeFactory.create(data.find(d => d.type === "custom"), canvas)
- * custom2.setConfig(config1)
- * custom2.setInitialXY(200, 350)
- * custom2.renderAsMax()
- *
- * setTimeout(() => custom1.transformToMax(200, 350), 500)
- * setTimeout(() => custom2.transformToMin(200, 90), 500)
- *
- *
- * // or a normal custom node
- * const config2 = {
- *    maxWidth: 275,
- *    maxHeight: 175,
- *    maxIconSize: 150,
- *    maxTextWidth: 260,
- *    maxTextHeight: 175,
- *    maxTextTranslateX: 5,
- *    maxTextTranslateY: 2
- * }
- * const custom3 = NodeFactory.create(data.find(d => d.type === "custom"), canvas)
- * custom3.setConfig(config2)
- * custom3.setInitialXY(550, 110)
- * custom3.renderAsMax()
- *
- * const custom4 = NodeFactory.create(data.find(d => d.type === "custom"), canvas)
- * custom4.setConfig(config2)
- * custom4.setInitialXY(550, 350)
- * custom4.renderAsMin()
- *
- * setTimeout(() => custom4.transformToMax(550, 110), 500)
- * setTimeout(() => custom3.transformToMin(550, 350), 500)
- */
-
-var CustomNode = /*#__PURE__*/function (_BaseNode) {
-  _inherits(CustomNode, _BaseNode);
-
-  function CustomNode(data, canvas, customConfig) {
-    var _this;
-
-    _classCallCheck(this, CustomNode);
-
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(CustomNode).call(this, data, canvas));
-    _this.config = _objectSpread2({}, CustomConfig, {}, customConfig);
-    return _this;
-  }
-  /**
-   * Creates the custom details description
-   * @private
-   */
-
-
-  _createClass(CustomNode, [{
-    key: "createCustomDetails",
-    value: function createCustomDetails() {
-      var text = this.canvas.foreignObject(this.config.maxTextWidth, this.config.maxTextHeight);
-      var background = document.createElement("div");
-      background.style.width = "".concat(this.config.maxTextWidth, "px");
-      background.style.height = "".concat(this.config.maxTextHeight, "px");
-      background.style.display = "flex";
-      background.style.flexDirection = "column";
-      background.style.justifyContent = "center";
-      background.style.alignItems = "center";
-      text.add(background); // add label
-
-      var label = document.createElement("p");
-      label.innerText = this.label;
-      label.style.padding = "".concat(this.config.offset * 1.5, "px ").concat(this.config.offset / 2, "px ").concat(this.config.offset / 2, "px 0px");
-      label.style.color = this.config.labelColor;
-      label.style.fontSize = "".concat(this.config.labelFontSize + 4, "px");
-      label.style.fontFamily = this.config.labelFontFamily;
-      label.style.fontWeight = this.config.labelFontWeight;
-      label.style.fontStyle = this.config.labelFontStyle;
-      label.style.textAlign = "center";
-      label.style.background = this.config.detailsBackground;
-      label.style.width = "fit-content";
-      background.appendChild(label); // add description
-
-      var descriptionBg = document.createElement("div");
-      descriptionBg.style.overflow = "hidden";
-      descriptionBg.style.margin = "".concat(this.config.offset, "px ").concat(this.config.offset, "px ").concat(this.config.offset, "px 0");
-      background.appendChild(descriptionBg);
-      var description = document.createElement("p");
-      description.innerText = this.description;
-      description.style.color = this.config.detailsColor;
-      description.style.fontSize = "".concat(this.config.detailsFontSize, "px");
-      description.style.fontFamily = this.config.detailsFontFamily;
-      description.style.fontWeight = this.config.detailsFontWeight;
-      description.style.fontStyle = this.config.detailsFontStyle;
-      description.style.background = this.config.detailsBackground;
-      description.style.width = "fit-content";
-      descriptionBg.appendChild(description); // fix overflow text
-
-      clamp(description, {
-        clamp: "".concat(this.config.maxTextHeight - label.clientHeight - this.config.offset * 2.5, "px")
-      });
-      return text;
-    }
-    /**
-     * Renders a custom node in minimal version
-     * @param {Number} X the initial X position
-     * @param {Number} Y the initial Y position
-     */
-
-  }, {
-    key: "renderAsMin",
-    value: function renderAsMin() {
-      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.initialX;
-      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.initialY;
-      // create svg elements
-      var svg = this.createSVGElement();
-      var node = this.createNode();
-      var icon = this.createIcon();
-      var text = this.createLabel();
-      svg.add(node);
-      svg.add(icon);
-      svg.add(text); // animate new elements into position
-
-      svg.center(X, Y);
-
-      if (this.config.nodeType === "path") {
-        node.scale(0.001).center(X, Y).animate({
-          duration: this.config.animationSpeed
-        }).transform({
-          scale: 1
-        });
-      } else {
-        node.center(X, Y).animate({
-          duration: this.config.animationSpeed
-        }).width(this.config.minWidth).height(this.config.minHeight).dmove(-this.config.minWidth / 2, -this.config.minHeight / 2);
-      }
-
-      icon.size(0, 0).center(X, Y).attr({
-        opacity: 0
-      }).animate({
-        duration: this.config.animationSpeed
-      }).attr({
-        opacity: this.config.minIconOpacity
-      }).size(this.config.minIconSize, this.config.minIconSize).dx(-this.config.minIconSize / 2 + this.config.minIconTranslateX).dy(-this.config.minIconSize / 2 + this.config.minIconTranslateY);
-      text.size(this.config.minTextWidth, text.children()[0].node.clientHeight).center(X, Y).scale(0.001).attr({
-        opacity: 0
-      }).animate({
-        duration: this.config.animationSpeed
-      }).attr({
-        opacity: 1
-      }).transform({
-        scale: 1,
-        translate: [this.config.minTextTranslateX, this.config.minTextTranslateY]
-      });
-      this.currentWidth = this.config.minWidth;
-      this.currentHeight = this.config.minHeight;
-      this.nodeSize = "min";
-      this.currentX = X;
-      this.currentY = Y;
-      this.opacity = 1;
-      this.isHidden = false;
-      this.svg = svg;
-    }
-    /**
-     * Renders a custom node in maximal version
-     * @param {Number} X the initial X position
-     * @param {Number} Y the initial Y position
-     */
-
-  }, {
-    key: "renderAsMax",
-    value: function renderAsMax() {
-      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.initialX;
-      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.initialY;
-      // create svg elements
-      var svg = this.createSVGElement();
-      var node = this.createNode();
-      var icon = this.createIcon();
-      var text = this.createCustomDetails();
-      svg.add(node);
-      svg.add(icon);
-      svg.add(text); // animate new elements into position
-
-      svg.center(X, Y);
-
-      if (this.config.nodeType === "path") {
-        node.center(X, Y).animate({
-          duration: this.config.animationSpeed
-        }).width(this.config.maxWidth).height(this.config.maxHeight).dmove(-this.config.maxWidth / 4, -this.config.maxHeight / 4);
-      } else {
-        node.center(X, Y).animate({
-          duration: this.config.animationSpeed
-        }).width(this.config.maxWidth).height(this.config.maxHeight).dmove(-this.config.maxWidth / 2, -this.config.maxHeight / 2);
-      }
-
-      icon.size(0, 0).center(X, Y).attr({
-        opacity: 0
-      }).animate({
-        duration: this.config.animationSpeed
-      }).attr({
-        opacity: this.config.maxIconOpacity
-      }).size(this.config.maxIconSize, this.config.maxIconSize).dx(-this.config.maxIconSize / 2 + this.config.maxIconTranslateX).dy(-this.config.maxIconSize / 2 + this.config.maxIconTranslateY);
-      text.size(this.config.maxTextWidth, text.children()[0].node.clientHeight).center(X, Y).scale(0.001).attr({
-        opacity: 0
-      }).animate({
-        duration: this.config.animationSpeed
-      }).attr({
-        opacity: 1
-      }).transform({
-        scale: 1,
-        translate: [this.config.maxTextTranslateX, this.config.maxTextTranslateY]
-      });
-      this.currentWidth = this.config.maxWidth;
-      this.currentHeight = this.config.maxHeight;
-      this.nodeSize = "max";
-      this.currentX = X;
-      this.currentY = Y;
-      this.opacity = 1;
-      this.isHidden = false;
-      this.svg = svg;
-    }
-    /**
-     * Transforms a node from minimal version to maximal version
-     * @param {Number} X the final X position
-     * @param {Number} Y the final Y position
-     */
-
-  }, {
-    key: "transformToMax",
-    value: function transformToMax() {
-      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.finalX;
-      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.finalY;
-      // update current elements
-      this.svg.get(0).animate({
-        duration: this.config.animationSpeed
-      }).width(this.config.maxWidth).height(this.config.maxHeight).center(X, Y);
-      this.svg.get(2).remove();
-      this.svg.get(1).remove(); // create new elements
-
-      var icon = this.createIcon();
-      var text = this.createCustomDetails();
-      this.svg.add(icon);
-      this.svg.add(text); // put new elements into position
-
-      icon.size(0, 0).center(this.initialX, this.initialY).attr({
-        opacity: 0
-      }).animate({
-        duration: this.config.animationSpeed
-      }).attr({
-        opacity: this.config.maxIconOpacity
-      }).size(this.config.maxIconSize, this.config.maxIconSize).cx(X - this.config.maxIconSize / 2 + this.config.maxIconTranslateX + this.config.maxIconSize / 2).cy(Y - this.config.maxIconSize / 2 + this.config.maxIconTranslateY + this.config.maxIconSize / 2);
-      text.center(this.initialX, this.initialY).scale(0.001).attr({
-        opacity: 0
-      }).animate({
-        duration: this.config.animationSpeed
-      }).attr({
-        opacity: 1
-      }).transform({
-        scale: 1,
-        translate: [this.config.maxTextTranslateX, this.config.maxTextTranslateY]
-      }).center(X, Y);
-      this.currentWidth = this.config.minWidth;
-      this.currentHeight = this.config.minHeight;
-      this.nodeSize = "max";
-      this.currentX = X;
-      this.currentY = Y;
-    }
-    /**
-     * Transforms a node from maximal version to minimal version
-     * @param {Number} X the final X position
-     * @param {Number} Y the final Y position
-     */
-
-  }, {
-    key: "transformToMin",
-    value: function transformToMin() {
-      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.finalX;
-      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.finalY;
-      // update current elements
-      this.svg.get(0).animate({
-        duration: this.config.animationSpeed
-      }).width(this.config.minWidth).height(this.config.minHeight).center(X, Y);
-      this.svg.get(2).remove();
-      this.svg.get(1).remove(); // create new elements
-
-      var icon = this.createIcon();
-      var text = this.createLabel();
-      this.svg.add(icon);
-      this.svg.add(text); // put new elements into position
-
-      icon.center(this.initialX, this.initialY).attr({
-        opacity: 0
-      }).animate({
-        duration: this.config.animationSpeed
-      }).attr({
-        opacity: this.config.minIconOpacity
-      }).size(this.config.minIconSize, this.config.minIconSize).dx(-this.config.minIconSize / 2 + this.config.minIconTranslateX).dy(-this.config.minIconSize / 2 + this.config.minIconTranslateY).center(X, Y);
-      text.center(this.initialX, this.initialY).size(this.config.minTextWidth, text.children()[0].node.clientHeight).scale(0.001).attr({
-        opacity: 0
-      }).animate({
-        duration: this.config.animationSpeed
-      }).attr({
-        opacity: 1
-      }).transform({
-        scale: 1,
-        translate: [this.config.minTextTranslateX, this.config.minTextTranslateY]
-      }).center(X, Y);
-      this.currentWidth = this.config.minWidth;
-      this.currentHeight = this.config.minHeight;
-      this.nodeSize = "min";
-      this.currentX = X;
-      this.currentY = Y;
-    }
-  }]);
-
-  return CustomNode;
-}(BaseNode);
-
-/**
- * Default configuration for risk nodes
- * @typedef {RiskConfig} RiskConfig
- *
- * @param {Number} [maxWidth=300] The nodes maximal width
- * @param {Number} [maxHeight=150] The nodes maximal height
- * @param {Number} [minWidth=150] The nodes minimal width
- * @param {Number} [minHeight=50] The nodes minimal height
- *
- * @param {String} [iconUrl=null] The path to the image icon (if this value is null, the default icon is used)
- * @param {Number} [minIconOpacity=0.6] The basic visibility of the icon
- * @param {Number} [minIconSize=35] The width and height for the image icon
- * @param {Number} [minIconTranslateX=-50] Moves the icon horizontally
- * @param {Number} [minIconTranslateY=0] Moves the icon vertically
- * @param {Number} [maxIconOpacity=0.75] The basic visibility of the icon
- * @param {Number} [maxIconSize=30] The width and height for the image icon
- * @param {Number} [maxIconTranslateX=-120] Moves the icon horizontally
- * @param {Number} [maxIconTranslateY=-55] Moves the icon vertically
- *
- * @param {Number} [offset=8] The spacing used by padding and margin
- * @param {Number} [animationSpeed=300] The animation in milliseconds
- * @param {Number} [borderRadius=4] The border radius
- * @param {Number} [borderStrokeWidth=1] The border stroke width
- * @param {String} [borderStrokeColor="#F26A7C"] The border color
- * @param {String} [borderStrokeDasharray="5 10"] Gaps inside border
- * @param {String} [backgroundColor="#ffffff"] The background color for the rendered node
- *
- * @param {Number} [minTextWidth=100] The minimal text width for the label
- * @param {Number} [minTextHeight=45] The minimal text height for the label
- * @param {Number} [minTextTranslateX=22] Moves the label horizontally
- * @param {Number} [minTextTranslateY=0] The the label vertically
- * @param {Number} [maxTextWidth=295] The maximal text width for the description
- * @param {Number} [maxTextHeight=145] The maximal text height for the description
- * @param {Number} [maxTextTranslateX=0] The the description horizontally
- * @param {Number} [maxTextTranslateY=0] The the description vertically
- * @param {String} [labelColor="#ff8e9e"] The label text color
- * @param {String} [labelFontFamily="Montserrat"] The label font family
- * @param {Number} [labelFontSize=14] The label font size
- * @param {Number} [labelFontWeight=600] The label font weight
- * @param {String} [labelFontStyle="normal"] The label font style
- * @param {String} [labelBackground="transparent"] The label background color
- * @param {String} [detailsColor="#ff8e9e"] The details text color
- * @param {String} [detailsFontFamily="Montserrat"] The details family
- * @param {Number} [detailsFontSize=12] The details font size
- * @param {Number} [detailsFontWeight=600] The details font weight
- * @param {String} [detailsFontStyle="normal"] The details font style
- * @param {String} [detailsBackground="transparent"] The details text background color
- */
-
-var RiskConfig = {
-  // large node
-  maxWidth: 300,
-  maxHeight: 150,
-  // small node
-  minWidth: 150,
-  minHeight: 50,
-  // icon
-  iconUrl: null,
-  minIconOpacity: 0.6,
-  minIconSize: 35,
-  minIconTranslateX: -50,
-  minIconTranslateY: 0,
-  maxIconOpacity: 0.75,
-  maxIconSize: 30,
-  maxIconTranslateX: -120,
-  maxIconTranslateY: -55,
-  // node
-  offset: 8,
-  animationSpeed: 300,
-  borderRadius: 4,
-  borderStrokeWidth: 1,
-  borderStrokeColor: "#F26A7C",
-  borderStrokeDasharray: "5 10",
-  backgroundColor: "#ffffff",
-  // text
-  minTextWidth: 100,
-  minTextHeight: 45,
-  minTextTranslateX: 22,
-  minTextTranslateY: 0,
-  maxTextWidth: 295,
-  maxTextHeight: 145,
-  maxTextTranslateX: 0,
-  maxTextTranslateY: 0,
-  labelColor: "#ff8e9e",
-  labelFontFamily: "Montserrat",
-  labelFontSize: 14,
-  labelFontWeight: 600,
-  labelFontStyle: "normal",
-  labelBackground: "transparent",
-  detailsColor: "#ff8e9e",
-  detailsFontFamily: "Montserrat",
-  detailsFontSize: 12,
-  detailsFontWeight: 600,
-  detailsFontStyle: "normal",
-  detailsBackground: "transparent"
-};
-/**
- * Class representing the visualization of risks
- * @param {Data} data the raw node data
- * @param {Canvas} canvas the canvas to render the node on
- * @param {RiskConfig} customRiskConfig custom config to override default values
- *
- * @example
- * const risk1 = NodeFactory.create(data.find(d => d.type === "risk"), canvas)
- * risk1.setInitialXY(200, 100)
- * risk1.renderAsMin()
- *
- * const risk2 = NodeFactory.create(data.find(d => d.type === "risk"), canvas)
- * risk2.setInitialXY(200, 400)
- * risk2.renderAsMax()
- *
- * setTimeout(() => risk1.transformToMax(200, 200), 500)
- * setTimeout(() => risk2.transformToMin(200, 350), 500)
- *
- */
-
-var RiskNode = /*#__PURE__*/function (_BaseNode) {
-  _inherits(RiskNode, _BaseNode);
-
-  function RiskNode(data, canvas, customRiskConfig) {
-    var _this;
-
-    _classCallCheck(this, RiskNode);
-
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(RiskNode).call(this, data, canvas));
-    _this.config = _objectSpread2({}, RiskConfig, {}, customRiskConfig);
-    return _this;
-  }
-  /**
-   * Creates the risk details description
-   * @private
-   */
-
-
-  _createClass(RiskNode, [{
-    key: "createRiskDetails",
-    value: function createRiskDetails() {
-      // create svg obj to store html
-      var text = this.canvas.foreignObject(this.config.maxTextWidth, this.config.maxTextHeight);
-      var background = document.createElement("div");
-      background.style.width = "".concat(this.config.maxTextWidth, "px");
-      background.style.height = "".concat(this.config.maxTextHeight, "px");
-      background.style.display = "grid";
-      background.style.alignItems = "center";
-      background.style.gridTemplateColumns = "auto 10px auto";
-      background.style.gridTemplateRows = "".concat(this.config.labelFontSize + 4 + this.config.offset * 2, "px auto");
-      text.add(background); // create label
-
-      var label = document.createElement("p");
-      label.innerText = this.label;
-      label.style.background = this.config.labelBackground;
-      label.style.padding = "\n      ".concat(this.config.offset, "px \n      ").concat(this.config.offset / 2, "px \n      ").concat(this.config.offset / 1.5, "px \n      ").concat(this.config.offset / 2, "px\n    ");
-      label.style.color = this.config.labelColor;
-      label.style.fontSize = "".concat(this.config.labelFontSize + 4, "px");
-      label.style.fontFamily = this.config.labelFontFamily;
-      label.style.fontWeight = this.config.labelFontWeight;
-      label.style.fontStyle = this.config.labelFontStyle;
-
-      if (this.state !== null) {
-        label.style.textAlign = "right";
-      } else {
-        label.style.width = "inherit";
-        label.style.textAlign = "center";
-      }
-
-      label.style.marginTop = "".concat(this.config.offset, "px");
-      label.style.height = "fit-content";
-      label.style.gridRow = "1";
-      label.style.gridColumn = "1";
-      background.appendChild(label); // create status, if any exists
-
-      if (this.state !== null) {
-        var seperator = document.createElement("p");
-        seperator.innerText = "•";
-        seperator.style.background = this.config.labelBackground;
-        seperator.style.padding = "\n        ".concat(this.config.offset, "px \n        ").concat(this.config.offset / 2, "px \n        ").concat(this.config.offset / 1.5, "px \n        ").concat(this.config.offset / 2, "px\n      ");
-        seperator.style.color = this.config.labelColor;
-        seperator.style.fontSize = "".concat(this.config.labelFontSize + 4, "px");
-        seperator.style.fontFamily = this.config.labelFontFamily;
-        seperator.style.fontWeight = "900";
-        seperator.style.fontStyle = this.config.labelFontStyle;
-        seperator.style.marginTop = "".concat(this.config.offset, "px");
-        seperator.style.height = "fit-content";
-        seperator.style.gridRow = "1";
-        seperator.style.gridColumn = "2";
-        background.appendChild(seperator);
-        var status = document.createElement("p");
-        status.innerText = this.state;
-        status.style.background = this.config.labelBackground;
-        status.style.padding = "\n        ".concat(this.config.offset, "px \n        ").concat(this.config.offset / 2, "px \n        ").concat(this.config.offset / 1.5, "px \n        ").concat(this.config.offset / 2, "px\n      ");
-        status.style.color = this.config.labelColor;
-        status.style.fontSize = "".concat(this.config.labelFontSize + 4, "px");
-        status.style.fontFamily = this.config.labelFontFamily;
-        status.style.fontWeight = this.config.labelFontWeight;
-        status.style.fontStyle = this.config.labelFontStyle;
-        status.style.fontStyle = "italic";
-        status.style.marginTop = "".concat(this.config.offset, "px");
-        status.style.height = "fit-content";
-        status.style.gridRow = "1";
-        status.style.gridColumn = "3";
-        background.appendChild(status);
-      } // create description
-
-
-      var descriptionBg = document.createElement("div");
-      descriptionBg.style.gridRow = "2";
-      descriptionBg.style.gridColumn = "1 / 4";
-      descriptionBg.style.width = "fit-content";
-      background.appendChild(descriptionBg);
-      var description = document.createElement("p");
-      description.innerText = this.description;
-      description.style.background = this.config.detailsBackground;
-      description.style.height = "".concat(this.config.maxTextHeight - label.clientHeight - this.config.offset * 2, "px");
-      description.style.padding = "0 ".concat(this.config.offset * 1.5, "px");
-      description.style.color = this.config.detailsColor;
-      description.style.fontSize = "".concat(this.config.detailsFontSize, "px");
-      description.style.fontFamily = this.config.detailsFontFamily;
-      description.style.fontWeight = this.config.detailsFontWeight;
-      description.style.fontStyle = this.config.detailsFontStyle;
-      descriptionBg.appendChild(description);
-      clamp(description, {
-        clamp: "".concat(this.config.maxTextHeight - label.clientHeight - this.config.offset * 2, "px")
-      });
-      return text;
-    }
-    /**
-     * Renders a risk node in minimal version
-     * @param {Number} [X=initialX] the initial X render position
-     * @param {Number} [Y=initialY] the initial Y render position
-     */
-
-  }, {
-    key: "renderAsMin",
-    value: function renderAsMin() {
-      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.initialX;
-      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.initialY;
-      // create svg elements
-      var svg = this.createSVGElement();
-      var node = this.createNode();
-      var icon = this.createIcon();
-      var text = this.createLabel();
-      svg.add(node);
-      svg.add(icon);
-      svg.add(text); // animate new elements into position
-
-      svg.center(X, Y);
-      node.center(X, Y).animate({
-        duration: this.config.animationSpeed
-      }).width(this.config.minWidth).height(this.config.minHeight).dmove(-this.config.minWidth / 2, -this.config.minHeight / 2);
-      icon.center(X, Y).attr({
-        opacity: 0
-      }).animate({
-        duration: this.config.animationSpeed
-      }).attr({
-        opacity: this.config.minIconOpacity
-      }).size(this.config.minIconSize, this.config.minIconSize).dx(-this.config.minIconSize / 2 + this.config.minIconTranslateX).dy(-this.config.minIconSize / 2 + this.config.minIconTranslateY);
-      text.size(this.config.minTextWidth, text.children()[0].node.clientHeight).center(X, Y).scale(0.001).attr({
-        opacity: 0
-      }).animate({
-        duration: this.config.animationSpeed
-      }).attr({
-        opacity: 1
-      }).transform({
-        scale: 1,
-        translate: [this.config.minTextTranslateX, this.config.minTextTranslateY]
-      });
-      this.currentWidth = this.config.minWidth;
-      this.currentHeight = this.config.minHeight;
-      this.nodeSize = "min";
-      this.currentX = X;
-      this.currentY = Y;
-      this.opacity = 1;
-      this.isHidden = false;
-      this.svg = svg;
-    }
-    /**
-     * Renders a risk node in maximal version
-     * @param {Number} [X=initialX] the initial X render position
-     * @param {Number} [Y=initialY] the initial Y render position
-     */
-
-  }, {
-    key: "renderAsMax",
-    value: function renderAsMax() {
-      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.initialX;
-      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.initialY;
-      // create svg elements
-      var svg = this.createSVGElement();
-      var node = this.createNode();
-      var icon = this.createIcon();
-      var text = this.createRiskDetails();
-      svg.add(node);
-      svg.add(icon);
-      svg.add(text); // animate new elements into position
-
-      svg.center(X, Y);
-      node.center(X, Y).animate({
-        duration: this.config.animationSpeed
-      }).width(this.config.maxWidth).height(this.config.maxHeight).dmove(-this.config.maxWidth / 2, -this.config.maxHeight / 2);
-      icon.center(X, Y).attr({
-        opacity: 0
-      }).animate({
-        duration: this.config.animationSpeed
-      }).attr({
-        opacity: this.config.maxIconOpacity
-      }).size(this.config.maxIconSize, this.config.maxIconSize).dx(-this.config.maxIconSize / 2 + this.config.maxIconTranslateX).dy(-this.config.maxIconSize / 2 + this.config.maxIconTranslateY);
-      text.center(X, Y).scale(0.001).attr({
-        opacity: 0
-      }).animate({
-        duration: this.config.animationSpeed
-      }).attr({
-        opacity: 1
-      }).transform({
-        scale: 1,
-        translate: [this.config.maxTextTranslateX, this.config.maxTextTranslateY]
-      });
-      this.currentWidth = this.config.maxWidth;
-      this.currentHeight = this.config.maxHeight;
-      this.nodeSize = "max";
-      this.currentX = X;
-      this.currentY = Y;
-      this.opacity = 1;
-      this.isHidden = false;
-      this.svg = svg;
-    }
-    /**
-     * Transforms a node from minimal version to maximal version
-     * @param {Number} [X=finalX] the final X render position
-     * @param {Number} [Y=finaY] the final Y render position
-     */
-
-  }, {
-    key: "transformToMax",
-    value: function transformToMax() {
-      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.finalX;
-      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.finalY;
-      // update current elements
-      this.svg.get(0).animate({
-        duration: this.config.animationSpeed
-      }).width(this.config.maxWidth).height(this.config.maxHeight).center(X, Y);
-      this.svg.get(2).remove();
-      this.svg.get(1).remove(); // create new elements
-
-      var icon = this.createIcon();
-      var text = this.createRiskDetails();
-      this.svg.add(icon);
-      this.svg.add(text); // put new elements into position
-
-      icon.center(this.initialX, this.initialY).attr({
-        opacity: 0
-      }).animate({
-        duration: this.config.animationSpeed
-      }).attr({
-        opacity: this.config.maxIconOpacity
-      }).size(this.config.maxIconSize, this.config.maxIconSize).cx(X - this.config.maxIconSize / 2 + this.config.maxIconTranslateX + this.config.maxIconSize / 2).cy(Y - this.config.maxIconSize / 2 + this.config.maxIconTranslateY + this.config.maxIconSize / 2);
-      text.center(this.initialX, this.initialY).scale(0.001).attr({
-        opacity: 0
-      }).animate({
-        duration: this.config.animationSpeed
-      }).attr({
-        opacity: 1
-      }).transform({
-        scale: 1,
-        translate: [this.config.maxTextTranslateX, this.config.maxTextTranslateY]
-      }).center(X, Y);
-      this.currentWidth = this.config.minWidth;
-      this.currentHeight = this.config.minHeight;
-      this.nodeSize = "max";
-      this.currentX = X;
-      this.currentY = Y;
-    }
-    /**
-     * Transforms a node from maximal version to minimal version
-     * @param {Number} [X=finalX] the final X render position
-     * @param {Number} [Y=finaY] the final Y render position
-     */
-
-  }, {
-    key: "transformToMin",
-    value: function transformToMin() {
-      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.finalX;
-      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.finalY;
-      // update current elements
-      this.svg.get(0).animate({
-        duration: this.config.animationSpeed
-      }).width(this.config.minWidth).height(this.config.minHeight).center(X, Y);
-      this.svg.get(2).remove();
-      this.svg.get(1).remove(); // create new elements
-
-      var icon = this.createIcon();
-      var text = this.createLabel();
-      this.svg.add(icon);
-      this.svg.add(text); // put new elements into position
-
-      icon.center(X, Y).attr({
-        opacity: 0
-      }).animate({
-        duration: this.config.animationSpeed
-      }).attr({
-        opacity: this.config.minIconOpacity
-      }).size(this.config.minIconSize, this.config.minIconSize).dx(-this.config.minIconSize / 2 + this.config.minIconTranslateX).dy(-this.config.minIconSize / 2 + this.config.minIconTranslateY);
-      text.size(this.config.minTextWidth, text.children()[0].node.clientHeight).center(X, Y).scale(0.001).attr({
-        opacity: 0
-      }).animate({
-        duration: this.config.animationSpeed
-      }).attr({
-        opacity: 1
-      }).transform({
-        scale: 1,
-        translate: [this.config.minTextTranslateX, this.config.minTextTranslateY]
-      });
-      this.currentWidth = this.config.minWidth;
-      this.currentHeight = this.config.minHeight;
-      this.nodeSize = "min";
-      this.currentX = X;
-      this.currentY = Y;
-    }
-  }]);
-
-  return RiskNode;
-}(BaseNode);
-
-var $find = arrayIteration.find;
-
-
-
-var FIND = 'find';
-var SKIPS_HOLES$1 = true;
-
-var USES_TO_LENGTH$2 = arrayMethodUsesToLength(FIND);
-
-// Shouldn't skip holes
-if (FIND in []) Array(1)[FIND](function () { SKIPS_HOLES$1 = false; });
-
-// `Array.prototype.find` method
-// https://tc39.github.io/ecma262/#sec-array.prototype.find
-_export({ target: 'Array', proto: true, forced: SKIPS_HOLES$1 || !USES_TO_LENGTH$2 }, {
-  find: function find(callbackfn /* , that = undefined */) {
-    return $find(this, callbackfn, arguments.length > 1 ? arguments[1] : undefined);
-  }
-});
-
-// https://tc39.github.io/ecma262/#sec-array.prototype-@@unscopables
-addToUnscopables(FIND);
-
-var defineProperty$5 = objectDefineProperty.f;
-
-var FunctionPrototype = Function.prototype;
-var FunctionPrototypeToString = FunctionPrototype.toString;
-var nameRE = /^\s*function ([^ (]*)/;
-var NAME = 'name';
-
-// Function instances `.name` property
-// https://tc39.github.io/ecma262/#sec-function-instances-name
-if (descriptors && !(NAME in FunctionPrototype)) {
-  defineProperty$5(FunctionPrototype, NAME, {
-    configurable: true,
-    get: function () {
-      try {
-        return FunctionPrototypeToString.call(this).match(nameRE)[1];
-      } catch (error) {
-        return '';
-      }
-    }
-  });
-}
-
-/**
- * @typedef
- */
-
-/**
- * Default configuration for requirement nodes
- * @typedef {RequirementConfig} RequirementConfig
- *
- * @param {Number} [maxWidth=370] The nodes maximal width
- * @param {Number} [maxHeight=200] The nodes maximal height
- * @param {Number} [minWidth=155] The nodes minimal width
- * @param {Number} [minHeight=50] The nodes minimal height
- *
- * @param {Object} state // TODO: create a proper type
- * @param {String} state.state A specific requirement state
- * @param {String} state.name The display name of a specific requirement state
- * @param {String} state.color The color attached to a specifc state
- * @param {Array} [states=Array[state]] An array of aviable requirement states
- *
- * @param {Number} [offset=8] The spacing used by padding and margin
- * @param {Number} [animationSpeed=300] The animation in milliseconds
- * @param {Number} [borderRadius=8] The border radius
- * @param {Number} [borderStrokeWidth=1] The border stroke width
- * @param {String} [borderStrokeColor="#666666"] The border color
- * @param {String} [borderStrokeDasharray="0"] Gaps inside border
- * @param {String} [backgroundColor="#ffffff"] The background color for the rendered node
- *
- * @param {Number} [minTextWidth=150] The minimal text width for the label
- * @param {Number} [minTextHeight=45] The minimal text height for the label
- * @param {Number} [minTextTranslateX=0] Moves the label horizontally
- * @param {Number} [minTextTranslateY=0] The the label vertically
- * @param {Number} [maxTextWidth=365] The maximal text width for the description
- * @param {Number} [maxTextHeight=195] The maximal text height for the description
- * @param {Number} [maxTextTranslateX=0] The the description horizontally
- * @param {Number} [maxTextTranslateY=0] The the description vertically
- * @param {String} [labelColor="#222222"] The label text color for details
- * @param {String} [labelColor="#ffffff"] The label text color for minimal nodes
- * @param {String} [labelFontFamily="Montserrat"] The label font family
- * @param {Number} [labelFontSize=14] The label font size
- * @param {Number} [labelFontWeight=600] The label font weight
- * @param {String} [labelFontStyle="normal"] The label font style
- * @param {String} [labelBackground="none"] The label background color
- * @param {String} [detailsColor="#222222"] The details text color
- * @param {String} [detailsFontFamily="Montserrat"] The details family
- * @param {Number} [detailsFontSize=12] The details font size
- * @param {Number} [detailsFontWeight=600] The details font weight
- * @param {String} [detailsFontStyle="normal"] The details font style
- * @param {String} [detailsBackground="none"] The details text background color
- */
-
-var RequirementConfig = {
-  // large node
-  maxWidth: 370,
-  maxHeight: 200,
-  // small node
-  minWidth: 155,
-  minHeight: 50,
-  // available node states
-  states: [{
-    state: "fulfilled",
-    name: "Fulfilled",
-    color: "#7ed167"
-  }, {
-    state: "partially-fulfilled",
-    name: "Partially Fulfilled",
-    color: "#ffc453"
-  }, {
-    state: "not-fulfilled",
-    name: "Not Fulfilled",
-    color: "#ff6655"
-  }, {
-    state: "Unknown State",
-    name: "Unknown State",
-    color: "#84a8f2"
-  }],
-  // node
-  offset: 8,
-  animationSpeed: 300,
-  borderRadius: 8,
-  borderStrokeWidth: 1,
-  borderStrokeColor: "#666666",
-  borderStrokeDasharray: "0",
-  backgroundColor: "#ffffff",
-  // text
-  minTextWidth: 150,
-  minTextHeight: 45,
-  minTextTranslateX: 0,
-  minTextTranslateY: 0,
-  maxTextWidth: 365,
-  maxTextHeight: 195,
-  maxTextTranslateX: 0,
-  maxTextTranslateY: 0,
-  maxLabelColor: "#222222",
-  labelColor: "#ffffff",
-  labelFontFamily: "Montserrat",
-  labelFontSize: 14,
-  labelFontWeight: 600,
-  labelFontStyle: "normal",
-  labelBackground: "none",
-  detailsColor: "#222222",
-  detailsFontFamily: "Montserrat",
-  detailsFontSize: 12,
-  detailsFontWeight: 600,
-  detailsFontStyle: "normal",
-  detailsBackground: "none"
-};
-/**
- * Class representing the visualization of requirements
- * @param {Data} data the raw node data
- * @param {Canvas} canvas the canvas to render the node on
- * @param {RequirementConfig} customRequirementConfig custom config to override the default values
- *
- * @example
- * const requirement1 = NodeFactory.create(data.find(d => d.type === "requirement"), canvas)
- * requirement1.setInitialXY(200, 100)
- * requirement1.renderAsMin()
- *
- * const requirement2 = NodeFactory.create(data.find(d => d.type === "requirement"), canvas)
- * requirement2.setInitialXY(200, 400)
- * requirement2.renderAsMax()
- *
- * setTimeout(() => requirement1.transformToMax(200, 200), 500)
- * setTimeout(() => requirement2.transformToMin(200, 350), 500)
- */
-
-var RequirementNode = /*#__PURE__*/function (_BaseNode) {
-  _inherits(RequirementNode, _BaseNode);
-
-  function RequirementNode(data, canvas, customRequirementConfig) {
-    var _this;
-
-    _classCallCheck(this, RequirementNode);
-
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(RequirementNode).call(this, data, canvas));
-    _this.config = _objectSpread2({}, RequirementConfig, {}, customRequirementConfig); // map color to respected state
-
-    if (data.state !== null || data.state !== undefined) {
-      var state = _this.config.states.find(function (s) {
-        return s.state === data.state;
-      });
-
-      _this.config = _objectSpread2({}, _this.config, {
-        borderStrokeColor: state.color,
-        backgroundColor: state.color
-      });
-    }
-
-    return _this;
-  }
-  /**
-   * Creates the requirements details description
-   * @private
-   */
-
-
-  _createClass(RequirementNode, [{
-    key: "createRequirementDetails",
-    value: function createRequirementDetails() {
-      var _this2 = this;
-
-      var text = this.canvas.foreignObject(this.config.maxTextWidth, this.config.maxTextHeight);
-      var background = document.createElement("div");
-      background.style.display = "flex";
-      background.style.flexDirection = "column";
-      background.style.alignItems = "center";
-      text.add(background); // create label
-
-      var label = document.createElement("p");
-      label.innerHTML = this.label;
-      label.style.textAlign = "center";
-      label.style.background = this.config.labelBackground;
-      label.style.marginTop = "".concat(this.config.offset, "px");
-      label.style.color = this.config.maxLabelColor;
-      label.style.fontSize = "".concat(this.config.labelFontSize + 4, "px");
-      label.style.fontFamily = this.config.labelFontFamily;
-      label.style.fontWeight = this.config.labelFontWeight;
-      label.style.fontStyle = this.config.labelFontStyle;
-      background.appendChild(label); // create status, if any exists
-
-      var status = document.createElement("p");
-
-      if (this.state !== null) {
-        status.innerHTML = this.config.states.find(function (s) {
-          return s.state.toLowerCase() === _this2.state.toLowerCase();
-        }).name;
-        status.style.background = "#222";
-        status.style.color = "#fff";
-        status.style.fontSize = "".concat(this.config.labelFontSize + 2, "px");
-        status.style.fontFamily = this.config.labelFontFamily;
-        status.style.fontWeight = "normal";
-        status.style.textAlign = "center";
-        status.style.width = "fit-content";
-        status.style.padding = "".concat(this.config.offset / 2, "px ").concat(this.config.offset / 1.5, "px");
-        status.style.borderRadius = "".concat(this.config.borderRadius / 2, "px");
-        status.style.margin = "".concat(this.config.offset, "px ").concat(this.config.offset, "px");
-        background.appendChild(status);
-      } // create description
-
-
-      var descriptionBg = document.createElement("div");
-      background.appendChild(descriptionBg);
-      var description = document.createElement("p");
-      description.style.background = this.config.detailsBackground;
-      description.style.padding = "0 ".concat(this.config.offset, "px");
-      description.style.margin = "0 ".concat(this.config.offset, "px ").concat(this.config.offset, "px ").concat(this.config.offset, "px");
-
-      if (this.state === null) {
-        description.style.marginTop = "".concat(this.config.offset, "px");
-      }
-
-      description.style.color = this.config.detailsColor;
-      description.style.fontSize = "".concat(this.config.detailsFontSize, "px");
-      description.style.fontFamily = this.config.detailsFontFamily;
-      description.style.fontWeight = this.config.detailsFontWeight;
-      description.style.fontStyle = this.config.detailsFontStyle;
-      description.innerText = this.description;
-      descriptionBg.appendChild(description);
-      var h = this.config.maxTextHeight - label.clientHeight - status.clientHeight - this.config.offset * 3.5;
-      clamp(description, {
-        clamp: "".concat(h, "px")
-      });
-      return text;
-    }
-    /**
-     * Renders a requirement node in minimal version
-     * @param {Number} [X=initialX] the initial X render position
-     * @param {Number} [Y=initialY] the initial Y render position
-     */
-
-  }, {
-    key: "renderAsMin",
-    value: function renderAsMin() {
-      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.initialX;
-      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.initialY;
-      // create svg elements
-      var svg = this.createSVGElement();
-      var node = this.createNode();
-      var text = this.createLabel();
-      svg.add(node);
-      svg.add(text); // animate new elements into position
-
-      svg.center(X, Y);
-      node.center(X, Y).animate({
-        duration: this.config.animationSpeed
-      }).width(this.config.minWidth).height(this.config.minHeight).dmove(-this.config.minWidth / 2, -this.config.minHeight / 2);
-      text.size(this.config.minTextWidth, text.children()[0].node.clientHeight).center(X, Y).scale(0.001).attr({
-        opacity: 0
-      }).animate({
-        duration: this.config.animationSpeed
-      }).attr({
-        opacity: 1
-      }).transform({
-        scale: 1,
-        translate: [this.config.minTextTranslateX, this.config.minTextTranslateY]
-      });
-      this.currentWidth = this.config.minWidth;
-      this.currentHeight = this.config.minHeight;
-      this.nodeSize = "min";
-      this.currentX = X;
-      this.currentY = Y;
-      this.opacity = 1;
-      this.isHidden = false;
-      this.svg = svg;
-    }
-    /**
-     * Renders a requirement node in maximal version
-     * @param {Number} [X=initialX] the initial X render position
-     * @param {Number} [Y=initialY] the initial Y render position
-     */
-
-  }, {
-    key: "renderAsMax",
-    value: function renderAsMax() {
-      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.initialX;
-      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.initialY;
-      // create svg elements
-      var svg = this.createSVGElement();
-      var node = this.createNode();
-      var text = this.createRequirementDetails();
-      svg.add(node);
-      svg.add(text); // animate new elements into position
-
-      svg.center(X, Y);
-      node.center(X, Y).animate({
-        duration: this.config.animationSpeed
-      }).width(this.config.maxWidth).height(this.config.maxHeight).dmove(-this.config.maxWidth / 2, -this.config.maxHeight / 2);
-      text.center(X, Y).scale(0.001).attr({
-        opacity: 0
-      }).animate({
-        duration: this.config.animationSpeed
-      }).attr({
-        opacity: 1
-      }).transform({
-        scale: 1,
-        translate: [this.config.maxTextTranslateX, this.config.maxTextTranslateY]
-      });
-      this.currentWidth = this.config.maxWidth;
-      this.currentHeight = this.config.maxHeight;
-      this.nodeSize = "max";
-      this.currentX = X;
-      this.currentY = Y;
-      this.opacity = 1;
-      this.isHidden = false;
-      this.svg = svg;
-    }
-    /**
-     * Transforms a node from minimal version to maximal version
-     * @param {Number} [X=finalX] the final X render position
-     * @param {Number} [Y=finaY] the final Y render position
-     */
-
-  }, {
-    key: "transformToMax",
-    value: function transformToMax() {
-      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.finalX;
-      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.finalY;
-      // update current elements
-      this.svg.get(0).animate({
-        duration: this.config.animationSpeed
-      }).width(this.config.maxWidth).height(this.config.maxHeight).center(X, Y);
-      this.svg.get(1).remove(); // create new elements
-
-      var text = this.createRequirementDetails();
-      this.svg.add(text); // put new elements into position
-
-      text.center(X, Y).scale(0.001).attr({
-        opacity: 0
-      }).animate({
-        duration: this.config.animationSpeed
-      }).attr({
-        opacity: 1
-      }).transform({
-        scale: 1,
-        translate: [this.config.maxTextTranslateX, this.config.maxTextTranslateY]
-      });
-      this.currentWidth = this.config.minWidth;
-      this.currentHeight = this.config.minHeight;
-      this.nodeSize = "max";
-      this.currentX = X;
-      this.currentY = Y;
-    }
-    /**
-     * Transforms a node from maximal version to minimal version
-     * @param {Number} [X=finalX] the final X render position
-     * @param {Number} [Y=finaY] the final Y render position
-     */
-
-  }, {
-    key: "transformToMin",
-    value: function transformToMin() {
-      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.finalX;
-      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.finalY;
-      // update current elements
-      this.svg.get(0).animate({
-        duration: this.config.animationSpeed
-      }).width(this.config.minWidth).height(this.config.minHeight).center(X, Y);
-      this.svg.get(1).remove(); // create new elements
-
-      var text = this.createLabel();
-      this.svg.add(text); // put new elements into position
-
-      text.size(this.config.minTextWidth, text.children()[0].node.clientHeight).center(X, Y).scale(0.001).attr({
-        opacity: 0
-      }).animate({
-        duration: this.config.animationSpeed
-      }).attr({
-        opacity: 1
-      }).transform({
-        scale: 1,
-        translate: [this.config.minTextTranslateX, this.config.minTextTranslateY]
-      });
-      this.currentWidth = this.config.minWidth;
-      this.currentHeight = this.config.minHeight;
-      this.nodeSize = "min";
-      this.currentX = X;
-      this.currentY = Y;
-    }
-  }]);
-
-  return RequirementNode;
-}(BaseNode);
-
-// https://enmascript.com/articles/2018/10/05/javascript-factory-pattern
-
-/**
- * Optional configuration to override default values
- *  @typedef {Config} Config
- *
- * @param {Number} [maxWidth] node size in maximal representation
- * @param {Number} [maxHeight] node size in maximal representation
- * @param {Number} [minWidth] node size in minimal representation
- * @param {Number} [minHeight] node size in minimal representation
- * @param {String} [iconUrl] path to an image icon
- * @param {Object} [iconOpacity]
- * @param {Number} [iconOpacity.minOpacity] opacity value for minimal representation
- * @param {Number} [iconOpacity.maxOpacity] opacity value for maximal representation
- * @param {Number} [offset] spacing for all elements inside the node
- * @param {Number} [animationSpeed] how long a node animations takes
- * @param {Number} [borderRadius] the border radius
- * @param {Object} [borderStroke]
- * @param {Number} [borderStroke.width] border width
- * @param {String} [borderStroke.color] border color as hex values
- * @param {Object} [backgroundColor]
- * @param {String} [backgroundColor.color] the nodes background color
- * @param {Object} [labelColor]
- * @param {String} [labelColor.color] the color for the label as hex value
- * @param {Object} [labelFont]
- * @param {String} [labelFont.family] the font family
- * @param {Number} [labelFont.size] the font size
- * @param {Number} [labelFont.weight] the font weight
- * @param {String} [labelFont.style] the font style
- * @param {Object} [labelBackground]
- * @param {String} [labelBackground.color] the label's background color as hex value
- * @param {Number} [labelBackground.opacity] the opacity of the label background
- * @param {Object} [detailsColor]
- * @param {String} [detailsColor.color] the color for the details as hex value
- * @param {Object} [detailsFont]
- * @param {Number} [detailsFont.family] the font family
- * @param {Number} [detailsFont.size] the font size
- * @param {Number} [detailsFont.weight] the font weight
- * @param {String} [detailsFont.style] the font style
- * @param {Object} [detailsBackground]
- * @param {String} [detailsBackground.color] the details background color as hex value
- * @param {Number} [detailsBackground.opacity] the details background opacity
- */
-
-/**
- * Factory to create node objects
- * @param {Data} data the raw node data
- * @param {Canvas} canvas the canvas to render the node on
- * @param {Config} [config] custom config to override the default values
- *
- *
- * @example
- * // creates an asset node
- * const asset = NodeFactory.create(data, canvas)
- * asset.renderAsMin()
- * setTimeout(() => asset.transformToMax(), 500)
- *
- */
-
-var NodeFactory = /*#__PURE__*/function () {
-  function NodeFactory() {
-    _classCallCheck(this, NodeFactory);
-  }
-
-  _createClass(NodeFactory, null, [{
-    key: "create",
-    value: function create(data, canvas) {
-      var config = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
-      var node;
-
-      if (data.type === "asset") {
-        node = new AssetNode(data, canvas, config);
-      } else if (data.type === "control") {
-        node = new ControlNode(data, canvas, config);
-      } else if (data.type === "risk") {
-        node = new RiskNode(data, canvas, config);
-      } else if (data.type === "requirement") {
-        node = new RequirementNode(data, canvas, config);
-      } else {
-        node = new CustomNode(data, canvas, config);
-      }
-
-      return node;
-    }
-  }]);
-
-  return NodeFactory;
-}();
 
 var Point2D_1 = createCommonjsModule(function (module) {
 /**
@@ -16737,55 +19205,118 @@ var BaseEdge = /*#__PURE__*/function () {
     this.opacity = 1;
     this.isHidden = false;
   }
-  /**
-   * Calculates two end points to create an edge
-   * @private
-   */
-
 
   _createClass(BaseEdge, [{
-    key: "calculate",
-    value: function calculate() {
+    key: "calculateEdge",
+    value: function calculateEdge() {
+      var fx = this.fromNode.getFinalX();
+      var fy = this.fromNode.getFinalY();
+      var tx = this.toNode.getFinalX();
+      var ty = this.toNode.getFinalY(); // this.canvas.circle(5).fill("#75f").center(fx, fy)
+      // this.canvas.circle(5).fill("#000").center(tx, ty)
+
       var line = shape("line", {
-        x1: this.fromNode.currentX,
-        y1: this.fromNode.currentY,
-        x2: this.toNode.currentX,
-        y2: this.toNode.currentY
-      });
-      var borderWidthTo = this.toNode.config.borderStrokeWidth;
-      var widthTo = this.toNode.currentWidth + borderWidthTo + this.config.offset;
-      var heightTo = this.toNode.currentHeight + borderWidthTo + this.config.offset;
-      var rectTo = shape("rect", {
-        x: this.toNode.currentX - widthTo / 2 - borderWidthTo / 2 - this.config.offset / 2,
-        y: this.toNode.currentY - heightTo / 2 - borderWidthTo / 2 - this.config.offset / 2,
-        width: widthTo + borderWidthTo + this.config.offset,
-        height: heightTo + borderWidthTo + this.config.offset,
-        rx: this.toNode.config.borderRadius,
-        ry: this.toNode.config.borderRadius
-      });
-      var borderWidthFrom = this.fromNode.config.borderStrokeWidth;
-      var widthFrom = this.fromNode.currentWidth + borderWidthFrom + this.config.offset;
-      var heightFrom = this.fromNode.currentHeight + borderWidthFrom + this.config.offset;
-      var rectFrom = shape("rect", {
-        x: this.fromNode.currentX - widthFrom / 2 - borderWidthFrom / 2 - this.config.offset / 2,
-        y: this.fromNode.currentY - heightFrom / 2 - borderWidthFrom / 2 - this.config.offset / 2,
-        width: widthFrom + borderWidthFrom + this.config.offset,
-        height: heightFrom + borderWidthFrom + this.config.offset,
+        x1: fx,
+        y1: fy,
+        x2: tx,
+        y2: ty
+      }); // from intersection point calculation
+
+      var w2 = this.fromNode.getNodeSize() === "min" ? this.fromNode.config.minWidth : this.fromNode.config.maxWidth;
+      var h2 = this.fromNode.getNodeSize() === "min" ? this.fromNode.config.minHeight : this.fromNode.config.maxHeight;
+      var rect2 = shape("rect", {
+        x: fx - w2 / 2 - this.fromNode.config.borderStrokeWidth / 2 - this.config.offset / 2,
+        y: fy - h2 / 2 - this.fromNode.config.borderStrokeWidth / 2 - this.config.offset / 2,
+        width: w2 + this.fromNode.config.borderStrokeWidth + this.config.offset,
+        height: h2 + this.fromNode.config.borderStrokeWidth + this.config.offset,
         rx: this.fromNode.config.borderRadius,
         ry: this.fromNode.config.borderRadius
       });
+      var fromPoints = intersect$1(rect2, line); // console.log(fromPoints)
 
-      var _intersect = intersect$1(rectTo, line),
-          toPoints = _intersect.points;
+      this.finalFromX = fromPoints.points[0].x;
+      this.finalFromY = fromPoints.points[0].y; // to intersection point calculation
 
-      var _intersect2 = intersect$1(rectFrom, line),
-          fromPoints = _intersect2.points;
+      var w1 = this.toNode.getNodeSize() === "min" ? this.toNode.config.minWidth : this.toNode.config.maxWidth;
+      var h1 = this.toNode.getNodeSize() === "min" ? this.toNode.config.minHeight : this.toNode.config.maxHeight;
+      var rect1 = shape("rect", {
+        x: tx - w1 / 2 - this.toNode.config.borderStrokeWidth / 2 - this.config.offset / 2,
+        y: ty - h1 / 2 - this.toNode.config.borderStrokeWidth / 2 - this.config.offset / 2,
+        width: w1 + this.toNode.config.borderStrokeWidth + this.config.offset,
+        height: h1 + this.toNode.config.borderStrokeWidth + this.config.offset,
+        rx: this.toNode.config.borderRadius,
+        ry: this.toNode.config.borderRadius
+      });
+      var toPoints = intersect$1(rect1, line);
+      this.finalToX = toPoints.points[0].x;
+      this.finalToY = toPoints.points[0].y; // this.canvas.circle(5).fill("#75f").center(this.finalFromX, this.finalFromY)
+      // this.canvas.circle(5).fill("#000").center(this.finalToX, this.finalToY)
+    }
+  }, {
+    key: "updateEdgePosition",
+    value: function updateEdgePosition() {
+      var fx = this.fromNode.getFinalX();
+      var fy = this.fromNode.getFinalY();
+      var tx = this.toNode.getFinalX();
+      var ty = this.toNode.getFinalY(); // this.canvas.circle(5).fill("#75f").center(fx, fy)
+      // this.canvas.circle(5).fill("#000").center(tx, ty)
 
-      this.finalToX = toPoints[0].x;
-      this.finalToY = toPoints[0].y;
-      this.finalFromX = fromPoints[0].x;
-      this.finalFromY = fromPoints[0].y; // this.canvas.circle(5).fill("#f75").center(this.finalToX, this.finalToY)
-      // this.canvas.circle(5).fill("#0f0").center(this.finalFromX, this.finalFromY)
+      var line = shape("line", {
+        x1: fx,
+        y1: fy,
+        x2: tx,
+        y2: ty
+      }); // from intersection point calculation
+
+      var w2 = this.fromNode.getNodeSize() === "min" ? this.fromNode.config.minWidth : this.fromNode.config.maxWidth;
+      var h2 = this.fromNode.getNodeSize() === "min" ? this.fromNode.config.minHeight : this.fromNode.config.maxHeight;
+      var rect2 = shape("rect", {
+        x: fx - w2 / 2 - this.fromNode.config.borderStrokeWidth / 2 - this.config.offset / 2,
+        y: fy - h2 / 2 - this.fromNode.config.borderStrokeWidth / 2 - this.config.offset / 2,
+        width: w2 + this.fromNode.config.borderStrokeWidth + this.config.offset,
+        height: h2 + this.fromNode.config.borderStrokeWidth + this.config.offset,
+        rx: this.fromNode.config.borderRadius,
+        ry: this.fromNode.config.borderRadius
+      });
+      var fromPoints = intersect$1(rect2, line); // console.log(fromPoints)
+
+      this.finalFromX = fromPoints.points[0].x;
+      this.finalFromY = fromPoints.points[0].y; // to intersection point calculation
+
+      var w1 = this.toNode.getNodeSize() === "min" ? this.toNode.config.minWidth : this.toNode.config.maxWidth;
+      var h1 = this.toNode.getNodeSize() === "min" ? this.toNode.config.minHeight : this.toNode.config.maxHeight;
+      var rect1 = shape("rect", {
+        x: tx - w1 / 2 - this.toNode.config.borderStrokeWidth / 2 - this.config.offset / 2,
+        y: ty - h2 / 2 - this.toNode.config.borderStrokeWidth / 2 - this.config.offset / 2,
+        width: w1 + this.toNode.config.borderStrokeWidth + this.config.offset,
+        height: h1 + this.toNode.config.borderStrokeWidth + this.config.offset,
+        rx: this.toNode.config.borderRadius,
+        ry: this.toNode.config.borderRadius
+      });
+      var toPoints = intersect$1(rect1, line);
+      this.finalToX = toPoints.points[0].x;
+      this.finalToY = toPoints.points[0].y; // this.canvas.circle(5).fill("#75f").center(this.finalFromX, this.finalFromY)
+      // this.canvas.circle(5).fill("#000").center(this.finalToX, this.finalToY)
+    }
+  }, {
+    key: "removeEdge",
+    value: function removeEdge(X, Y) {
+      var _this = this;
+
+      this.svg.attr({
+        opacity: 1
+      }).animate({
+        duration: this.config.animationSpeed
+      }).transform({
+        scale: 0.001,
+        position: [X, Y]
+      }).attr({
+        opacity: 0
+      }).after(function () {
+        _this.svg.remove();
+
+        _this.svg = null;
+      });
     }
     /**
      * Creates the edge label
@@ -16800,7 +19331,7 @@ var BaseEdge = /*#__PURE__*/function () {
       background.style.background = this.config.labelBackground;
       background.style.padding = "".concat(this.config.offset / 2, "px");
       background.style.textAlign = "center";
-      background.style.width = "fit-content"; // uncomment this for more than one word
+      background.style.minWidth = "100px"; // uncomment this for more than one word
 
       var label = document.createElement("p");
       label.innerText = this.label;
@@ -16822,12 +19353,164 @@ var BaseEdge = /*#__PURE__*/function () {
   }, {
     key: "setLabel",
     value: function setLabel(label) {
-      this.label = label;
+      this.label = label || null;
     }
   }]);
 
   return BaseEdge;
 }();
+
+var ThinEdgeConfig = {
+  offset: 8,
+  animationSpeed: 300,
+  type: "solid",
+  // arrow
+  strokeWidth: 2,
+  strokeColor: "#aaa",
+  strokeDasharray: "7 5",
+  marker: "M 0 0 L 6 3 L 0 6 z",
+  // text
+  labelColor: "#777",
+  labelFontFamily: "Montserrat",
+  labelFontSize: 16,
+  labelFontWeight: 600,
+  labelFontStyle: "normal",
+  labelBackground: "#ffffffcc"
+};
+
+var ThinEdge = /*#__PURE__*/function (_BaseEdge) {
+  _inherits(ThinEdge, _BaseEdge);
+
+  function ThinEdge(canvas, fromNode, toNode) {
+    var _this;
+
+    var customThinEdgeConfig = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
+
+    _classCallCheck(this, ThinEdge);
+
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(ThinEdge).call(this, canvas, fromNode, toNode));
+    _this.config = _objectSpread2({}, ThinEdgeConfig, {}, customThinEdgeConfig);
+    return _this;
+  }
+  /**
+   * Creates the initial SVG element and adds hover effect
+   */
+
+
+  _createClass(ThinEdge, [{
+    key: "render",
+    value: function render(X, Y) {
+      var _this2 = this;
+
+      var svg = this.canvas.group(); // .draggable()
+
+      svg.css("cursor", "default");
+      svg.id("edge#".concat(this.fromNode.id, "_").concat(this.toNode.id));
+      var line = "M".concat(this.finalFromX, ",").concat(this.finalFromY, " L").concat(this.finalToX, ",").concat(this.finalToY);
+      var dasharray = this.config.type === "dashed" ? this.config.strokeDasharray : "0";
+      var path = this.canvas.path(line).stroke({
+        width: this.config.strokeWidth,
+        color: this.config.strokeColor,
+        dasharray: dasharray
+      }); // create a re-useable marker
+
+      var i = _toConsumableArray(this.canvas.defs().node.childNodes).findIndex(function (d) {
+        return d.id === "defaultThinMarker";
+      });
+
+      if (i === -1) {
+        var marker = this.canvas.marker(12, 6, function (add) {
+          add.path(_this2.config.marker).fill(_this2.config.strokeColor).dx(1);
+        });
+        marker.id("defaultThinMarker");
+        this.canvas.defs().add(marker);
+        path.marker("end", marker);
+      } else {
+        var _marker = this.canvas.defs().get(i);
+
+        path.marker("end", _marker);
+      }
+
+      svg.add(path);
+
+      if (this.label !== null) {
+        var label = this.createLabel();
+        svg.add(label);
+      }
+
+      svg.attr({
+        opacity: 0
+      });
+      svg.center(X, Y);
+      this.svg = svg;
+    }
+    /**
+     * Transform an edge to its final rendered position
+     */
+
+  }, {
+    key: "transformToFinalPosition",
+    value: function transformToFinalPosition() {
+      this.svg.back();
+      this.svg.scale(0.001).attr({
+        opacity: 1
+      }).animate({
+        duration: this.config.animationSpeed
+      }).transform({
+        scale: 1
+      });
+      this.svg.get(0).attr({
+        opacity: 0
+      }).animate({
+        duration: this.config.animationSpeed
+      }).plot("M".concat(this.finalFromX, ",").concat(this.finalFromY, " L").concat(this.finalToX, ",").concat(this.finalToY)).attr({
+        opacity: 1
+      });
+
+      if (this.label) {
+        this.svg.get(1).attr({
+          opacity: 0
+        }).animate({
+          duration: this.config.animationSpeed
+        }).center((this.finalFromX + this.finalToX) / 2, (this.finalFromY + this.finalToY) / 2).attr({
+          opacity: 1
+        });
+      }
+    }
+    /**
+     * Transform an edge from its visible position to its initial rendered position
+     * @param {Number} [X=finalFromX] The x-position the edge will be translated
+     * @param {Number} [Y=finalFromY] The y-position the edge will be translated
+     */
+
+  }, {
+    key: "transformToInitialPosition",
+    value: function transformToInitialPosition() {
+      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.finalFromX;
+      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.finalFromY;
+      this.svg.back();
+      this.svg.get(0).attr({
+        opacity: 1
+      }).animate({
+        duration: this.config.animationSpeed
+      }).plot("M".concat(X, ",").concat(Y, " L").concat(X, ",").concat(Y)).attr({
+        opacity: 0
+      });
+
+      if (this.label) {
+        this.svg.get(1).attr({
+          opacity: 1
+        }).animate({
+          duration: this.config.animationSpeed
+        }).center(X, Y).attr({
+          opacity: 0
+        });
+      }
+    }
+  }]);
+
+  return ThinEdge;
+}(BaseEdge);
 
 var BoldEdgeConfig = {
   offset: 8,
@@ -16997,138 +19680,1947 @@ var BoldEdge = /*#__PURE__*/function (_BaseEdge) {
   return BoldEdge;
 }(BaseEdge);
 
-var ThinEdgeConfig = {
-  offset: 8,
-  animationSpeed: 300,
-  type: "solid",
-  // arrow
-  strokeWidth: 2,
-  strokeColor: "#afd4ed",
-  strokeDasharray: "0",
-  marker: "M 0 0 L 8 4 L 0 8 z",
-  // text
-  labelColor: "#222222",
-  labelFontFamily: "Montserrat",
-  labelFontSize: 16,
-  labelFontWeight: 600,
-  labelFontStyle: "normal",
-  labelBackground: "#ffffffcc"
-};
+var BaseLayout = /*#__PURE__*/function () {
+  function BaseLayout() {
+    _classCallCheck(this, BaseLayout);
 
-var ThinEdge = /*#__PURE__*/function (_BaseEdge) {
-  _inherits(ThinEdge, _BaseEdge);
-
-  function ThinEdge(canvas, fromNode, toNode) {
-    var _this;
-
-    var customThinEdgeConfig = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
-
-    _classCallCheck(this, ThinEdge);
-
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(ThinEdge).call(this, canvas, fromNode, toNode));
-    _this.config = _objectSpread2({}, ThinEdgeConfig, {}, customThinEdgeConfig);
-
-    _this.calculate();
-
-    return _this;
+    this.canvas = null;
+    this.rawNodes = [];
+    this.rawEdges = [];
+    this.nodes = [];
+    this.edges = [];
+    this.currentLayoutWidth = 0;
+    this.currentLayoutHeight = 0;
+    this.info = {
+      currentX: 0,
+      currentY: 0,
+      currentWidth: 0,
+      currentHeight: 0,
+      currentState: "expanded"
+    };
+    this.tree = null;
   }
-  /**
-   * Creates the initial SVG element and adds hover effect
-   */
 
+  _createClass(BaseLayout, [{
+    key: "getNodeData",
+    value: function getNodeData() {
+      return this.nodeData;
+    }
+  }, {
+    key: "getEdgeData",
+    value: function getEdgeData() {
+      return this.edgeData;
+    }
+  }, {
+    key: "createGridDataAsync",
+    value: function () {
+      var _createGridDataAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee(nodeData, edgeData) {
+        var _this = this;
 
-  _createClass(ThinEdge, [{
-    key: "createSVGElement",
-    value: function createSVGElement() {
-      var _this2 = this;
+        var mapNodeIdsToUrl, nodeIdsToFetch, nodeFetchUrl, fetchedNodes;
+        return regeneratorRuntime.wrap(function _callee$(_context) {
+          while (1) {
+            switch (_context.prev = _context.next) {
+              case 0:
+                this.nodeData = nodeData;
+                this.edgeData = edgeData; // find children ids that we need to fetch
 
-      var svg = this.canvas.group(); // .draggable()
+                mapNodeIdsToUrl = function mapNodeIdsToUrl(n) {
+                  return "id=".concat(n.id, "&");
+                };
 
-      svg.css("cursor", "default");
-      svg.id("edge#".concat(this.fromNode.id, "_").concat(this.toNode.id));
-      var line = "M".concat(this.finalFromX, ",").concat(this.finalFromY, " L").concat(this.finalFromX, ",").concat(this.finalFromY);
-      var path = this.canvas.path(line).stroke({
-        width: this.config.strokeWidth,
-        color: this.config.strokeColor,
-        dasharray: this.config.strokeDasharray
-      });
-      var marker = this.canvas.marker(14, 8, function (add) {
-        add.path(_this2.config.marker).fill(_this2.config.strokeColor).dx(1);
-      });
-      path.marker("end", marker);
-      svg.add(path);
+                nodeIdsToFetch = nodeData.map(mapNodeIdsToUrl).join("").slice(0, -1);
+                nodeFetchUrl = "".concat(this.config.databaseUrl, "/nodes?").concat(nodeIdsToFetch);
+                _context.next = 7;
+                return fetch(nodeFetchUrl).then(function (data) {
+                  return data.json();
+                });
 
-      if (this.label !== null) {
-        var label = this.createLabel();
-        svg.add(label);
+              case 7:
+                fetchedNodes = _context.sent;
+                // create new nodes
+                fetchedNodes.forEach(function (rawNode) {
+                  var node;
+                  if (rawNode.type === "risk") node = new RiskNode(rawNode, _this.canvas);
+                  if (rawNode.type === "asset") node = new AssetNode(rawNode, _this.canvas);
+                  if (rawNode.type === "custom") node = new CustomNode(rawNode, _this.canvas);
+                  if (rawNode.type === "requirement") node = new RequirementNode(rawNode, _this.canvas);
+                  if (rawNode.type === "control") node = new ControlNode(rawNode, _this.canvas); // sets the currently used rendering size
+
+                  node.setNodeSize(_this.config.renderingSize); // node.addEvent("dblclick", () => { this.manageDataAsync(node) })
+
+                  _this.nodes.push(node);
+                }); // re-calculate and re-render layout
+
+                this.calculateLayout();
+                this.renderLayout();
+
+              case 11:
+              case "end":
+                return _context.stop();
+            }
+          }
+        }, _callee, this);
+      }));
+
+      function createGridDataAsync(_x, _x2) {
+        return _createGridDataAsync.apply(this, arguments);
       }
 
-      svg.attr({
-        opacity: 0
-      });
-      this.svg = svg;
-    }
-    /**
-     * Transform an edge to its final rendered position
-     */
+      return createGridDataAsync;
+    }()
+  }, {
+    key: "createContextualDataAsync",
+    value: function () {
+      var _createContextualDataAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee2(nodeData, edgeData) {
+        return regeneratorRuntime.wrap(function _callee2$(_context2) {
+          while (1) {
+            switch (_context2.prev = _context2.next) {
+              case 0:
+                this.nodeData = nodeData;
+                this.edgeData = edgeData; // load focus, children and parents
+                // load attached node and attached risks
+
+              case 2:
+              case "end":
+                return _context2.stop();
+            }
+          }
+        }, _callee2, this);
+      }));
+
+      function createContextualDataAsync(_x3, _x4) {
+        return _createContextualDataAsync.apply(this, arguments);
+      }
+
+      return createContextualDataAsync;
+    }()
+  }, {
+    key: "createRadialDataAsync",
+    value: function () {
+      var _createRadialDataAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee3(nodeData, edgeData) {
+        var _this2 = this;
+
+        var mapNodeIdsToUrl, nodeIdsToFetch, nodeFetchUrl, fetchedNodes, constructTree, tree, createEdges, requiredEdges, mapEdgeIdsToUrl, edgeIdsToFetch, edgeFetchUrl, fetchedEdges;
+        return regeneratorRuntime.wrap(function _callee3$(_context3) {
+          while (1) {
+            switch (_context3.prev = _context3.next) {
+              case 0:
+                // FIXME: ask: what if an edge dose not exist?
+                this.nodeData = nodeData;
+                this.edgeData = edgeData; // find children ids that we need to fetch
+
+                mapNodeIdsToUrl = function mapNodeIdsToUrl(n) {
+                  return "id=".concat(n.id, "&");
+                };
+
+                nodeIdsToFetch = nodeData.map(mapNodeIdsToUrl).join("").slice(0, -1);
+                nodeFetchUrl = "".concat(this.config.databaseUrl, "/nodes?").concat(nodeIdsToFetch);
+                _context3.next = 7;
+                return fetch(nodeFetchUrl).then(function (data) {
+                  return data.json();
+                });
+
+              case 7:
+                fetchedNodes = _context3.sent;
+                // create new nodes
+                fetchedNodes.forEach(function (rawNode) {
+                  var node;
+                  if (rawNode.type === "risk") node = new RiskNode(rawNode, _this2.canvas);
+                  if (rawNode.type === "asset") node = new AssetNode(rawNode, _this2.canvas);
+                  if (rawNode.type === "custom") node = new CustomNode(rawNode, _this2.canvas);
+                  if (rawNode.type === "requirement") node = new RequirementNode(rawNode, _this2.canvas);
+                  if (rawNode.type === "control") node = new ControlNode(rawNode, _this2.canvas); // sets the currently used rendering size
+
+                  node.setNodeSize(_this2.config.renderingSize);
+                  node.addEvent("dblclick", function () {
+                    _this2.manageDataAsync(node);
+                  });
+
+                  _this2.nodes.push(node);
+                }); // construct a tree data structure to generate edges and calculate node positions
+
+                constructTree = function constructTree(array, parentRef, rootRef) {
+                  var root = rootRef !== undefined ? rootRef : [];
+                  var parent = parentRef !== undefined ? parentRef : {
+                    id: null
+                  };
+                  var children = array.filter(function (child) {
+                    return child.parentId === parent.id;
+                  });
+
+                  if (children.length > 0) {
+                    if (parent.id === null) {
+                      root = children;
+                    } else {
+                      parent.children = children;
+                    }
+
+                    children.forEach(function (child) {
+                      constructTree(array, child);
+                    });
+                  }
+
+                  return root;
+                };
+
+                tree = constructTree(fetchedNodes)[0]; // FIXME: where is the root?
+                // find edges that the layout needs
+
+                createEdges = function createEdges(root, edgeList) {
+                  if (root.children) {
+                    root.children.forEach(function (child) {
+                      edgeList.push({
+                        startNodeId: child.id,
+                        endNodeId: root.id
+                      });
+                      createEdges(child, edgeList);
+                    });
+                  }
+
+                  return edgeList;
+                };
+
+                requiredEdges = _toConsumableArray(new Set(createEdges(tree, []))); // fetch edges based on given ids
+
+                mapEdgeIdsToUrl = function mapEdgeIdsToUrl(n) {
+                  return "endNodeId=".concat(n.endNodeId, "&startNodeId=").concat(n.startNodeId, "&");
+                };
+
+                edgeIdsToFetch = requiredEdges.map(mapEdgeIdsToUrl).join("").slice(0, -1);
+                edgeFetchUrl = "".concat(this.config.databaseUrl, "/edges?").concat(edgeIdsToFetch);
+                _context3.next = 18;
+                return fetch(edgeFetchUrl).then(function (data) {
+                  return data.json();
+                });
+
+              case 18:
+                fetchedEdges = _context3.sent;
+                // create new edges
+                fetchedEdges.forEach(function (rawEdge) {
+                  var fromNode = _this2.nodes.find(function (n) {
+                    return n.id === rawEdge.startNodeId;
+                  });
+
+                  var toNode = _this2.nodes.find(function (n) {
+                    return n.id === rawEdge.endNodeId;
+                  });
+
+                  var edge = null;
+                  if (rawEdge.type === "solid") edge = new ThinEdge(_this2.canvas, fromNode, toNode, {
+                    type: "solid"
+                  });else if (rawEdge.type === "dashed") edge = new ThinEdge(_this2.canvas, fromNode, toNode, {
+                    type: "dashed"
+                  });else if (rawEdge.type === "bold") edge = new BoldEdge(_this2.canvas, fromNode, toNode, {
+                    type: "bold"
+                  });else edge = new ThinEdge(_this2.canvas, fromNode, toNode, {
+                    type: "solid"
+                  });
+                  fromNode.addOutgoingEdge(edge);
+                  toNode.addIncomingEdge(edge);
+                  edge.setLabel(rawEdge.label);
+
+                  _this2.edges.push(edge);
+                }); // re-calculate and re-render layout
+
+                this.calculateLayout();
+                this.renderLayout();
+
+              case 22:
+              case "end":
+                return _context3.stop();
+            }
+          }
+        }, _callee3, this);
+      }));
+
+      function createRadialDataAsync(_x5, _x6) {
+        return _createRadialDataAsync.apply(this, arguments);
+      }
+
+      return createRadialDataAsync;
+    }() // eslint-disable-next-line class-methods-use-this
 
   }, {
-    key: "transformToFinal",
-    value: function transformToFinal() {
-      this.svg.attr({
-        opacity: 1
-      });
-      this.svg.get(0).attr({
-        opacity: 0
-      }).animate({
-        duration: this.config.animationSpeed
-      }).plot("M".concat(this.finalFromX, ",").concat(this.finalFromY, " L").concat(this.finalToX, ",").concat(this.finalToY)).attr({
-        opacity: 1
-      });
+    key: "manageDataAsync",
+    value: function () {
+      var _manageDataAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee4(clickedNode) {
+        var _this3 = this;
 
-      if (this.label) {
-        this.svg.get(1).attr({
-          opacity: 0
-        }).animate({
-          duration: this.config.animationSpeed
-        }).center((this.finalFromX + this.finalToX) / 2, (this.finalFromY + this.finalToY) / 2).attr({
-          opacity: 1
-        });
+        var BFS, isAddOperation, requestedNodes, existingNodes, mapNodeIdsToUrl, nodeIdsToFetch, nodeFetchUrl, fetchedNodes, requiredEdges, mapEdgeIdsToUrl, edgeIdsToFetch, edgeFetchUrl, fetchedEdges, removedNodes, nodesToRemove, X, Y, edgesToRemove, edgesToBeUpdated;
+        return regeneratorRuntime.wrap(function _callee4$(_context4) {
+          while (1) {
+            switch (_context4.prev = _context4.next) {
+              case 0:
+                BFS = function BFS(root) {
+                  var remove = [];
+                  var queue = [];
+                  queue.push(root);
+
+                  while (queue.length) {
+                    var current = queue.shift();
+
+                    if (current.id !== root.id) {
+                      remove.push(current);
+                    }
+
+                    current.children.forEach(function (child) {
+                      if (!queue.includes(child)) {
+                        queue.push(child);
+                      }
+                    });
+                  }
+
+                  return remove;
+                }; // skip, if node has no children
+
+
+                if (!(clickedNode.childrenIds.length === 0)) {
+                  _context4.next = 3;
+                  break;
+                }
+
+                return _context4.abrupt("return");
+
+              case 3:
+                isAddOperation = clickedNode.children.map(function (child) {
+                  return child.svg;
+                }).length === 0; // add new data
+
+                if (!isAddOperation) {
+                  _context4.next = 28;
+                  break;
+                }
+
+                // find children ids that we need to fetch
+                requestedNodes = [];
+                existingNodes = this.nodes.map(function (n) {
+                  return n.id;
+                });
+                clickedNode.childrenIds.forEach(function (id) {
+                  if (!existingNodes.includes(id)) {
+                    requestedNodes.push(id);
+                  }
+                }); // remove leafs (tree specific)
+
+                this.leafs.forEach(function (leafe) {
+                  leafe.removeLeaf(clickedNode.getFinalX(), clickedNode.getFinalY());
+                });
+                this.leafs = []; // fetch children based on given ids
+
+                mapNodeIdsToUrl = function mapNodeIdsToUrl(id) {
+                  return "id=".concat(id, "&");
+                };
+
+                nodeIdsToFetch = requestedNodes.map(mapNodeIdsToUrl).join("").slice(0, -1);
+                nodeFetchUrl = "".concat(this.config.databaseUrl, "/nodes?").concat(nodeIdsToFetch);
+                _context4.next = 15;
+                return fetch(nodeFetchUrl).then(function (data) {
+                  return data.json();
+                });
+
+              case 15:
+                fetchedNodes = _context4.sent;
+                // create new children nodes
+                fetchedNodes.forEach(function (rawNode) {
+                  var node;
+                  if (rawNode.type === "risk") node = new RiskNode(rawNode, _this3.canvas);
+                  if (rawNode.type === "asset") node = new AssetNode(rawNode, _this3.canvas);
+                  if (rawNode.type === "custom") node = new CustomNode(rawNode, _this3.canvas);
+                  if (rawNode.type === "requirement") node = new RequirementNode(rawNode, _this3.canvas);
+                  if (rawNode.type === "control") node = new ControlNode(rawNode, _this3.canvas); // sets the currently used rendering size
+
+                  node.setNodeSize(_this3.config.renderingSize);
+                  node.addEvent("dblclick", function () {
+                    _this3.manageDataAsync(node);
+                  });
+
+                  _this3.nodes.push(node);
+                }); // find edges between new children and clicked node
+
+                requiredEdges = [];
+                fetchedNodes.forEach(function (node) {
+                  requiredEdges.push({
+                    startNodeId: node.id,
+                    endNodeId: clickedNode.id
+                  });
+                }); // fetch edges based on given ids
+
+                mapEdgeIdsToUrl = function mapEdgeIdsToUrl(n) {
+                  return "endNodeId=".concat(n.endNodeId, "&startNodeId=").concat(n.startNodeId, "&");
+                };
+
+                edgeIdsToFetch = requiredEdges.map(mapEdgeIdsToUrl).join("").slice(0, -1);
+                edgeFetchUrl = "".concat(this.config.databaseUrl, "/edges?").concat(edgeIdsToFetch);
+                _context4.next = 24;
+                return fetch(edgeFetchUrl).then(function (data) {
+                  return data.json();
+                });
+
+              case 24:
+                fetchedEdges = _context4.sent;
+                // create new edges
+                fetchedEdges.forEach(function (rawEdge) {
+                  var fromNode = _this3.nodes.find(function (n) {
+                    return n.id === rawEdge.startNodeId;
+                  });
+
+                  var toNode = _this3.nodes.find(function (n) {
+                    return n.id === rawEdge.endNodeId;
+                  });
+
+                  var edge = null;
+                  if (rawEdge.type === "solid") edge = new ThinEdge(_this3.canvas, fromNode, toNode, {
+                    type: "solid"
+                  });else if (rawEdge.type === "dashed") edge = new ThinEdge(_this3.canvas, fromNode, toNode, {
+                    type: "dashed"
+                  });else if (rawEdge.type === "bold") edge = new BoldEdge(_this3.canvas, fromNode, toNode, {
+                    type: "bold"
+                  });else edge = new ThinEdge(_this3.canvas, fromNode, toNode, {
+                    type: "solid"
+                  });
+                  fromNode.addOutgoingEdge(edge);
+                  toNode.addIncomingEdge(edge);
+                  edge.setLabel(rawEdge.label);
+
+                  _this3.edges.push(edge);
+                }); // re-calculate and re-render layout
+
+                this.calculateLayout();
+                this.renderLayout();
+
+              case 28:
+                // remove existing data
+                if (isAddOperation === false) {
+                  // find children ids that we need to remove
+                  removedNodes = [];
+                  nodesToRemove = BFS(clickedNode);
+                  X = clickedNode.getFinalX();
+                  Y = clickedNode.getFinalY(); // remove children
+
+                  nodesToRemove.forEach(function (child) {
+                    child.removeNode(X, Y);
+                    removedNodes.push(child.id);
+                  });
+                  clickedNode.setChildren([]);
+                  this.nodes = this.nodes.filter(function (node) {
+                    return !removedNodes.includes(node.id);
+                  }); // find edges that we need to remove
+
+                  edgesToRemove = _toConsumableArray(nodesToRemove.map(function (n) {
+                    return n.outgoingEdges;
+                  })).flat();
+                  edgesToBeUpdated = [];
+                  this.edges.forEach(function (edge) {
+                    if (edgesToRemove.includes(edge) === false) {
+                      edgesToBeUpdated.push(edge);
+                    }
+                  }); // remove edges
+
+                  edgesToRemove.forEach(function (edge) {
+                    edge.removeEdge(clickedNode.getFinalX(), clickedNode.getFinalY());
+                  });
+                  this.edges = [];
+                  this.edges = [].concat(edgesToBeUpdated); // remove leafs (tree specific)
+
+                  this.leafs.forEach(function (leafe) {
+                    leafe.removeLeaf(clickedNode.getFinalX(), clickedNode.getFinalY());
+                  });
+                  this.leafs = []; // re-calculate and re-render layout
+
+                  this.calculateLayout();
+                  this.renderLayout(); // update existing edges
+
+                  this.edges.forEach(function (edge) {
+                    edge.updateEdgePosition();
+                  });
+                }
+
+              case 29:
+              case "end":
+                return _context4.stop();
+            }
+          }
+        }, _callee4, this);
+      }));
+
+      function manageDataAsync(_x7) {
+        return _manageDataAsync.apply(this, arguments);
       }
-    }
-    /**
-     * Transform an edge from its visible position to its initial rendered position
-     * @param {Number} [X=finalFromX] The x-position the edge will be translated
-     * @param {Number} [Y=finalFromY] The y-position the edge will be translated
-     */
 
+      return manageDataAsync;
+    }()
   }, {
-    key: "transformToInitial",
-    value: function transformToInitial() {
-      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.finalFromX;
-      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.finalFromY;
-      this.svg.get(0).attr({
-        opacity: 1
-      }).animate({
-        duration: this.config.animationSpeed
-      }).plot("M".concat(X, ",").concat(Y, " L").concat(X, ",").concat(Y)).attr({
-        opacity: 0
+    key: "removeLayout",
+    value: function removeLayout() {
+      this.nodes.forEach(function (node) {
+        node.removeNode();
       });
-
-      if (this.label) {
-        this.svg.get(1).attr({
-          opacity: 1
-        }).animate({
-          duration: this.config.animationSpeed
-        }).center(X, Y).attr({
-          opacity: 0
-        });
-      }
+      this.edges.forEach(function (edge) {
+        edge.removeEdge();
+      });
+      this.leafs.forEach(function (leaf) {
+        leaf.removeLeaf();
+      });
+    }
+  }, {
+    key: "setConfig",
+    value: function setConfig(config) {
+      this.config = _objectSpread2({}, this.config, {}, config);
+    }
+  }, {
+    key: "setCanvas",
+    value: function setCanvas(canvas) {
+      this.canvas = canvas.nested();
+    }
+  }, {
+    key: "setRawNodes",
+    value: function setRawNodes(rawNodes) {
+      this.rawNodes = _toConsumableArray(rawNodes);
+    }
+  }, {
+    key: "setRawEdges",
+    value: function setRawEdges(rawEdges) {
+      this.rawEdges = _toConsumableArray(rawEdges);
+    }
+  }, {
+    key: "setNodes",
+    value: function setNodes(nodes) {
+      this.nodes = nodes;
+    }
+  }, {
+    key: "getNodes",
+    value: function getNodes() {
+      return this.nodes;
+    }
+  }, {
+    key: "getEdges",
+    value: function getEdges() {
+      return this.edges;
+    }
+  }, {
+    key: "setEdges",
+    value: function setEdges(edges) {
+      this.edges = edges;
     }
   }]);
 
-  return ThinEdge;
-}(BaseEdge);
+  return BaseLayout;
+}();
+
+var GridExpanderConfig = {
+  // large representation (for calculations)
+  maxWidth: 130,
+  maxHeight: 40,
+  // small representation (for calculations)
+  minWidth: 130,
+  minHeight: 40,
+  // actual text size
+  width: 130,
+  height: 40,
+  // node
+  offset: 8,
+  animationSpeed: 300,
+  borderRadius: 5,
+  borderStrokeWidth: 0,
+  borderStrokeColor: "#aaa",
+  borderStrokeDasharray: "0",
+  backgroundColor: "#ffffff",
+  // text
+  labelColor: "#84a8f2",
+  labelFontFamily: "Montserrat",
+  labelFontSize: 12,
+  labelFontWeight: 600,
+  labelFontStyle: "normal",
+  labelBackground: "#fff"
+};
+
+var GridExpander = /*#__PURE__*/function () {
+  function GridExpander(canvas, renderingSize) {
+    _classCallCheck(this, GridExpander);
+
+    this.svg = null;
+    this.canvas = canvas;
+    this.config = _objectSpread2({}, GridExpanderConfig, {
+      renderingSize: renderingSize
+    });
+    this.isShowLess = false;
+    this.expandX = 0;
+    this.expandY = 0;
+    this.collapseX = 0;
+    this.collapseY = 0;
+    this.prevNode = null;
+  }
+
+  _createClass(GridExpander, [{
+    key: "setPrevNode",
+    value: function setPrevNode(prevNode) {
+      this.prevNode = prevNode;
+    }
+  }, {
+    key: "isRendered",
+    value: function isRendered() {
+      return this.svg !== null;
+    }
+  }, {
+    key: "renderExpander",
+    value: function renderExpander(innerText, funcExp, funcLess) {
+      var svg = this.canvas.group();
+      svg.css("cursor", "pointer");
+      svg.id("gridExpander");
+      var X = this.expandX;
+      var Y = this.expandY;
+      this.innerText = innerText;
+      this.funcExp = funcExp;
+      this.funcLess = funcLess;
+      var w = this.config.width;
+      var h = this.config.height;
+      var textMore = this.canvas.foreignObject(w, h);
+      var background = document.createElement("div");
+      var label = document.createElement("p");
+      label.innerText = "".concat(innerText);
+      label.style.color = this.config.labelColor;
+      label.style.textAlign = "center";
+      label.style.padding = "".concat(this.config.offset / 2, "px");
+      label.style.background = this.config.labelBackground;
+      label.style.fontSize = "".concat(this.config.labelFontSize, "px");
+      label.style.fontFamily = this.config.labelFontFamily;
+      label.style.fontWeight = this.config.labelFontWeight;
+      label.style.fontStyle = this.config.labelFontStyle;
+      background.appendChild(label);
+      textMore.add(background);
+      textMore.height(background.clientHeight);
+      var textLess = this.canvas.foreignObject(w, h);
+      var backgroundLess = document.createElement("div");
+      var labelLess = document.createElement("p");
+      labelLess.innerText = "Show Less";
+      labelLess.style.color = this.config.labelColor;
+      labelLess.style.textAlign = "center";
+      labelLess.style.padding = "".concat(this.config.offset / 2, "px");
+      labelLess.style.background = this.config.labelBackground;
+      labelLess.style.fontSize = "".concat(this.config.labelFontSize, "px");
+      labelLess.style.fontFamily = this.config.labelFontFamily;
+      labelLess.style.fontWeight = this.config.labelFontWeight;
+      labelLess.style.fontStyle = this.config.labelFontStyle;
+      backgroundLess.appendChild(labelLess);
+      textLess.add(backgroundLess);
+      textLess.height(backgroundLess.clientHeight);
+      svg.add(textMore);
+      svg.add(textLess);
+      svg.center(X, Y);
+      textLess.center(X, Y).scale(0.001).attr({
+        opacity: 0
+      }).animate({
+        duration: this.config.animationSpeed
+      }).attr({
+        opacity: 0
+      }).transform({
+        scale: 1
+      });
+      textMore.center(X, Y).scale(0.001).attr({
+        opacity: 0
+      }).animate({
+        duration: this.config.animationSpeed
+      }).attr({
+        opacity: 1
+      }).transform({
+        scale: 1
+      });
+      svg.on("click", this.funcExp);
+      this.svg = svg;
+      this.isExpanded = false;
+    }
+  }, {
+    key: "transform",
+    value: function transform() {
+      if (this.isExpanded) {
+        // console.log("to col")
+        this.isExpanded = false;
+        this.svg.on("click", this.funcExp);
+        this.svg.off("click", this.funcLess);
+        this.svg.get(0).attr({
+          opacity: 1
+        });
+        this.svg.get(1).attr({
+          opacity: 0
+        });
+        this.svg.animate({
+          duration: this.config.animationSpeed
+        }).transform({
+          position: [this.expandX, this.expandY]
+        });
+      } else {
+        // console.log("to exp")
+        this.isExpanded = true;
+        this.svg.off("click", this.funcExp);
+        this.svg.on("click", this.funcLess);
+        this.svg.get(0).attr({
+          opacity: 0
+        });
+        this.svg.get(1).attr({
+          opacity: 1
+        });
+        this.svg.animate({
+          duration: this.config.animationSpeed
+        }).transform({
+          position: [this.collapseX, this.collapseY]
+        });
+      }
+    }
+  }, {
+    key: "removeNode",
+    value: function removeNode() {
+      var _this = this;
+
+      if (this.svg !== null) {
+        this.svg.animate({
+          duration: this.config.animationSpeed
+        }).transform({
+          scale: 0.001
+        }).after(function () {
+          _this.svg.remove();
+
+          _this.svg = null;
+        });
+      }
+    }
+  }, {
+    key: "addEvent",
+    value: function addEvent(func) {
+      this.svg.on("click", func);
+    }
+  }, {
+    key: "setFinalX",
+    value: function setFinalX(finalX) {
+      this.finalX = finalX;
+    }
+  }, {
+    key: "setFinalY",
+    value: function setFinalY(finalY) {
+      this.finalY = finalY;
+    }
+  }, {
+    key: "getFinalX",
+    value: function getFinalX() {
+      return this.finalX;
+    }
+  }, {
+    key: "getFinalY",
+    value: function getFinalY() {
+      return this.finalY;
+    }
+  }]);
+
+  return GridExpander;
+}();
+
+var GridConfig = {
+  // limit layout width
+  maxLayoutWidth: 600,
+  // how many nodes shall be rendered before showing "load more more"
+  limitedTo: 1,
+  // where to translate a given layout
+  translateX: 0,
+  translateY: 0,
+  // layout animation speed for all nodes and edges
+  animationSpeed: 300,
+  // hide all other layouts and center selected one
+  hideOtherLayouts: false,
+  // TODO:
+  // node spacing
+  spacing: 32,
+  // how to render all nodes
+  renderingSize: "min" // min max
+
+};
+
+var GridLayout = /*#__PURE__*/function (_BaseLayout) {
+  _inherits(GridLayout, _BaseLayout);
+
+  function GridLayout() {
+    var _this;
+
+    var customGridConfig = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+
+    _classCallCheck(this, GridLayout);
+
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(GridLayout).call(this));
+    _this.config = _objectSpread2({}, GridConfig, {}, customGridConfig);
+    _this.gridExpander = null;
+    return _this;
+  }
+
+  _createClass(GridLayout, [{
+    key: "calculateLayout",
+    value: function calculateLayout() {
+      var _this2 = this;
+
+      // TODO: ask: grid can query all the data at once, but only render a limited amount?
+      var currentWidth = 0;
+      var currentHeight = 0;
+      var rowMaxHeight = 0;
+
+      if (this.gridExpander === null) {
+        this.gridExpander = new GridExpander(this.canvas, this.config.renderingSize);
+      } // add expander to nodes
+
+
+      this.nodes = [].concat(_toConsumableArray(this.nodes), [this.gridExpander]);
+      this.nodes.forEach(function (node, i) {
+        var w = _this2.config.renderingSize === "max" ? node.config.maxWidth : node.config.minWidth;
+        var h = _this2.config.renderingSize === "max" ? node.config.maxHeight : node.config.minHeight;
+        rowMaxHeight = Math.max(h, rowMaxHeight); // calculate initial position
+
+        var x = w / 2 + _this2.config.spacing + _this2.config.translateX;
+        var y = h / 2 + _this2.config.spacing + _this2.config.translateY; // check if new element position is larger than the available space
+
+        if (currentWidth > _this2.config.maxLayoutWidth) {
+          currentWidth = 0;
+          currentHeight += rowMaxHeight + _this2.config.spacing;
+        }
+
+        node.setFinalX(currentWidth + x);
+        currentWidth += w + _this2.config.spacing;
+        node.setFinalY(currentHeight + y);
+
+        if (i === _this2.config.limitedTo) {
+          _this2.gridExpander.expandX = node.getFinalX();
+          _this2.gridExpander.expandY = node.getFinalY();
+
+          _this2.gridExpander.setPrevNode(_this2.nodes[i - 1]);
+        }
+
+        if (i === _this2.nodes.length - 1) {
+          _this2.gridExpander.collapseX = node.getFinalX();
+          _this2.gridExpander.collapseY = node.getFinalY();
+
+          _this2.gridExpander.setPrevNode(_this2.nodes[i - 1]);
+        }
+      });
+    }
+  }, {
+    key: "renderLayout",
+    value: function renderLayout() {
+      var _this3 = this;
+
+      this.nodes.forEach(function (node, i) {
+        // renders a limited amount of nodes
+        if (i < _this3.config.limitedTo && !node.isRendered()) {
+          if (_this3.config.renderingSize === "max") {
+            if (node.svg === null) node.renderAsMax(node.getFinalX(), node.getFinalY());
+          } else if (_this3.config.renderingSize === "min") {
+            if (node.svg === null) node.renderAsMin(node.getFinalX(), node.getFinalY());
+          }
+        }
+
+        if (i >= _this3.config.limitedTo && !(node instanceof GridExpander) && node.isRendered()) {
+          node.removeNode();
+        } // renders the expand button
+
+
+        if (node instanceof GridExpander && node.svg === null) {
+          var funcExp = function funcExp() {
+            _this3.gridExpander.transform();
+
+            _this3.config = _objectSpread2({}, _this3.config, {
+              limitedTo: _this3.nodes.length,
+              prevLimitedTo: _this3.config.limitedTo
+            });
+
+            _this3.renderLayout();
+          };
+
+          var funcLess = function funcLess() {
+            _this3.gridExpander.transform();
+
+            _this3.config = _objectSpread2({}, _this3.config, {
+              limitedTo: _this3.config.prevLimitedTo,
+              prevLimitedTo: undefined
+            });
+
+            _this3.renderLayout();
+          };
+
+          node.renderExpander("Show ".concat(_this3.nodes.length - _this3.config.limitedTo, " More"), funcExp, funcLess);
+        }
+      });
+    }
+  }]);
+
+  return GridLayout;
+}(BaseLayout);
+
+var RadialConfig = {
+  maxLayoutWidth: 600,
+  maxLayoutHeight: 600,
+  // where to translate a given layout
+  translateX: 0,
+  translateY: 0,
+  // layout animation speed
+  animationSpeed: 300,
+  // how a layout starts
+  layoutState: "expanded",
+  // expanded, collapsed // TODO: ask: even needed?
+  // hide all other layouts and center selected one
+  hideOtherLayouts: false,
+  // TODO:
+  // radial radius (first radius only)
+  radialRadius: 200,
+  // user defined delta angle constant (second+ radius)
+  radiusDelta: 150,
+  hAspect: 4 / 3,
+  wAspect: 4 / 4,
+  // how to render all nodes
+  renderingSize: "min" // min, max
+
+};
+
+var RadialLayout = /*#__PURE__*/function (_BaseLayout) {
+  _inherits(RadialLayout, _BaseLayout);
+
+  function RadialLayout() {
+    var _this;
+
+    var customRadialConfig = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+
+    _classCallCheck(this, RadialLayout);
+
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(RadialLayout).call(this));
+    _this.config = _objectSpread2({}, RadialConfig, {}, customRadialConfig);
+    return _this;
+  } // calculates the radial layout positions for all given nodes and edges
+
+
+  _createClass(RadialLayout, [{
+    key: "calculateLayout",
+    value: function calculateLayout() {
+      var _this2 = this;
+
+      // construct a tree
+      var constructTree = function constructTree(array, parentRef, rootRef) {
+        var root = rootRef !== undefined ? rootRef : [];
+        var parent = parentRef !== undefined ? parentRef : {
+          id: null
+        };
+        var children = array.filter(function (child) {
+          return child.parentId === parent.id;
+        }); // console.log("0", children, parent, parentRef)
+
+        if (children.length > 0) {
+          if (parent.id === null) {
+            // console.log("1", children)
+            root = children;
+          } else {
+            parent.children = children; // console.log("2", children)
+          }
+
+          children.forEach(function (child) {
+            // console.log("chid", child, child instanceof Number)
+            constructTree(array, child);
+          });
+        }
+
+        return root;
+      };
+
+      var updateNodeDepth = function updateNodeDepth(node, depth) {
+        node.setDepth(depth);
+        node.children.forEach(function (child) {
+          updateNodeDepth(child, depth + 1);
+        });
+      };
+
+      var calcRadialPositions = function calcRadialPositions(node, alfa, beta) {
+        // center root
+        if (node.parentId === null) {
+          node.setFinalX(_this2.config.maxLayoutWidth / 2 + _this2.config.translateX);
+          node.setFinalY(_this2.config.maxLayoutHeight / 2 + _this2.config.translateY);
+        } // depth of node inside tree
+
+
+        var depth = node.getDepth(); // theta
+
+        var theta = alfa; // multipler for depth levels after the first circle
+
+        var delta = _this2.config.radiusDelta; // innermost circle radius + delta angle
+
+        var radius = _this2.config.radialRadius + delta * depth;
+
+        var BFS = function BFS(root) {
+          var queue = [];
+          var leaves = 0;
+          queue.push(root);
+
+          while (queue.length) {
+            var current = queue.shift();
+            current.children.forEach(function (child) {
+              if (!queue.includes(child)) {
+                queue.push(child);
+              }
+            });
+
+            if (current.children.length === 0) {
+              leaves += 1;
+            }
+          }
+
+          return leaves;
+        }; // number of children in the subtree
+
+
+        var children = BFS(node);
+        node.children.forEach(function (child) {
+          // number of leaves in subtree
+          var lambda = BFS(child);
+          var mü = theta + lambda / children * (beta - alfa);
+
+          var x = radius * Math.cos((theta + mü) / 2) * _this2.config.hAspect;
+
+          var y = radius * Math.sin((theta + mü) / 2) * _this2.config.wAspect;
+
+          child.setFinalX(x + _this2.config.maxLayoutWidth / 2 + _this2.config.translateX);
+          child.setFinalY(y + _this2.config.maxLayoutHeight / 2 + _this2.config.translateY);
+
+          if (child.children.length > 0) {
+            calcRadialPositions(child, theta, mü);
+          }
+
+          theta = mü;
+        });
+      }; // calculate edges
+
+
+      var calcRadialEdges = function calcRadialEdges(edges) {
+        edges.forEach(function (edge) {
+          edge.calculateEdge();
+        });
+      };
+
+      var tree = constructTree(this.nodes)[0]; // TODO: where is the root?
+
+      updateNodeDepth(tree, 0);
+      calcRadialPositions(tree, 0, 2 * Math.PI);
+      calcRadialEdges(this.edges);
+    }
+  }, {
+    key: "renderLayout",
+    value: function renderLayout() {
+      var _this3 = this;
+
+      this.centerX = this.nodes[0].getFinalX();
+      this.centerY = this.nodes[0].getFinalY();
+      this.nodes.forEach(function (node) {
+        if (_this3.config.renderingSize === "max") {
+          if (node.svg === null) node.renderAsMax(_this3.centerX, _this3.centerY);
+        } else if (_this3.config.renderingSize === "min") {
+          if (node.svg === null) {
+            node.renderAsMin(_this3.centerX, _this3.centerY);
+          }
+        }
+      });
+      this.nodes.forEach(function (node) {
+        node.transformToFinalPosition();
+      });
+      this.edges.forEach(function (edge) {
+        if (edge.svg === null) {
+          edge.render(_this3.centerX, _this3.centerY);
+        }
+      });
+      this.edges.forEach(function (edge) {
+        edge.transformToFinalPosition();
+      });
+    }
+  }]);
+
+  return RadialLayout;
+}(BaseLayout);
+
+var LeafConfig = {
+  // large representation
+  maxWidth: 370,
+  maxHeight: 200,
+  // small representation
+  minWidth: 150,
+  minHeight: 40,
+  // icon
+  iconUrl: null,
+  minIconOpacity: 1,
+  minIconSize: 32,
+  minIconTranslateX: -45,
+  minIconTranslateY: 0,
+  // node
+  offset: 8,
+  animationSpeed: 300,
+  borderRadius: 5,
+  borderStrokeWidth: 0,
+  borderStrokeColor: "#aaa",
+  borderStrokeDasharray: "0",
+  backgroundColor: "#ffffff",
+  // text
+  minTextWidth: 87,
+  minTextHeight: 24,
+  minTextTranslateX: 15,
+  minTextTranslateY: 0,
+  labelColor: "#84a8f2",
+  labelFontFamily: "Montserrat",
+  labelFontSize: 12,
+  labelFontWeight: 600,
+  labelFontStyle: "normal",
+  labelBackground: "#fff",
+  // arrow
+  strokeWidth: 2,
+  strokeColor: "#aaa",
+  strokeDasharray: "7 5",
+  marker: "M 0 0 L 6 3 L 0 6 z",
+  color1: "#aaa",
+  color2: "#222"
+};
+
+var LeafExtenstion = /*#__PURE__*/function () {
+  function LeafExtenstion(canvas, node) {
+    _classCallCheck(this, LeafExtenstion);
+
+    this.svg = null;
+    this.canvas = canvas;
+    this.node = node;
+    this.nodeSize = node.childrenIds.length;
+    this.config = _objectSpread2({}, LeafConfig); // position
+
+    this.initialX = 0;
+    this.initialY = 0;
+    this.finalX = 0;
+    this.finalY = 0;
+    this.currentX = 0;
+    this.currentY = 0;
+    this.events = [];
+  }
+
+  _createClass(LeafExtenstion, [{
+    key: "addEvent",
+    value: function addEvent(event, func) {
+      // this.svg.on(event, func)
+      // console.log(this.svg)
+      this.events = [].concat(_toConsumableArray(this.events), [{
+        event: event,
+        func: func
+      }]); // console.log(this.getNodeSize())
+    }
+  }, {
+    key: "render",
+    value: function render() {
+      var _this = this;
+
+      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.node.finalX;
+      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.node.finalY;
+      var svg = this.canvas.group().draggable();
+      svg.css("cursor", "pointer");
+      svg.id("leafExtenstion");
+      var w = this.node.nodeSize === "min" ? this.config.minWidth : this.config.maxWidth;
+      var h = this.node.nodeSize === "min" ? this.config.minHeight + 10 : this.config.maxHeight;
+      var text = this.canvas.foreignObject(w, h);
+      var background = document.createElement("div");
+      var label = document.createElement("p");
+      label.innerText = "Show ".concat(this.nodeSize, " more children");
+      label.style.color = this.config.labelColor;
+      label.style.textAlign = "center";
+      label.style.padding = "".concat(this.config.offset / 2, "px");
+      label.style.background = this.config.labelBackground;
+      label.style.fontSize = "".concat(this.config.labelFontSize, "px");
+      label.style.fontFamily = this.config.labelFontFamily;
+      label.style.fontWeight = this.config.labelFontWeight;
+      label.style.fontStyle = this.config.labelFontStyle;
+      background.appendChild(label);
+      text.add(background);
+      text.height(background.clientHeight);
+      svg.add(text);
+      var translateY = this.node.nodeSize === "min" ? 75 : 195;
+      svg.center(X, Y + translateY);
+      var tx = this.node.getFinalX();
+      var ty = this.node.getFinalY();
+      var edgesStartingLine = this.canvas.path("M 0 0 h".concat(this.node.currentWidth * 1.35)).stroke({
+        width: 0,
+        color: "red"
+      }).center(tx, ty + h / 2 + this.config.offset + translateY / 3);
+      var interval = edgesStartingLine.length() / this.nodeSize;
+      var intervalSpaceUsed = 0;
+
+      for (var i = 0; i < this.nodeSize; i += 1) {
+        var p = edgesStartingLine.pointAt(intervalSpaceUsed);
+        intervalSpaceUsed += interval;
+        var fx = p.x + interval / 2;
+        var fy = p.y; // this.canvas.circle(5).fill("#75f").center(fx, fy)
+        // this.canvas.circle(5).fill("#000").center(tx, ty)
+
+        var _intersect = intersect$1(shape("rect", {
+          x: tx - w / 2 - this.node.config.borderStrokeWidth / 2 - this.config.offset / 2,
+          y: ty - h / 2 - this.node.config.borderStrokeWidth / 2 - this.config.offset / 2,
+          width: w + this.node.config.borderStrokeWidth + this.config.offset,
+          height: h + this.node.config.borderStrokeWidth + this.config.offset,
+          rx: this.node.config.borderRadius,
+          ry: this.node.config.borderRadius
+        }), shape("line", {
+          x1: fx,
+          y1: fy,
+          x2: tx,
+          y2: ty
+        })),
+            points = _intersect.points; // this.canvas.circle(5).fill("#000").center(points[0].x, points[0].y)
+
+
+        var path = this.canvas.path("M".concat(fx, ",").concat(fy, " L").concat(points[0].x, ",").concat(points[0].y)).stroke({
+          width: this.config.strokeWidth,
+          color: this.config.strokeColor
+        }); // create a re-useable marker
+
+        var index = _toConsumableArray(this.canvas.defs().node.childNodes).findIndex(function (d) {
+          return d.id === "defaultThinMarker";
+        });
+
+        if (index === -1) {
+          var marker = this.canvas.marker(12, 6, function (add) {
+            add.path(_this.config.marker).fill(_this.config.strokeColor).dx(1);
+          });
+          marker.id("defaultThinMarker");
+          this.canvas.defs().add(marker);
+          path.marker("end", marker);
+        } else {
+          var _marker = this.canvas.defs().get(index);
+
+          path.marker("end", _marker);
+        }
+
+        svg.add(path);
+      }
+
+      svg.transform({
+        position: [this.initialX, this.initialY]
+      });
+      this.finalX = svg.cx();
+      this.finalY = svg.cy();
+      this.events.forEach(function (_ref) {
+        var event = _ref.event,
+            func = _ref.func;
+        svg.on(event, func);
+      });
+      this.svg = svg;
+    }
+  }, {
+    key: "transformToFinalPosition",
+    value: function transformToFinalPosition() {
+      this.svg.attr({
+        opacity: 1
+      }).animate({
+        duration: this.config.animationSpeed
+      }).transform({
+        position: [this.finalX, this.finalY]
+      }).attr({
+        opacity: 1
+      });
+    }
+  }, {
+    key: "removeLeaf",
+    value: function removeLeaf() {
+      this.svg.remove();
+      this.svg = null;
+    }
+  }]);
+
+  return LeafExtenstion;
+}();
+
+var TreeConfig = {
+  maxLayoutWidth: 600,
+  minHeight: window.innerHeight - 10,
+  // where to translate a given layout
+  translateX: 0,
+  translateY: 0,
+  // layout animation speed
+  animationSpeed: 300,
+  // how a layout starts
+  layoutState: "expanded",
+  // expanded, collapsed // TODO: ask: even needed?
+  // tree orientation
+  orientation: "vertical",
+  // vertical, horizontal
+  // hide all other layouts and center selected one
+  hideOtherLayouts: false,
+  // TODO:
+  // node spacing
+  vSpacing: 100,
+  hSpacing: 25,
+  // how to render all nodes
+  renderingSize: "min",
+  // min, max
+  // renders additional edges to indicate loadable nodes
+  showAdditionEdges: true // true, false
+
+};
+
+var TreeLayout = /*#__PURE__*/function (_BaseLayout) {
+  _inherits(TreeLayout, _BaseLayout);
+
+  function TreeLayout() {
+    var _this;
+
+    var customTreeConfig = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+
+    _classCallCheck(this, TreeLayout);
+
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(TreeLayout).call(this));
+    _this.config = _objectSpread2({}, TreeConfig, {}, customTreeConfig);
+    _this.leafs = [];
+    return _this;
+  }
+
+  _createClass(TreeLayout, [{
+    key: "calculateLayout",
+    value: function calculateLayout() {
+      var _this2 = this;
+
+      var isVertical = this.config.orientation === "vertical"; // construct a tree
+
+      var constructTree = function constructTree(array, parentRef, rootRef) {
+        var root = rootRef !== undefined ? rootRef : [];
+        var parent = parentRef !== undefined ? parentRef : {
+          id: null
+        };
+        var children = array.filter(function (child) {
+          return child.parentId === parent.id;
+        });
+
+        if (children.length > 0) {
+          if (parent.id === null) {
+            root = children;
+          } else {
+            parent.children = children;
+          }
+
+          children.forEach(function (child) {
+            constructTree(array, child);
+          });
+        }
+
+        return root;
+      };
+
+      var InitializeNodes = function InitializeNodes(node, parent, prevSibling, depth) {
+        node.setDepth(depth);
+        node.setParent(parent);
+        node.setPrevSibling(prevSibling);
+
+        if (isVertical) {
+          node.setFinalY(depth);
+        } else {
+          node.setFinalX(depth);
+        }
+
+        if (node.getChildren() === undefined) {
+          node.setChildren([]);
+        }
+
+        node.children.forEach(function (child, i) {
+          var prev = i >= 1 ? node.children[i - 1] : null;
+          InitializeNodes(child, node, prev, depth + 1);
+        });
+      };
+
+      var finalizeTree = function finalizeTree(node) {
+        node.setFinalX(node.getFinalX() + _this2.config.translateX);
+        node.setFinalY(node.getFinalY() + _this2.config.translateY);
+        node.children.forEach(function (child) {
+          finalizeTree(child);
+        });
+      };
+
+      var CalculateFinalPositions = function CalculateFinalPositions(node, modifier) {
+        if (isVertical) {
+          node.setFinalX(node.getFinalX() + modifier);
+        } else {
+          node.setFinalY(node.getFinalY() + modifier);
+        }
+
+        node.children.forEach(function (child) {
+          CalculateFinalPositions(child, node.modifier + modifier);
+        });
+      };
+
+      var CalculateInitialX = function CalculateInitialX(node) {
+        node.children.forEach(function (child) {
+          CalculateInitialX(child);
+        });
+        var w = _this2.config.renderingSize === "max" ? node.config.maxWidth : node.config.minWidth;
+        var h = _this2.config.renderingSize === "max" ? node.config.maxHeight : node.config.minHeight;
+        w += _this2.config.hSpacing;
+        h += _this2.config.vSpacing;
+
+        if (isVertical) {
+          node.setFinalY(node.getDepth() * h); // if node has no children
+
+          if (node.children.length === 0) {
+            // set x to prev siblings x, or 0 for first node in row
+            if (!node.isLeftMost()) {
+              node.setFinalX(node.getPrevSibling().getFinalX() + w);
+            } else {
+              node.setFinalX(0);
+            }
+          } else if (node.children.length === 1) {
+            if (node.isLeftMost()) {
+              node.setFinalX(node.children[0].getFinalX());
+            } else {
+              node.setFinalX(node.getPrevSibling().getFinalX() + w);
+              node.setModifier(node.getFinalX() - node.children[0].getFinalX());
+            }
+          } else {
+            // center node on 2+ nodes
+            var left = node.getLeftMostChild();
+            var right = node.getRightMostChild();
+            var mid = (left.getFinalX() + right.getFinalX()) / 2;
+
+            if (node.isLeftMost()) {
+              node.setFinalX(mid);
+            } else {
+              node.setFinalX(node.getPrevSibling().getFinalX() + w);
+              node.setModifier(node.getFinalX() - mid);
+            }
+          }
+        } else {
+          node.setFinalX(node.getDepth() * w); // if node has no children
+
+          if (node.children.length === 0) {
+            // set y to prev siblings y, or 0 for first node in col
+            if (!node.isLeftMost()) {
+              node.setFinalY(node.getPrevSibling().getFinalY() + h);
+            } else {
+              node.setFinalY(0);
+            }
+          } else if (node.children.length === 1) {
+            if (node.isLeftMost()) {
+              node.setFinalY(node.children[0].getFinalY());
+            } else {
+              node.setFinalY(node.getPrevSibling().getFinalY() + h);
+              node.setModifier(node.getFinalY() - node.children[0].getFinalY());
+            }
+          } else {
+            // center node on 2+ nodes
+            var _left = node.getLeftMostChild();
+
+            var _right = node.getRightMostChild();
+
+            var _mid = (_left.getFinalY() + _right.getFinalY()) / 2;
+
+            if (node.isLeftMost()) {
+              node.setFinalY(_mid);
+            } else {
+              node.setFinalY(node.getPrevSibling().getFinalY() + h);
+              node.setModifier(node.getFinalY() - _mid);
+            }
+          }
+        }
+      };
+
+      var fixOverlappingConflicts = function fixOverlappingConflicts(node) {
+        node.children.forEach(function (child) {
+          fixOverlappingConflicts(child);
+        });
+
+        var getLeftContour = function getLeftContour(current) {
+          var value = -Infinity;
+          var queue = [current];
+
+          while (queue.length !== 0) {
+            var deq = queue.shift();
+            deq.children.forEach(function (child) {
+              queue.push(child);
+            });
+
+            if (isVertical) {
+              value = Math.max(value, deq.getFinalX());
+            } else {
+              value = Math.max(value, deq.getFinalY());
+            }
+          }
+
+          return value;
+        };
+
+        var getRightContour = function getRightContour(current) {
+          var value = Infinity;
+          var queue = [current];
+
+          while (queue.length !== 0) {
+            var deq = queue.shift();
+            deq.children.forEach(function (child) {
+              queue.push(child);
+            });
+
+            if (isVertical) {
+              value = Math.min(value, deq.getFinalX());
+            } else {
+              value = Math.min(value, deq.getFinalY());
+            }
+          }
+
+          return value;
+        };
+
+        var shift = function shift(current, value) {
+          var queue = [current];
+
+          while (queue.length !== 0) {
+            var deq = queue.shift();
+            deq.children.forEach(function (child) {
+              queue.push(child);
+            });
+
+            if (isVertical) {
+              deq.setFinalX(deq.getFinalX() + value);
+            } else {
+              deq.setFinalY(deq.getFinalY() + value);
+            }
+          }
+        };
+
+        var distance = 0;
+        var w = _this2.config.renderingSize === "max" ? node.config.maxWidth : node.config.minWidth;
+        var h = _this2.config.renderingSize === "max" ? node.config.maxHeight : node.config.minHeight;
+
+        if (isVertical) {
+          distance = w + _this2.config.hSpacing;
+        } else {
+          distance = h + _this2.config.vSpacing;
+        }
+
+        for (var i = 0; i < node.children.length - 1; i += 1) {
+          var c1 = getLeftContour(node.children[i]);
+          var c2 = getRightContour(node.children[i + 1]);
+
+          if (c1 >= c2) {
+            shift(node.children[i + 1], c1 - c2 + distance);
+          }
+        }
+      };
+
+      var centerRoot = function centerRoot(node) {
+        if (isVertical) {
+          (function () {
+            var minX = 0;
+            var maxX = 0;
+            var queue = [node];
+
+            while (queue.length) {
+              var deq = queue.shift();
+              minX = Math.min(deq.getFinalX(), minX);
+              maxX = Math.max(deq.getFinalX(), maxX);
+              deq.children.forEach(function (child) {
+                return queue.push(child);
+              });
+            }
+
+            node.setFinalX((minX + maxX) / 2);
+          })();
+        } else {
+          (function () {
+            var minY = 0;
+            var maxY = 0;
+            var queue = [node];
+
+            while (queue.length) {
+              var deq = queue.shift();
+              minY = Math.min(deq.getFinalY(), minY);
+              maxY = Math.max(deq.getFinalY(), maxY);
+              deq.children.forEach(function (child) {
+                return queue.push(child);
+              });
+            }
+
+            node.setFinalY((minY + maxY) / 2);
+          })();
+        }
+      };
+
+      var calcRadialEdges = function calcRadialEdges(edges) {
+        edges.forEach(function (edge) {
+          edge.calculateEdge();
+        });
+      };
+
+      var addLeaf = function addLeaf(node, initialX, initialY) {
+        if (_this2.config.showAdditionEdges === false) {
+          return;
+        }
+
+        if (node.children.length === 0 && node.childrenIds.length > 0) {
+          var leaf = new LeafExtenstion(_this2.canvas, node);
+          leaf.finalX = node.finalX;
+          var h = _this2.config.renderingSize === "max" ? node.config.maxHeight : node.config.minHeight;
+          leaf.finalY = node.finalY + h + 35;
+          leaf.initialX = initialX;
+          leaf.initialY = initialY;
+          leaf.addEvent("dblclick", function () {
+            _this2.manageDataAsync(node);
+          });
+
+          _this2.leafs.push(leaf);
+        }
+
+        node.children.forEach(function (child) {
+          addLeaf(child, initialX, initialY);
+        });
+      };
+
+      var root = constructTree(this.nodes)[0]; // TODO: filter for root
+
+      InitializeNodes(root, null, null, 0);
+      CalculateInitialX(root);
+      CalculateFinalPositions(root, 0);
+      fixOverlappingConflicts(root);
+      centerRoot(root);
+      finalizeTree(root);
+      calcRadialEdges(this.edges);
+      addLeaf(root, root.getFinalX(), root.getFinalY()); // console.log(root)
+    }
+  }, {
+    key: "renderLayout",
+    value: function renderLayout() {
+      var _this3 = this;
+
+      this.centerX = this.nodes[0].getFinalX();
+      this.centerY = this.nodes[0].getFinalY();
+      this.nodes.forEach(function (node) {
+        if (_this3.config.renderingSize === "max") {
+          if (node.svg === null) node.renderAsMax(_this3.centerX, _this3.centerY);
+        } else if (_this3.config.renderingSize === "min") {
+          if (node.svg === null) {
+            node.renderAsMin(_this3.centerX, _this3.centerY);
+          }
+        }
+
+        node.transformToFinalPosition();
+      });
+      this.leafs.forEach(function (leaf) {
+        leaf.render();
+        leaf.transformToFinalPosition();
+      });
+      this.edges.forEach(function (edge) {
+        if (edge.svg === null) {
+          edge.render(_this3.centerX, _this3.centerY);
+        }
+
+        edge.transformToFinalPosition();
+      });
+    }
+  }]);
+
+  return TreeLayout;
+}(BaseLayout);
+
+var ContextualConfig = {
+  // limit width and size
+  maxLayoutWidth: 1000,
+  maxLayoutHeight: window.innerHeight - 10,
+  // where to translate a given layout
+  translateX: 0,
+  translateY: 0,
+  // layout animation speed for all nodes and edges
+  animationSpeed: 300,
+  // hide all other layouts and center selected one
+  hideOtherLayouts: false,
+  // TODO:
+  // spacing between nodes
+  spacing: 32,
+  // how to render all nodes
+  renderingSize: "min",
+  // min max
+  // limit how many nodes are displayed without a container
+  containerLimit: 3,
+  // container config
+  containderBorderRadius: 5,
+  containerBorderStrokeColor: "#555555",
+  containerBorderStrokeWidth: 2,
+  containerBackgroundColor: "#fff"
+};
+
+var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
+  _inherits(ContextualLayout, _BaseLayout);
+
+  function ContextualLayout() {
+    var _this;
+
+    var customContextualConfig = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+
+    _classCallCheck(this, ContextualLayout);
+
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(ContextualLayout).call(this));
+    _this.config = _objectSpread2({}, ContextualConfig, {}, customContextualConfig);
+    return _this;
+  }
+
+  _createClass(ContextualLayout, [{
+    key: "calculateLayout",
+    value: function calculateLayout() {
+      console.log(this.nodes);
+    }
+  }, {
+    key: "renderLayout",
+    value: function renderLayout() {}
+  }]);
+
+  return ContextualLayout;
+}(BaseLayout);
+
+/**
+ * The canvas element where all svgs are held
+ * @typedef {Canvas} Canvas
+ *
+ * @see https://svgjs.com/docs/3.0/container-elements/#svg-svg
+ */
+
+/**
+ * The raw data object to create a node
+ * @typedef {Data} Data
+ *
+ * @property {Number} id the node id
+ * @property {String} label the node label
+ * @property {String} type the node type (asset, control, risk requirement, custom)
+ * @property {String} tooltipText the tooltip text that is shown while hovering a specific node
+ */
+
+/**
+ * Creates and handles all vizualization operations
+ *
+ * @example
+ * const visualization = new Visualization()
+ * const { canvas } = visualization
+ */
+
+var Visualization = /*#__PURE__*/function () {
+  function Visualization(config) {
+    _classCallCheck(this, Visualization);
+
+    // TODO: this constructor should receive custom overrides for all nodes, edges and layouts
+    // create the main canvas element dom element
+    var element = document.createElement("div");
+    element.setAttribute("id", "canvas");
+    element.style.position = "relative";
+    document.body.appendChild(element); // create the tooltip dom element
+
+    var tooltip = document.createElement("div");
+    tooltip.setAttribute("id", "tooltip");
+    tooltip.style.display = "none";
+    tooltip.style.position = "absolute";
+    tooltip.style.background = "#333";
+    tooltip.style.border = "0px";
+    tooltip.style.boxShadow = "0 5px 15px -5px rgba(0, 0, 0, .65)";
+    tooltip.style.color = "#eee";
+    tooltip.style.padding = "0.4rem 0.6rem";
+    tooltip.style.fontSize = "0.85rem";
+    tooltip.style.fontWeight = "400";
+    tooltip.style.fontStyle = "normal";
+    element.appendChild(tooltip); // canvas set up
+
+    this.zoomLevel = 1;
+    this.canvas = SVG().addTo(element).size(window.innerWidth - 10, window.innerHeight - 10).viewbox(0, 0, window.innerWidth - 10, window.innerHeight - 10).panZoom({
+      zoomMin: 0.25,
+      zoomMax: 10,
+      zoomFactor: 0.25
+    });
+    this.layouts = [];
+    this.lastLayoutWidth = 0;
+    this.config = config;
+  }
+
+  _createClass(Visualization, [{
+    key: "render",
+    value: function render(initialGraphData, layout) {
+      layout.setCanvas(this.canvas);
+      layout.setConfig({
+        databaseUrl: this.config.databaseUrl
+      });
+
+      if (layout instanceof RadialLayout) {
+        layout.createRadialDataAsync(initialGraphData.nodes, initialGraphData.edges);
+      }
+
+      if (layout instanceof GridLayout) {
+        layout.createGridDataAsync(initialGraphData.nodes, initialGraphData.edges);
+      }
+
+      if (layout instanceof TreeLayout) {
+        layout.createRadialDataAsync(initialGraphData.nodes, initialGraphData.edges);
+      }
+
+      if (layout instanceof ContextualLayout) {
+        layout.createContextualDataAsync(initialGraphData.nodes, initialGraphData.edges);
+      }
+
+      return layout;
+    }
+  }, {
+    key: "transform",
+    value: function () {
+      var _transform = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee(currentLayout, newLayout) {
+        return regeneratorRuntime.wrap(function _callee$(_context) {
+          while (1) {
+            switch (_context.prev = _context.next) {
+              case 0:
+                newLayout.setCanvas(this.canvas);
+                newLayout.setConfig({
+                  databaseUrl: this.config.databaseUrl
+                });
+
+                if (newLayout instanceof RadialLayout) {
+                  newLayout.createRadialDataAsync(currentLayout.getNodeData(), currentLayout.getEdgeData());
+                }
+
+                if (newLayout instanceof GridLayout) {
+                  newLayout.createGridDataAsync(currentLayout.getNodeData(), currentLayout.getEdgeData());
+                }
+
+                if (newLayout instanceof TreeLayout) {
+                  newLayout.createRadialDataAsync(currentLayout.getNodeData(), currentLayout.getEdgeData());
+                }
+
+                if (newLayout instanceof ContextualLayout) {
+                  newLayout.createContextualDataAsync(currentLayout.getNodeData(), currentLayout.getEdgeData());
+                }
+
+                currentLayout.removeLayout(); // calculate and render layout
+                // newLayout.calculateLayout() // TODO: root isn't transformed
+                // newLayout.renderLayout()
+                // console.log(newLayout)
+
+              case 7:
+              case "end":
+                return _context.stop();
+            }
+          }
+        }, _callee, this);
+      }));
+
+      function transform(_x, _x2) {
+        return _transform.apply(this, arguments);
+      }
+
+      return transform;
+    }()
+    /**
+     * Change the current zoom level
+     * @param {Number} zoom zoom level between 0.25 and 10
+     * @param {Object} [zoomOptions]
+     * @param {Number} [zoomOptions.x] zoom into specified point
+     * @param {Number} [zoomOptions.y] zoom into specified point
+     *
+     * @example
+     * visualization.setZoom(2, {x: 100, y: 100})
+     */
+
+  }, {
+    key: "setZoom",
+    value: function setZoom(zoom, opts) {
+      this.canvas.zoom(zoom, opts);
+    }
+    /**
+     * Returns the current canvas element
+     */
+
+  }, {
+    key: "getCanvas",
+    value: function getCanvas() {
+      return this.canvas;
+    }
+  }]);
+
+  return Visualization;
+}();
+
+// https://enmascript.com/articles/2018/10/05/javascript-factory-pattern
+
+/**
+ * Optional configuration to override default values
+ *  @typedef {Config} Config
+ *
+ * @param {Number} [maxWidth] node size in maximal representation
+ * @param {Number} [maxHeight] node size in maximal representation
+ * @param {Number} [minWidth] node size in minimal representation
+ * @param {Number} [minHeight] node size in minimal representation
+ * @param {String} [iconUrl] path to an image icon
+ * @param {Object} [iconOpacity]
+ * @param {Number} [iconOpacity.minOpacity] opacity value for minimal representation
+ * @param {Number} [iconOpacity.maxOpacity] opacity value for maximal representation
+ * @param {Number} [offset] spacing for all elements inside the node
+ * @param {Number} [animationSpeed] how long a node animations takes
+ * @param {Number} [borderRadius] the border radius
+ * @param {Object} [borderStroke]
+ * @param {Number} [borderStroke.width] border width
+ * @param {String} [borderStroke.color] border color as hex values
+ * @param {Object} [backgroundColor]
+ * @param {String} [backgroundColor.color] the nodes background color
+ * @param {Object} [labelColor]
+ * @param {String} [labelColor.color] the color for the label as hex value
+ * @param {Object} [labelFont]
+ * @param {String} [labelFont.family] the font family
+ * @param {Number} [labelFont.size] the font size
+ * @param {Number} [labelFont.weight] the font weight
+ * @param {String} [labelFont.style] the font style
+ * @param {Object} [labelBackground]
+ * @param {String} [labelBackground.color] the label's background color as hex value
+ * @param {Number} [labelBackground.opacity] the opacity of the label background
+ * @param {Object} [detailsColor]
+ * @param {String} [detailsColor.color] the color for the details as hex value
+ * @param {Object} [detailsFont]
+ * @param {Number} [detailsFont.family] the font family
+ * @param {Number} [detailsFont.size] the font size
+ * @param {Number} [detailsFont.weight] the font weight
+ * @param {String} [detailsFont.style] the font style
+ * @param {Object} [detailsBackground]
+ * @param {String} [detailsBackground.color] the details background color as hex value
+ * @param {Number} [detailsBackground.opacity] the details background opacity
+ */
+
+/**
+ * Factory to create node objects
+ * @param {Data} data the raw node data
+ * @param {Canvas} canvas the canvas to render the node on
+ * @param {Config} [config] custom config to override the default values
+ *
+ *
+ * @example
+ * // creates an asset node
+ * const asset = NodeFactory.create(data, canvas)
+ * asset.renderAsMin()
+ * setTimeout(() => asset.transformToMax(), 500)
+ *
+ */
+
+var NodeFactory = /*#__PURE__*/function () {
+  function NodeFactory() {
+    _classCallCheck(this, NodeFactory);
+  }
+
+  _createClass(NodeFactory, null, [{
+    key: "create",
+    value: function create(data, canvas) {
+      var config = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+      var node;
+
+      if (data.type === "asset") {
+        node = new AssetNode(data, canvas, config);
+      } else if (data.type === "control") {
+        node = new ControlNode(data, canvas, config);
+      } else if (data.type === "risk") {
+        node = new RiskNode(data, canvas, config);
+      } else if (data.type === "requirement") {
+        node = new RequirementNode(data, canvas, config);
+      } else {
+        node = new CustomNode(data, canvas, config);
+      }
+
+      return node;
+    }
+  }]);
+
+  return NodeFactory;
+}();
 
 /**
  * Optional configuration to override default values
@@ -17176,5 +21668,98 @@ var EdgeFactory = /*#__PURE__*/function () {
   return EdgeFactory;
 }();
 
-export { EdgeFactory, NodeFactory, Visualization };
+var Node = /*#__PURE__*/function () {
+  function Node(id) {
+    _classCallCheck(this, Node);
+
+    this.id = id;
+    this.neighbors = [];
+    this.edges = [];
+  }
+
+  _createClass(Node, [{
+    key: "addNeighbor",
+    value: function addNeighbor(node) {
+      this.neighbors.push(node);
+    }
+  }, {
+    key: "addEdge",
+    value: function addEdge(edge) {
+      this.edges.push(edge);
+    }
+  }, {
+    key: "getNeighbors",
+    value: function getNeighbors() {
+      return this.neighbors;
+    }
+  }]);
+
+  return Node;
+}();
+
+var Edge = /*#__PURE__*/function () {
+  function Edge(startNodeId, endNodeId, id) {
+    _classCallCheck(this, Edge);
+
+    // this.id = id || undefined
+    // this.id = `edge#${node1.id}_${node2.id}`
+    this.startNodeId = startNodeId;
+    this.endNodeId = endNodeId;
+  }
+
+  _createClass(Edge, [{
+    key: "getKey",
+    value: function getKey() {
+      return "".concat(this.startNodeId, "_").concat(this.endNodeId);
+    }
+  }]);
+
+  return Edge;
+}();
+
+var Graph = /*#__PURE__*/function () {
+  function Graph() {
+    _classCallCheck(this, Graph);
+
+    this.nodes = [];
+    this.edges = [];
+  }
+
+  _createClass(Graph, [{
+    key: "addNode",
+    value: function addNode(id) {
+      this.nodes.push(new Node(id));
+    }
+  }, {
+    key: "addEdge",
+    value: function addEdge(startNodeId, endNodeId) {
+      var startNode = this.nodes.find(function (n) {
+        return n.id === startNodeId;
+      });
+      var endNode = this.nodes.find(function (n) {
+        return n.id === endNodeId;
+      });
+      startNode.addNeighbor(endNode);
+      endNode.addNeighbor(startNode);
+      var edge = new Edge(startNodeId, endNodeId);
+      startNode.addEdge(edge);
+      endNode.addEdge(edge);
+      this.edges.push(edge);
+    }
+  }, {
+    key: "getNodes",
+    value: function getNodes() {
+      return this.nodes;
+    }
+  }, {
+    key: "getEdges",
+    value: function getEdges() {
+      return this.edges;
+    }
+  }]);
+
+  return Graph;
+}();
+
+export { ContextualLayout, EdgeFactory, Graph, GridLayout, NodeFactory, RadialLayout, TreeLayout, Visualization };
 //# sourceMappingURL=graphVisualization.js.map
