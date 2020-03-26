@@ -112,18 +112,6 @@ const AssetConfig = {
  * @param {Canvas} canvas the canvas to render the node on
  * @param {AssetConfig} customAssetConfig custom config to override default values
  *
- * @example
- * const asset1 = NodeFactory.create(data.find(d => d.type === "asset"), canvas)
- * asset1.setInitialXY(200, 450)
- * asset1.renderAsMin()
- *
- * const asset2 = NodeFactory.create(data.find(d => d.type === "asset"), canvas)
- * asset2.setInitialXY(200, 150)
- * asset2.renderAsMax()
- *
- * setTimeout(() => asset1.transformToMax(200, 150), 500)
- * setTimeout(() => asset2.transformToMin(200, 450), 500)
- *
  */
 class AssetNode extends BaseNode {
   constructor(data, canvas, customAssetConfig) {

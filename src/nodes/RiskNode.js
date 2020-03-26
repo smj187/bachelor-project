@@ -113,18 +113,6 @@ const RiskConfig = {
  * @param {Canvas} canvas the canvas to render the node on
  * @param {RiskConfig} customRiskConfig custom config to override default values
  *
- * @example
- * const risk1 = NodeFactory.create(data.find(d => d.type === "risk"), canvas)
- * risk1.setInitialXY(200, 100)
- * risk1.renderAsMin()
- *
- * const risk2 = NodeFactory.create(data.find(d => d.type === "risk"), canvas)
- * risk2.setInitialXY(200, 400)
- * risk2.renderAsMax()
- *
- * setTimeout(() => risk1.transformToMax(200, 200), 500)
- * setTimeout(() => risk2.transformToMin(200, 350), 500)
- *
  */
 class RiskNode extends BaseNode {
   constructor(data, canvas, customRiskConfig) {

@@ -4,8 +4,8 @@ const BoldEdgeConfig = {
   offset: 8,
   animationSpeed: 300,
 
-  color1: "#555",
-  color2: "#555",
+  color1: null,
+  color2: null,
 
   blockarrowLineWidth: 3,
   blockarrowArrowWidth: 10,
@@ -18,6 +18,8 @@ const BoldEdgeConfig = {
   labelFontWeight: 600,
   labelFontStyle: "normal",
   labelBackground: "#ffffffcc",
+  labelTranslateX: 0,
+  labelTranslateY: 0,
 }
 
 class BoldEdge extends BaseEdge {
@@ -26,15 +28,13 @@ class BoldEdge extends BaseEdge {
 
 
     this.config = { ...BoldEdgeConfig, ...customBoldEdgeConfig }
-
-    this.calculate()
   }
 
 
   /**
    * Creates the initial SVG element and adds hover effect
    */
-  createSVGElement() {
+  render() {
     const svg = this.canvas.group()
     svg.css("cursor", "default")
     svg.id(`edge#${this.fromNode.id}_${this.toNode.id}`)
@@ -47,7 +47,7 @@ class BoldEdge extends BaseEdge {
   /**
    * Transform an edge to its final rendered position
    */
-  transformToFinal() {
+  transformToFinalPosition() {
     this
       .svg
       .attr({ opacity: 1 })
@@ -86,8 +86,8 @@ class BoldEdge extends BaseEdge {
       return where.config.borderStrokeColor
     }
 
-    const c1 = getColor(this.fromNode)
-    const c2 = getColor(this.toNode)
+    const c1 = this.config.color1 !== "null" ? this.config.color1 : getColor(this.fromNode)
+    const c2 = this.config.color2 !== "null" ? this.config.color2 : getColor(this.toNode)
     const gradient = this.canvas.gradient("linear", (add) => {
       add.stop(0, c1)
       add.stop(1, c2)
@@ -119,12 +119,14 @@ class BoldEdge extends BaseEdge {
       .attr({ opacity: 1 })
 
     if (this.label) {
+      const cx = (this.finalFromX + this.finalToX) / 2 + this.config.labelTranslateX
+      const cy = (this.finalFromY + this.finalToY) / 2 + this.config.labelTranslateY
       this
         .svg
         .get(1)
         .attr({ opacity: 0 })
         .animate({ duration: this.config.animationSpeed })
-        .center((this.finalFromX + this.finalToX) / 2, (this.finalFromY + this.finalToY) / 2)
+        .center(cx, cy)
         .attr({ opacity: 1 })
     }
   }
@@ -135,7 +137,7 @@ class BoldEdge extends BaseEdge {
    * @param {Number} [X=finalFromX] The x-position the edge will be translated
    * @param {Number} [Y=finalFromY] The y-position the edge will be translated
    */
-  transformToInitial(X = this.finalFromX, Y = this.finalFromY) {
+  transformToInitialPosition(X = this.finalFromX, Y = this.finalFromY) {
     const blockArrow = this.svg.get(0)
     const label = this.svg.get(1)
 

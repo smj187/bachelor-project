@@ -57,13 +57,6 @@ import Requirement from "./RequirementNode"
  * @param {Canvas} canvas the canvas to render the node on
  * @param {Config} [config] custom config to override the default values
  *
- *
- * @example
- * // creates an asset node
- * const asset = NodeFactory.create(data, canvas)
- * asset.renderAsMin()
- * setTimeout(() => asset.transformToMax(), 500)
- *
  */
 class NodeFactory {
   static create(data, canvas, config = {}) {

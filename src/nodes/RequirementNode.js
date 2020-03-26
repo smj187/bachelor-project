@@ -112,17 +112,6 @@ const RequirementConfig = {
  * @param {Canvas} canvas the canvas to render the node on
  * @param {RequirementConfig} customRequirementConfig custom config to override the default values
  *
- * @example
- * const requirement1 = NodeFactory.create(data.find(d => d.type === "requirement"), canvas)
- * requirement1.setInitialXY(200, 100)
- * requirement1.renderAsMin()
- *
- * const requirement2 = NodeFactory.create(data.find(d => d.type === "requirement"), canvas)
- * requirement2.setInitialXY(200, 400)
- * requirement2.renderAsMax()
- *
- * setTimeout(() => requirement1.transformToMax(200, 200), 500)
- * setTimeout(() => requirement2.transformToMin(200, 350), 500)
  */
 class RequirementNode extends BaseNode {
   constructor(data, canvas, customRequirementConfig) {

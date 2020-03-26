@@ -173,7 +173,8 @@ class BaseEdge {
     background.style.background = this.config.labelBackground
     background.style.padding = `${this.config.offset / 2}px`
     background.style.textAlign = "center"
-    background.style.minWidth = "100px" // uncomment this for more than one word
+    background.style.width = "100px"
+    background.style.minWidth = "100px" // FIXME: this creates a new row for each word
 
     const label = document.createElement("p")
     label.innerText = this.label

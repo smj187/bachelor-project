@@ -79,82 +79,6 @@ class BaseNode {
     this.incomingEdges = []
   }
 
-  isLeaf() {
-    return this.children.length === 0
-  }
-
-  isLeftMost() {
-    if (this.parent === null || this.parent === undefined) {
-      return true
-    }
-
-    return this.parent.children[0] === this
-  }
-
-  isRightMost() {
-    if (this.parent === null || this.parent === undefined) {
-      return true
-    }
-    return this.parent.children[this.children.length - 1] === this
-  }
-
-  getLeftMostChild() {
-    if (this.children.length === 0) {
-      return null
-    }
-    return this.children[0]
-  }
-
-  getRightMostChild() {
-    if (this.children.length === 0) {
-      return null
-    }
-    return this.children[this.children.length - 1]
-  }
-
-  getPrevSibling() {
-    if (this.parent === null || this.parent === undefined || this.isLeftMost()) {
-      return null
-    }
-    return this.parent.children[this.parent.children.indexOf(this) - 1]
-  }
-
-  setPrevSibling(prevSibling) {
-    this.prevSibling = prevSibling
-  }
-
-  getNextSibling() {
-    if (this.parent === null || this.isRightMost()) {
-      return null
-    }
-    return this.parent.children[this.parent.children.indexOf(this) + 1]
-  }
-
-  getLeftMostSibling() {
-    if (this.parent === null) {
-      return null
-    }
-    if (this.isLeftMost()) {
-      return this
-    }
-    return this.parent.children[0]
-  }
-
-  getRightMostSibling() {
-    if (this.children.length === 0) {
-      return null
-    }
-    return this.children[this.children.length - 1]
-  }
-
-  setModifier(modifier) {
-    this.modifier = modifier
-  }
-
-  getModifier() {
-    return this.modifier
-  }
-
 
   addIncomingEdge(incomingEdge) {
     this.incomingEdges.push(incomingEdge)
@@ -208,55 +132,8 @@ class BaseNode {
   }
 
 
-  getNodeSize() {
-    return this.nodeSize
-  }
-
-  isRoot() {
-    return this.parentId === null
-  }
-
-  getChildren() {
-    return this.children
-  }
-
-  setChildren(children) {
-    this.children = children
-  }
-
-
-  setNodeSize(nodeSize) {
-    this.nodeSize = nodeSize
-  }
-
-  getParent() {
-    return this.parent
-  }
-
-  setParent(parent) {
-    this.parent = parent
-  }
-
-  setDepth(depth) {
-    this.depth = depth
-  }
-
-  getDepth() {
-    return this.depth
-  }
-
-  moveToFront() {
-    this.svg.front()
-  }
-
-  moveToBack() {
-    this.svg.back()
-  }
-
-  getId() {
-    return this.id
-  }
-
+  // TODO: ask: shall the library export a method where the user can change the default
+  //            mouse events for every interaction function
   addEvent(event, func) {
     // this.svg.on(event, func)
     // console.log(this.svg)
@@ -265,16 +142,13 @@ class BaseNode {
   }
 
 
-  // TODO: add event listener (mouse events)
-  // TODO: maybe before creation: pass config which to override mouse events
-
-
   /**
    * Creates the initial SVG element and adds hover effect
+   * @private
    */
   createSVGElement() {
-    const svg = this.canvas.group().draggable()
-    // const svg = this.canvas.group()
+    // const svg = this.canvas.group().draggable()
+    const svg = this.canvas.group()
     svg.css("cursor", "pointer")
     svg.id(`node#${this.id}`)
 
@@ -456,6 +330,83 @@ class BaseNode {
   }
 
 
+  isLeaf() {
+    return this.children.length === 0
+  }
+
+  isLeftMost() {
+    if (this.parent === null || this.parent === undefined) {
+      return true
+    }
+
+    return this.parent.children[0] === this
+  }
+
+  isRightMost() {
+    if (this.parent === null || this.parent === undefined) {
+      return true
+    }
+    return this.parent.children[this.children.length - 1] === this
+  }
+
+  getLeftMostChild() {
+    if (this.children.length === 0) {
+      return null
+    }
+    return this.children[0]
+  }
+
+  getRightMostChild() {
+    if (this.children.length === 0) {
+      return null
+    }
+    return this.children[this.children.length - 1]
+  }
+
+  getPrevSibling() {
+    if (this.parent === null || this.parent === undefined || this.isLeftMost()) {
+      return null
+    }
+    return this.parent.children[this.parent.children.indexOf(this) - 1]
+  }
+
+  setPrevSibling(prevSibling) {
+    this.prevSibling = prevSibling
+  }
+
+  getNextSibling() {
+    if (this.parent === null || this.isRightMost()) {
+      return null
+    }
+    return this.parent.children[this.parent.children.indexOf(this) + 1]
+  }
+
+  getLeftMostSibling() {
+    if (this.parent === null) {
+      return null
+    }
+    if (this.isLeftMost()) {
+      return this
+    }
+    return this.parent.children[0]
+  }
+
+  getRightMostSibling() {
+    if (this.children.length === 0) {
+      return null
+    }
+    return this.children[this.children.length - 1]
+  }
+
+  setModifier(modifier) {
+    this.modifier = modifier
+  }
+
+  getModifier() {
+    return this.modifier
+  }
+
+
   /**
    *
    * @param {Object} config adds or overrides existing config data
@@ -576,6 +527,56 @@ class BaseNode {
    */
   getCurrentHeight() {
     return this.currentHeight
+  }
+
+
+  getNodeSize() {
+    return this.nodeSize
+  }
+
+  isRoot() {
+    return this.parentId === null
+  }
+
+  getChildren() {
+    return this.children
+  }
+
+  setChildren(children) {
+    this.children = children
+  }
+
+
+  setNodeSize(nodeSize) {
+    this.nodeSize = nodeSize
+  }
+
+  getParent() {
+    return this.parent
+  }
+
+  setParent(parent) {
+    this.parent = parent
+  }
+
+  setDepth(depth) {
+    this.depth = depth
+  }
+
+  getDepth() {
+    return this.depth
+  }
+
+  moveToFront() {
+    this.svg.front()
+  }
+
+  moveToBack() {
+    this.svg.back()
+  }
+
+  getId() {
+    return this.id
   }
 }
 

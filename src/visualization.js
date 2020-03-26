@@ -29,14 +29,13 @@ import ContextualLayout from "./layouts/ContextualLayout"
 /**
  * Creates and handles all vizualization operations
  *
- * @example
- * const visualization = new Visualization()
- * const { canvas } = visualization
  */
-
-
 class Visualization {
   constructor(config) { // TODO: this constructor should receive custom overrides for all nodes, edges and layouts
+    if (config.databaseUrl === undefined || config.databaseUrl === null) {
+      throw new Error("missing database URL")
+    }
+
     // create the main canvas element dom element
     const element = document.createElement("div")
     element.setAttribute("id", "canvas")
@@ -74,6 +73,12 @@ class Visualization {
     this.config = config
   }
 
+
+  /**
+   * Renders a layout
+   * @param {Graph} initialGraphData the initial graph that should be displayed
+   * @param {Layout} layout the layout type
+   */
   render(initialGraphData, layout) {
     layout.setCanvas(this.canvas)
     layout.setConfig({ databaseUrl: this.config.databaseUrl })
@@ -94,14 +99,22 @@ class Visualization {
       layout.createContextualDataAsync(initialGraphData.nodes, initialGraphData.edges)
     }
 
+    // FIXME: layout do not update their position if a previous layout is changing in size
+    // layout.registerUpdatePosition()
+
 
     return layout
   }
 
+
+  /**
+   * Transforms a layout from one type into another type
+   * @param {Layout} currentLayout
+   * @param {Layout} newLayout
+   */
   async transform(currentLayout, newLayout) {
     newLayout.setCanvas(this.canvas)
     newLayout.setConfig({ databaseUrl: this.config.databaseUrl })
-
 
     if (newLayout instanceof RadialLayout) {
       newLayout.createRadialDataAsync(currentLayout.getNodeData(), currentLayout.getEdgeData())
@@ -121,13 +134,6 @@ class Visualization {
 
 
     currentLayout.removeLayout()
-
-
-    // calculate and render layout
-    // newLayout.calculateLayout() // TODO: root isn't transformed
-    // newLayout.renderLayout()
-
-    // console.log(newLayout)
   }
 
 
@@ -138,8 +144,6 @@ class Visualization {
    * @param {Number} [zoomOptions.x] zoom into specified point
    * @param {Number} [zoomOptions.y] zoom into specified point
    *
-   * @example
-   * visualization.setZoom(2, {x: 100, y: 100})
    */
   setZoom(zoom, opts) {
     this.canvas.zoom(zoom, opts)

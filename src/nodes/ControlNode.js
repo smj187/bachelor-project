@@ -113,18 +113,6 @@ const ControlConfig = {
  * @param {Canvas} canvas the canvas to render the node on
  * @param {ControlConfig} customControlConfig custom config to override default values
  *
- * @example
- * const control1 = NodeFactory.create(data.find(d => d.type === "control"), canvas)
- * control1.setInitialXY(700, 150)
- * control1.renderAsMin()
- *
- * const control2 = NodeFactory.create(data.find(d => d.type === "control"), canvas)
- * control2.setInitialXY(500, 450)
- * control2.renderAsMax()
- *
- * setTimeout(() => control1.transformToMax(500, 450), 500)
- * setTimeout(() => control2.transformToMin(700, 150), 500)
- *
  */
 class ControlNode extends BaseNode {
   constructor(data, canvas, customControlConfig) {

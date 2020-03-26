@@ -169,23 +169,23 @@ class RadialLayout extends BaseLayout {
           node.renderAsMin(this.centerX, this.centerY)
         }
       }
-    })
-
-    this.nodes.forEach((node) => {
       node.transformToFinalPosition()
     })
+
+    // this.nodes.forEach((node) => {
+    // })
 
 
     this.edges.forEach((edge) => {
       if (edge.svg === null) {
         edge.render(this.centerX, this.centerY)
       }
-    })
-
-
-    this.edges.forEach((edge) => {
       edge.transformToFinalPosition()
     })
+
+
+    // this.edges.forEach((edge) => {
+    // })
   }
 }
 

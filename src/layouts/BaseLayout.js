@@ -17,6 +17,7 @@ class BaseLayout {
 
     this.nodes = []
     this.edges = []
+    this.leafs = []
 
     this.currentLayoutWidth = 0
     this.currentLayoutHeight = 0
@@ -63,7 +64,7 @@ class BaseLayout {
 
       // sets the currently used rendering size
       node.setNodeSize(this.config.renderingSize)
-      // node.addEvent("dblclick", () => { this.manageDataAsync(node) })
+      // node.addEvent("dblclick", () => { this.manageTreeDataAsync(node) })
 
       this.nodes.push(node)
     })
@@ -75,13 +76,237 @@ class BaseLayout {
   }
 
 
+  /**
+   * Contextual layout data creation
+   * @param {*} nodeData
+   * @param {*} edgeData
+   */
   async createContextualDataAsync(nodeData, edgeData) {
     this.nodeData = nodeData
     this.edgeData = edgeData
 
-    // load focus, children and parents
 
-    // load attached node and attached risks
+    // in order to load parents and children, the data of the focus node has to be loaded first
+    const focusNode = this.nodeData.find((n) => n.id === this.startNodeId)
+    const focusFetchUrl = `${this.config.databaseUrl}/nodes?id=${focusNode.id}`
+    const fetchedFocus = await fetch(focusFetchUrl).then((data) => data.json())
+    this.createNodeFromData(fetchedFocus[0], "max")
+    this.focus = this.nodes.find((n) => n.id === this.startNodeId)
+
+
+    // load parents and children passed on edges inside the graph structure
+    const parentChildNodeIds = this.edgeData.map((e) => {
+      if (e.startNodeId === this.startNodeId) {
+        return e.endNodeId
+      }
+      if (e.endNodeId === this.startNodeId) {
+        return e.startNodeId
+      }
+      return null
+    }).filter((id) => id !== null)
+    const mapNodeIdsToUrl = (id) => `id=${id}&`
+    const nodeIdsToFetch = parentChildNodeIds.map(mapNodeIdsToUrl).join("").slice(0, -1)
+    const nodeFetchUrl = `${this.config.databaseUrl}/nodes?${nodeIdsToFetch}`
+    const fetchedNodes = await fetch(nodeFetchUrl).then((data) => data.json())
+
+    fetchedNodes.forEach((rawNode) => {
+      this.createNodeFromData(rawNode, "min")
+    })
+    const parentNodeIds = this.edgeData.filter((e) => e.startNodeId === this.startNodeId).map((e) => e.endNodeId)
+    const childNodeIds = this.edgeData.filter((e) => e.endNodeId === this.startNodeId).map((e) => e.startNodeId)
+    this.parents = this.nodes.filter((n) => parentNodeIds.includes(n.id))
+    this.children = this.nodes.filter((n) => childNodeIds.includes(n.id))
+
+
+    // here we load attached risks which are attached to a different node
+    const assignedNodeDataUrl = `${this.config.databaseUrl}/RiskEdgeConnectionTable?startNodeId=${this.startNodeId}`
+    const assignedNodeData = await fetch(assignedNodeDataUrl).then((data) => data.json())
+    const assignedNodeId = assignedNodeData[0].endNodeId
+    const riskIds = assignedNodeData[0].risks
+
+    const assignedNodeUrl = `${this.config.databaseUrl}/nodes?id=${assignedNodeId}`
+    const assignedNode = await fetch(assignedNodeUrl).then((data) => data.json())
+    this.createNodeFromData(assignedNode[0], "min")
+    this.assginedNode = this.nodes.find((n) => n.id === assignedNodeId)
+
+    const riskIdsToFetch = riskIds.map(mapNodeIdsToUrl).join("").slice(0, -1)
+    const riskFetchUrl = `${this.config.databaseUrl}/nodes?${riskIdsToFetch}`
+    const fetchedRisks = await fetch(riskFetchUrl).then((data) => data.json())
+
+    fetchedRisks.forEach((rawNode) => {
+      this.createNodeFromData(rawNode, "min")
+    })
+    this.risks = this.nodes.filter((n) => riskIds.includes(n.id))
+    const config = {
+      color1: "#F26A7C", color2: "#F26A7C", labelTranslateY: -20, labelColor: "#ff8e9e",
+    }
+    const connection = new BoldEdge(this.canvas, this.focus, this.assginedNode, config)
+    connection.setLabel("associated")
+    this.edges.push(connection)
+
+
+    // load edges
+    const parentChildEdges = this.edgeData.filter((e) => {
+      if (e.startNodeId === this.startNodeId) {
+        return true
+      }
+      if (e.endNodeId === this.startNodeId) {
+        return true
+      }
+      return false
+    })
+
+    // fetch edges based on given ids
+    const mapEdgeIdsToUrl = (n) => `endNodeId=${n.endNodeId}&startNodeId=${n.startNodeId}&`
+    const edgeIdsToFetch = parentChildEdges.map(mapEdgeIdsToUrl).join("").slice(0, -1)
+    const edgeFetchUrl = `${this.config.databaseUrl}/edges?${edgeIdsToFetch}`
+    const fetchedEdges = await fetch(edgeFetchUrl).then((data) => data.json())
+
+    // create new edges
+    fetchedEdges.forEach((rawEdge) => {
+      const fromNode = this.nodes.find((n) => n.id === rawEdge.startNodeId)
+      const toNode = this.nodes.find((n) => n.id === rawEdge.endNodeId)
+
+      let edge = null
+      if (rawEdge.type === "solid") edge = new ThinEdge(this.canvas, fromNode, toNode, { type: "solid" })
+      else if (rawEdge.type === "dashed") edge = new ThinEdge(this.canvas, fromNode, toNode, { type: "dashed" })
+      else if (rawEdge.type === "bold") edge = new BoldEdge(this.canvas, fromNode, toNode, { type: "bold" })
+      else edge = new ThinEdge(this.canvas, fromNode, toNode, { type: "solid" })
+
+      fromNode.addOutgoingEdge(edge)
+      toNode.addIncomingEdge(edge)
+      edge.setLabel(rawEdge.label)
+      this.edges.push(edge)
+    })
+
+
+    // re-calculate and re-render layout
+    this.calculateLayout()
+    this.renderLayout()
+  }
+
+  async manageContextualDataAsync(clickedNode) {
+    // remove all elements but the clicked node
+    const removedNodes = []
+    const nodesToRemove = this.nodes // .filter((n) => n.id !== clickedNode.id)
+    const X = this.focus.getFinalX()
+    const Y = this.focus.getFinalY()
+
+    // remove children
+    nodesToRemove.forEach((child) => {
+      child.removeNode(X, Y)
+      removedNodes.push(child.id)
+    })
+    clickedNode.setChildren([])
+    // this.nodes = this.nodes.filter((node) => !removedNodes.includes(node.id))
+    this.nodes = []
+
+
+    // remove containers
+    this.containers.forEach((container) => {
+      container.removeContainer(X, Y)
+    })
+    this.containers = []
+
+    // remove edges
+    this.edges.forEach((edge) => {
+      edge.removeEdge(X, Y)
+    })
+    this.edges = []
+
+    // transform clicked node into max and position it to focus
+    // clickedNode.setInitialXY(clickedNode.getFinalX(), clickedNode.getFinalY())
+    // clickedNode.transformToMax(X, Y)
+
+
+    // clear layout
+    this.focus = null
+    this.parents = []
+    this.children = []
+    this.assginedNode = null
+    this.assignedRisks = []
+    this.containers = []
+
+    // this.nodes[0].transformToMax(X, Y)
+
+
+    // // add data
+
+    this.startNodeId = clickedNode.id
+    this.createContextualDataAsync(this.nodeData, this.edgeData)
+
+    // // in order to load parents and children, the data of the focus node has to be loaded first
+    // const focusFetchUrl = `${this.config.databaseUrl}/nodes?id=${clickedNode.getId()}`
+    // const fetchedFocus = await fetch(focusFetchUrl).then((data) => data.json())
+    // console.log(fetchedFocus[0])
+    // this.createNodeFromData(fetchedFocus[0], "max")
+    // this.focus = this.nodes.find((n) => n.id === fetchedFocus[0].id)
+
+
+    // // load parents and children edges
+    // const parentEdgeFetchUrl = `${this.config.databaseUrl}/edges?startNodeId=${fetchedFocus[0].id}`
+    // const childrenEdgeFetchUrl = `${this.config.databaseUrl}/edges?endNodeId=${fetchedFocus[0].id}`
+    // const fetchedParentEdges = await fetch(parentEdgeFetchUrl).then((data) => data.json())
+    // const fetchedChildrenEdges = await fetch(childrenEdgeFetchUrl).then((data) => data.json())
+    // const fetchedEdges = [...fetchedChildrenEdges, ...fetchedParentEdges]
+
+
+    // // load nodes based on edngNodeIds in edge response
+    // const nodeIds = fetchedEdges.map((e) => e.endNodeId)
+    // const mapNodeIdsToUrl = (id) => `id=${id}&`
+    // const nodeIdsToFetch = nodeIds.map(mapNodeIdsToUrl).join("").slice(0, -1)
+    // const nodeFetchUrl = `${this.config.databaseUrl}/nodes?${nodeIdsToFetch}`
+    // const fetchedNodes = await fetch(nodeFetchUrl).then((data) => data.json())
+    // fetchedNodes.forEach((rawNode) => {
+    //   this.createNodeFromData(rawNode, "min")
+    // })
+    // // console.log(fetchedEdges)
+
+    // const parentNodeIds = fetchedEdges.filter((e) => e.endNodeId !== clickedNode.id).map((n) => n.endNodeId)
+    // const childNodeIds = fetchedEdges.filter((e) => e.startNodeId !== clickedNode.id).map((n) => n.startNodeId)
+    // this.parents = this.nodes.filter((n) => parentNodeIds.includes(n.id))
+    // this.children = this.nodes.filter((n) => childNodeIds.includes(n.id))
+    // console.log(childNodeIds, this.nodes)
+    // // // this.parents = this.nodes.filter((n) => parentNodeIds.includes(n.id))
+    // // // this.children = this.nodes.filter((n) => childNodeIds.includes(n.id))
+
+
+    // create new edges
+    // fetchedEdges.forEach((rawEdge) => {
+    //   const fromNode = this.nodes.find((n) => n.id === rawEdge.startNodeId)
+    //   const toNode = this.nodes.find((n) => n.id === rawEdge.endNodeId)
+
+    //   let edge = null
+    //   if (rawEdge.type === "solid") edge = new ThinEdge(this.canvas, fromNode, toNode, { type: "solid" })
+    //   else if (rawEdge.type === "dashed") edge = new ThinEdge(this.canvas, fromNode, toNode, { type: "dashed" })
+    //   else if (rawEdge.type === "bold") edge = new BoldEdge(this.canvas, fromNode, toNode, { type: "bold" })
+    //   else edge = new ThinEdge(this.canvas, fromNode, toNode, { type: "solid" })
+
+    //   fromNode.addOutgoingEdge(edge)
+    //   toNode.addIncomingEdge(edge)
+    //   edge.setLabel(rawEdge.label)
+    //   this.edges.push(edge)
+    // })
+
+    // load parents and children passed on those edges
+    // console.log(fetchedEdges)
+  }
+
+  createNodeFromData(data, renderingSize) {
+    let node
+    if (data.type === "risk") node = new RiskNode(data, this.canvas)
+    if (data.type === "asset") node = new AssetNode(data, this.canvas)
+    if (data.type === "custom") node = new CustomNode(data, this.canvas)
+    if (data.type === "requirement") node = new RequirementNode(data, this.canvas)
+    if (data.type === "control") node = new ControlNode(data, this.canvas)
+
+    // sets the currently used rendering size
+    node.setNodeSize(renderingSize)
+    if (data.type === "control") {
+      node.addEvent("dblclick", () => { this.manageContextualDataAsync(node) })
+    }
+
+    this.nodes.push(node)
   }
 
 
@@ -108,7 +333,7 @@ class BaseLayout {
 
       // sets the currently used rendering size
       node.setNodeSize(this.config.renderingSize)
-      node.addEvent("dblclick", () => { this.manageDataAsync(node) })
+      node.addEvent("dblclick", () => { this.manageTreeDataAsync(node) })
 
       this.nodes.push(node)
     })
@@ -179,8 +404,8 @@ class BaseLayout {
     this.renderLayout()
   }
 
-  // eslint-disable-next-line class-methods-use-this
-  async manageDataAsync(clickedNode) {
+
+  async manageTreeDataAsync(clickedNode) {
     const BFS = (root) => {
       const remove = []
       const queue = []
@@ -248,7 +473,7 @@ class BaseLayout {
 
         // sets the currently used rendering size
         node.setNodeSize(this.config.renderingSize)
-        node.addEvent("dblclick", () => { this.manageDataAsync(node) })
+        node.addEvent("dblclick", () => { this.manageTreeDataAsync(node) })
 
         this.nodes.push(node)
       })

@@ -473,6 +473,17 @@
             "config": null
         },
         {
+            "id": 206,
+            "label": "Asset 206",
+            "description": "Lorem ipsum.",
+            "type": "asset",
+            "keyValuePairs": [],
+            "tooltipText": null,
+            "parentId": null,
+            "childrenIds": [],
+            "config": null
+        },
+        {
             "id": 300,
             "label": "Risk 300",
             "description": "Voluptate expedita dicta neque harum debitis laudantium molestias velit aut",
@@ -481,15 +492,7 @@
             "tooltipText": null,
             "parentId": null,
             "childrenIds": [],
-            "config": null,
-            "controls": [
-                100,
-                103,
-                105
-            ],
-            "assets": [
-                205
-            ]
+            "config": null
         },
         {
             "id": 301,
@@ -500,14 +503,7 @@
             "tooltipText": null,
             "parentId": null,
             "childrenIds": [],
-            "config": null,
-            "controls": [
-                100,
-                106
-            ],
-            "assets": [
-                204
-            ]
+            "config": null
         },
         {
             "id": 302,
@@ -518,16 +514,7 @@
             "tooltipText": null,
             "parentId": null,
             "childrenIds": [],
-            "config": null,
-            "controls": [
-                100,
-                104,
-                105,
-                106
-            ],
-            "assets": [
-                203
-            ]
+            "config": null
         },
         {
             "id": 303,
@@ -538,14 +525,7 @@
             "tooltipText": null,
             "parentId": null,
             "childrenIds": [],
-            "config": null,
-            "controls": [
-                100,
-                102
-            ],
-            "assets": [
-                200
-            ]
+            "config": null
         },
         {
             "id": 304,
@@ -556,15 +536,7 @@
             "tooltipText": null,
             "parentId": null,
             "childrenIds": [],
-            "config": null,
-            "controls": [
-                100,
-                104,
-                105
-            ],
-            "assets": [
-                201
-            ]
+            "config": null
         },
         {
             "id": 305,
@@ -575,16 +547,7 @@
             "tooltipText": null,
             "parentId": null,
             "childrenIds": [],
-            "config": null,
-            "controls": [
-                100,
-                103,
-                105,
-                106
-            ],
-            "assets": [
-                201
-            ]
+            "config": null
         },
         {
             "id": 306,
@@ -595,93 +558,7 @@
             "tooltipText": null,
             "parentId": null,
             "childrenIds": [],
-            "config": null,
-            "controls": [
-                100,
-                103,
-                105
-            ],
-            "assets": [
-                205
-            ]
-        },
-        {
-            "id": 307,
-            "label": "Risk 307",
-            "description": "Voluptate expedita dicta neque harum debitis laudantium molestias velit aut",
-            "type": "risk",
-            "state": "critical",
-            "tooltipText": null,
-            "parentId": null,
-            "childrenIds": [],
-            "config": null,
-            "controls": [
-                100,
-                101,
-                103
-            ],
-            "assets": [
-                204
-            ]
-        },
-        {
-            "id": 308,
-            "label": "Risk 308",
-            "description": "Voluptate expedita dicta neque harum debitis laudantium molestias velit aut",
-            "type": "risk",
-            "state": "critical",
-            "tooltipText": null,
-            "parentId": null,
-            "childrenIds": [],
-            "config": null,
-            "controls": [
-                100,
-                103,
-                104,
-                105,
-                106
-            ],
-            "assets": [
-                203
-            ]
-        },
-        {
-            "id": 309,
-            "label": "Risk 309",
-            "description": "Voluptate expedita dicta neque harum debitis laudantium molestias velit aut",
-            "type": "risk",
-            "state": "critical",
-            "tooltipText": null,
-            "parentId": null,
-            "childrenIds": [],
-            "config": null,
-            "controls": [
-                101,
-                102,
-                103,
-                104,
-                106
-            ],
-            "assets": [
-                204
-            ]
-        },
-        {
-            "id": 310,
-            "label": "Risk 310",
-            "description": "Voluptate expedita dicta neque harum debitis laudantium molestias velit aut",
-            "type": "risk",
-            "state": "critical",
-            "tooltipText": null,
-            "parentId": null,
-            "childrenIds": [],
-            "config": null,
-            "controls": [
-                106
-            ],
-            "assets": [
-                200
-            ]
+            "config": null
         }
     ],
     "edges": [
@@ -805,6 +682,119 @@
             "type": "solid",
             "startNodeId": 30,
             "endNodeId": 11
+        },
+        {
+            "id": 100,
+            "label": "applies",
+            "type": "solid",
+            "startNodeId": 102,
+            "endNodeId": 100
+        },
+        {
+            "id": 101,
+            "label": "applies",
+            "type": "solid",
+            "startNodeId": 102,
+            "endNodeId": 101
+        },
+        {
+            "id": 102,
+            "label": "protects",
+            "type": "solid",
+            "startNodeId": 103,
+            "endNodeId": 102
+        },
+        {
+            "id": 103,
+            "label": "protects",
+            "type": "solid",
+            "startNodeId": 104,
+            "endNodeId": 102
+        },
+        {
+            "id": 104,
+            "label": "manages",
+            "type": "solid",
+            "startNodeId": 105,
+            "endNodeId": 104
+        },
+        {
+            "id": 105,
+            "label": "uses",
+            "type": "solid",
+            "startNodeId": 106,
+            "endNodeId": 104
+        }
+    ],
+    "RiskEdgeConnectionTable": [
+        {
+            "id": 200,
+            "startNodeId": 100,
+            "endNodeId": 200,
+            "risks": [
+                300,
+                301,
+                302
+            ]
+        },
+        {
+            "id": 201,
+            "startNodeId": 101,
+            "endNodeId": 201,
+            "risks": [
+                301,
+                302,
+                303
+            ]
+        },
+        {
+            "id": 202,
+            "startNodeId": 102,
+            "endNodeId": 202,
+            "risks": [
+                300,
+                301
+            ]
+        },
+        {
+            "id": 203,
+            "startNodeId": 103,
+            "endNodeId": 203,
+            "risks": [
+                300,
+                301,
+                303,
+                304,
+                305
+            ]
+        },
+        {
+            "id": 204,
+            "startNodeId": 104,
+            "endNodeId": 204,
+            "risks": [
+                304,
+                305,
+                306
+            ]
+        },
+        {
+            "id": 205,
+            "startNodeId": 105,
+            "endNodeId": 205,
+            "risks": [
+                305,
+                306
+            ]
+        },
+        {
+            "id": 206,
+            "startNodeId": 106,
+            "endNodeId": 206,
+            "risks": [
+                305,
+                306
+            ]
         }
     ]
 }
