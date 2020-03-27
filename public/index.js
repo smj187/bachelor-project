@@ -46,8 +46,8 @@ const vis = new Visualization({ databaseUrl: "http://localhost:3000" })
 
 
 // const grid1 = vis.render(graph, new GridLayout())
-// setTimeout(() => { vis.transform(grid1, new TreeLayout({ translateY: 400, translateX: 300 })) }, 2000)
-// setTimeout(() => { vis.transform(grid1, new RadialLayout({ translateY: 100, translateX: 300 })) }, 2000)
+// setTimeout(() => { vis.transform(grid1, new TreeLayout({ translateY: 400, translateX: 300 })) }, 3000)
+// setTimeout(() => { vis.transform(grid1, new RadialLayout({ translateY: 100, translateX: 300 })) }, 3000)
 
 
 // const radial1 = vis.render(graph, new RadialLayout({ translateY: 150, translateX: 200 }))
@@ -55,8 +55,8 @@ const vis = new Visualization({ databaseUrl: "http://localhost:3000" })
 // setTimeout(() => { vis.transform(radial1, new GridLayout()) }, 2000)
 
 
-// const tree1 = vis.render(graph, new TreeLayout({ translateX: 100, translateY: 100 }))
-// setTimeout(() => { vis.transform(tree1, new RadialLayout({ translateY: 100, translateX: 300 })) }, 2000)
+const tree1 = vis.render(graph, new TreeLayout({ translateX: 100, translateY: 100 }))
+setTimeout(() => { vis.transform(tree1, new RadialLayout({ translateY: 100, translateX: 300 })) }, 4000)
 // setTimeout(() => { vis.transform(tree1, new GridLayout()) }, 2000)
 
 
@@ -77,4 +77,4 @@ contextualGraph.addEdge(104, 102)
 contextualGraph.addEdge(105, 104)
 contextualGraph.addEdge(106, 104)
 
-const contextual1 = vis.render(contextualGraph, new ContextualLayout({ startNodeId: 106 }))
+// const contextual1 = vis.render(contextualGraph, new ContextualLayout({ startNodeId: 106 }))
