@@ -65,8 +65,8 @@ const CustomConfig = {
 
 
   // small node
-  minWidth: 150,
-  minHeight: 80,
+  minWidth: 200,
+  minHeight: 100,
 
 
   // icon

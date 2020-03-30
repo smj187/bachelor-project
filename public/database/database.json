@@ -1,18 +1,221 @@
 {
-    "nodes": [
+    "node-data": [
         {
-            "id": 10,
-            "label": "Requirement 10",
+            "id": 0,
+            "label": "Requirement 0",
             "description": "leo rhoncus cursus etiam habitasse molestie velit blandit phasellus cursus lacinia ut est nulla lectus tristique rhoncus sollicitudin consectetur ligula proin nam eget duis ut imperdiet metus",
             "type": "requirement",
             "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": null,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 1,
+            "label": "Requirement 1",
+            "description": "leo rhoncus cursus etiam habitasse molestie velit blandit phasellus cursus lacinia ut est nulla lectus tristique rhoncus sollicitudin consectetur ligula proin nam eget duis ut imperdiet metus",
+            "type": "requirement",
+            "state": "PARTIALLY-FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": null,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 2,
+            "label": "Requirement 2",
+            "description": "leo rhoncus cursus etiam habitasse molestie velit blandit phasellus cursus rhoncus sollicitudin consectetur ligula proin nam eget duis ut imperdiet metus",
+            "type": "requirement",
+            "state": "NOT-FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": null,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 3,
+            "label": "Requirement 3",
+            "description": "rhoncus sollicitudin consectetur ligula proin nam eget duis ut imperdiet metus leo rhoncus cursus etiam habitasse molestie velit blandit phasellus cursus ",
+            "type": "requirement",
+            "state": "Unknown State",
+            "attributes": null,
+            "tooltip": null,
+            "parent": null,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 4,
+            "label": "Requirement 4",
+            "description": "ante enim nibh tincidunt taciti justo ad rhoncus sollicitudin consectetur ligula proin nam eget duis adipiscing eros tellus feugiat cursus porttitor dolor faucibus bibendum lobortis ut imperdiet metus",
+            "type": "requirement",
+            "state": "Unknown State",
+            "attributes": null,
+            "tooltip": null,
+            "parent": null,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 5,
+            "label": "Requirement 5",
+            "description": "adipiscing eros tellus feugiat cursus porttitor dolor faucibus bibendum lobortis amet mi quam habitasse leo per aliquet vestibulum erat vehicula blandit",
+            "type": "requirement",
+            "state": "Unknown State",
+            "attributes": null,
+            "tooltip": null,
+            "parent": null,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 6,
+            "label": "Control 6",
+            "description": "adipiscing eros tellus feugiat cursus porttitor dolor ante enim nibh tincidunt taciti justo ad",
+            "type": "control",
+            "attributes": null,
+            "tooltip": null,
+            "parent": null,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 7,
+            "label": "Control 7",
+            "description": "nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam ante enim nibh tincidunt taciti justo ad vero eos et accusam et justo duo ",
+            "type": "control",
+            "attributes": null,
+            "tooltip": null,
+            "parent": null,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 8,
+            "label": "Control 8",
+            "description": "clita kasd gubergren, no sea takimata  ante enim nibh tincidunt taciti justo ad",
+            "type": "control",
+            "attributes": null,
+            "tooltip": null,
+            "parent": null,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 9,
+            "label": "Risk 9",
+            "description": "aute irure dolor in reprehenderit in voluptate velit esse sanctus est Lorem ipsum dolor sit amet voluptate expedita dicta neque harum debitis laudantium molestias velit aut",
+            "type": "risk",
+            "state": "critical",
+            "tooltip": null,
+            "parent": null,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 10,
+            "label": "Risk 10",
+            "description": "sanctus est Lorem ipsum dolor labore et dolore magna aliquyam ante enim nibh tincidunt taciti justo ad vero eos et accusam et justo duo sit amet voluptate expedita dicta neque harum debitis laudantium molestias velit aut",
+            "type": "risk",
+            "state": "censorious",
+            "tooltip": null,
+            "parent": null,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 11,
+            "label": "Risk 11",
+            "description": "enim nibh tincidunt taciti justo ad rhoncus sollicitudin sanctus est lorem ipsum dolor sit amet voluptate expedita dicta neque harum debitis laudantium molestias velit aut",
+            "type": "risk",
+            "state": "moderate",
+            "tooltip": null,
+            "parent": null,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 12,
+            "label": "Risk 12",
+            "description": "lorem ipsum dolor sit amet voluptate expedita dicta neque harum debitis laudantium molestias velit aut",
+            "type": "risk",
+            "state": "low",
+            "tooltip": null,
+            "parent": null,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 13,
+            "label": "Asset 13",
+            "description": "Lorem ipsum dolor sit amet consectetur adipisicing elit. Quibusdam maxime cupiditate fugiat deserunt libero, ab temporibus delectus sunt et doloribus. Voluptate expedita dicta neque harum debitis laudantium molestias velit aut, quos impedit consequatur est libero aliquam enim quibusdam optio nisi aspernatur. Voluptates iure reiciendis, eos illo explicabo sequi architecto! Iure numquam officia temporibus et, mollitia, dolore quas eos non quibusdam quia hic dolores impedit debitis eligendi? Sequi a maxime provident tenetur eveniet modi animi consectetur vitae, nostrum amet ad iusto accusamus placeat, beatae saepe voluptatum! Veritatis architecto error cum eaque. Ipsam blanditiis ab, tenetur eveniet modi doloribus aspernatur aliquid dicta.",
+            "type": "asset",
+            "keyValuePairs": [
+                {
+                    "key": "key 1",
+                    "value": "key value pair: value 1"
+                },
+                {
+                    "key": "key 2",
+                    "value": "key value pair: value 2"
+                },
+                {
+                    "key": "key 3",
+                    "value": "key value pair: value 3"
+                },
+                {
+                    "key": "key 4",
+                    "value": "key value pair: value 4"
+                },
+                {
+                    "key": "key 5",
+                    "value": "key value pair: value 5"
+                },
+                {
+                    "key": "key 6",
+                    "value": "key value pair: value 6"
+                }
+            ],
+            "tooltip": "Asset with <br> tooltip",
+            "parent": null,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 14,
+            "label": "Asset 14",
+            "description": "Quibusdam maxime cupiditate fugiat deserunt libero, ab temporibus delectus sunt et doloribus. Voluptate expedita dicta neque harum debitis laudantium molestias velit aut, quos impedit consequatur est libero aliquam enim quibusdam optio nisi aspernatur. Voluptates iure reiciendis, eos illo explicabo sequi architecto! Iure numquam officia temporibus et, mollitia, dolore quas eos non quibusdam quia hic dolores impedit debitis eligendi? Sequi a maxime provident tenetur eveniet modi animi consectetur vitae, nostrum amet ad iusto accusamus placeat, beatae saepe voluptatum! Veritatis architecto error cum eaque. Ipsam blanditiis ab, tenetur eveniet modi doloribus aspernatur aliquid dicta.",
+            "type": "asset",
+            "keyValuePairs": [
+                {
+                    "key": "key 1",
+                    "value": "key value pair: value 1"
+                },
+                {
+                    "key": "key 2",
+                    "value": "key value pair: value 2"
+                }
+            ],
+            "tooltip": "Asset with <br> tooltip",
+            "parent": null,
+            "children": [],
+            "config": null
+        }
+    ],
+    "nodes": [
+        {
+            "id": 1,
+            "label": "Requirement 1",
+            "description": "sollicitudin consectetur ligula proin nam eget duis ut imperdiet metus",
+            "type": "requirement",
+            "state": "NOT-FULFILLED",
             "tooltipText": null,
             "parentId": null,
-            "childrenIds": [
-                11,
-                12,
-                13
-            ],
+            "childrenIds": [],
             "config": null
         },
         {

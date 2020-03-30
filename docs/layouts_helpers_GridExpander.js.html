@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,7 +8,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <title>
-      Home - Documentation
+      layouts/helpers/GridExpander.js - Documentation
   </title>
 
   <link href="https://www.braintreepayments.com/images/favicon-ccda0b14.png" rel="icon" type="image/png">
@@ -49,14 +51,14 @@
 
   <div class="top-nav-wrapper">
     <ul>
-      <li  class="active" >
+      <li >
         <a href="index.html">
           
-          
-            <svg fill="#0095dd" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+            <svg fill="#6D6D6D" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
               <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
               <path d="M0 0h24v24H0z" fill="none"/>
             </svg>
+          
           
         </a>
       </li>
@@ -85,17 +87,265 @@
 
   <div id="main">
     
+      <h1 class="page-title">
+        layouts/helpers/GridExpander.js
+      </h1>
+    
 
     
       
 
+<section>
+  <article>
+    <pre class="prettyprint source linenums"><code>import GridExpanderConfig from "../../configuration/GridExpanderConfiguration"
 
 
-    
+/**
+ * Class representing the option to collapse or expand the grid layout
+ *
+ * @param {Canvas} canvas The canvas to render this expander on
+ * @private
+ */
+class GridExpander {
+  constructor(canvas) {
+    this.svg = null
+    this.canvas = canvas
+    this.config = { ...GridExpanderConfig }
 
-      
+    // position for hide representation
+    this.expandedX = 0
+    this.expandedY = 0
+
+    // position for show representation
+    this.collapsedX = 0
+    this.collapsedY = 0
+
+    // current state
+    this.isExpanded = false
+
+    // the re-render function reference
+    this.reRenderFunc = null
+  }
 
 
+  /**
+   * Renders the grid expander
+   *
+   * @param {Number} X The X position for collapsed representation
+   * @param {Number} Y The Y position for collapsed representation
+   * @private
+   */
+  renderAsMin(X = this.collapsedX, Y = this.collapsedY) {
+    const svg = this.canvas.group()
+    svg.css("cursor", "pointer")
+    svg.id("gridExpander")
+
+    const w = this.config.width
+    const h = this.config.height
+
+    const createText = (innerText) => {
+      const fobj = this.canvas.foreignObject(w, h)
+
+      const background = document.createElement("div")
+      background.style.background = this.config.labelBackground
+      background.style.padding = `${this.config.offset / 2}px`
+      background.style.textAlign = "center"
+      background.style.width = `${this.config.minTextWidth}px`
+
+      const label = document.createElement("div")
+      label.innerText = innerText
+      label.style.color = this.config.labelColor
+      label.style.fontSize = `${this.config.labelFontSize}px`
+      label.style.fontFamily = this.config.labelFontFamily
+      label.style.fontWeight = this.config.labelFontWeight
+      label.style.fontStyle = this.config.labelFontStyle
+
+      background.appendChild(label)
+      fobj.add(background)
+      fobj.css("user-select", "none")
+      fobj.height(background.clientHeight)
+
+      return fobj
+    }
+
+    // create new elements
+    const showMore = createText(this.config.expandText)
+    const showLess = createText(this.config.collapseText)
+
+    svg.add(showMore)
+    svg.add(showLess)
+
+
+    // animate new elements into position
+    svg
+      .center(X, Y)
+
+    showMore
+      .scale(0.001)
+      .center(X, Y)
+      .animate({ duration: this.config.animationSpeed })
+      .transform({ scale: 1, position: [X, Y] })
+
+    showLess
+      .attr({ opacity: 0 })
+      .scale(0.001)
+      .center(X, Y)
+      .animate({ duration: this.config.animationSpeed })
+      .transform({ scale: 1, position: [X, Y] })
+
+
+    // add tooltip
+    svg.on("mouseover", (ev) => {
+      const tooltip = document.getElementById("tooltip")
+      tooltip.innerHTML = this.isExpanded ? "Collapse this layout" : "Expand this layout and load additional data"
+      tooltip.style.display = "block"
+
+      tooltip.style.left = `${ev.clientX - tooltip.clientWidth / 2}px`
+      tooltip.style.top = `${ev.clientY - tooltip.clientHeight - 20}px`
+
+      showLess
+        .transform({ scale: 1.05, position: [X, Y] })
+    })
+
+    // remove tooltip
+    svg.on("mouseout", () => {
+      const tooltip = document.getElementById("tooltip")
+      tooltip.style.display = "none"
+
+      showLess
+        .transform({ scale: 0.95, position: [X, Y] })
+    })
+
+    svg.on("dblclick", this.reRenderFunc)
+
+    this.isExpanded = false
+    this.svg = svg
+  }
+
+
+  /**
+   * Transforms the expander into expanded position
+   * @param {Number} X The X position for expanded representation
+   * @param {Number} Y The Y position for expanded representation
+   * @private
+   */
+  transformToExpanded(X = this.expandedX, Y = this.expandedY) {
+    this
+      .svg
+      .get(0)
+      .attr({ opacity: 0 })
+
+    this
+      .svg
+      .get(1)
+      .attr({ opacity: 1 })
+
+    this
+      .svg
+      .animate({ duration: this.config.animationSpeed })
+      .transform({ position: [X, Y] })
+
+    this.isExpanded = true
+  }
+
+
+  /**
+   * Transforms the expander back into collapsed position
+   * @param {Number} X The X position for collapsed representation
+   * @param {Number} Y The Y position for collapsed representation
+   * @private
+   */
+  transformToCollapsed(X = this.collapsedX, Y = this.collapsedY) {
+    this
+      .svg
+      .get(0)
+      .attr({ opacity: 1 })
+
+    this
+      .svg
+      .get(1)
+      .attr({ opacity: 0 })
+
+    this
+      .svg
+      .animate({ duration: this.config.animationSpeed })
+      .transform({ position: [X, Y] })
+
+
+    this.isExpanded = false
+  }
+
+
+  /**
+   * Function to determine if the expander is already rendered
+   */
+  isRendered() {
+    return this.svg !== null
+  }
+
+
+  /**
+   * Function to assign the grid re-render function to this expander
+   * @param {Function} reRenderFunc The re-render function
+   */
+  setReRenderFunc(reRenderFunc) {
+    this.reRenderFunc = reRenderFunc
+  }
+
+
+  // eslint-disable-next-line class-methods-use-this
+  removeNode() { }
+
+  getIsExpanded() {
+    return this.isExpanded
+  }
+
+  setExpandedX(expandedX) {
+    this.expandedX = expandedX
+  }
+
+  setExpandedY(expandedY) {
+    this.expandedY = expandedY
+  }
+
+  setCollapsedX(collapsedX) {
+    this.collapsedX = collapsedX
+  }
+
+  setCollapsedY(collapsedY) {
+    this.collapsedY = collapsedY
+  }
+
+  getCollapsedX() {
+    return this.collapsedX
+  }
+
+  getCollapsedY() {
+    return this.collapsedY
+  }
+
+  getMinWidth() {
+    return this.config.width
+  }
+
+  getMaxWidth() {
+    return this.config.width
+  }
+
+  getMinHeight() {
+    return this.config.height
+  }
+
+  getMaxHeight() {
+    return this.config.height
+  }
+}
+
+
+export default GridExpander
+</code></pre>
+  </article>
+</section>
 
     
 

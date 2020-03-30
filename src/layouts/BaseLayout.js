@@ -6,6 +6,9 @@ import ControlNode from "../nodes/ControlNode"
 import ThinEdge from "../edges/ThinEdge"
 import BoldEdge from "../edges/BoldEdge"
 
+import fetchDataAsync from "../utils/HttpRequests"
+import NodeFactory from "../nodes/NodeFactory"
+
 
 class BaseLayout {
   constructor() {
@@ -30,7 +33,15 @@ class BaseLayout {
       currentState: "expanded",
     }
 
+    this.currentLayoutState = null
+
     this.tree = null
+
+    this.loadedNodes = []
+  }
+
+  setLoadedNodes(loadedNodes) {
+    this.loadedNodes = loadedNodes
   }
 
   getNodeData() {
@@ -39,6 +50,83 @@ class BaseLayout {
 
   getEdgeData() {
     return this.edgeData
+  }
+
+  /**
+   * Load requested/missing nodes from the database
+   */
+  async loadAdditionalGridDataAsync() {
+    const existingNodeIds = this.nodes.map((n) => n.id)
+    const additionalNodes = this.nodeData.filter((n) => !existingNodeIds.includes(n.id))
+
+    // TODO: check if nodes already have been fetched
+    // console.log(this.loadedNodes, additionalNodes)
+
+
+    if (additionalNodes.length) {
+      const ids = additionalNodes.map((n) => n.id)
+      const url = `${this.config.databaseUrl}/${this.config.nodeEndpoint}`
+      const { data } = await fetchDataAsync(url, ids)
+
+      // create node representations
+      data.forEach((rawNode) => {
+        const node = NodeFactory.create(rawNode, this.canvas)
+
+        // set the currently used rendering size
+        node.setNodeSize(this.config.renderingSize)
+        this.nodes.push(node)
+
+        this.loadedNodes.push(node)
+      })
+    }
+
+
+    // re-calculate and re-render layout
+    this.calculateLayout()
+    this.renderLayout()
+  }
+
+
+  async loadInitialGridDataAsync(nodeData, edgeData) {
+    this.nodeData = nodeData
+    this.edgeData = edgeData
+
+    // console.log(this.config.limit)
+
+
+    // load the limited amount of data
+    const limit = this.config.limit ? this.config.limit : nodeData.length
+
+
+    // TODO: check if nodes already have been fetched
+    const ids = nodeData.map((n) => n.id).slice(0, limit)
+    const url = `${this.config.databaseUrl}/${this.config.nodeEndpoint}`
+    const { data } = await fetchDataAsync(url, ids)
+
+
+    // create node representations
+    data.forEach((rawNode) => {
+      const node = NodeFactory.create(rawNode, this.canvas)
+
+      // set the currently used rendering size
+      node.setNodeSize(this.config.renderingSize)
+      this.nodes.push(node)
+
+      this.loadedNodes.push(node)
+    })
+
+    // console.log(this.nodes)
+
+
+    // re-calculate and re-render layout
+    this.calculateLayout()
+    this.renderLayout()
+
+    // setTimeout(() => {
+    //   this.nodes = this.nodes.filter((n) => n.id > 3)
+    //   this.calculateLayout()
+    //   this.renderLayout()
+    // }, 2000)
   }
 
   async createGridDataAsync(nodeData, edgeData) {
@@ -73,6 +161,45 @@ class BaseLayout {
     // re-calculate and re-render layout
     this.calculateLayout()
     this.renderLayout()
+  }
+
+  async updateGridLayoutConfiguration(updatedConfiguration) {
+    this.config = { ...this.config, ...updatedConfiguration }
+    console.log(this.config)
+
+    if (updatedConfiguration.maxColumns) {
+      this.removeLayout()
+      this.loadAdditionalGridDataAsync()
+    } else {
+      this.loadAdditionalGridDataAsync()
+    }
+
+    // re-calculate and re-render layout
+
+    // this.calculateLayout()
+    // this.renderLayout()
+  }
+
+
+  removeLayout() {
+    this.nodes.forEach((node) => {
+      node.removeNode()
+    })
+
+    // grid
+    if (this.expander) {
+      this.expander.removeNode()
+    }
+
+    this.nodes = []
+
+    // this.edges.forEach((edge) => {
+    //   edge.removeEdge()
+    // })
+
+    // this.leafs.forEach((leaf) => {
+    //   leaf.removeLeaf()
+    // })
   }
 
 
@@ -571,23 +698,13 @@ class BaseLayout {
     }
   }
 
-  removeLayout() {
-    this.nodes.forEach((node) => {
-      node.removeNode()
-    })
-
-    this.edges.forEach((edge) => {
-      edge.removeEdge()
-    })
-
-    this.leafs.forEach((leaf) => {
-      leaf.removeLeaf()
-    })
-  }
-
 
   setConfig(config) {
     this.config = { ...this.config, ...config }
+  }
+
+  getConfig(key) {
+    return this.config[key]
   }
 
   setCanvas(canvas) {

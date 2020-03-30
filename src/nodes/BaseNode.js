@@ -118,17 +118,27 @@ class BaseNode {
     return this.svg !== null
   }
 
-  removeNode(X = this.initialX, Y = this.initialY) {
-    if (this.svg !== null) {
-      this
-        .svg
-        .animate({ duration: this.config.animationSpeed })
-        .transform({ scale: 0.001, position: [X, Y] })
-        .after(() => {
-          this.svg.remove()
-          this.svg = null
-        })
+  removeNode(X = this.initialX, Y = this.initialY, opts = { animation: true }) {
+    if (opts.animation === true) {
+      if (this.svg !== null) {
+        this
+          .svg
+          .animate({ duration: this.config.animationSpeed })
+          .transform({ scale: 0.001, position: [X, Y] })
+          .after(() => {
+            this.svg.remove()
+            this.svg = null
+          })
+      }
+    } else {
+      this.svg.remove()
+      this.svg = null
     }
+  }
+
+
+  getSVGBbox() {
+    return this.svg.bbox()
   }
 
 
@@ -147,8 +157,8 @@ class BaseNode {
    * @private
    */
   createSVGElement() {
-    // const svg = this.canvas.group().draggable()
-    const svg = this.canvas.group()
+    const svg = this.canvas.group().draggable()
+    // const svg = this.canvas.group()
     svg.css("cursor", "pointer")
     svg.id(`node#${this.id}`)
 
@@ -312,7 +322,7 @@ class BaseNode {
     background.style.textAlign = textAlign
     background.style.width = `${this.config.minTextWidth}px`
 
-    const label = document.createElement("p")
+    const label = document.createElement("div")
     label.innerText = this.label
     label.style.color = this.config.labelColor
     label.style.fontSize = `${this.config.labelFontSize}px`
@@ -323,6 +333,7 @@ class BaseNode {
 
     background.appendChild(label)
     fobj.add(background)
+    fobj.css("user-select", "none")
 
     fobj.dmove(this.config.borderStrokeWidth, this.config.borderStrokeWidth)
 
@@ -404,6 +415,23 @@ class BaseNode {
 
   getModifier() {
     return this.modifier
+  }
+
+
+  getMinWidth() {
+    return this.config.minWidth
+  }
+
+  getMaxWidth() {
+    return this.config.maxWidth
+  }
+
+  getMinHeight() {
+    return this.config.minHeight
+  }
+
+  getMaxHeight() {
+    return this.config.maxHeight
   }
 
 

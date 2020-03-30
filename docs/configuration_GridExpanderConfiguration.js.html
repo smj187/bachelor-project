@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,7 +8,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <title>
-      Home - Documentation
+      configuration/GridExpanderConfiguration.js - Documentation
   </title>
 
   <link href="https://www.braintreepayments.com/images/favicon-ccda0b14.png" rel="icon" type="image/png">
@@ -49,14 +51,14 @@
 
   <div class="top-nav-wrapper">
     <ul>
-      <li  class="active" >
+      <li >
         <a href="index.html">
           
-          
-            <svg fill="#0095dd" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+            <svg fill="#6D6D6D" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
               <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
               <path d="M0 0h24v24H0z" fill="none"/>
             </svg>
+          
           
         </a>
       </li>
@@ -85,17 +87,60 @@
 
   <div id="main">
     
+      <h1 class="page-title">
+        configuration/GridExpanderConfiguration.js
+      </h1>
+    
 
     
       
 
+<section>
+  <article>
+    <pre class="prettyprint source linenums"><code>/**
+ * This object contains default configuration for the grid expander.
+ * @typedef {GridExpanderConfig} GridExpanderConfig
+ *
+ * @param {Number} [width=130] Defines how long the expander text will occur
+ * @param {Number} [height=40] Defines how heigh the expander text will occur
+ * @param {Number} [offset=8] Limits the spacing used by padding
+ * @param {Number} [animationSpeed=300] Determins how fast the expander animates inside the grid layout
+ * @param {String} [labelColor="#222"] Sets the label text color
+ * @param {String} [labelFontFamily="Montserrat"] Sets the label font family
+ * @param {Number} [labelFontSize=12] Sets the label font size
+ * @param {Number} [labelFontWeight=700] Sets the label font weight
+ * @param {String} [labelFontStyle="normal"] Sets the label font style
+ * @param {String} [labelBackground="#fff"] Sets the label background color
+ * @param {String} [expandText="Show More"] Represents the expand text
+ * @param {String} [collapseText="Hide"] Represents the collapse text
+ */
 
+const GridExpanderConfig = {
 
-    
+  //  text size
+  width: 130,
+  height: 40,
 
-      
+  // node
+  offset: 8,
+  animationSpeed: 300,
 
+  // text
+  labelColor: "#222",
+  labelFontFamily: "Montserrat",
+  labelFontSize: 12,
+  labelFontWeight: 700,
+  labelFontStyle: "normal",
+  labelBackground: "#fff",
 
+  expandText: "Show More",
+  collapseText: "Hide",
+}
+
+export default GridExpanderConfig
+</code></pre>
+  </article>
+</section>
 
     
 

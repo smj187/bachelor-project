@@ -11,18 +11,18 @@ class Graph {
     this.nodes.push(new Node(id))
   }
 
-  addEdge(startNodeId, endNodeId) {
-    const startNode = this.nodes.find((n) => n.id === startNodeId)
-    const endNode = this.nodes.find((n) => n.id === endNodeId)
+  addEdge(startNode, endNode) {
+    const fromNodeRef = this.nodes.find((n) => n.id === startNode)
+    const toNodeRef = this.nodes.find((n) => n.id === endNode)
 
 
-    startNode.addNeighbor(endNode)
-    endNode.addNeighbor(startNode)
+    fromNodeRef.addNeighbor(toNodeRef)
+    toNodeRef.addNeighbor(fromNodeRef)
 
 
-    const edge = new Edge(startNodeId, endNodeId)
-    startNode.addEdge(edge)
-    endNode.addEdge(edge)
+    const edge = new Edge(startNode, endNode)
+    fromNodeRef.addEdge(edge)
+    toNodeRef.addEdge(edge)
 
     this.edges.push(edge)
   }

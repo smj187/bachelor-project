@@ -70,7 +70,15 @@ class Visualization {
     this.lastLayoutWidth = 0
 
 
-    this.config = config
+    this.config = {
+      ...config,
+      nodeEndpoint: "node-data",
+      edgeEndpoint: "edge-data",
+    }
+
+
+    // stores all loaded nodes
+    this.loadedNodes = []
   }
 
 
@@ -81,29 +89,52 @@ class Visualization {
    */
   render(initialGraphData, layout) {
     layout.setCanvas(this.canvas)
-    layout.setConfig({ databaseUrl: this.config.databaseUrl })
+    layout.setConfig({
+      databaseUrl: this.config.databaseUrl,
+      nodeEndpoint: this.config.nodeEndpoint,
+      edgeEndpoint: this.config.edgeEndpoint,
+    })
 
-    if (layout instanceof RadialLayout) {
-      layout.createRadialDataAsync(initialGraphData.nodes, initialGraphData.edges)
-    }
+
+    const nodes = initialGraphData.getNodes()
+    const edges = initialGraphData.getEdges()
+
+
+    // if (layout instanceof RadialLayout) {
+    //   layout.createRadialDataAsync(initialGraphData.nodes, initialGraphData.edges)
+    // }
 
     if (layout instanceof GridLayout) {
-      layout.createGridDataAsync(initialGraphData.nodes, initialGraphData.edges)
+      layout.loadInitialGridDataAsync(nodes, edges)
     }
 
-    if (layout instanceof TreeLayout) {
-      layout.createRadialDataAsync(initialGraphData.nodes, initialGraphData.edges)
-    }
+    // if (layout instanceof TreeLayout) {
+    //   layout.createRadialDataAsync(initialGraphData.nodes, initialGraphData.edges)
+    // }
 
-    if (layout instanceof ContextualLayout) {
-      layout.createContextualDataAsync(initialGraphData.nodes, initialGraphData.edges)
-    }
+    // if (layout instanceof ContextualLayout) {
+    //   layout.createContextualDataAsync(initialGraphData.nodes, initialGraphData.edges)
+    // }
 
-    // FIXME: layout do not update their position if a previous layout is changing in size
-    // layout.registerUpdatePosition()
+    // // FIXME: layout do not update their position if a previous layout is changing in size
+    // // layout.registerUpdatePosition()
 
 
     return layout
+  }
+
+
+  // eslint-disable-next-line class-methods-use-this
+  updateLayoutConfiguration(layout, config) {
+    // layout.setConfig(config)
+
+    if (layout instanceof GridLayout) {
+      layout.updateGridLayoutConfiguration(config)
+    }
+
+
+    // layout.calculateLayout()
+    // layout.renderLayout()
   }
 
 

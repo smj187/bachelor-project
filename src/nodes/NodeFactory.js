@@ -1,8 +1,8 @@
-import Asset from "./AssetNode"
-import Control from "./ControlNode"
-import Custom from "./CustomNode"
-import Risk from "./RiskNode"
-import Requirement from "./RequirementNode"
+import RiskNode from "./RiskNode"
+import AssetNode from "./AssetNode"
+import RequirementNode from "./RequirementNode"
+import CustomNode from "./CustomNode"
+import ControlNode from "./ControlNode"
 
 // https://anasshekhamis.com/2017/08/10/the-factory-design-pattern-in-javascript/
 // https://enmascript.com/articles/2018/10/05/javascript-factory-pattern
@@ -59,20 +59,14 @@ import Requirement from "./RequirementNode"
  *
  */
 class NodeFactory {
-  static create(data, canvas, config = {}) {
+  static create(rawNode, canvas) {
     let node
+    if (rawNode.type === "risk") node = new RiskNode(rawNode, canvas)
+    if (rawNode.type === "asset") node = new AssetNode(rawNode, canvas)
+    if (rawNode.type === "custom") node = new CustomNode(rawNode, canvas)
+    if (rawNode.type === "requirement") node = new RequirementNode(rawNode, canvas)
+    if (rawNode.type === "control") node = new ControlNode(rawNode, canvas)
 
-    if (data.type === "asset") {
-      node = new Asset(data, canvas, config)
-    } else if (data.type === "control") {
-      node = new Control(data, canvas, config)
-    } else if (data.type === "risk") {
-      node = new Risk(data, canvas, config)
-    } else if (data.type === "requirement") {
-      node = new Requirement(data, canvas, config)
-    } else {
-      node = new Custom(data, canvas, config)
-    }
 
     return node
   }
