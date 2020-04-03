@@ -1,136 +1,68 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="utf-8">
+    <title>Visualization - Documentation</title>
 
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <title>
-      Visualization - Documentation
-  </title>
-
-  <link href="https://www.braintreepayments.com/images/favicon-ccda0b14.png" rel="icon" type="image/png">
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.7.0/highlight.min.js"></script>
-  <script>hljs.initHighlightingOnLoad();</script>
-
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
-
-  <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
-  <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
-  
-
-  
-
-  <!-- start Mixpanel -->
-  <script type="text/javascript">(function(e,a){if(!a.__SV){var b=window;try{var c,l,i,j=b.location,g=j.hash;c=function(a,b){return(l=a.match(RegExp(b+"=([^&]*)")))?l[1]:null};g&&c(g,"state")&&(i=JSON.parse(decodeURIComponent(c(g,"state"))),"mpeditor"===i.action&&(b.sessionStorage.setItem("_mpcehash",g),history.replaceState(i.desiredHash||"",e.title,j.pathname+j.search)))}catch(m){}var k,h;window.mixpanel=a;a._i=[];a.init=function(b,c,f){function e(b,a){var c=a.split(".");2==c.length&&(b=b[c[0]],a=c[1]);b[a]=function(){b.push([a].concat(Array.prototype.slice.call(arguments,
-  0)))}}var d=a;"undefined"!==typeof f?d=a[f]=[]:f="mixpanel";d.people=d.people||[];d.toString=function(b){var a="mixpanel";"mixpanel"!==f&&(a+="."+f);b||(a+=" (stub)");return a};d.people.toString=function(){return d.toString(1)+".people (stub)"};k="disable time_event track track_pageview track_links track_forms register register_once alias unregister identify name_tag set_config reset people.set people.set_once people.increment people.append people.union people.track_charge people.clear_charges people.delete_user".split(" ");
-  for(h=0;h<k.length;h++)e(d,k[h]);a._i.push([b,c,f])};a.__SV=1.2;b=e.createElement("script");b.type="text/javascript";b.async=!0;b.src="undefined"!==typeof MIXPANEL_CUSTOM_LIB_URL?MIXPANEL_CUSTOM_LIB_URL:"file:"===e.location.protocol&&"//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js".match(/^\/\//)?"https://cdn.mxpnl.com/libs/mixpanel-2-latest.min.js":"//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js";c=e.getElementsByTagName("script")[0];c.parentNode.insertBefore(b,c)}})(document,window.mixpanel||[]);
-  mixpanel.init("1919205b2da72e4da3b9b6639b444d59");</script>
-  <!-- end Mixpanel -->
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
 </head>
-
 <body>
-  <svg style="display: none;">
-    <defs>
-      <symbol id="linkIcon" fill="#706d77" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
-          <path d="M0 0h24v24H0z" fill="none"/>
-          <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/>
-      </symbol>
-    </defs>
-  </svg>
 
-  <input type="checkbox" id="nav-trigger" class="nav-trigger" />
-  <label for="nav-trigger" class="navicon-button x">
-    <div class="navicon"></div>
-  </label>
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
 
-  <label for="nav-trigger" class="overlay"></label>
+<label for="nav-trigger" class="overlay"></label>
 
-  <div class="top-nav-wrapper">
-    <ul>
-      <li >
-        <a href="index.html">
-          
-            <svg fill="#6D6D6D" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
-              <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
-              <path d="M0 0h24v24H0z" fill="none"/>
-            </svg>
-          
-          
-        </a>
-      </li>
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="AssetNode.html">AssetNode</a></li><li><a href="BaseEdge.html">BaseEdge</a></li><li><a href="BaseNode.html">BaseNode</a></li><li><a href="ControlNode.html">ControlNode</a></li><li><a href="CustomNode.html">CustomNode</a></li><li><a href="EdgeFactory.html">EdgeFactory</a></li><li><a href="Graph.html">Graph</a><ul class='methods'><li data-type='method'><a href="Graph.html#excludeEdge">excludeEdge</a></li><li data-type='method'><a href="Graph.html#excludeNode">excludeNode</a></li><li data-type='method'><a href="Graph.html#includeEdge">includeEdge</a></li><li data-type='method'><a href="Graph.html#includeNode">includeNode</a></li></ul></li><li><a href="GraphEdge.html">GraphEdge</a></li><li><a href="GraphNode.html">GraphNode</a><ul class='methods'><li data-type='method'><a href="GraphNode.html#addEdge">addEdge</a></li><li data-type='method'><a href="GraphNode.html#addNeighbor">addNeighbor</a></li><li data-type='method'><a href="GraphNode.html#getNeighbors">getNeighbors</a></li><li data-type='method'><a href="GraphNode.html#removeNeighbor">removeNeighbor</a></li></ul></li><li><a href="NodeFactory.html">NodeFactory</a></li><li><a href="RequirementNode.html">RequirementNode</a></li><li><a href="RiskNode.html">RiskNode</a></li><li><a href="Visualization.html">Visualization</a><ul class='methods'><li data-type='method'><a href="Visualization.html#getCanvas">getCanvas</a></li><li data-type='method'><a href="Visualization.html#render">render</a></li><li data-type='method'><a href="Visualization.html#setZoom">setZoom</a></li><li data-type='method'><a href="Visualization.html#transform">transform</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="ContextualLayoutConfiguration.html">ContextualLayoutConfiguration</a></li><li><a href="GridLayoutConfiguration.html">GridLayoutConfiguration</a></li></ul><h3><a href="global.html">Global</a></h3>
+</nav>
 
-      
-
-    </ul>
-  </div>
-
-  <nav>
-    <h3 class="reference-title">
-      Graph visualization
-    </h3>
-
+<div id="main">
     
-      <h3>
-        Resources
-      </h3>
-      
-        <a href="https://github.com/svgdotjs/svg.js">svgdotjs</a>
-      
+    <h1 class="page-title">Visualization</h1>
+    
     
 
-    <h3>Classes</h3><ul><li id="AssetNode-nav"><a href="AssetNode.html">AssetNode</a><ul class='methods'><li data-type="method" id="AssetNode-renderAsMax-nav"><a href="AssetNode.html#renderAsMax">renderAsMax</a></li><li data-type="method" id="AssetNode-renderAsMin-nav"><a href="AssetNode.html#renderAsMin">renderAsMin</a></li><li data-type="method" id="AssetNode-transformToMax-nav"><a href="AssetNode.html#transformToMax">transformToMax</a></li><li data-type="method" id="AssetNode-transformToMin-nav"><a href="AssetNode.html#transformToMin">transformToMin</a></li></ul></li><li id="BaseEdge-nav"><a href="BaseEdge.html">BaseEdge</a></li><li id="BaseNode-nav"><a href="BaseNode.html">BaseNode</a><ul class='methods'><li data-type="method" id="BaseNode-createIcon-nav"><a href="BaseNode.html#createIcon">createIcon</a></li><li data-type="method" id="BaseNode-createLabel-nav"><a href="BaseNode.html#createLabel">createLabel</a></li><li data-type="method" id="BaseNode-createNode-nav"><a href="BaseNode.html#createNode">createNode</a></li><li data-type="method" id="BaseNode-getConfig-nav"><a href="BaseNode.html#getConfig">getConfig</a></li><li data-type="method" id="BaseNode-getCurrentHeight-nav"><a href="BaseNode.html#getCurrentHeight">getCurrentHeight</a></li><li data-type="method" id="BaseNode-getCurrentWidth-nav"><a href="BaseNode.html#getCurrentWidth">getCurrentWidth</a></li><li data-type="method" id="BaseNode-getFinalX-nav"><a href="BaseNode.html#getFinalX">getFinalX</a></li><li data-type="method" id="BaseNode-getFinalY-nav"><a href="BaseNode.html#getFinalY">getFinalY</a></li><li data-type="method" id="BaseNode-getInitialX-nav"><a href="BaseNode.html#getInitialX">getInitialX</a></li><li data-type="method" id="BaseNode-getInitialY-nav"><a href="BaseNode.html#getInitialY">getInitialY</a></li><li data-type="method" id="BaseNode-setConfig-nav"><a href="BaseNode.html#setConfig">setConfig</a></li><li data-type="method" id="BaseNode-setFinalX-nav"><a href="BaseNode.html#setFinalX">setFinalX</a></li><li data-type="method" id="BaseNode-setFinalXY-nav"><a href="BaseNode.html#setFinalXY">setFinalXY</a></li><li data-type="method" id="BaseNode-setFinalY-nav"><a href="BaseNode.html#setFinalY">setFinalY</a></li><li data-type="method" id="BaseNode-setInitialX-nav"><a href="BaseNode.html#setInitialX">setInitialX</a></li><li data-type="method" id="BaseNode-setInitialXY-nav"><a href="BaseNode.html#setInitialXY">setInitialXY</a></li><li data-type="method" id="BaseNode-setInitialY-nav"><a href="BaseNode.html#setInitialY">setInitialY</a></li></ul></li><li id="ControlNode-nav"><a href="ControlNode.html">ControlNode</a><ul class='methods'><li data-type="method" id="ControlNode-renderAsMax-nav"><a href="ControlNode.html#renderAsMax">renderAsMax</a></li><li data-type="method" id="ControlNode-renderAsMin-nav"><a href="ControlNode.html#renderAsMin">renderAsMin</a></li><li data-type="method" id="ControlNode-transformToMax-nav"><a href="ControlNode.html#transformToMax">transformToMax</a></li><li data-type="method" id="ControlNode-transformToMin-nav"><a href="ControlNode.html#transformToMin">transformToMin</a></li></ul></li><li id="CustomNode-nav"><a href="CustomNode.html">CustomNode</a><ul class='methods'><li data-type="method" id="CustomNode-renderAsMax-nav"><a href="CustomNode.html#renderAsMax">renderAsMax</a></li><li data-type="method" id="CustomNode-renderAsMin-nav"><a href="CustomNode.html#renderAsMin">renderAsMin</a></li><li data-type="method" id="CustomNode-transformToMax-nav"><a href="CustomNode.html#transformToMax">transformToMax</a></li><li data-type="method" id="CustomNode-transformToMin-nav"><a href="CustomNode.html#transformToMin">transformToMin</a></li></ul></li><li id="EdgeFactory-nav"><a href="EdgeFactory.html">EdgeFactory</a></li><li id="NodeFactory-nav"><a href="NodeFactory.html">NodeFactory</a></li><li id="RequirementNode-nav"><a href="RequirementNode.html">RequirementNode</a><ul class='methods'><li data-type="method" id="RequirementNode-renderAsMax-nav"><a href="RequirementNode.html#renderAsMax">renderAsMax</a></li><li data-type="method" id="RequirementNode-renderAsMin-nav"><a href="RequirementNode.html#renderAsMin">renderAsMin</a></li><li data-type="method" id="RequirementNode-transformToMax-nav"><a href="RequirementNode.html#transformToMax">transformToMax</a></li><li data-type="method" id="RequirementNode-transformToMin-nav"><a href="RequirementNode.html#transformToMin">transformToMin</a></li></ul></li><li id="RiskNode-nav"><a href="RiskNode.html">RiskNode</a><ul class='methods'><li data-type="method" id="RiskNode-renderAsMax-nav"><a href="RiskNode.html#renderAsMax">renderAsMax</a></li><li data-type="method" id="RiskNode-renderAsMin-nav"><a href="RiskNode.html#renderAsMin">renderAsMin</a></li><li data-type="method" id="RiskNode-transformToMax-nav"><a href="RiskNode.html#transformToMax">transformToMax</a></li><li data-type="method" id="RiskNode-transformToMin-nav"><a href="RiskNode.html#transformToMin">transformToMin</a></li></ul></li><li id="Visualization-nav"><a href="Visualization.html">Visualization</a><ul class='methods'><li data-type="method" id="Visualization-getCanvas-nav"><a href="Visualization.html#getCanvas">getCanvas</a></li><li data-type="method" id="Visualization-render-nav"><a href="Visualization.html#render">render</a></li><li data-type="method" id="Visualization-setZoom-nav"><a href="Visualization.html#setZoom">setZoom</a></li><li data-type="method" id="Visualization-transform-nav"><a href="Visualization.html#transform">transform</a></li></ul></li></ul><h3 id="global-nav"><a href="global.html">Global</a></h3>
-  </nav>
 
-  <div id="main">
-    
-      <h1 class="page-title">
-        Visualization
-      </h1>
-    
 
-    
 
 <section>
-  <header>
+
+<header>
     
-      <h2>
-        
+        <h2>
         Visualization
+        </h2>
         
-      </h2>
-
-      
-        <div class="class-description">
-          <p>Creates and handles all vizualization operations</p>
-        </div>
-      
+            <div class="class-description"><p>Creates and handles all vizualization operations</p></div>
+        
     
-  </header>
+</header>
 
-  <article>
+<article>
     <div class="container-overview">
-      
+    
         
 
-
-  
+    
     <h2>Constructor</h2>
-  
+    
 
-  <span class='name-container'>
-    <a class="link-icon" href="#Visualization">
-      <svg height="20" width="20" style="fill: black;">
-        <use xlink:href="#linkIcon"></use>
-      </svg>
-    </a>
-    <h4 class="name" id="Visualization">
-      <span class="type-signature"></span>new Visualization<span class="signature">()</span><span class="type-signature"></span>
-    </h4>
-  </span>
+    <h4 class="name" id="Visualization"><span class="type-signature"></span>new Visualization<span class="signature">()</span><span class="type-signature"></span></h4>
 
-  
+    
+
+
+
 
 
 
@@ -145,46 +77,42 @@
 
 <dl class="details">
 
-  
+    
 
-  
+    
 
-  
+    
 
-  
+    
 
-  
+    
 
-  
+    
 
-  
+    
 
-  
+    
 
-  
+    
 
-  
+    
 
-  
+    
 
-  
+    
 
-  
+    
     <dt class="tag-source">Source:</dt>
-    <dd class="tag-source">
-      <ul class="dummy">
-        <li>
-          <a href="visualization.js.html">visualization.js</a>, <a href="visualization.js.html#line34">line 34</a>
-        </li>
-      </ul>
-    </dd>
-  
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="visualization.js.html">visualization.js</a>, <a href="visualization.js.html#line36">line 36</a>
+    </li></ul></dd>
+    
 
-  
+    
 
-  
+    
 
-  
+    
 </dl>
 
 
@@ -200,7 +128,9 @@
 
 
 
-      
+
+
+    
     </div>
 
     
@@ -216,32 +146,27 @@
     
 
     
-      <h3 class="subsection-title">Methods</h3>
-
-      
+        <h3 class="subsection-title">Methods</h3>
         
+            <div class="subsection-item">
+                
 
+    
 
-  
+    <h4 class="name" id="getCanvas"><span class="type-signature"></span>getCanvas<span class="signature">()</span><span class="type-signature"></span></h4>
 
-  <span class='name-container'>
-    <a class="link-icon" href="#getCanvas">
-      <svg height="20" width="20" style="fill: black;">
-        <use xlink:href="#linkIcon"></use>
-      </svg>
-    </a>
-    <h4 class="name" id="getCanvas">
-      <span class="type-signature"></span>getCanvas<span class="signature">()</span><span class="type-signature"></span>
-    </h4>
-  </span>
-
-  
+    
+    <p class="summary"><p>Returns the current canvas element</p>.</p>
+    
 
 
 
-  <div class="description">
+<div class="description">
     <p>Returns the current canvas element</p>
-  </div>
+</div>
+
+
+
 
 
 
@@ -254,46 +179,42 @@
 
 <dl class="details">
 
-  
+    
 
-  
+    
 
-  
+    
 
-  
+    
 
-  
+    
 
-  
+    
 
-  
+    
 
-  
+    
 
-  
+    
 
-  
+    
 
-  
+    
 
-  
+    
 
-  
+    
     <dt class="tag-source">Source:</dt>
-    <dd class="tag-source">
-      <ul class="dummy">
-        <li>
-          <a href="visualization.js.html">visualization.js</a>, <a href="visualization.js.html#line155">line 155</a>
-        </li>
-      </ul>
-    </dd>
-  
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="visualization.js.html">visualization.js</a>, <a href="visualization.js.html#line231">line 231</a>
+    </li></ul></dd>
+    
 
-  
+    
 
-  
+    
 
-  
+    
 </dl>
 
 
@@ -309,30 +230,26 @@
 
 
 
-      
+
+
+            </div>
         
+            <div class="subsection-item">
+                
 
+    
 
-  
+    <h4 class="name" id="render"><span class="type-signature">(async) </span>render<span class="signature">(initialGraphData, layout)</span><span class="type-signature"></span></h4>
 
-  <span class='name-container'>
-    <a class="link-icon" href="#render">
-      <svg height="20" width="20" style="fill: black;">
-        <use xlink:href="#linkIcon"></use>
-      </svg>
-    </a>
-    <h4 class="name" id="render">
-      <span class="type-signature"></span>render<span class="signature">(initialGraphData, layout)</span><span class="type-signature"></span>
-    </h4>
-  </span>
-
-  
+    
+    <p class="summary"><p>Renders a layout</p>.</p>
+    
 
 
 
-  <div class="description">
+<div class="description">
     <p>Renders a layout</p>
-  </div>
+</div>
 
 
 
@@ -340,88 +257,79 @@
 
 
 
-  <h5>Parameters:</h5>
-  
+
+
+    <h5>Parameters:</h5>
+    
 
 <table class="params">
-  <thead>
+    <thead>
     <tr>
-      
+        
         <th>Name</th>
-      
+        
 
-      <th>Type</th>
+        <th>Type</th>
 
-      
+        
 
-      
+        
 
-      <th class="last">Description</th>
+        <th class="last">Description</th>
     </tr>
-  </thead>
+    </thead>
 
-  <tbody>
+    <tbody>
     
-      <tr>
-        
-          <td class="name"><code>initialGraphData</code></td>
-        
 
-        <td class="type">
-          
+        <tr>
             
-    <span class="param-type">
-      Graph
-    </span>
-
-    
-
-
-          
-        </td>
-
-        
-
-        
-
-        <td class="description last">
-          <p>the initial graph that should be displayed</p>
-          
-        </td>
-      </tr>
-
-    
-      <tr>
-        
-          <td class="name"><code>layout</code></td>
-        
-
-        <td class="type">
-          
+                <td class="name"><code>initialGraphData</code></td>
             
-    <span class="param-type">
-      Layout
-    </span>
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="Graph.html">Graph</a></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>the initial graph that should be displayed</p></td>
+        </tr>
 
     
 
+        <tr>
+            
+                <td class="name"><code>layout</code></td>
+            
 
-          
-        </td>
+            <td class="type">
+            
+                
+<span class="param-type">Layout</span>
 
-        
 
-        
+            
+            </td>
 
-        <td class="description last">
-          <p>the layout type</p>
-          
-        </td>
-      </tr>
+            
+
+            
+
+            <td class="description last"><p>the layout type</p></td>
+        </tr>
 
     
-  </tbody>
+    </tbody>
 </table>
+
 
 
 
@@ -429,46 +337,42 @@
 
 <dl class="details">
 
-  
+    
 
-  
+    
 
-  
+    
 
-  
+    
 
-  
+    
 
-  
+    
 
-  
+    
 
-  
+    
 
-  
+    
 
-  
+    
 
-  
+    
 
-  
+    
 
-  
+    
     <dt class="tag-source">Source:</dt>
-    <dd class="tag-source">
-      <ul class="dummy">
-        <li>
-          <a href="visualization.js.html">visualization.js</a>, <a href="visualization.js.html#line82">line 82</a>
-        </li>
-      </ul>
-    </dd>
-  
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="visualization.js.html">visualization.js</a>, <a href="visualization.js.html#line118">line 118</a>
+    </li></ul></dd>
+    
 
-  
+    
 
-  
+    
 
-  
+    
 </dl>
 
 
@@ -484,30 +388,26 @@
 
 
 
-      
+
+
+            </div>
         
+            <div class="subsection-item">
+                
 
+    
 
-  
+    <h4 class="name" id="setZoom"><span class="type-signature"></span>setZoom<span class="signature">(zoom, zoomOptions<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
 
-  <span class='name-container'>
-    <a class="link-icon" href="#setZoom">
-      <svg height="20" width="20" style="fill: black;">
-        <use xlink:href="#linkIcon"></use>
-      </svg>
-    </a>
-    <h4 class="name" id="setZoom">
-      <span class="type-signature"></span>setZoom<span class="signature">(zoom, zoomOptions<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span>
-    </h4>
-  </span>
-
-  
+    
+    <p class="summary"><p>Change the current zoom level</p>.</p>
+    
 
 
 
-  <div class="description">
+<div class="description">
     <p>Change the current zoom level</p>
-  </div>
+</div>
 
 
 
@@ -515,214 +415,193 @@
 
 
 
-  <h5>Parameters:</h5>
-  
+
+
+    <h5>Parameters:</h5>
+    
 
 <table class="params">
-  <thead>
+    <thead>
     <tr>
-      
+        
         <th>Name</th>
-      
+        
 
-      <th>Type</th>
+        <th>Type</th>
 
-      
+        
         <th>Attributes</th>
-      
+        
 
-      
+        
 
-      <th class="last">Description</th>
+        <th class="last">Description</th>
     </tr>
-  </thead>
+    </thead>
 
-  <tbody>
-    
-      <tr>
-        
-          <td class="name"><code>zoom</code></td>
-        
-
-        <td class="type">
-          
-            
-    <span class="param-type">
-      Number
-    </span>
-
+    <tbody>
     
 
+        <tr>
+            
+                <td class="name"><code>zoom</code></td>
+            
 
-          
-        </td>
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
 
-        
-          <td class="attributes">
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
             
 
             
 
-            
-          </td>
-        
-
-        
-
-        <td class="description last">
-          <p>zoom level between 0.25 and 10</p>
-          
-        </td>
-      </tr>
-
-    
-      <tr>
-        
-          <td class="name"><code>zoomOptions</code></td>
-        
-
-        <td class="type">
-          
-            
-    <span class="param-type">
-      Object
-    </span>
+            <td class="description last"><p>zoom level between 0.25 and 10</p></td>
+        </tr>
 
     
 
-
-          
-        </td>
-
-        
-          <td class="attributes">
+        <tr>
             
-              &lt;optional><br>
+                <td class="name"><code>zoomOptions</code></td>
             
 
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
             
 
             
-          </td>
-        
 
-        
-
-        <td class="description last">
-          
-          
-            <h6>Properties</h6>
-            
+            <td class="description last">
+                <h6>Properties</h6>
+                
 
 <table class="params">
-  <thead>
+    <thead>
     <tr>
-      
+        
         <th>Name</th>
-      
+        
 
-      <th>Type</th>
+        <th>Type</th>
 
-      
+        
         <th>Attributes</th>
-      
+        
 
-      
+        
 
-      <th class="last">Description</th>
+        <th class="last">Description</th>
     </tr>
-  </thead>
+    </thead>
 
-  <tbody>
-    
-      <tr>
-        
-          <td class="name"><code>x</code></td>
-        
-
-        <td class="type">
-          
-            
-    <span class="param-type">
-      Number
-    </span>
-
+    <tbody>
     
 
-
-          
-        </td>
-
-        
-          <td class="attributes">
+        <tr>
             
-              &lt;optional><br>
+                <td class="name"><code>x</code></td>
             
 
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
             
 
             
-          </td>
-        
 
-        
-
-        <td class="description last">
-          <p>zoom into specified point</p>
-          
-        </td>
-      </tr>
-
-    
-      <tr>
-        
-          <td class="name"><code>y</code></td>
-        
-
-        <td class="type">
-          
-            
-    <span class="param-type">
-      Number
-    </span>
+            <td class="description last"><p>zoom into specified point</p></td>
+        </tr>
 
     
 
-
-          
-        </td>
-
-        
-          <td class="attributes">
+        <tr>
             
-              &lt;optional><br>
+                <td class="name"><code>y</code></td>
             
 
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
             
 
             
-          </td>
-        
 
-        
-
-        <td class="description last">
-          <p>zoom into specified point</p>
-          
-        </td>
-      </tr>
+            <td class="description last"><p>zoom into specified point</p></td>
+        </tr>
 
     
-  </tbody>
+    </tbody>
 </table>
 
-          
-        </td>
-      </tr>
+            </td>
+        </tr>
 
     
-  </tbody>
+    </tbody>
 </table>
+
 
 
 
@@ -730,46 +609,42 @@
 
 <dl class="details">
 
-  
+    
 
-  
+    
 
-  
+    
 
-  
+    
 
-  
+    
 
-  
+    
 
-  
+    
 
-  
+    
 
-  
+    
 
-  
+    
 
-  
+    
 
-  
+    
 
-  
+    
     <dt class="tag-source">Source:</dt>
-    <dd class="tag-source">
-      <ul class="dummy">
-        <li>
-          <a href="visualization.js.html">visualization.js</a>, <a href="visualization.js.html#line148">line 148</a>
-        </li>
-      </ul>
-    </dd>
-  
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="visualization.js.html">visualization.js</a>, <a href="visualization.js.html#line224">line 224</a>
+    </li></ul></dd>
+    
 
-  
+    
 
-  
+    
 
-  
+    
 </dl>
 
 
@@ -785,30 +660,26 @@
 
 
 
-      
+
+
+            </div>
         
+            <div class="subsection-item">
+                
 
+    
 
-  
+    <h4 class="name" id="transform"><span class="type-signature">(async) </span>transform<span class="signature">(currentLayout, newLayout)</span><span class="type-signature"></span></h4>
 
-  <span class='name-container'>
-    <a class="link-icon" href="#transform">
-      <svg height="20" width="20" style="fill: black;">
-        <use xlink:href="#linkIcon"></use>
-      </svg>
-    </a>
-    <h4 class="name" id="transform">
-      <span class="type-signature">(async) </span>transform<span class="signature">(currentLayout, newLayout)</span><span class="type-signature"></span>
-    </h4>
-  </span>
-
-  
+    
+    <p class="summary"><p>Transforms a layout from one type into another type</p>.</p>
+    
 
 
 
-  <div class="description">
+<div class="description">
     <p>Transforms a layout from one type into another type</p>
-  </div>
+</div>
 
 
 
@@ -816,88 +687,79 @@
 
 
 
-  <h5>Parameters:</h5>
-  
+
+
+    <h5>Parameters:</h5>
+    
 
 <table class="params">
-  <thead>
+    <thead>
     <tr>
-      
+        
         <th>Name</th>
-      
+        
 
-      <th>Type</th>
+        <th>Type</th>
 
-      
+        
 
-      
+        
 
-      <th class="last">Description</th>
+        <th class="last">Description</th>
     </tr>
-  </thead>
+    </thead>
 
-  <tbody>
+    <tbody>
     
-      <tr>
-        
-          <td class="name"><code>currentLayout</code></td>
-        
 
-        <td class="type">
-          
+        <tr>
             
-    <span class="param-type">
-      Layout
-    </span>
-
-    
-
-
-          
-        </td>
-
-        
-
-        
-
-        <td class="description last">
-          
-          
-        </td>
-      </tr>
-
-    
-      <tr>
-        
-          <td class="name"><code>newLayout</code></td>
-        
-
-        <td class="type">
-          
+                <td class="name"><code>currentLayout</code></td>
             
-    <span class="param-type">
-      Layout
-    </span>
+
+            <td class="type">
+            
+                
+<span class="param-type">Layout</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
 
     
 
+        <tr>
+            
+                <td class="name"><code>newLayout</code></td>
+            
 
-          
-        </td>
+            <td class="type">
+            
+                
+<span class="param-type">Layout</span>
 
-        
 
-        
+            
+            </td>
 
-        <td class="description last">
-          
-          
-        </td>
-      </tr>
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
 
     
-  </tbody>
+    </tbody>
 </table>
+
 
 
 
@@ -905,46 +767,42 @@
 
 <dl class="details">
 
-  
+    
 
-  
+    
 
-  
+    
 
-  
+    
 
-  
+    
 
-  
+    
 
-  
+    
 
-  
+    
 
-  
+    
 
-  
+    
 
-  
+    
 
-  
+    
 
-  
+    
     <dt class="tag-source">Source:</dt>
-    <dd class="tag-source">
-      <ul class="dummy">
-        <li>
-          <a href="visualization.js.html">visualization.js</a>, <a href="visualization.js.html#line115">line 115</a>
-        </li>
-      </ul>
-    </dd>
-  
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="visualization.js.html">visualization.js</a>, <a href="visualization.js.html#line191">line 191</a>
+    </li></ul></dd>
+    
 
-  
+    
 
-  
+    
 
-  
+    
 </dl>
 
 
@@ -960,30 +818,31 @@
 
 
 
-      
+
+
+            </div>
+        
     
 
     
 
     
-  </article>
+</article>
+
 </section>
 
 
 
 
-  </div>
+</div>
 
-  <br class="clear">
+<br class="clear">
 
-  <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.3</a>
-  </footer>
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.3</a> on Thu Apr 02 2020 21:28:39 GMT+0200 (GMT+02:00) using the Toast theme.
+</footer>
 
-  <script src="scripts/linenumber.js"></script>
-  <script src="scripts/pagelocation.js"></script>
-
-  
-
+<script>prettyPrint();</script>
+<script src="scripts/linenumber.js"></script>
 </body>
 </html>

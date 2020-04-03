@@ -131,10 +131,6 @@ class RequirementNode extends BaseNode {
   }
 
 
-  /**
-   * Creates the requirements details description
-   * @private
-   */
   createRequirementDetails() {
     const text = this.canvas.foreignObject(this.config.maxTextWidth, this.config.maxTextHeight)
 
@@ -199,11 +195,6 @@ class RequirementNode extends BaseNode {
   }
 
 
-  /**
-   * Renders a requirement node in minimal version
-   * @param {Number} [X=initialX] the initial X render position
-   * @param {Number} [Y=initialY] the initial Y render position
-   */
   renderAsMin(X = this.initialX, Y = this.initialY) {
     // create svg elements
     const svg = this.createSVGElement()
@@ -246,11 +237,6 @@ class RequirementNode extends BaseNode {
   }
 
 
-  /**
-   * Renders a requirement node in maximal version
-   * @param {Number} [X=initialX] the initial X render position
-   * @param {Number} [Y=initialY] the initial Y render position
-   */
   renderAsMax(X = this.initialX, Y = this.initialY) {
     // create svg elements
     const svg = this.createSVGElement()
@@ -292,11 +278,6 @@ class RequirementNode extends BaseNode {
   }
 
 
-  /**
-   * Transforms a node from minimal version to maximal version
-   * @param {Number} [X=finalX] the final X render position
-   * @param {Number} [Y=finaY] the final Y render position
-   */
   transformToMax(X = this.finalX, Y = this.finalY) {
     // update current elements
     this
@@ -337,11 +318,6 @@ class RequirementNode extends BaseNode {
   }
 
 
-  /**
-   * Transforms a node from maximal version to minimal version
-   * @param {Number} [X=finalX] the final X render position
-   * @param {Number} [Y=finaY] the final Y render position
-   */
   transformToMin(X = this.finalX, Y = this.finalY) {
     // update current elements
     this

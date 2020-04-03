@@ -1,63 +1,26 @@
 /**
- * This object contains default configuration for grid layout representations.
- * @typedef {GridConfiguration} GridConfiguration
+ * @namespace GridLayoutConfiguration
+ * @description This object contains default configuration for grid layout representations.
  *
- * @param {Number} [maxColumns=3] Determins how many columns the current layout contains
- * @param {Number} [maxRows=3] Determins how many rows the current layout contains
- * @param {Number} [nodeLimiter=null] Determins how many nodes are rendered maximal
- * @param {Number} [translateX=0] Adds additional X translation for all SVG elements before rendering
- * @param {Number} [translateY=0] Adds additional Y translation for all SVG elements before rendering
- * @param {Number} [animationSpeed=300] Determins how fast SVG elements animates inside the current layout
- * @param {Boolean} [hideOtherLayouts=false] Hides other layouts, if set to true, else layouts will appear side-by-side
- * @param {Number} [spacing=32] Adds spacing between different SVG representations
- * @param {String} [layoutBackgroundColor=null] Adds a background color to the current layout
- * @param {Number} [layoutBackgroundBorderRadius=32] Adds a border radius to the current layout
- * @param {String} [renderingSize="min"] Determins if all nodes are rendered in minimal or maximal representation
+ * @property {Number} limitColumns=3             - Limits how many columns the layout has.
+ * @property {Number} limitNodes=null            - Limits how many nodes are rendered.
+ * @property {Number} translateX=0               - Adds additional X translation for all SVG elements before rendering.
+ * @property {Number} translateY=0               - Adds additional Y translation for all SVG elements before rendering.
+ * @property {Number} animationSpeed=300         - Determins how fast SVG elements animates inside the current layout.
+ * @property {Boolean} hideOtherLayouts=false    - If set to true, other layouts are not visible.
+ * @property {Number} spacing=32                 - Determins the minimal spacing between nodes.
+ * @property {String} renderingSize=min          - Determins the node render representation. Available: "min" or "max".
  */
-
-const GridConfiguration = {
-
-  // limits the layout in columns
-  maxColumns: 2,
-
-
-  // // limits the layout in rows
-  // maxRows: 10, not used..
-
-
-  // limits how many nodes are rendered maximal
-  limit: null,
-
-
-  // adds additional X and Y translation for all SVG elements before rendering
+const GridLayoutConfiguration = {
+  limitColumns: 4,
+  limitNodes: null,
   translateX: 0,
   translateY: 0,
-
-
-  // determins how fast SVG elements animated inside the current layout
   animationSpeed: 300,
-
-
-  // if set to ture, then other layouts will be hidden as long this variable changes
   hideOtherLayouts: false, // TODO:
-
-
-  // adds spacing between different SVG representations
   spacing: 32,
-
-
-  // adds a background color and eventually a border radius to the current layout
-  renderLayoutBackground: true, // true, false
-  layoutBackgroundColor: "#fff",
-  layoutBackgroundBorderRadius: 10,
-  layoutBackgroundBorderStrokeWidth: 1.5,
-  layoutBackgroundBorderStrokeColor: "#222",
-  layoutBackgroundBorderStrokeDasharray: "0",
-
-
-  // determins if all nodes are rendered in minimal or maximal representation
-  renderingSize: "min", //  min max
+  renderingSize: "min",
 }
 
 
-export default GridConfiguration
+export default GridLayoutConfiguration

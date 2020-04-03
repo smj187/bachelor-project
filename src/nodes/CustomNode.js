@@ -182,10 +182,6 @@ class CustomNode extends BaseNode {
   }
 
 
-  /**
-   * Creates the custom details description
-   * @private
-   */
   createCustomDetails() {
     const text = this.canvas.foreignObject(this.config.maxTextWidth, this.config.maxTextHeight)
     const background = document.createElement("div")
@@ -234,16 +230,11 @@ class CustomNode extends BaseNode {
   }
 
 
-  /**
-   * Renders a custom node in minimal version
-   * @param {Number} X the initial X position
-   * @param {Number} Y the initial Y position
-   */
   renderAsMin(X = this.initialX, Y = this.initialY) {
     // create svg elements
     const svg = this.createSVGElement()
     const node = this.createNode()
-    const icon = this.createIcon()
+    const icon = this.createIcon() // FIXME: by loading the icon, on sometimes the icon is not in the correct position
     const text = this.createLabel()
 
     svg.add(node)
@@ -257,8 +248,8 @@ class CustomNode extends BaseNode {
 
     if (this.config.nodeType === "path") {
       node
-        .scale(0.001)
         .center(X, Y)
+        .scale(0.001)
         .animate({ duration: this.config.animationSpeed })
         .transform({ scale: 1 })
     } else {
@@ -271,8 +262,8 @@ class CustomNode extends BaseNode {
     }
 
     icon
-      .size(0, 0)
       .center(X, Y)
+      .size(0, 0)
       .attr({ opacity: 0 })
       .animate({ duration: this.config.animationSpeed })
       .attr({ opacity: this.config.minIconOpacity })
@@ -281,8 +272,8 @@ class CustomNode extends BaseNode {
       .dy(-this.config.minIconSize / 2 + this.config.minIconTranslateY)
 
     text
-      .size(this.config.minTextWidth, text.children()[0].node.clientHeight)
       .center(X, Y)
+      .size(this.config.minTextWidth, text.children()[0].node.clientHeight)
       .scale(0.001)
       .attr({ opacity: 0 })
       .animate({ duration: this.config.animationSpeed })
@@ -301,11 +292,6 @@ class CustomNode extends BaseNode {
   }
 
 
-  /**
-   * Renders a custom node in maximal version
-   * @param {Number} X the initial X position
-   * @param {Number} Y the initial Y position
-   */
   renderAsMax(X = this.initialX, Y = this.initialY) {
     // create svg elements
     const svg = this.createSVGElement()
@@ -370,11 +356,6 @@ class CustomNode extends BaseNode {
   }
 
 
-  /**
-   * Transforms a node from minimal version to maximal version
-   * @param {Number} X the final X position
-   * @param {Number} Y the final Y position
-   */
   transformToMax(X = this.finalX, Y = this.finalY) {
     // update current elements
     this
@@ -433,11 +414,6 @@ class CustomNode extends BaseNode {
   }
 
 
-  /**
-   * Transforms a node from maximal version to minimal version
-   * @param {Number} X the final X position
-   * @param {Number} Y the final Y position
-   */
   transformToMin(X = this.finalX, Y = this.finalY) {
     // update current elements
     this

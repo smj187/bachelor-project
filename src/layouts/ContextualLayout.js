@@ -51,16 +51,18 @@ const ContextualConfig = {
 }
 
 class ContextualLayout extends BaseLayout {
-  constructor(overrideConfig = {}) {
+  constructor(customConfig = {}) {
     super()
 
-    this.config = { ...ContextualConfig, ...overrideConfig }
+    console.log(customConfig)
 
-    if (overrideConfig.startNodeId === undefined) {
+    this.config = { ...ContextualConfig, ...customConfig }
+
+    if (customConfig.focus === undefined) {
       throw new Error("No Focus element reference id provided")
     }
 
-    this.startNodeId = overrideConfig.startNodeId
+    this.focusId = customConfig.focus
 
     this.focus = null
     this.parents = []

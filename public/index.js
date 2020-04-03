@@ -4,7 +4,7 @@
 /* eslint-disable max-classes-per-file */
 
 import {
-  Graph, Visualization, RadialLayout, GridLayout, TreeLayout, ContextualLayout,
+  Visualization, RadialLayout, GridLayout, TreeLayout, ContextualLayout,
 } from "./graphVisualization.js"
 
 
@@ -13,37 +13,103 @@ import {
 const vis = new Visualization({ databaseUrl: "http://localhost:3001" }) // this is the visualization
 
 
-// neighbors store node refs -> to call from database: neighbor nodes + node.parent or node.children
-const graph = new Graph() // this the initial graph/sub graph structure
-graph.addNode(0) // ersten 4 gleich -> cols nicht korrekt
-graph.addNode(1)
-graph.addNode(2)
-graph.addNode(3)
-graph.addNode(4)
-graph.addNode(12) // TODO: was tun bei duplicaten?
-graph.addNode(5)
-graph.addNode(6)
-graph.addNode(7)
-graph.addNode(8)
-graph.addNode(9)
-graph.addNode(10)
-graph.addNode(11)
-graph.addNode(12)
-graph.addNode(13)
-graph.addNode(14)
-graph.addNode(15)
+// create an initial subgraph by passing node and edge ids as paramaters
+// const graph1 = vis.createInitialGraph([10, 11, 12], [[10, 12], [10, 11], [11, 12]])
 
-// graph.addEdge(1, 0) // TODO: ask: is there always every edge provided (speaking: for each connection, there exists an edge) -> NO
-// graph.addEdge(2, 0)
-// graph.addEdge(3, 0)
+// or by manually adding them
+const graph1 = vis.createInitialGraph()
+for (let i = 0; i < 15; i += 1) {
+  graph1.includeNode(i)
+}
 
-const grid1 = vis.render(graph, new GridLayout({ limit: 8, maxColumns: 4 }))
+// remove and add nodes
+graph1.excludeNode(0)
+graph1.excludeNode(1)
+graph1.excludeNode(2)
+graph1.excludeNode(3)
+graph1.excludeNode(4)
+graph1.excludeNode(5)
 
-// setTimeout(() => {  vis.updateLayoutConfiguration(grid1, { maxColumns: 4, limit: 12 })}, 2000)
-// setTimeout(() => { vis.updateLayoutConfiguration(grid1, { limit: 12 }) }, 2000)
+graph1.includeNode(4)
+graph1.includeNode(5)
+
+/** Grid 1 */
+const grid1 = new GridLayout({ limitNodes: null, limitColumns: 3 })
+// vis.render(graph1, grid1)
+
+
+// // add or remove nodes to the graph and update the visualization
+// setTimeout(() => {
+//   graph1.excludeNode(4)
+//   graph1.excludeNode(5)
+
+//   graph1.includeNode(0)
+//   graph1.includeNode(1)
+//   graph1.includeNode(2)
+//   graph1.includeNode(3)
+
+//   vis.update(grid1, graph1)
+// }, 2000)
+
+// // and re-ranage the layout into 4 columns
+// setTimeout(() => {
+//   vis.update(grid1, { limitColumns: 4 })
+// }, 1000)
+
+// // remove two nodes and re-ranage the layout into 4 columns without any limitations
+// setTimeout(() => {
+//   graph1.excludeNode(4)
+//   graph1.excludeNode(5)
+
+//   vis.update(grid1, graph1, { limitNodes: null, limitColumns: 4 })
+// }, 1000)
+
+
+/** Multiple Layouts 2 */
+const graph2 = vis.createInitialGraph([0, 1, 2, 3])
+const graph3 = vis.createInitialGraph([13, 14, 15])
+const graph4 = vis.createInitialGraph([4, 5])
+const graph5 = vis.createInitialGraph([0, 1, 4, 8, 10, 14])
+const grid2 = new GridLayout({ limitNodes: 4, limitColumns: 2, translateX: 0 })
+const grid3 = new GridLayout({ limitNodes: 1, limitColumns: 1, translateY: 0 })
+const grid4 = new GridLayout({ limitNodes: null, limitColumns: 1, translateY: 0 })
+const grid5 = new GridLayout({ limitNodes: null, limitColumns: 1, translateX: 0 })
+
+// vis.render(graph2, grid2)
+// vis.render(graph3, grid3)
+// vis.render(graph4, grid4)
+// vis.render(graph5, grid5)
+
+// // remove node 0 from all layouts
+// setTimeout(() => {
+//   graph2.excludeNode(0)
+//   graph5.excludeNode(0)
+
+//   vis.update(grid2, graph2)
+//   vis.update(grid5, graph5)
+// }, 3000)
+
+// // and re-ranage the first layout from one into a two column grid
+// setTimeout(() => {
+//   vis.update(grid2, { limitColumns: 1 })
+// }, 1000)
+
+
+/** Contextual 1 */
+const graph6 = vis.createInitialGraph()
+for (let i = 16; i <= 39; i += 1) {
+  graph6.includeNode(i)
+}
+
+const contextual1 = new ContextualLayout({ focus: 36 })
+vis.render(graph6, contextual1)
+
+// const grid2 = vis.render(graph, new GridLayout({
+//   limitNodes: 3, limitColumns: 3, translateX: 0, translateY: 200,
+// }))
 
 /*
-// TODO: showNode()
+// TODO: showNode() // redundant?
 */
 
 // const vis = new Visualization({ databaseUrl: "http://localhost:3000" })

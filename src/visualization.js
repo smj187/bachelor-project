@@ -7,6 +7,8 @@ import RadialLayout from "./layouts/RadialLayout"
 import TreeLayout from "./layouts/TreeLayout"
 import ContextualLayout from "./layouts/ContextualLayout"
 
+import Graph from "./data/Graph"
+
 /**
  * The canvas element where all svgs are held
  * @typedef {Canvas} Canvas
@@ -74,11 +76,38 @@ class Visualization {
       ...config,
       nodeEndpoint: "node-data",
       edgeEndpoint: "edge-data",
+      contextualRelationshipEndpoint: "contextual-relationships",
+      layoutSpacing: 200,
     }
 
 
     // stores all loaded nodes
     this.loadedNodes = []
+
+
+    this.knownGraph = new Graph()
+
+    this.fetchedNodes = []
+    this.fetchedEdges = []
+  }
+
+  createInitialGraph(nodeIds = [], edgeIds = []) {
+    const graph = new Graph()
+
+    // add nodes
+    nodeIds.forEach((id) => {
+      graph.includeNode(id)
+      this.knownGraph.includeNode(id)
+    })
+
+    // add edges
+    edgeIds.forEach((ids) => {
+      graph.includeEdge(ids[0], ids[1])
+      this.knownGraph.includeEdge(ids[0], ids[1])
+    })
+
+
+    return graph
   }
 
 
@@ -87,54 +116,72 @@ class Visualization {
    * @param {Graph} initialGraphData the initial graph that should be displayed
    * @param {Layout} layout the layout type
    */
-  render(initialGraphData, layout) {
+  async render(initialGraphData, layout) {
     layout.setCanvas(this.canvas)
     layout.setConfig({
       databaseUrl: this.config.databaseUrl,
       nodeEndpoint: this.config.nodeEndpoint,
       edgeEndpoint: this.config.edgeEndpoint,
+      contextualRelationshipEndpoint: this.config.contextualRelationshipEndpoint,
     })
+    layout.setNodeData(initialGraphData.getNodes())
+    layout.setEdgeData(initialGraphData.getEdges())
 
 
-    const nodes = initialGraphData.getNodes()
-    const edges = initialGraphData.getEdges()
-
-
-    // if (layout instanceof RadialLayout) {
-    //   layout.createRadialDataAsync(initialGraphData.nodes, initialGraphData.edges)
-    // }
+    this.layouts.push(layout)
+    layout.setLayoutReferences(this.layouts)
 
     if (layout instanceof GridLayout) {
-      layout.loadInitialGridDataAsync(nodes, edges)
+      const createdLayout = await layout.loadInitialGridDataAsync()
+      const layouts = this.layouts.slice(0, this.layouts.indexOf(layout))
+      const offset = layouts.map((l) => l.layoutInfo.w).reduce((a, b) => a + b, 0)
+      createdLayout.calculateLayout(offset)
+      createdLayout.renderLayout()
     }
 
-    // if (layout instanceof TreeLayout) {
-    //   layout.createRadialDataAsync(initialGraphData.nodes, initialGraphData.edges)
-    // }
-
-    // if (layout instanceof ContextualLayout) {
-    //   layout.createContextualDataAsync(initialGraphData.nodes, initialGraphData.edges)
-    // }
-
-    // // FIXME: layout do not update their position if a previous layout is changing in size
-    // // layout.registerUpdatePosition()
+    if (layout instanceof ContextualLayout) {
+      const createdLayout = await layout.loadInitialContextualDataAsync()
+    }
 
 
     return layout
   }
 
+  async update(layout, graphOrConfig, config = {}) {
+    if (graphOrConfig instanceof Graph) {
+      await layout.updateGraphStructure(graphOrConfig, config)
+      const updatedLayout = await layout.loadAdditionalGridDataAsync()
+      const prevW = updatedLayout.layoutInfo.w
+      updatedLayout.calculateLayout()
+      const newW = updatedLayout.layoutInfo.w
 
-  // eslint-disable-next-line class-methods-use-this
-  updateLayoutConfiguration(layout, config) {
-    // layout.setConfig(config)
+      // update all layouts right side
+      this.layouts.forEach((llayout, i) => {
+        if (i > this.layouts.indexOf(layout)) {
+          llayout.calculateLayout(newW - prevW)
+          llayout.renderLayout()
+        }
+      })
 
-    if (layout instanceof GridLayout) {
-      layout.updateGridLayoutConfiguration(config)
+      updatedLayout.renderLayout()
+    } else {
+      const updatedLayout = await layout.updateLayoutConfiguration(graphOrConfig)
+      await updatedLayout.loadAdditionalGridDataAsync()
+
+      const prevW = updatedLayout.layoutInfo.w
+      updatedLayout.calculateLayout()
+      const newW = updatedLayout.layoutInfo.w
+
+      // update all layouts right side
+      this.layouts.forEach((llayout, i) => {
+        if (i > this.layouts.indexOf(layout)) {
+          llayout.calculateLayout(newW - prevW)
+          llayout.renderLayout()
+        }
+      })
+
+      updatedLayout.renderLayout()
     }
-
-
-    // layout.calculateLayout()
-    // layout.renderLayout()
   }
 
 

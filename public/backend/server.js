@@ -12,6 +12,17 @@ app.use(cors())
 
 const DATABASE_URL = `${__dirname}\\database.json`
 
+app.post("/contextual-relationships", (req, res) => {
+  fs.readFile(DATABASE_URL, "utf8", (err, data) => {
+    if (err) {
+      throw err
+    }
+    const parsed = JSON.parse(data)["contextual-relationships"]
+
+    res.send(parsed.find((p) => p.focus === req.body[0]) || [])
+  })
+})
+
 
 // get nodedata entpoint
 app.post("/node-data", (req, res) => {
@@ -23,7 +34,6 @@ app.post("/node-data", (req, res) => {
 
 
     // return in requested order
-    console.log(req.body)
     const requested = []
     req.body.forEach((id) => {
       const node = parsed["node-data"].find((n) => n.id === id)
@@ -31,8 +41,9 @@ app.post("/node-data", (req, res) => {
         requested.push(node)
       }
     })
-
+    console.log("req @:", new Date().toLocaleTimeString(), "<->", req.body)
     res.send(requested)
+
 
     // // return ordered by ids ascending
     // res.send(parsed["node-data"].filter((n) => body.includes(n.id)))

@@ -120,10 +120,7 @@ class AssetNode extends BaseNode {
     this.config = { ...AssetConfig, ...customAssetConfig }
   }
 
-  /**
-   * Creates the asset details description
-   * @private
-   */
+
   createAssetDetails() {
     const text = this.canvas.foreignObject(this.config.maxTextWidth, this.config.maxTextHeight)
     const background = document.createElement("div")
@@ -213,11 +210,6 @@ class AssetNode extends BaseNode {
   }
 
 
-  /**
-   * Renders an asset node in minimal version
-   * @param {Number} [X=initialX] the initial X render position
-   * @param {Number} [Y=initialY] the initial Y render position
-   */
   renderAsMin(X = this.initialX, Y = this.initialY) {
     // create svg elements
     const svg = this.createSVGElement()
@@ -271,11 +263,6 @@ class AssetNode extends BaseNode {
   }
 
 
-  /**
-   * Renders an asset node in maximal version
-   * @param {Number} [X=initialX] the initial X render position
-   * @param {Number} [Y=initialY] the initial Y render position
-   */
   renderAsMax(X = this.initialX, Y = this.initialY) {
     // create svg elements
     const svg = this.createSVGElement()
@@ -327,12 +314,6 @@ class AssetNode extends BaseNode {
     this.svg = svg
   }
 
-
-  /**
-   * Transforms a node from minimal version to maximal version
-   * @param {Number} [X=finalX] the final X render position
-   * @param {Number} [Y=finaY] the final Y render position
-   */
   transformToMax(X = this.finalX, Y = this.finalY) {
     // update current elements
     this
@@ -389,12 +370,6 @@ class AssetNode extends BaseNode {
     this.currentY = Y
   }
 
-
-  /**
-   * Transforms a node from maximal version to minimal version
-   * @param {Number} [X=finalX] the final X render position
-   * @param {Number} [Y=finaY] the final Y render position
-   */
   transformToMin(X = this.finalX, Y = this.finalY) {
     // update current elements
     this

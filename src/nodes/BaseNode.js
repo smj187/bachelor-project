@@ -152,13 +152,9 @@ class BaseNode {
   }
 
 
-  /**
-   * Creates the initial SVG element and adds hover effect
-   * @private
-   */
   createSVGElement() {
-    const svg = this.canvas.group().draggable()
-    // const svg = this.canvas.group()
+    // const svg = this.canvas.group().draggable()
+    const svg = this.canvas.group()
     svg.css("cursor", "pointer")
     svg.id(`node#${this.id}`)
 
@@ -230,11 +226,6 @@ class BaseNode {
   }
 
 
-  /**
-   * Creates the actual SVG node
-   * @param {Number} width the node width
-   * @param {Number} height the node height
-   */
   createNode(width = 0, height = 0) {
     let node = null
     if (this.type === "custom") {
@@ -279,10 +270,6 @@ class BaseNode {
   }
 
 
-  /**
-   * Creates an icon with a given icon url or uses the default icon
-   * @param {Number} size the width and height for the icon
-   */
   createIcon(size = 0) {
     let icon = null
     if (this.config.iconUrl === null) {
@@ -307,12 +294,6 @@ class BaseNode {
   }
 
 
-  /**
-   * Creates the node label text limited to 2 lines
-   * @param {Number} width the label width
-   * @param {Number} height the label height
-   * @param {String} textAlign how to align the label, default is center
-   */
   createLabel(textAlign = "center") { // FIXME: html text gets highlighted way to often
     const fobj = this.canvas.foreignObject(this.config.minTextWidth, 0)
 
@@ -435,124 +416,73 @@ class BaseNode {
   }
 
 
-  /**
-   *
-   * @param {Object} config adds or overrides existing config data
-   */
   setConfig(config) {
     this.config = { ...this.config, ...config }
   }
 
 
-  /**
-   * Returns the current config for a node
-   */
   getConfig() {
     return this.config
   }
 
 
-  /**
-   * Returns the current final X position
-   */
   getFinalX() {
     return this.finalX
   }
 
 
-  /**
-   * Returns the current final Y position
-   */
   getFinalY() {
     return this.finalY
   }
 
 
-  /**
-   * Sets the final X position
-   * @param {Number} finalX the final X position
-   */
   setFinalX(finalX) {
     this.finalX = finalX
   }
 
 
-  /**
-   * Sets the final Y position
-   * @param {Number} finalY the final Y position
-   */
   setFinalY(finalY) {
     this.finalY = finalY
   }
 
 
-  /**
-   * Sets the final rendering position
-   * @param {Number} finalX the final X position
-   * @param {Number} finalY the final Y position
-   */
   setFinalXY(finalX, finalY) {
     this.finalX = finalX
     this.finalY = finalY
   }
 
 
-  /**
-   * Returns the current initial X position
-   */
   getInitialX() {
     return this.initialX
   }
 
 
-  /**
-   * Returns the current final Y position
-   */
   getInitialY() {
     return this.initialY
   }
 
 
-  /**
-   * Sets the initial X position
-   * @param {Number} initialX the initial X position
-   */
   setInitialX(initialX) {
     this.initialX = initialX
   }
 
 
-  /**
-   * Sets the initial Y position
-   * @param {Number} initialY the initial Y position
-   */
   setInitialY(initialY) {
     this.initialY = initialY
   }
 
 
-  /**
-  * Sets the initial rendering position
-  * @param {Number} initialX the initial X position
-  * @param {Number} initialY The initial Y position
-  */
   setInitialXY(initialX, initialY) {
     this.initialX = initialX
     this.initialY = initialY
   }
 
 
-  /**
-   * Returns the current node width
-   */
   getCurrentWidth() {
     return this.currentWidth
   }
 
 
-  /**
-   * Returns the current node height
-   */
   getCurrentHeight() {
     return this.currentHeight
   }

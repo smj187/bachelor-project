@@ -186,6 +186,22 @@
             "config": null
         },
         {
+            "id": 14,
+            "label": "Asset 14",
+            "description": "Lorem ipsum dolor sit amet consectetur adipisicing elit.",
+            "type": "asset",
+            "keyValuePairs": [
+                {
+                    "key": "key 1",
+                    "value": "key value pair: value 1"
+                }
+            ],
+            "tooltip": "Asset with <br> tooltip",
+            "parent": null,
+            "children": [],
+            "config": null
+        },
+        {
             "id": 15,
             "label": "Asset 15",
             "description": "Quibusdam maxime cupiditate fugiat deserunt libero",
@@ -200,6 +216,857 @@
             "parent": null,
             "children": [],
             "config": null
+        },
+        {
+            "id": 16,
+            "label": "Requirement 16",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": null,
+            "children": [
+                18,
+                19,
+                20
+            ],
+            "config": null
+        },
+        {
+            "id": 17,
+            "label": "Requirement 17",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": null,
+            "children": [
+                21
+            ],
+            "config": null
+        },
+        {
+            "id": 18,
+            "label": "Requirement 18",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": 16,
+            "children": [
+                22
+            ],
+            "config": null
+        },
+        {
+            "id": 19,
+            "label": "Requirement 19",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": 16,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 20,
+            "label": "Requirement 20",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": 16,
+            "children": [
+                23,
+                24,
+                25,
+                26
+            ],
+            "config": null
+        },
+        {
+            "id": 21,
+            "label": "Requirement 21",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": 17,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 22,
+            "label": "Requirement 22",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": 18,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 23,
+            "label": "Requirement 23",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": 20,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 24,
+            "label": "Requirement 24",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": 20,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 25,
+            "label": "Requirement 25",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": 20,
+            "children": [
+                27,
+                28,
+                29
+            ],
+            "config": null
+        },
+        {
+            "id": 26,
+            "label": "Requirement 26",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": 20,
+            "children": [
+                30
+            ],
+            "config": null
+        },
+        {
+            "id": 27,
+            "label": "Requirement 27",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": 25,
+            "children": [
+                31
+            ],
+            "config": null
+        },
+        {
+            "id": 28,
+            "label": "Requirement 28",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": 25,
+            "children": [
+                32,
+                33,
+                34,
+                35
+            ],
+            "config": null
+        },
+        {
+            "id": 29,
+            "label": "Requirement 29",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": 25,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 30,
+            "label": "Requirement 30",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": 26,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 31,
+            "label": "Requirement 31",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": 27,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 32,
+            "label": "Requirement 32",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": 28,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 33,
+            "label": "Requirement 33",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": 28,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 34,
+            "label": "Requirement 34",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": 28,
+            "children": [
+                36
+            ],
+            "config": null
+        },
+        {
+            "id": 35,
+            "label": "Requirement 35",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": 28,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 36,
+            "label": "Requirement 36",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": 34,
+            "children": [
+                37,
+                38,
+                39
+            ],
+            "config": null
+        },
+        {
+            "id": 37,
+            "label": "Requirement 37",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": 36,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 38,
+            "label": "Requirement 38",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": 36,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 39,
+            "label": "Requirement 39",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": 36,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 40,
+            "label": "Asset 40",
+            "description": "Quibusdam maxime cupiditate fugiat deserunt libero",
+            "type": "asset",
+            "keyValuePairs": [
+                {
+                    "key": "key 1",
+                    "value": "key value pair: value 1"
+                }
+            ],
+            "tooltip": "Asset with <br> tooltip",
+            "parent": null,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 41,
+            "label": "Asset 41",
+            "description": "Quibusdam maxime cupiditate fugiat deserunt libero",
+            "type": "asset",
+            "keyValuePairs": [
+                {
+                    "key": "key 1",
+                    "value": "key value pair: value 1"
+                }
+            ],
+            "tooltip": "Asset with <br> tooltip",
+            "parent": null,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 42,
+            "label": "Asset 42",
+            "description": "Quibusdam maxime cupiditate fugiat deserunt libero",
+            "type": "asset",
+            "keyValuePairs": [
+                {
+                    "key": "key 12",
+                    "value": "key value pair: value 1"
+                }
+            ],
+            "tooltip": "Asset with <br> tooltip",
+            "parent": null,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 43,
+            "label": "Asset 43",
+            "description": "Quibusdam maxime cupiditate fugiat deserunt libero",
+            "type": "asset",
+            "keyValuePairs": [
+                {
+                    "key": "key 1",
+                    "value": "key value pair: value 1"
+                }
+            ],
+            "tooltip": "Asset with <br> tooltip",
+            "parent": null,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 44,
+            "label": "Asset 44",
+            "description": "Quibusdam maxime cupiditate fugiat deserunt libero",
+            "type": "asset",
+            "keyValuePairs": [
+                {
+                    "key": "key 1",
+                    "value": "key value pair: value 1"
+                }
+            ],
+            "tooltip": "Asset with <br> tooltip",
+            "parent": null,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 45,
+            "label": "Asset 45",
+            "description": "Quibusdam maxime cupiditate fugiat deserunt libero",
+            "type": "asset",
+            "keyValuePairs": [
+                {
+                    "key": "key 1",
+                    "value": "key value pair: value 1"
+                }
+            ],
+            "tooltip": "Asset with <br> tooltip",
+            "parent": null,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 46,
+            "label": "Asset 46",
+            "description": "Quibusdam maxime cupiditate fugiat deserunt libero",
+            "type": "asset",
+            "keyValuePairs": [
+                {
+                    "key": "key 1",
+                    "value": "key value pair: value 1"
+                }
+            ],
+            "tooltip": "Asset with <br> tooltip",
+            "parent": null,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 47,
+            "label": "Asset 47",
+            "description": "Quibusdam maxime cupiditate fugiat deserunt libero",
+            "type": "asset",
+            "keyValuePairs": [
+                {
+                    "key": "key 1",
+                    "value": "key value pair: value 1"
+                }
+            ],
+            "tooltip": "Asset with <br> tooltip",
+            "parent": null,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 48,
+            "label": "Asset 48",
+            "description": "Quibusdam maxime cupiditate fugiat deserunt libero",
+            "type": "asset",
+            "keyValuePairs": [
+                {
+                    "key": "key 1",
+                    "value": "key value pair: value 1"
+                }
+            ],
+            "tooltip": "Asset with <br> tooltip",
+            "parent": null,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 49,
+            "label": "Asset 49",
+            "description": "Quibusdam maxime cupiditate fugiat deserunt libero",
+            "type": "asset",
+            "keyValuePairs": [
+                {
+                    "key": "key 1",
+                    "value": "key value pair: value 1"
+                }
+            ],
+            "tooltip": "Asset with <br> tooltip",
+            "parent": null,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 50,
+            "label": "Asset 50",
+            "description": "Quibusdam maxime cupiditate fugiat deserunt libero",
+            "type": "asset",
+            "keyValuePairs": [
+                {
+                    "key": "key 1",
+                    "value": "key value pair: value 1"
+                }
+            ],
+            "tooltip": "Asset with <br> tooltip",
+            "parent": null,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 5,
+            "label": "Control 5",
+            "description": "clita kasd gubergren, no sea takimata  ante enim nibh tincidunt taciti justo ad",
+            "type": "control",
+            "attributes": null,
+            "tooltip": null,
+            "parent": null,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 51,
+            "label": "Control 51",
+            "description": "clita kasd gubergren, no sea takimata  ante enim nibh tincidunt taciti justo ad",
+            "type": "control",
+            "attributes": null,
+            "tooltip": null,
+            "parent": null,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 52,
+            "label": "Control 52",
+            "description": "clita kasd gubergren, no sea takimata  ante enim nibh tincidunt taciti justo ad",
+            "type": "control",
+            "attributes": null,
+            "tooltip": null,
+            "parent": null,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 53,
+            "label": "Control 53",
+            "description": "clita kasd gubergren, no sea takimata  ante enim nibh tincidunt taciti justo ad",
+            "type": "control",
+            "attributes": null,
+            "tooltip": null,
+            "parent": null,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 54,
+            "label": "Control 54",
+            "description": "clita kasd gubergren, no sea takimata  ante enim nibh tincidunt taciti justo ad",
+            "type": "control",
+            "attributes": null,
+            "tooltip": null,
+            "parent": null,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 55,
+            "label": "Control 55",
+            "description": "clita kasd gubergren, no sea takimata  ante enim nibh tincidunt taciti justo ad",
+            "type": "control",
+            "attributes": null,
+            "tooltip": null,
+            "parent": null,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 56,
+            "label": "Control 56",
+            "description": "clita kasd gubergren, no sea takimata  ante enim nibh tincidunt taciti justo ad",
+            "type": "control",
+            "attributes": null,
+            "tooltip": null,
+            "parent": null,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 57,
+            "label": "Control 57",
+            "description": "clita kasd gubergren, no sea takimata  ante enim nibh tincidunt taciti justo ad",
+            "type": "control",
+            "attributes": null,
+            "tooltip": null,
+            "parent": null,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 58,
+            "label": "Control 58",
+            "description": "clita kasd gubergren, no sea takimata  ante enim nibh tincidunt taciti justo ad",
+            "type": "control",
+            "attributes": null,
+            "tooltip": null,
+            "parent": null,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 59,
+            "label": "Control 59",
+            "description": "clita kasd gubergren, no sea takimata  ante enim nibh tincidunt taciti justo ad",
+            "type": "control",
+            "attributes": null,
+            "tooltip": null,
+            "parent": null,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 60,
+            "label": "Control 60",
+            "description": "clita kasd gubergren, no sea takimata  ante enim nibh tincidunt taciti justo ad",
+            "type": "control",
+            "attributes": null,
+            "tooltip": null,
+            "parent": null,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 61,
+            "label": "Control 61",
+            "description": "clita kasd gubergren, no sea takimata  ante enim nibh tincidunt taciti justo ad",
+            "type": "control",
+            "attributes": null,
+            "tooltip": null,
+            "parent": null,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 62,
+            "label": "Control 62",
+            "description": "clita kasd gubergren, no sea takimata  ante enim nibh tincidunt taciti justo ad",
+            "type": "control",
+            "attributes": null,
+            "tooltip": null,
+            "parent": null,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 63,
+            "label": "Control 63",
+            "description": "clita kasd gubergren, no sea takimata  ante enim nibh tincidunt taciti justo ad",
+            "type": "control",
+            "attributes": null,
+            "tooltip": null,
+            "parent": null,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 64,
+            "label": "Control 64",
+            "description": "clita kasd gubergren, no sea takimata  ante enim nibh tincidunt taciti justo ad",
+            "type": "control",
+            "attributes": null,
+            "tooltip": null,
+            "parent": null,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 65,
+            "label": "Risk 65",
+            "description": "neque harum debitis laudantium molestias velit aut",
+            "type": "risk",
+            "state": "critical",
+            "tooltip": null,
+            "parent": null,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 66,
+            "label": "Risk 66",
+            "description": "neque harum debitis laudantium molestias velit aut",
+            "type": "risk",
+            "state": "critical",
+            "tooltip": null,
+            "parent": null,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 67,
+            "label": "Risk 67",
+            "description": "neque harum debitis laudantium molestias velit aut",
+            "type": "risk",
+            "state": "critical",
+            "tooltip": null,
+            "parent": null,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 68,
+            "label": "Risk 68",
+            "description": "neque harum debitis laudantium molestias velit aut",
+            "type": "risk",
+            "state": "critical",
+            "tooltip": null,
+            "parent": null,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 69,
+            "label": "Risk 69",
+            "description": "neque harum debitis laudantium molestias velit aut",
+            "type": "risk",
+            "state": "critical",
+            "tooltip": null,
+            "parent": null,
+            "children": [],
+            "config": null
+        }
+    ],
+    "contextual-relationships": [
+        {
+            "focus": 16,
+            "assigned": 40,
+            "risks": []
+        },
+        {
+            "focus": 17,
+            "assigned": 41,
+            "risks": []
+        },
+        {
+            "focus": 17,
+            "assigned": 42,
+            "risks": []
+        },
+        {
+            "focus": 19,
+            "assigned": 43,
+            "risks": []
+        },
+        {
+            "focus": 20,
+            "assigned": 44,
+            "risks": []
+        },
+        {
+            "focus": 21,
+            "assigned": 45,
+            "risks": []
+        },
+        {
+            "focus": 22,
+            "assigned": 46,
+            "risks": []
+        },
+        {
+            "focus": 23,
+            "assigned": 47,
+            "risks": []
+        },
+        {
+            "focus": 24,
+            "assigned": 48,
+            "risks": []
+        },
+        {
+            "focus": 25,
+            "assigned": 49,
+            "risks": []
+        },
+        {
+            "focus": 26,
+            "assigned": 50,
+            "risks": []
+        },
+        {
+            "focus": 27,
+            "assigned": 51,
+            "risks": []
+        },
+        {
+            "focus": 28,
+            "assigned": 52,
+            "risks": []
+        },
+        {
+            "focus": 29,
+            "assigned": 53,
+            "risks": []
+        },
+        {
+            "focus": 30,
+            "assigned": 55,
+            "risks": []
+        },
+        {
+            "focus": 31,
+            "assigned": 55,
+            "risks": []
+        },
+        {
+            "focus": 32,
+            "assigned": 56,
+            "risks": []
+        },
+        {
+            "focus": 33,
+            "assigned": 57,
+            "risks": []
+        },
+        {
+            "focus": 34,
+            "assigned": 58,
+            "risks": []
+        },
+        {
+            "focus": 35,
+            "assigned": 59,
+            "risks": [
+                65,
+                66,
+                67
+            ]
+        },
+        {
+            "focus": 36,
+            "assigned": 60,
+            "risks": [
+                65,
+                66
+            ]
+        },
+        {
+            "focus": 37,
+            "assigned": 61,
+            "risks": [
+                69
+            ]
+        },
+        {
+            "focus": 38,
+            "assigned": 62,
+            "risks": [
+                68
+            ]
+        },
+        {
+            "focus": 39,
+            "assigned": 63,
+            "risks": [
+                66
+            ]
         }
     ],
     "edge-data": [
@@ -294,6 +1161,34 @@
             "type": "solid",
             "fromNode": 15,
             "toNode": 5
+        },
+        {
+            "id": 16,
+            "label": "applies",
+            "type": "solid",
+            "fromNode": 36,
+            "toNode": 34
+        },
+        {
+            "id": 17,
+            "label": "protects",
+            "type": "dashed",
+            "fromNode": 37,
+            "toNode": 36
+        },
+        {
+            "id": 18,
+            "label": "protects",
+            "type": "solid",
+            "fromNode": 38,
+            "toNode": 36
+        },
+        {
+            "id": 19,
+            "label": "protects",
+            "type": "solid",
+            "fromNode": 39,
+            "toNode": 36
         }
     ]
 }

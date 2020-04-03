@@ -1,3 +1,4 @@
+/* eslint-disable no-nested-ternary */
 import RiskNode from "../nodes/RiskNode"
 import AssetNode from "../nodes/AssetNode"
 import RequirementNode from "../nodes/RequirementNode"
@@ -6,8 +7,9 @@ import ControlNode from "../nodes/ControlNode"
 import ThinEdge from "../edges/ThinEdge"
 import BoldEdge from "../edges/BoldEdge"
 
-import fetchDataAsync from "../utils/HttpRequests"
+import { Request, RequestMultiple } from "../utils/HttpRequests"
 import NodeFactory from "../nodes/NodeFactory"
+import EdgeFactory from "../edges/EdgeFactory"
 
 
 class BaseLayout {
@@ -15,169 +17,146 @@ class BaseLayout {
     this.canvas = null
 
 
-    this.rawNodes = []
-    this.rawEdges = []
-
     this.nodes = []
     this.edges = []
     this.leafs = []
 
-    this.currentLayoutWidth = 0
-    this.currentLayoutHeight = 0
-
-    this.info = {
-      currentX: 0,
-      currentY: 0,
-      currentWidth: 0,
-      currentHeight: 0,
-      currentState: "expanded",
-    }
 
     this.currentLayoutState = null
 
+
+    this.layoutInfo = {
+      x: 0,
+      y: 0,
+      cx: 0,
+      cy: 0,
+      w: 0,
+      h: 0,
+    }
+
+
     this.tree = null
 
-    this.loadedNodes = []
+
+    this.layoutReferences = []
   }
 
-  setLoadedNodes(loadedNodes) {
-    this.loadedNodes = loadedNodes
-  }
 
-  getNodeData() {
-    return this.nodeData
-  }
-
-  getEdgeData() {
-    return this.edgeData
-  }
-
-  /**
-   * Load requested/missing nodes from the database
-   */
   async loadAdditionalGridDataAsync() {
     const existingNodeIds = this.nodes.map((n) => n.id)
     const additionalNodes = this.nodeData.filter((n) => !existingNodeIds.includes(n.id))
 
-    // TODO: check if nodes already have been fetched
-    // console.log(this.loadedNodes, additionalNodes)
-
-
     if (additionalNodes.length) {
       const ids = additionalNodes.map((n) => n.id)
-      const url = `${this.config.databaseUrl}/${this.config.nodeEndpoint}`
-      const { data } = await fetchDataAsync(url, ids)
+      const { data: nodes } = await Request(`${this.config.databaseUrl}/${this.config.nodeEndpoint}`, ids)
 
-      // create node representations
-      data.forEach((rawNode) => {
-        const node = NodeFactory.create(rawNode, this.canvas)
-
-        // set the currently used rendering size
-        node.setNodeSize(this.config.renderingSize)
-        this.nodes.push(node)
-
-        this.loadedNodes.push(node)
-      })
+      this.createRepresentations(nodes)
     }
 
-
-    // re-calculate and re-render layout
-    this.calculateLayout()
-    this.renderLayout()
+    return this
   }
 
+  async loadInitialGridDataAsync() {
+    const limit = this.config.limitNodes ? this.config.limitNodes : this.nodeData.length
 
-  async loadInitialGridDataAsync(nodeData, edgeData) {
-    this.nodeData = nodeData
-    this.edgeData = edgeData
+    const ids = this.nodeData.map((n) => n.id).slice(0, limit)
+    if (ids.length) {
+      const { data: nodes } = await Request(`${this.config.databaseUrl}/${this.config.nodeEndpoint}`, ids)
+      this.createRepresentations(nodes)
+    }
 
-    // console.log(this.config.limit)
-
-
-    // load the limited amount of data
-    const limit = this.config.limit ? this.config.limit : nodeData.length
-
-
-    // TODO: check if nodes already have been fetched
-    const ids = nodeData.map((n) => n.id).slice(0, limit)
-    const url = `${this.config.databaseUrl}/${this.config.nodeEndpoint}`
-    const { data } = await fetchDataAsync(url, ids)
-
-
-    // create node representations
-    data.forEach((rawNode) => {
-      const node = NodeFactory.create(rawNode, this.canvas)
-
-      // set the currently used rendering size
-      node.setNodeSize(this.config.renderingSize)
-      this.nodes.push(node)
-
-      this.loadedNodes.push(node)
-    })
-
-    // console.log(this.nodes)
-
-
-    // re-calculate and re-render layout
-    this.calculateLayout()
-    this.renderLayout()
-
-    // setTimeout(() => {
-    //   this.nodes = this.nodes.filter((n) => n.id > 3)
-    //   this.calculateLayout()
-    //   this.renderLayout()
-    // }, 2000)
+    return this
   }
 
-  async createGridDataAsync(nodeData, edgeData) {
-    this.nodeData = nodeData
-    this.edgeData = edgeData
-
-
-    // find children ids that we need to fetch
-    const mapNodeIdsToUrl = (n) => `id=${n.id}&`
-    const nodeIdsToFetch = nodeData.map(mapNodeIdsToUrl).join("").slice(0, -1)
-    const nodeFetchUrl = `${this.config.databaseUrl}/nodes?${nodeIdsToFetch}`
-    const fetchedNodes = await fetch(nodeFetchUrl).then((data) => data.json())
-
-
-    // create new nodes
-    fetchedNodes.forEach((rawNode) => {
-      let node
-      if (rawNode.type === "risk") node = new RiskNode(rawNode, this.canvas)
-      if (rawNode.type === "asset") node = new AssetNode(rawNode, this.canvas)
-      if (rawNode.type === "custom") node = new CustomNode(rawNode, this.canvas)
-      if (rawNode.type === "requirement") node = new RequirementNode(rawNode, this.canvas)
-      if (rawNode.type === "control") node = new ControlNode(rawNode, this.canvas)
-
-      // sets the currently used rendering size
-      node.setNodeSize(this.config.renderingSize)
-      // node.addEvent("dblclick", () => { this.manageTreeDataAsync(node) })
-
-      this.nodes.push(node)
-    })
-
-
-    // re-calculate and re-render layout
-    this.calculateLayout()
-    this.renderLayout()
+  async removeGridDataAsync(newGraph) {
+    const nodes = newGraph.getNodes().map((n) => n.id)
+    this.removeRepresentation(nodes)
   }
 
-  async updateGridLayoutConfiguration(updatedConfiguration) {
-    this.config = { ...this.config, ...updatedConfiguration }
-    console.log(this.config)
+  async updateGraphStructure(newGraph, newConfiguration) {
+    this.nodeData = newGraph.getNodes()
+    this.edgeData = newGraph.getEdges()
 
-    if (updatedConfiguration.maxColumns) {
+    this.removeGridDataAsync(newGraph)
+
+    this.config = { ...this.config, ...newConfiguration }
+
+    if (newConfiguration.limitColumns) {
       this.removeLayout()
-      this.loadAdditionalGridDataAsync()
-    } else {
-      this.loadAdditionalGridDataAsync()
     }
 
-    // re-calculate and re-render layout
+    return this
+  }
 
-    // this.calculateLayout()
-    // this.renderLayout()
+  async updateLayoutConfiguration(newConfiguration) {
+    this.config = { ...this.config, ...newConfiguration }
+
+    if (newConfiguration.limitColumns) {
+      this.removeLayout()
+    }
+    return this
+  }
+
+
+  async loadInitialContextualDataAsync() {
+    // load focus and assigned info
+    const request1 = [
+      {
+        url: `${this.config.databaseUrl}/${this.config.nodeEndpoint}`,
+        body: [this.focusId],
+      },
+      {
+        url: `${this.config.databaseUrl}/${this.config.contextualRelationshipEndpoint}`,
+        body: [this.focusId],
+      },
+    ]
+
+    const response1 = await RequestMultiple(request1)
+
+    const focus = response1[0].data[0]
+    const assignedInfo = response1[1].data
+
+
+    // load parents, children, assigned, risks and edges
+    const parentIds = focus.parent !== null
+      ? focus.parent instanceof Array ? focus.parent : [focus.parent]
+      : []
+    const childrenIds = focus.children
+    const assignedId = assignedInfo.assigned
+    const riskIds = assignedInfo !== []
+      ? [...assignedInfo.risks]
+      : []
+
+    const parentEdges = parentIds.map((id) => ({ fromNode: this.focusId, toNode: id }))
+    const childrenEdges = childrenIds.map((id) => ({ fromNode: id, toNode: this.focusId }))
+
+    const request2 = [
+      {
+        url: `${this.config.databaseUrl}/${this.config.nodeEndpoint}`,
+        body: [...parentIds, ...childrenIds, assignedId, ...riskIds],
+      },
+      {
+        url: `${this.config.databaseUrl}/${this.config.edgeEndpoint}`,
+        body: [...parentEdges, ...childrenEdges],
+      },
+    ]
+
+    const response2 = await RequestMultiple(request2)
+    const nodes = response2[0].data
+    const edges = response2[1].data
+    console.log(nodes, edges)
+
+
+    // console.log(this.focusId)
+    console.log(parentIds)
+    console.log(childrenIds)
+    console.log(assignedId)
+    console.log(riskIds)
+    console.log(parentEdges)
+    console.log(childrenEdges)
+
+
+    return this
   }
 
 
@@ -193,6 +172,7 @@ class BaseLayout {
 
     this.nodes = []
 
+
     // this.edges.forEach((edge) => {
     //   edge.removeEdge()
     // })
@@ -203,11 +183,38 @@ class BaseLayout {
   }
 
 
-  /**
-   * Contextual layout data creation
-   * @param {*} nodeData
-   * @param {*} edgeData
-   */
+  createRepresentations(nodes = [], edges = [], renderingSize = this.config.renderingSize) {
+    nodes.forEach((rawNode) => {
+      const node = NodeFactory.create(rawNode, this.canvas)
+      node.setNodeSize(renderingSize)
+      this.nodes.push(node)
+    })
+
+    edges.forEach((rawEdge) => {
+      const edge = EdgeFactory.create(rawEdge, this.canvas)
+      this.nodes.push(edge)
+    })
+  }
+
+  removeRepresentation(nodes = [], edges = []) {
+    this.nodes = this.nodes.filter((node) => {
+      if (!nodes.includes(node.getId())) {
+        node.removeNode(undefined, undefined, { animation: false })
+        return false
+      }
+      return true
+    })
+
+    // this.edges = this.nodes.filter((node) => {
+    //   if (!nodes.includes(node.getId())) {
+    //     node.removeNode(undefined, undefined, { animation: false })
+    //     return false
+    //   }
+    //   return true
+    // })
+  }
+
+
   async createContextualDataAsync(nodeData, edgeData) {
     this.nodeData = nodeData
     this.edgeData = edgeData
@@ -698,6 +705,14 @@ class BaseLayout {
     }
   }
 
+  setLayoutReferences(layoutReferences) {
+    this.layoutReferences = layoutReferences
+  }
+
+  getLayoutReferences() {
+    return this.layoutReferences
+  }
+
 
   setConfig(config) {
     this.config = { ...this.config, ...config }
@@ -709,14 +724,6 @@ class BaseLayout {
 
   setCanvas(canvas) {
     this.canvas = canvas.nested()
-  }
-
-  setRawNodes(rawNodes) {
-    this.rawNodes = [...rawNodes]
-  }
-
-  setRawEdges(rawEdges) {
-    this.rawEdges = [...rawEdges]
   }
 
 
@@ -734,6 +741,22 @@ class BaseLayout {
 
   setEdges(edges) {
     this.edges = edges
+  }
+
+  setNodeData(nodeData) {
+    this.nodeData = nodeData
+  }
+
+  getNodeData() {
+    return this.nodeData
+  }
+
+  setEdgeData(edgeData) {
+    this.edgeData = edgeData
+  }
+
+  getEdgeData() {
+    return this.edgeData
   }
 }
 

@@ -122,10 +122,6 @@ class RiskNode extends BaseNode {
   }
 
 
-  /**
-   * Creates the risk details description
-   * @private
-   */
   createRiskDetails() {
     // create svg obj to store html
     const text = this.canvas.foreignObject(this.config.maxTextWidth, this.config.maxTextHeight)
@@ -236,11 +232,6 @@ class RiskNode extends BaseNode {
   }
 
 
-  /**
-   * Renders a risk node in minimal version
-   * @param {Number} [X=initialX] the initial X render position
-   * @param {Number} [Y=initialY] the initial Y render position
-   */
   renderAsMin(X = this.initialX, Y = this.initialY) {
     // create svg elements
     const svg = this.createSVGElement()
@@ -293,11 +284,6 @@ class RiskNode extends BaseNode {
   }
 
 
-  /**
-   * Renders a risk node in maximal version
-   * @param {Number} [X=initialX] the initial X render position
-   * @param {Number} [Y=initialY] the initial Y render position
-   */
   renderAsMax(X = this.initialX, Y = this.initialY) {
     // create svg elements
     const svg = this.createSVGElement()
@@ -349,11 +335,6 @@ class RiskNode extends BaseNode {
   }
 
 
-  /**
-   * Transforms a node from minimal version to maximal version
-   * @param {Number} [X=finalX] the final X render position
-   * @param {Number} [Y=finaY] the final Y render position
-   */
   transformToMax(X = this.finalX, Y = this.finalY) {
     // update current elements
     this
@@ -411,11 +392,6 @@ class RiskNode extends BaseNode {
   }
 
 
-  /**
-   * Transforms a node from maximal version to minimal version
-   * @param {Number} [X=finalX] the final X render position
-   * @param {Number} [Y=finaY] the final Y render position
-   */
   transformToMin(X = this.finalX, Y = this.finalY) {
     // update current elements
     this
