@@ -22,8 +22,8 @@ const ThinEdgeConfig = {
 }
 
 class ThinEdge extends BaseEdge {
-  constructor(canvas, fromNode, toNode, customThinEdgeConfig = {}) {
-    super(canvas, fromNode, toNode)
+  constructor(data, canvas, fromNode, toNode, customThinEdgeConfig = {}) {
+    super(data, canvas, fromNode, toNode)
 
     this.config = { ...ThinEdgeConfig, ...customThinEdgeConfig }
   }

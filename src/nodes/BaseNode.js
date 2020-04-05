@@ -153,8 +153,8 @@ class BaseNode {
 
 
   createSVGElement() {
-    // const svg = this.canvas.group().draggable()
-    const svg = this.canvas.group()
+    const svg = this.canvas.group().draggable()
+    // const svg = this.canvas.group()
     svg.css("cursor", "pointer")
     svg.id(`node#${this.id}`)
 

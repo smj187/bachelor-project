@@ -114,7 +114,7 @@ const AssetConfig = {
  *
  */
 class AssetNode extends BaseNode {
-  constructor(data, canvas, customAssetConfig) {
+  constructor(data, canvas, customAssetConfig = {}) {
     super(data, canvas)
 
     this.config = { ...AssetConfig, ...customAssetConfig }

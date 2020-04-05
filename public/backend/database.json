@@ -493,11 +493,21 @@
             "state": "FULFILLED",
             "attributes": null,
             "tooltip": null,
-            "parent": 34,
+            "parent": [
+                34,
+                33,
+                32,
+                31,
+                30,
+                28,
+                26,
+                25
+            ],
             "children": [
                 37,
                 38,
-                39
+                39,
+                0
             ],
             "config": null
         },
@@ -1044,7 +1054,10 @@
             "assigned": 60,
             "risks": [
                 65,
-                66
+                66,
+                67,
+                68,
+                69
             ]
         },
         {
@@ -1177,16 +1190,9 @@
             "toNode": 36
         },
         {
-            "id": 18,
-            "label": "protects",
-            "type": "solid",
-            "fromNode": 38,
-            "toNode": 36
-        },
-        {
             "id": 19,
             "label": "protects",
-            "type": "solid",
+            "type": "bold",
             "fromNode": 39,
             "toNode": 36
         }

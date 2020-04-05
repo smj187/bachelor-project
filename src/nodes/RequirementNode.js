@@ -280,6 +280,8 @@ class RequirementNode extends BaseNode {
 
   transformToMax(X = this.finalX, Y = this.finalY) {
     // update current elements
+
+    console.log("to max", X, Y)
     this
       .svg
       .get(0)
@@ -310,8 +312,8 @@ class RequirementNode extends BaseNode {
       .transform({ scale: 1, translate: [this.config.maxTextTranslateX, this.config.maxTextTranslateY] })
 
 
-    this.currentWidth = this.config.minWidth
-    this.currentHeight = this.config.minHeight
+    this.currentWidth = this.config.maxWidth
+    this.currentHeight = this.config.maxHeight
     this.nodeSize = "max"
     this.currentX = X
     this.currentY = Y

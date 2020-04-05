@@ -16266,8 +16266,8 @@ var BaseNode = /*#__PURE__*/function () {
     value: function createSVGElement() {
       var _this2 = this;
 
-      // const svg = this.canvas.group().draggable()
-      var svg = this.canvas.group();
+      var svg = this.canvas.group().draggable(); // const svg = this.canvas.group()
+
       svg.css("cursor", "pointer");
       svg.id("node#".concat(this.id));
       svg.on("mouseover", function () {
@@ -17184,8 +17184,10 @@ var AssetConfig = {
 var AssetNode = /*#__PURE__*/function (_BaseNode) {
   _inherits(AssetNode, _BaseNode);
 
-  function AssetNode(data, canvas, customAssetConfig) {
+  function AssetNode(data, canvas) {
     var _this;
+
+    var customAssetConfig = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
 
     _classCallCheck(this, AssetNode);
 
@@ -17757,6 +17759,7 @@ var RequirementNode = /*#__PURE__*/function (_BaseNode) {
       var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.finalX;
       var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.finalY;
       // update current elements
+      console.log("to max", X, Y);
       this.svg.get(0).animate({
         duration: this.config.animationSpeed
       }).width(this.config.maxWidth).height(this.config.maxHeight).center(X, Y);
@@ -17775,8 +17778,8 @@ var RequirementNode = /*#__PURE__*/function (_BaseNode) {
         scale: 1,
         translate: [this.config.maxTextTranslateX, this.config.maxTextTranslateY]
       });
-      this.currentWidth = this.config.minWidth;
-      this.currentHeight = this.config.minHeight;
+      this.currentWidth = this.config.maxWidth;
+      this.currentHeight = this.config.maxHeight;
       this.nodeSize = "max";
       this.currentX = X;
       this.currentY = Y;
@@ -22917,10 +22920,11 @@ var shape = IntersectionParams_1.newShape;
  */
 
 var BaseEdge = /*#__PURE__*/function () {
-  function BaseEdge(canvas, fromNode, toNode) {
+  function BaseEdge(data, canvas, fromNode, toNode) {
     _classCallCheck(this, BaseEdge);
 
     this.svg = null;
+    this.data = data;
     this.canvas = canvas;
     this.fromNode = fromNode;
     this.toNode = toNode;
@@ -23112,14 +23116,14 @@ var ThinEdgeConfig = {
 var ThinEdge = /*#__PURE__*/function (_BaseEdge) {
   _inherits(ThinEdge, _BaseEdge);
 
-  function ThinEdge(canvas, fromNode, toNode) {
+  function ThinEdge(data, canvas, fromNode, toNode) {
     var _this;
 
-    var customThinEdgeConfig = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
+    var customThinEdgeConfig = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : {};
 
     _classCallCheck(this, ThinEdge);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(ThinEdge).call(this, canvas, fromNode, toNode));
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(ThinEdge).call(this, data, canvas, fromNode, toNode));
     _this.config = _objectSpread2({}, ThinEdgeConfig, {}, customThinEdgeConfig);
     return _this;
   }
@@ -23264,14 +23268,14 @@ var BoldEdgeConfig = {
 var BoldEdge = /*#__PURE__*/function (_BaseEdge) {
   _inherits(BoldEdge, _BaseEdge);
 
-  function BoldEdge(canvas, fromNode, toNode) {
+  function BoldEdge(data, canvas, fromNode, toNode) {
     var _this;
 
-    var customBoldEdgeConfig = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
+    var customBoldEdgeConfig = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : {};
 
     _classCallCheck(this, BoldEdge);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(BoldEdge).call(this, canvas, fromNode, toNode));
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(BoldEdge).call(this, data, canvas, fromNode, toNode));
     _this.config = _objectSpread2({}, BoldEdgeConfig, {}, customBoldEdgeConfig);
     return _this;
   }
@@ -24955,22 +24959,15 @@ var EdgeFactory = /*#__PURE__*/function () {
 
   _createClass(EdgeFactory, null, [{
     key: "create",
-    value: function create(canvas, fromNode, toNode) {
-      var edgeConfig = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
+    value: function create(rawEdge, canvas, fromNode, toNode) {
       var edge;
-
-      if (edgeConfig.type === "dashed") {
-        edge = new ThinEdge(canvas, fromNode, toNode, _objectSpread2({}, edgeConfig, {
-          type: "dashed"
-        }));
-      } else if (edgeConfig.type === "bold") {
-        edge = new BoldEdge(canvas, fromNode, toNode, edgeConfig);
-      } else {
-        edge = new ThinEdge(canvas, fromNode, toNode, _objectSpread2({}, edgeConfig, {
-          type: "solid"
-        }));
-      }
-
+      if (rawEdge.type === "dashed") edge = new ThinEdge(rawEdge, canvas, fromNode, toNode, {
+        type: "dashed"
+      });else if (rawEdge.type === "solid") edge = new ThinEdge(rawEdge, canvas, fromNode, toNode, {
+        type: "solid"
+      });else if (rawEdge.type === "bold") edge = new BoldEdge(rawEdge, canvas, fromNode, toNode);else edge = new ThinEdge(rawEdge, canvas, fromNode, toNode, {
+        type: "solid"
+      });
       return edge;
     }
   }]);
@@ -25186,15 +25183,45 @@ var BaseLayout = /*#__PURE__*/function () {
       return updateLayoutConfiguration;
     }()
   }, {
-    key: "loadInitialContextualDataAsync",
+    key: "loadAdditionalContextualDataAsync",
     value: function () {
-      var _loadInitialContextualDataAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee6() {
-        var _this = this;
-
-        var request1, response1, focus, assignedInfo, parentIds, childrenIds, assignedId, riskIds, parentEdges, childrenEdges, request2, response2, nodes, edges;
+      var _loadAdditionalContextualDataAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee6(newFocus) {
+        var fx, fy;
         return regeneratorRuntime.wrap(function _callee6$(_context6) {
           while (1) {
             switch (_context6.prev = _context6.next) {
+              case 0:
+                console.log("load", newFocus);
+                fx = this.focus.getFinalX();
+                fy = this.focus.getFinalY();
+                console.log(fx, fy); // newFocus.transformToMax(fx, fy)
+
+                newFocus.transformToFinalPosition(fx, fy);
+
+              case 5:
+              case "end":
+                return _context6.stop();
+            }
+          }
+        }, _callee6, this);
+      }));
+
+      function loadAdditionalContextualDataAsync(_x5) {
+        return _loadAdditionalContextualDataAsync.apply(this, arguments);
+      }
+
+      return loadAdditionalContextualDataAsync;
+    }()
+  }, {
+    key: "loadInitialContextualDataAsync",
+    value: function () {
+      var _loadInitialContextualDataAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee7() {
+        var _this = this;
+
+        var request1, response1, focus, assignedInfo, parentIds, childrenIds, assignedId, riskIds, parentEdgeIds, childEdgeIds, request2, response2, nodeData, edgeData, find, childEdges, parentEdges, checkEdges;
+        return regeneratorRuntime.wrap(function _callee7$(_context7) {
+          while (1) {
+            switch (_context7.prev = _context7.next) {
               case 0:
                 // load focus and assigned info
                 request1 = [{
@@ -25204,11 +25231,11 @@ var BaseLayout = /*#__PURE__*/function () {
                   url: "".concat(this.config.databaseUrl, "/").concat(this.config.contextualRelationshipEndpoint),
                   body: [this.focusId]
                 }];
-                _context6.next = 3;
+                _context7.next = 3;
                 return RequestMultiple(request1);
 
               case 3:
-                response1 = _context6.sent;
+                response1 = _context7.sent;
                 focus = response1[0].data[0];
                 assignedInfo = response1[1].data; // load parents, children, assigned, risks and edges
 
@@ -25216,13 +25243,13 @@ var BaseLayout = /*#__PURE__*/function () {
                 childrenIds = focus.children;
                 assignedId = assignedInfo.assigned;
                 riskIds = assignedInfo !== [] ? _toConsumableArray(assignedInfo.risks) : [];
-                parentEdges = parentIds.map(function (id) {
+                parentEdgeIds = parentIds.map(function (id) {
                   return {
                     fromNode: _this.focusId,
                     toNode: id
                   };
                 });
-                childrenEdges = childrenIds.map(function (id) {
+                childEdgeIds = childrenIds.map(function (id) {
                   return {
                     fromNode: id,
                     toNode: _this.focusId
@@ -25233,31 +25260,121 @@ var BaseLayout = /*#__PURE__*/function () {
                   body: [].concat(_toConsumableArray(parentIds), _toConsumableArray(childrenIds), [assignedId], _toConsumableArray(riskIds))
                 }, {
                   url: "".concat(this.config.databaseUrl, "/").concat(this.config.edgeEndpoint),
-                  body: [].concat(_toConsumableArray(parentEdges), _toConsumableArray(childrenEdges))
+                  body: [].concat(_toConsumableArray(parentEdgeIds), _toConsumableArray(childEdgeIds))
                 }];
-                _context6.next = 15;
+                _context7.next = 15;
                 return RequestMultiple(request2);
 
               case 15:
-                response2 = _context6.sent;
-                nodes = response2[0].data;
-                edges = response2[1].data;
-                console.log(nodes, edges); // console.log(this.focusId)
+                response2 = _context7.sent;
+                nodeData = response2[0].data;
+                edgeData = response2[1].data; // create representations
 
-                console.log(parentIds);
-                console.log(childrenIds);
-                console.log(assignedId);
-                console.log(riskIds);
-                console.log(parentEdges);
-                console.log(childrenEdges);
-                return _context6.abrupt("return", this);
+                this.createRepresentations(response1[0].data, [], "max");
+                this.createRepresentations(nodeData, edgeData, "min"); // create not existing child and parent edges manually
 
-              case 26:
+                find = function find(x, e) {
+                  return x.fromNode === e.fromNode && x.toNode === e.toNode;
+                };
+
+                childEdges = edgeData.filter(function (e) {
+                  return childEdgeIds.find(function (x) {
+                    return find(x, e);
+                  });
+                });
+                parentEdges = edgeData.filter(function (e) {
+                  return parentEdgeIds.find(function (x) {
+                    return find(x, e);
+                  });
+                });
+
+                checkEdges = function checkEdges(edges, edgeIds) {
+                  var existingEdges = edges.map(function (_ref3) {
+                    var fromNode = _ref3.fromNode,
+                        toNode = _ref3.toNode;
+                    return {
+                      fromNode: fromNode,
+                      toNode: toNode
+                    };
+                  });
+                  edgeIds.forEach(function (e) {
+                    var existingEdge = existingEdges.find(function (x) {
+                      return x.fromNode === e.fromNode && x.toNode === e.toNode;
+                    });
+
+                    if (existingEdge === undefined) {
+                      var fromNode = _this.nodes.find(function (n) {
+                        return n.id === e.fromNode;
+                      });
+
+                      var toNode = _this.nodes.find(function (n) {
+                        return n.id === e.toNode;
+                      });
+
+                      var edge = EdgeFactory.create({}, _this.canvas, fromNode, toNode);
+                      edge.setLabel(null);
+
+                      _this.edges.push(edge);
+                    }
+                  });
+                };
+
+                if (childEdges.length < childrenIds.length) {
+                  checkEdges(childEdges, childEdgeIds);
+                }
+
+                if (parentEdges.length < parentEdgeIds.length) {
+                  checkEdges(parentEdges, parentEdgeIds);
+                } // assign loaded data
+
+
+                this.focus = this.nodes.find(function (n) {
+                  return n.id === _this.focusId;
+                });
+                this.parents = this.nodes.filter(function (n) {
+                  return parentIds.includes(n.id);
+                });
+                this.children = this.nodes.filter(function (n) {
+                  return childrenIds.includes(n.id);
+                });
+                this.assgined = this.nodes.find(function (n) {
+                  return n.id === assignedId;
+                });
+                this.risks = this.nodes.filter(function (n) {
+                  return riskIds.includes(n.id);
+                });
+                this.parentEdges = this.edges.filter(function (e) {
+                  var found = parentEdgeIds.find(function (_ref4) {
+                    var fromNode = _ref4.fromNode,
+                        toNode = _ref4.toNode;
+                    return fromNode === e.fromNode.id && toNode === e.toNode.id;
+                  });
+                  return found;
+                });
+                this.childEdges = this.edges.filter(function (e) {
+                  var found = childEdgeIds.find(function (_ref5) {
+                    var fromNode = _ref5.fromNode,
+                        toNode = _ref5.toNode;
+                    return fromNode === e.fromNode.id && toNode === e.toNode.id;
+                  });
+                  return found;
+                }); // console.log(this.edges)
+                // console.log(this.focusId)
+                // console.log(parentIds)
+                // console.log(childrenIds)
+                // console.log(assignedId)
+                // console.log(riskIds)
+                // console.log(parentEdges)
+                // console.log(childrenEdges)
+
+                return _context7.abrupt("return", this);
+
+              case 34:
               case "end":
-                return _context6.stop();
+                return _context7.stop();
             }
           }
-        }, _callee6, this);
+        }, _callee7, this);
       }));
 
       function loadInitialContextualDataAsync() {
@@ -25299,9 +25416,18 @@ var BaseLayout = /*#__PURE__*/function () {
         _this2.nodes.push(node);
       });
       edges.forEach(function (rawEdge) {
-        var edge = EdgeFactory.create(rawEdge, _this2.canvas);
+        var fromNode = _this2.nodes.find(function (n) {
+          return n.id === rawEdge.fromNode;
+        });
 
-        _this2.nodes.push(edge);
+        var toNode = _this2.nodes.find(function (n) {
+          return n.id === rawEdge.toNode;
+        });
+
+        var edge = EdgeFactory.create(rawEdge, _this2.canvas, fromNode, toNode);
+        edge.setLabel(rawEdge.label || null);
+
+        _this2.edges.push(edge);
       });
     }
   }, {
@@ -25328,13 +25454,13 @@ var BaseLayout = /*#__PURE__*/function () {
   }, {
     key: "createContextualDataAsync",
     value: function () {
-      var _createContextualDataAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee7(nodeData, edgeData) {
+      var _createContextualDataAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee8(nodeData, edgeData) {
         var _this3 = this;
 
         var focusNode, focusFetchUrl, fetchedFocus, parentChildNodeIds, mapNodeIdsToUrl, nodeIdsToFetch, nodeFetchUrl, fetchedNodes, parentNodeIds, childNodeIds, assignedNodeDataUrl, assignedNodeData, assignedNodeId, riskIds, assignedNodeUrl, assignedNode, riskIdsToFetch, riskFetchUrl, fetchedRisks, config, connection, parentChildEdges, mapEdgeIdsToUrl, edgeIdsToFetch, edgeFetchUrl, fetchedEdges;
-        return regeneratorRuntime.wrap(function _callee7$(_context7) {
+        return regeneratorRuntime.wrap(function _callee8$(_context8) {
           while (1) {
-            switch (_context7.prev = _context7.next) {
+            switch (_context8.prev = _context8.next) {
               case 0:
                 this.nodeData = nodeData;
                 this.edgeData = edgeData; // in order to load parents and children, the data of the focus node has to be loaded first
@@ -25343,13 +25469,13 @@ var BaseLayout = /*#__PURE__*/function () {
                   return n.id === _this3.startNodeId;
                 });
                 focusFetchUrl = "".concat(this.config.databaseUrl, "/nodes?id=").concat(focusNode.id);
-                _context7.next = 6;
+                _context8.next = 6;
                 return fetch(focusFetchUrl).then(function (data) {
                   return data.json();
                 });
 
               case 6:
-                fetchedFocus = _context7.sent;
+                fetchedFocus = _context8.sent;
                 this.createNodeFromData(fetchedFocus[0], "max");
                 this.focus = this.nodes.find(function (n) {
                   return n.id === _this3.startNodeId;
@@ -25375,13 +25501,13 @@ var BaseLayout = /*#__PURE__*/function () {
 
                 nodeIdsToFetch = parentChildNodeIds.map(mapNodeIdsToUrl).join("").slice(0, -1);
                 nodeFetchUrl = "".concat(this.config.databaseUrl, "/nodes?").concat(nodeIdsToFetch);
-                _context7.next = 15;
+                _context8.next = 15;
                 return fetch(nodeFetchUrl).then(function (data) {
                   return data.json();
                 });
 
               case 15:
-                fetchedNodes = _context7.sent;
+                fetchedNodes = _context8.sent;
                 fetchedNodes.forEach(function (rawNode) {
                   _this3.createNodeFromData(rawNode, "min");
                 });
@@ -25403,36 +25529,36 @@ var BaseLayout = /*#__PURE__*/function () {
                 }); // here we load attached risks which are attached to a different node
 
                 assignedNodeDataUrl = "".concat(this.config.databaseUrl, "/RiskEdgeConnectionTable?startNodeId=").concat(this.startNodeId);
-                _context7.next = 24;
+                _context8.next = 24;
                 return fetch(assignedNodeDataUrl).then(function (data) {
                   return data.json();
                 });
 
               case 24:
-                assignedNodeData = _context7.sent;
+                assignedNodeData = _context8.sent;
                 assignedNodeId = assignedNodeData[0].endNodeId;
                 riskIds = assignedNodeData[0].risks;
                 assignedNodeUrl = "".concat(this.config.databaseUrl, "/nodes?id=").concat(assignedNodeId);
-                _context7.next = 30;
+                _context8.next = 30;
                 return fetch(assignedNodeUrl).then(function (data) {
                   return data.json();
                 });
 
               case 30:
-                assignedNode = _context7.sent;
+                assignedNode = _context8.sent;
                 this.createNodeFromData(assignedNode[0], "min");
                 this.assginedNode = this.nodes.find(function (n) {
                   return n.id === assignedNodeId;
                 });
                 riskIdsToFetch = riskIds.map(mapNodeIdsToUrl).join("").slice(0, -1);
                 riskFetchUrl = "".concat(this.config.databaseUrl, "/nodes?").concat(riskIdsToFetch);
-                _context7.next = 37;
+                _context8.next = 37;
                 return fetch(riskFetchUrl).then(function (data) {
                   return data.json();
                 });
 
               case 37:
-                fetchedRisks = _context7.sent;
+                fetchedRisks = _context8.sent;
                 fetchedRisks.forEach(function (rawNode) {
                   _this3.createNodeFromData(rawNode, "min");
                 });
@@ -25467,13 +25593,13 @@ var BaseLayout = /*#__PURE__*/function () {
 
                 edgeIdsToFetch = parentChildEdges.map(mapEdgeIdsToUrl).join("").slice(0, -1);
                 edgeFetchUrl = "".concat(this.config.databaseUrl, "/edges?").concat(edgeIdsToFetch);
-                _context7.next = 50;
+                _context8.next = 50;
                 return fetch(edgeFetchUrl).then(function (data) {
                   return data.json();
                 });
 
               case 50:
-                fetchedEdges = _context7.sent;
+                fetchedEdges = _context8.sent;
                 // create new edges
                 fetchedEdges.forEach(function (rawEdge) {
                   var fromNode = _this3.nodes.find(function (n) {
@@ -25506,13 +25632,13 @@ var BaseLayout = /*#__PURE__*/function () {
 
               case 54:
               case "end":
-                return _context7.stop();
+                return _context8.stop();
             }
           }
-        }, _callee7, this);
+        }, _callee8, this);
       }));
 
-      function createContextualDataAsync(_x5, _x6) {
+      function createContextualDataAsync(_x6, _x7) {
         return _createContextualDataAsync.apply(this, arguments);
       }
 
@@ -25521,11 +25647,11 @@ var BaseLayout = /*#__PURE__*/function () {
   }, {
     key: "manageContextualDataAsync",
     value: function () {
-      var _manageContextualDataAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee8(clickedNode) {
+      var _manageContextualDataAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee9(clickedNode) {
         var removedNodes, nodesToRemove, X, Y;
-        return regeneratorRuntime.wrap(function _callee8$(_context8) {
+        return regeneratorRuntime.wrap(function _callee9$(_context9) {
           while (1) {
-            switch (_context8.prev = _context8.next) {
+            switch (_context9.prev = _context9.next) {
               case 0:
                 // remove all elements but the clicked node
                 removedNodes = [];
@@ -25612,13 +25738,13 @@ var BaseLayout = /*#__PURE__*/function () {
 
               case 19:
               case "end":
-                return _context8.stop();
+                return _context9.stop();
             }
           }
-        }, _callee8, this);
+        }, _callee9, this);
       }));
 
-      function manageContextualDataAsync(_x7) {
+      function manageContextualDataAsync(_x8) {
         return _manageContextualDataAsync.apply(this, arguments);
       }
 
@@ -25649,13 +25775,13 @@ var BaseLayout = /*#__PURE__*/function () {
   }, {
     key: "createRadialDataAsync",
     value: function () {
-      var _createRadialDataAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee9(nodeData, edgeData) {
+      var _createRadialDataAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee10(nodeData, edgeData) {
         var _this5 = this;
 
         var mapNodeIdsToUrl, nodeIdsToFetch, nodeFetchUrl, fetchedNodes, constructTree, tree, createEdges, requiredEdges, mapEdgeIdsToUrl, edgeIdsToFetch, edgeFetchUrl, fetchedEdges;
-        return regeneratorRuntime.wrap(function _callee9$(_context9) {
+        return regeneratorRuntime.wrap(function _callee10$(_context10) {
           while (1) {
-            switch (_context9.prev = _context9.next) {
+            switch (_context10.prev = _context10.next) {
               case 0:
                 // FIXME: ask: what if an edge dose not exist?
                 this.nodeData = nodeData;
@@ -25667,13 +25793,13 @@ var BaseLayout = /*#__PURE__*/function () {
 
                 nodeIdsToFetch = nodeData.map(mapNodeIdsToUrl).join("").slice(0, -1);
                 nodeFetchUrl = "".concat(this.config.databaseUrl, "/nodes?").concat(nodeIdsToFetch);
-                _context9.next = 7;
+                _context10.next = 7;
                 return fetch(nodeFetchUrl).then(function (data) {
                   return data.json();
                 });
 
               case 7:
-                fetchedNodes = _context9.sent;
+                fetchedNodes = _context10.sent;
                 // create new nodes
                 fetchedNodes.forEach(function (rawNode) {
                   var node;
@@ -25740,13 +25866,13 @@ var BaseLayout = /*#__PURE__*/function () {
 
                 edgeIdsToFetch = requiredEdges.map(mapEdgeIdsToUrl).join("").slice(0, -1);
                 edgeFetchUrl = "".concat(this.config.databaseUrl, "/edges?").concat(edgeIdsToFetch);
-                _context9.next = 18;
+                _context10.next = 18;
                 return fetch(edgeFetchUrl).then(function (data) {
                   return data.json();
                 });
 
               case 18:
-                fetchedEdges = _context9.sent;
+                fetchedEdges = _context10.sent;
                 // create new edges
                 fetchedEdges.forEach(function (rawEdge) {
                   var fromNode = _this5.nodes.find(function (n) {
@@ -25779,13 +25905,13 @@ var BaseLayout = /*#__PURE__*/function () {
 
               case 22:
               case "end":
-                return _context9.stop();
+                return _context10.stop();
             }
           }
-        }, _callee9, this);
+        }, _callee10, this);
       }));
 
-      function createRadialDataAsync(_x8, _x9) {
+      function createRadialDataAsync(_x9, _x10) {
         return _createRadialDataAsync.apply(this, arguments);
       }
 
@@ -25794,13 +25920,13 @@ var BaseLayout = /*#__PURE__*/function () {
   }, {
     key: "manageTreeDataAsync",
     value: function () {
-      var _manageTreeDataAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee10(clickedNode) {
+      var _manageTreeDataAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee11(clickedNode) {
         var _this6 = this;
 
         var BFS, isAddOperation, requestedNodes, existingNodes, mapNodeIdsToUrl, nodeIdsToFetch, nodeFetchUrl, fetchedNodes, requiredEdges, mapEdgeIdsToUrl, edgeIdsToFetch, edgeFetchUrl, fetchedEdges, removedNodes, nodesToRemove, X, Y, edgesToRemove, edgesToBeUpdated;
-        return regeneratorRuntime.wrap(function _callee10$(_context10) {
+        return regeneratorRuntime.wrap(function _callee11$(_context11) {
           while (1) {
-            switch (_context10.prev = _context10.next) {
+            switch (_context11.prev = _context11.next) {
               case 0:
                 BFS = function BFS(root) {
                   var remove = [];
@@ -25826,11 +25952,11 @@ var BaseLayout = /*#__PURE__*/function () {
 
 
                 if (!(clickedNode.childrenIds.length === 0)) {
-                  _context10.next = 3;
+                  _context11.next = 3;
                   break;
                 }
 
-                return _context10.abrupt("return");
+                return _context11.abrupt("return");
 
               case 3:
                 isAddOperation = clickedNode.children.map(function (child) {
@@ -25838,7 +25964,7 @@ var BaseLayout = /*#__PURE__*/function () {
                 }).length === 0; // add new data
 
                 if (!isAddOperation) {
-                  _context10.next = 28;
+                  _context11.next = 28;
                   break;
                 }
 
@@ -25864,13 +25990,13 @@ var BaseLayout = /*#__PURE__*/function () {
 
                 nodeIdsToFetch = requestedNodes.map(mapNodeIdsToUrl).join("").slice(0, -1);
                 nodeFetchUrl = "".concat(this.config.databaseUrl, "/nodes?").concat(nodeIdsToFetch);
-                _context10.next = 15;
+                _context11.next = 15;
                 return fetch(nodeFetchUrl).then(function (data) {
                   return data.json();
                 });
 
               case 15:
-                fetchedNodes = _context10.sent;
+                fetchedNodes = _context11.sent;
                 // create new children nodes
                 fetchedNodes.forEach(function (rawNode) {
                   var node;
@@ -25902,13 +26028,13 @@ var BaseLayout = /*#__PURE__*/function () {
 
                 edgeIdsToFetch = requiredEdges.map(mapEdgeIdsToUrl).join("").slice(0, -1);
                 edgeFetchUrl = "".concat(this.config.databaseUrl, "/edges?").concat(edgeIdsToFetch);
-                _context10.next = 24;
+                _context11.next = 24;
                 return fetch(edgeFetchUrl).then(function (data) {
                   return data.json();
                 });
 
               case 24:
-                fetchedEdges = _context10.sent;
+                fetchedEdges = _context11.sent;
                 // create new edges
                 fetchedEdges.forEach(function (rawEdge) {
                   var fromNode = _this6.nodes.find(function (n) {
@@ -25988,13 +26114,13 @@ var BaseLayout = /*#__PURE__*/function () {
 
               case 29:
               case "end":
-                return _context10.stop();
+                return _context11.stop();
             }
           }
-        }, _callee10, this);
+        }, _callee11, this);
       }));
 
-      function manageTreeDataAsync(_x10) {
+      function manageTreeDataAsync(_x11) {
         return _manageTreeDataAsync.apply(this, arguments);
       }
 
@@ -26090,10 +26216,11 @@ var GridExpanderConfiguration = {
  */
 
 var GridExpander = /*#__PURE__*/function () {
-  function GridExpander(canvas) {
+  function GridExpander(canvas, type) {
     _classCallCheck(this, GridExpander);
 
     this.svg = null;
+    this.type = type;
     this.canvas = canvas;
     this.config = _objectSpread2({}, GridExpanderConfiguration); // the re-render function reference
 
@@ -26101,6 +26228,11 @@ var GridExpander = /*#__PURE__*/function () {
   }
 
   _createClass(GridExpander, [{
+    key: "updateConfig",
+    value: function updateConfig(newConfig) {
+      this.config = _objectSpread2({}, this.config, {}, newConfig);
+    }
+  }, {
     key: "render",
     value: function render() {
       var _this = this;
@@ -27408,152 +27540,108 @@ var TreeLayout = /*#__PURE__*/function (_BaseLayout) {
   return TreeLayout;
 }(BaseLayout);
 
-var $hypot = Math.hypot;
-var abs = Math.abs;
-var sqrt = Math.sqrt;
-
-// Chrome 77 bug
-// https://bugs.chromium.org/p/v8/issues/detail?id=9546
-var BUGGY = !!$hypot && $hypot(Infinity, NaN) !== Infinity;
-
-// `Math.hypot` method
-// https://tc39.github.io/ecma262/#sec-math.hypot
-_export({ target: 'Math', stat: true, forced: BUGGY }, {
-  hypot: function hypot(value1, value2) { // eslint-disable-line no-unused-vars
-    var sum = 0;
-    var i = 0;
-    var aLen = arguments.length;
-    var larg = 0;
-    var arg, div;
-    while (i < aLen) {
-      arg = abs(arguments[i++]);
-      if (larg < arg) {
-        div = larg / arg;
-        sum = sum * div * div + 1;
-        larg = arg;
-      } else if (arg > 0) {
-        div = arg / larg;
-        sum += div * div;
-      } else sum += arg;
-    }
-    return larg === Infinity ? Infinity : larg * sqrt(sum);
-  }
-});
-
-var ContextualConfig = {
-  offset: 8,
-  animationSpeed: 300,
-  color: "#ff8e9e",
-  blockarrowLineWidth: 3,
-  blockarrowArrowWidth: 10,
-  blockarrowArrowLength: 5
-};
-
 var ContextualConainer = /*#__PURE__*/function () {
-  function ContextualConainer(canvas, contextualConfig, type) {
+  function ContextualConainer(canvas, type, config, ix, iy, cx, cy, w, h) {
     _classCallCheck(this, ContextualConainer);
 
     this.canvas = canvas;
     this.svg = null;
-    this.config = _objectSpread2({}, ContextualConfig, {}, contextualConfig);
     this.type = type;
-    this.initialX = 0;
-    this.initialY = 0;
-    this.finalX = 0;
-    this.finalY = 0;
-    this.w = 0;
-    this.h = 0;
-    this.cx = 0;
-    this.cy = 0;
-    this.fromPoint = null;
-    this.toPoint = null;
+    this.config = config;
+    this.initialX = ix;
+    this.initialY = iy;
+    this.finalX = cx;
+    this.finalY = cy;
+    this.w = w;
+    this.h = h;
+    this.dy = 0;
   }
 
   _createClass(ContextualConainer, [{
-    key: "setColor",
-    value: function setColor(color) {
-      this.config = _objectSpread2({}, this.config, {
-        color: color
-      });
-    }
-  }, {
     key: "render",
-    value: function render(X, Y) {
-      var svg = this.canvas.group().draggable();
-      var node = this.canvas.rect(0, 0).draggable();
+    value: function render() {
+      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.initialX;
+      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.initialY;
+      var svg = this.canvas.rect(0, 0).draggable();
 
-      if (this.type === "riskContainer") {
-        node.fill(this.config.riskContainerBackgroundColor);
-        node.radius(this.config.riskContainderBorderRadius);
-        node.stroke({
-          color: this.config.riskContainerBorderStrokeColor,
+      if (this.type === "child") {
+        svg.radius(this.config.childContainderBorderRadius);
+        svg.stroke({
+          width: this.config.childContainerBorderStrokeWidth
+        });
+        svg.stroke({
+          color: this.config.childContainerBorderStrokeColor
+        });
+        svg.fill({
+          color: this.config.childContainerBackgroundColor
+        });
+      } else if (this.type === "parent") {
+        svg.radius(this.config.parentContainderBorderRadius);
+        svg.stroke({
+          width: this.config.parentContainerBorderStrokeWidth
+        });
+        svg.stroke({
+          color: this.config.parentContainerBorderStrokeColor
+        });
+        svg.fill({
+          color: this.config.parentContainerBackgroundColor
+        });
+      } else if (this.type === "risk") {
+        svg.radius(this.config.riskContainderBorderRadius);
+        svg.stroke({
           width: this.config.riskContainerBorderStrokeWidth
         });
-      } else if (this.type === "childrenContainer") {
-        node.fill(this.config.childrenContainerBackgroundColor);
-        node.radius(this.config.childrenContainderBorderRadius);
-        node.stroke({
-          color: this.config.childrenContainerBorderStrokeColor,
-          width: this.config.childrenContainerBorderStrokeWidth
+        svg.stroke({
+          color: this.config.riskContainerBorderStrokeColor
         });
-      } else if (this.type === "parentContainer") {
-        node.fill(this.config.parentContainerBackgroundColor);
-        node.radius(this.config.parentContainderBorderRadius);
-        node.stroke({
-          color: this.config.parentContainerBorderStrokeColor,
-          width: this.config.parentContainerBorderStrokeWidth
+        svg.fill({
+          color: this.config.riskContainerBackgroundColor
         });
       }
 
-      svg.add(node);
-      svg.id(this.type);
       svg.center(X, Y);
       this.svg = svg;
-      this.fromPoint.y -= this.config.offset;
-      this.toPoint.y += this.config.offset; // this.canvas.circle(5).center(this.fromPoint.x, this.fromPoint.y).fill("#000")
-      // this.canvas.circle(5).center(this.toPoint.x, this.toPoint.y).fill("#99f")
-      // add edge
-
-      var lw = this.config.blockarrowLineWidth;
-      var aw = this.config.blockarrowArrowWidth;
-      var al = this.config.blockarrowArrowLength;
-      var dx = this.toPoint.x - this.fromPoint.x;
-      var dy = this.toPoint.y - this.fromPoint.y;
-      var len = Math.sqrt(dx * dx + dy * dy);
-      var dW = aw - lw;
-      var angle = Math.atan2(dy, dx) * 180 / Math.PI;
-      this.angle = angle;
-      var svgPath = "\n      M 0,".concat(-lw / 2, "\n      h ").concat(len - al, "\n      v ").concat(-dW / 2, "\n      L ").concat(len, ",0\n      L ").concat(len - al, ",").concat(aw / 2, "\n      v ").concat(-dW / 2, "\n      H 0\n      Z\n    ");
-      var path = this.canvas.path();
-      path.plot(svgPath);
-      path.fill(this.config.color);
-      this.ex = this.toPoint.x;
-      this.ey = (this.toPoint.y + this.fromPoint.y) / 2;
-      path.center(this.ex, this.ey);
-      path.rotate(angle);
-      path.scale(0.0001);
-      svg.add(path); // this.canvas.circle(5).center(this.cx, this.cy).fill("#f75")
-      // this.canvas.circle(5).center(p2x, p2y).fill("#6f7")
     }
   }, {
-    key: "transform",
-    value: function transform() {
+    key: "update",
+    value: function update() {
+      this.svg.animate({
+        duration: this.config.animationSpeed
+      }).height(this.h).dy(this.dy);
+    }
+  }, {
+    key: "transformToFinalPosition",
+    value: function transformToFinalPosition() {
+      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.finalX;
+      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.finalY;
       this.svg.back();
-      this.svg.get(0).animate({
+      this.svg.animate({
         duration: this.config.animationSpeed
-      }).size(this.w, this.h).center(this.cx, this.cy);
-      this.svg.get(1).animate({
+      }).size(this.w, this.h).center(X, Y);
+    }
+  }, {
+    key: "transformToInitialPosition",
+    value: function transformToInitialPosition() {
+      var _this = this;
+
+      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.finalX;
+      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.finalY;
+      this.svg.back();
+      this.svg.back();
+      this.svg.animate({
         duration: this.config.animationSpeed
-      }).transform({
-        scale: 1,
-        rotate: this.angle,
-        position: [this.ex, this.ey]
+      }).center(X, Y).size(0, 0).attr({
+        opacity: 0
+      }).after(function () {
+        return _this.svg.attr({
+          opacity: 1
+        });
       });
     }
   }, {
     key: "removeContainer",
     value: function removeContainer(X, Y) {
-      var _this = this;
+      var _this2 = this;
 
       if (this.svg !== null) {
         this.svg.animate({
@@ -27562,23 +27650,35 @@ var ContextualConainer = /*#__PURE__*/function () {
           scale: 0.001,
           position: [X, Y]
         }).after(function () {
-          _this.svg.remove();
+          _this2.svg.remove();
 
-          _this.svg = null;
+          _this2.svg = null;
         });
       }
+    }
+  }, {
+    key: "isRendered",
+    value: function isRendered() {
+      return this.svg !== null;
     }
   }]);
 
   return ContextualConainer;
 }();
 
-var ContextualConfig$1 = {
+/**
+ * @namespace ContextualLayoutConfiguration
+ * @description This object contains default configuration for contextual layout representations.
+ *
+ * @property {Number} layoutWidth=1200             - The width used by the layout representation.
+ * @property {Number} layoutHeight=800             - The height used by the layout representation.
+ */
+var ContextualLayoutConfiguration = {
   // limit width and size
-  maxLayoutWidth: 1200,
+  maxLayoutWidth: 800,
   maxLayoutHeight: 800,
   // where to translate a given layout
-  translateX: 0,
+  translateX: -50,
   translateY: 0,
   // layout animation speed for all nodes and edges
   animationSpeed: 300,
@@ -27587,33 +27687,45 @@ var ContextualConfig$1 = {
   // TODO:
   // spacing between nodes
   spacing: 16,
-  parentFocusDistance: 250,
-  // TODO: fix naming convention
-  childFocusDistance: 250,
-  translateRiskX: 450,
-  translateRiskY: -100,
-  focusRiskDistance: 400,
+  assignedFocusDistance: 800,
   // how to render all nodes
   renderingSize: "min",
   // min max
   // risk container
-  riskLimitContainer: 1,
-  riskContainderBorderRadius: 5,
-  riskContainerBorderStrokeColor: "#ff8e9e",
-  riskContainerBorderStrokeWidth: 1,
-  riskContainerBackgroundColor: "#fff",
+  riskFocusDistance: 500,
+  riskContainerNodeLimit: 4,
+  riskContainerColumns: 2,
+  riskContainderBorderRadius: 0,
+  riskContainerBorderStrokeColor: "#ff8e9e10",
+  riskContainerBorderStrokeWidth: 1.85,
+  riskContainerBackgroundColor: "#ff8e9e05",
   // children container
-  childrenLimitContainer: 3,
-  childrenContainderBorderRadius: 5,
-  childrenContainerBorderStrokeColor: "#555555cc",
-  childrenContainerBorderStrokeWidth: 1,
-  childrenContainerBackgroundColor: "#fff",
-  // container config
-  parentLimitContainer: 3,
+  childrenFocusDistance: 80,
+  childContainerNodeLimit: 6,
+  childContainerColumns: 3,
+  childContainderBorderRadius: 5,
+  childContainerBorderStrokeColor: "#888888",
+  childContainerBorderStrokeWidth: 1.85,
+  childContainerBackgroundColor: "#fff",
+  // parent container
+  parentFocusDistance: 80,
+  parentContainerNodeLimit: 6,
+  parentContainerColumns: 3,
   parentContainderBorderRadius: 5,
-  parentContainerBorderStrokeColor: "#555555cc",
-  parentContainerBorderStrokeWidth: 1,
+  parentContainerBorderStrokeColor: "#888888",
+  parentContainerBorderStrokeWidth: 1.85,
   parentContainerBackgroundColor: "#fff"
+};
+
+/* eslint-disable no-bitwise */
+
+var LightenDarkenColor$1 = function LightenDarkenColor(col, amt) {
+  var num = parseInt(col, 16);
+  var r = (num >> 16) + amt;
+  var b = (num >> 8 & 0x00FF) + amt;
+  var g = (num & 0x0000FF) + amt;
+  var newColor = g | b << 8 | r << 16;
+  return newColor.toString(16);
 };
 
 var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
@@ -27627,20 +27739,20 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
     _classCallCheck(this, ContextualLayout);
 
     _this = _possibleConstructorReturn(this, _getPrototypeOf(ContextualLayout).call(this));
-    console.log(customConfig);
-    _this.config = _objectSpread2({}, ContextualConfig$1, {}, customConfig);
 
     if (customConfig.focus === undefined) {
       throw new Error("No Focus element reference id provided");
     }
 
+    _this.config = _objectSpread2({}, ContextualLayoutConfiguration, {}, customConfig);
     _this.focusId = customConfig.focus;
     _this.focus = null;
     _this.parents = [];
     _this.children = [];
-    _this.assginedNode = null;
-    _this.assignedRisks = [];
+    _this.assgined = null;
+    _this.risks = [];
     _this.containers = [];
+    _this.expanders = [];
     return _this;
   }
 
@@ -27649,450 +27761,918 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
     value: function calculateLayout() {
       var _this2 = this;
 
-      var centerX = this.config.maxLayoutWidth / 2;
-      var centerY = this.config.maxLayoutHeight / 2; // calculate risk container
+      var offset = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
 
-      var calculateContainers = function calculateContainers(risks, children, parents) {
-        var createContainer = function createContainer(nodes, type) {
-          var xValues = nodes.map(function (r) {
-            return r.finalX;
-          });
-          var yValues = nodes.map(function (r) {
-            return r.finalY;
-          });
-
-          var p0x = Math.min.apply(Math, _toConsumableArray(xValues)) - nodes[0].config.minWidth / 2 - _this2.config.spacing;
-
-          var p0y = Math.min.apply(Math, _toConsumableArray(yValues)) - nodes[0].config.minHeight / 2 - _this2.config.spacing;
-
-          var p1x = Math.max.apply(Math, _toConsumableArray(xValues)) + nodes[0].config.minWidth / 2 + _this2.config.spacing;
-
-          var p1y = Math.min.apply(Math, _toConsumableArray(yValues)) - nodes[0].config.minHeight / 2 - _this2.config.spacing;
-
-          var p2x = Math.max.apply(Math, _toConsumableArray(xValues)) + nodes[0].config.minWidth / 2 + _this2.config.spacing;
-
-          var p2y = Math.max.apply(Math, _toConsumableArray(yValues)) + nodes[0].config.minHeight / 2 + _this2.config.spacing; // this.canvas.circle(5).center(p0x, p0y)
-          // this.canvas.circle(5).center(p1x, p1y).fill("#f75")
-          // this.canvas.circle(5).center(p2x, p2y).fill("#6f7")
-
-
-          var w = Math.hypot(p0x - p1x, p0y - p1y);
-          var h = Math.sqrt(Math.pow(p2x - p1x, 2) + Math.pow(p2y - p1y, 2));
-          var cx = (p0x + p2x) / 2;
-          var cy = (p0y + p2y) / 2;
-          var container = new ContextualConainer(_this2.canvas, _this2.config, type);
-          container.w = w;
-          container.h = h;
-          container.cx = cx;
-          container.cy = cy;
-          _this2.containers = [].concat(_toConsumableArray(_this2.containers), [container]);
-        };
-
-        if (risks.length > _this2.config.riskLimitContainer) {
-          // FIXME: it does not render a container for one risk
-          createContainer(risks, "riskContainer");
-        }
-
-        if (children.length > _this2.config.childrenLimitContainer) {
-          createContainer(children, "childrenContainer");
-        }
-
-        if (parents.length > _this2.config.parentLimitContainer) {
-          createContainer(parents, "parentContainer");
-        }
-      }; // calculate focus position
-
-
+      // calculate focus position
       var calculateFocusPosition = function calculateFocusPosition() {
-        _this2.focus.setFinalX(centerX - centerX / 2.5);
+        var w = _this2.focus.getMaxWidth();
 
-        _this2.focus.setFinalY(centerY);
+        _this2.focus.setFinalX(w + offset + _this2.config.translateX);
+
+        _this2.focus.setFinalY(_this2.config.maxLayoutHeight / 2);
       }; // caculate assgined node position
 
 
       var calculateAssignedPosition = function calculateAssignedPosition() {
-        if (_this2.assginedNode) {
-          _this2.assginedNode.setFinalX(centerX + centerX / 1.25);
-
-          _this2.assginedNode.setFinalY(centerY);
-        }
-      }; // position parents as grid
-
-
-      var calculateParentChildRiskPositions = function calculateParentChildRiskPositions(nodes, location) {
-        if (nodes.length === 0) {
+        if (_this2.assgined === null) {
           return;
         }
 
-        var limitation;
+        _this2.assgined.setFinalX(_this2.focus.getFinalX() + _this2.config.assignedFocusDistance);
 
-        if (location === "risk") {
-          limitation = _this2.config.riskLimitContainer;
-        } else if (location === "parent") {
-          limitation = _this2.config.parentLimitContainer;
+        _this2.assgined.setFinalY(_this2.config.maxLayoutHeight / 2);
+      };
+
+      var calculateChildPositions = function calculateChildPositions() {
+        if (_this2.children.length === 0) {
+          return;
+        }
+
+        var children = _this2.children.slice(0, _this2.config.childContainerNodeLimit);
+
+        var cols = _this2.config.childContainerColumns;
+        var nodeIndex = 0;
+        var nodeCols = [];
+        var nodeRows = []; // divide children into sets of rows
+
+        for (var i = 0; i < children.length; i += 1) {
+          var row = [];
+
+          for (var j = 0; j < cols; j += 1) {
+            var node = children[nodeIndex];
+
+            if (node !== undefined) {
+              row.push(node);
+              nodeIndex += 1;
+            }
+          }
+
+          if (row.length) {
+            nodeRows.push(row);
+          }
+        } // divide children into sets of columns
+
+
+        nodeIndex = 0;
+
+        for (var _i = 0; _i < cols; _i += 1) {
+          nodeCols.push([]);
+        }
+
+        children.forEach(function (node, i) {
+          var col = nodeCols[i % cols];
+          col.push(node);
+        });
+        var X = 0;
+        var Y = _this2.focus.getFinalY() + _this2.focus.getMaxHeight() / 2 + _this2.config.childrenFocusDistance + _this2.config.spacing * 2; // calculate initial position
+
+        children.forEach(function (node) {
+          var w = node.getMinWidth();
+          var h = node.getMinHeight();
+          var x = _this2.config.spacing + X + w / 2;
+          var y = _this2.config.spacing + Y + h / 2;
+          node.setFinalX(x);
+          node.setFinalY(y);
+        }); // find row spacing
+
+        var rowSpacing = 0;
+        nodeRows.forEach(function (row) {
+          var h = row.map(function (n) {
+            return n.getMinHeight();
+          });
+          var max = Math.max.apply(Math, _toConsumableArray(h));
+          rowSpacing = Math.max(rowSpacing, max);
+        }); // calculate y positions
+
+        nodeRows.forEach(function (row, i) {
+          if (i >= 1) {
+            row.forEach(function (n) {
+              var h = (rowSpacing + _this2.config.spacing) * i;
+              n.setFinalY(n.getFinalY() + h);
+            });
+          }
+        }); // find col spacing
+
+        var columnSpacing = 0;
+        nodeRows.forEach(function (row) {
+          var w = row.map(function (n) {
+            return n.getMinWidth();
+          });
+          var max = Math.max.apply(Math, _toConsumableArray(w));
+          columnSpacing = Math.max(columnSpacing, max);
+        }); // calculate x positions
+
+        nodeCols.forEach(function (column, i) {
+          if (i >= 1) {
+            column.forEach(function (n) {
+              var w = (columnSpacing + _this2.config.spacing) * i;
+              n.setFinalX(n.getFinalX() + w);
+            });
+          }
+        }); // calculate container
+        // top left
+
+        var x0 = Math.min.apply(Math, _toConsumableArray(children.map(function (n) {
+          var w = n.getMinWidth();
+          return n.getFinalX() - w / 2 - _this2.config.spacing / 1;
+        })));
+        var y0 = Math.min.apply(Math, _toConsumableArray(children.map(function (n) {
+          var h = n.getMinHeight();
+          return n.getFinalY() - h / 2 - _this2.config.spacing / 1;
+        }))); // top right
+
+        var x1 = Math.max.apply(Math, _toConsumableArray(children.map(function (n) {
+          var w = n.getMinWidth();
+          return n.getFinalX() + w / 2 + _this2.config.spacing / 1;
+        })));
+        var y1 = y0; // store layout width and height info
+
+        var calculateDistance = function calculateDistance(sx, sy, tx, ty) {
+          var dx = tx - sx;
+          var dy = ty - sy;
+          return Math.sqrt(dx * dx + dy * dy);
+        }; // adjust X position
+
+
+        var adjustment = _this2.focus.getFinalX() - (x0 + x1) / 2;
+        children.forEach(function (node) {
+          node.setFinalX(node.getFinalX() + adjustment);
+        }); // bottom right
+
+        var x2 = x1;
+        var y2 = Math.max.apply(Math, _toConsumableArray(children.map(function (n) {
+          var h = n.getMinHeight();
+          return n.getFinalY() + h / 2 + _this2.config.spacing / 1;
+        }))); // bottom left
+        var cx = (x0 + x2) / 2;
+        var cy = (y0 + y2) / 2;
+        x0 += adjustment;
+        x1 += adjustment;
+        x2 += adjustment;
+        cx += adjustment; // this.canvas.circle(5).fill("#000").center(x0, y0)
+        // this.canvas.circle(5).fill("#75f").center(x1, y1)
+        // this.canvas.circle(5).fill("#f75").center(x2, y2)
+        // this.canvas.circle(5).fill("#00f").center(x3, y3)
+        // this.canvas.circle(5).fill("#1f1").center(cx, cy)
+
+        if (children.length <= _this2.config.childContainerColumns) {
+          return;
+        }
+
+        var w = calculateDistance(x0, y0, x1, y1);
+        var h = calculateDistance(x1, y1, x2, y2);
+
+        var ix = _this2.focus.getFinalX();
+
+        var iy = _this2.focus.getFinalY();
+
+        var existingContainer = _this2.containers.find(function (c) {
+          return c.type === "child";
+        }) || null;
+        var container = existingContainer === null ? new ContextualConainer(_this2.canvas, "child", _this2.config, ix, iy, cx, cy, w, h) : existingContainer;
+
+        if (existingContainer === null) {
+          _this2.containers.push(container);
         } else {
-          limitation = _this2.config.childrenLimitContainer;
-        }
-
-        var fx = _this2.focus.getFinalX();
-
-        var fy = _this2.focus.getFinalY();
-
-        var rx = _this2.focus.getFinalY() + _this2.config.translateRiskX;
-
-        var ry = _this2.focus.getFinalY() + _this2.config.translateRiskY; // arranges nodes next to each other growing to the left
+          container.h = h;
+          container.w = w;
+          container.cx = cx;
+          container.cy = cy;
+        } // calculate expander
 
 
-        var calculateLeftNodes = function calculateLeftNodes(nodeList, row) {
-          var isEven = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-          var w = 0;
-          nodeList.forEach(function (node, i) {
-            if (isEven === false) {
-              w += node.config.minWidth + _this2.config.spacing;
-            } else {
-              w += node.config.minWidth / 2 + _this2.config.spacing;
+        if (_this2.children.length > _this2.config.childContainerNodeLimit) {
+          var expander = _this2.expanders.find(function (e) {
+            return e.type === "childExpander";
+          }) || null;
 
-              if (i > 0) {
-                w += node.config.minWidth / 2;
-              } else {
-                w -= _this2.config.spacing / 2;
-              }
-            }
+          if (expander === null) {
+            var newExpander = new GridExpander(_this2.canvas, "childExpander");
 
-            if (location === "risk") {
-              node.setFinalX(rx - w);
-            } else {
-              node.setFinalX(fx - w);
-            }
+            _this2.expanders.push(newExpander);
 
-            var rowMultiplier = row * node.config.minHeight + row * _this2.config.spacing;
-
-            if (location === "parent") {
-              node.setFinalY(fy - _this2.config.parentFocusDistance - rowMultiplier);
-            } else if (location === "child") {
-              node.setFinalY(fy + _this2.config.childFocusDistance + rowMultiplier);
-            } else {
-              node.setFinalY(ry + _this2.config.childFocusDistance + rowMultiplier);
-            }
-          });
-        }; // arranges nodes next to each other growing to the right
-
-
-        var calculateRightNodes = function calculateRightNodes(nodeList, row) {
-          var isEven = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-          var w = 0;
-          nodeList.forEach(function (node, i) {
-            if (isEven === false) {
-              w += node.config.minWidth + _this2.config.spacing;
-            } else {
-              w += node.config.minWidth / 2 + _this2.config.spacing;
-
-              if (i > 0) {
-                w += node.config.minWidth / 2;
-              } else {
-                w -= _this2.config.spacing / 2;
-              }
-            }
-
-            if (location === "risk") {
-              node.setFinalX(rx + w);
-            } else {
-              node.setFinalX(fx + w);
-            }
-
-            var rowMultiplier = row * node.config.minHeight + row * _this2.config.spacing;
-
-            if (location === "parent") {
-              node.setFinalY(fy - _this2.config.parentFocusDistance - rowMultiplier);
-            } else if (location === "child") {
-              node.setFinalY(fy + _this2.config.childFocusDistance + rowMultiplier);
-            } else {
-              node.setFinalY(ry + _this2.config.childFocusDistance + rowMultiplier);
-            }
-          });
-        };
-
-        var calculateCenterNode = function calculateCenterNode(node, row) {
-          if (location === "risk") {
-            node.setFinalX(rx);
+            x0 += _this2.config.spacing;
+            y0 -= _this2.config.spacing * 1.5;
+            var expanderTextColor = "#".concat(LightenDarkenColor$1(_this2.config.childContainerBorderStrokeColor.substr(1), -50));
+            newExpander.updateConfig({
+              expanderTextColor: expanderTextColor
+            });
+            newExpander.setFinalX(x0);
+            newExpander.setFinalY(y0);
           } else {
-            node.setFinalX(fx);
+            x0 += _this2.config.spacing;
+            y0 -= _this2.config.spacing * 1.5;
+            expander.setFinalY(y0);
           }
+        } else {
+          var _expander = _this2.expanders.find(function (e) {
+            return e.type === "childExpander";
+          }) || null;
 
-          var rowMultiplier = row * node.config.minHeight + row * _this2.config.spacing;
+          if (_expander !== null) {
+            x0 += _this2.config.spacing;
+            y0 -= _this2.config.spacing * 1.5;
 
-          if (location === "parent") {
-            node.setFinalY(fy - _this2.config.parentFocusDistance - rowMultiplier);
-          } else if (location === "child") {
-            node.setFinalY(fy + _this2.config.parentFocusDistance + rowMultiplier);
-          } else {
-            node.setFinalY(ry + _this2.config.childFocusDistance + rowMultiplier);
-          }
-        }; // arragen nodes without a container
-
-
-        if (limitation >= nodes.length) {
-          // dont create a container
-          if (nodes.length % 2 === 1) {
-            var mid = nodes.indexOf(nodes[Math.floor(nodes.length / 2)]);
-            var leftNodes = nodes.slice(0, mid);
-            var rightNodes = nodes.slice(mid + 1);
-            var center = nodes[mid];
-            calculateCenterNode(center, 0);
-            calculateLeftNodes(leftNodes, 0);
-            calculateRightNodes(rightNodes, 0);
-          } else {
-            var _mid = nodes.indexOf(nodes[Math.floor(nodes.length / 2)]);
-
-            var _leftNodes = nodes.slice(0, _mid);
-
-            var _rightNodes = nodes.slice(_mid);
-
-            calculateLeftNodes(_leftNodes, 0, true);
-            calculateRightNodes(_rightNodes, 0, true);
-          }
-        } // create nodes inside a container
-
-
-        if (limitation < nodes.length) {
-          // calculate node positions if there are more nodes than the set container limit
-          if (limitation % 2 === 0) {
-            var cols = limitation;
-            var rows = Math.ceil(nodes.length / cols);
-            var nodeIndex = 0;
-
-            for (var row = 0; row < rows; row += 1) {
-              var rowNodes = [];
-
-              for (var col = 0; col < cols; col += 1) {
-                var node = nodes[nodeIndex];
-
-                if (node !== undefined) {
-                  rowNodes.push(node);
-                  nodeIndex += 1;
-                }
-              }
-
-              if (rowNodes.length % 2 === 0) {
-                var _mid2 = rowNodes.indexOf(rowNodes[Math.floor(rowNodes.length / 2)]);
-
-                var _leftNodes2 = rowNodes.slice(0, _mid2);
-
-                var _rightNodes2 = rowNodes.slice(_mid2);
-
-                calculateLeftNodes(_leftNodes2, row, true);
-                calculateRightNodes(_rightNodes2, row, true);
-              } else {
-                var _mid3 = rowNodes.indexOf(rowNodes[Math.floor(rowNodes.length / 2)]);
-
-                var _leftNodes3 = rowNodes.slice(0, _mid3);
-
-                var _rightNodes3 = rowNodes.slice(_mid3 + 1);
-
-                var _center = rowNodes[_mid3];
-                calculateCenterNode(_center, row);
-                calculateLeftNodes(_leftNodes3, row);
-                calculateRightNodes(_rightNodes3, row);
-              }
-            }
-          } else {
-            var _cols = limitation;
-
-            var _rows = Math.ceil(nodes.length / _cols);
-
-            var _nodeIndex = 0;
-
-            for (var _row = 0; _row < _rows; _row += 1) {
-              var _rowNodes = [];
-
-              for (var _col = 0; _col < _cols; _col += 1) {
-                var _node = nodes[_nodeIndex];
-
-                if (_node !== undefined) {
-                  _rowNodes.push(_node);
-
-                  _nodeIndex += 1;
-                }
-              }
-
-              if (_rowNodes.length % 2 === 1) {
-                var _mid4 = _rowNodes.indexOf(_rowNodes[Math.floor(_rowNodes.length / 2)]);
-
-                var _leftNodes4 = _rowNodes.slice(0, _mid4);
-
-                var _rightNodes4 = _rowNodes.slice(_mid4 + 1);
-
-                var _center2 = _rowNodes[_mid4];
-                calculateCenterNode(_center2, _row);
-                calculateLeftNodes(_leftNodes4, _row);
-                calculateRightNodes(_rightNodes4, _row);
-              } else {
-                var _mid5 = _rowNodes.indexOf(_rowNodes[Math.floor(_rowNodes.length / 2)]);
-
-                var _leftNodes5 = _rowNodes.slice(0, _mid5);
-
-                var _rightNodes5 = _rowNodes.slice(_mid5);
-
-                calculateLeftNodes(_leftNodes5, _row, true);
-                calculateRightNodes(_rightNodes5, _row, true);
-              }
-            }
+            _expander.setFinalY(y0);
           }
         }
-      }; // calculate parent and child edges
+      };
+
+      var calculateParentPositions = function calculateParentPositions() {
+        if (_this2.parents.length === 0) {
+          return;
+        }
+
+        var parents = _this2.parents.slice(0, _this2.config.parentContainerNodeLimit);
+
+        var cols = _this2.config.childContainerColumns;
+        var nodeIndex = 0;
+        var nodeCols = [];
+        var nodeRows = []; // divide parents into sets of rows
+
+        for (var i = 0; i < parents.length; i += 1) {
+          var row = [];
+
+          for (var j = 0; j < cols; j += 1) {
+            var node = parents[nodeIndex];
+
+            if (node !== undefined) {
+              row.push(node);
+              nodeIndex += 1;
+            }
+          }
+
+          if (row.length) {
+            nodeRows.push(row);
+          }
+        } // divide parents into sets of columns
 
 
-      var calculateParentChildEdges = function calculateParentChildEdges(edges) {
-        edges.forEach(function (edge) {
-          edge.calculateEdge();
+        nodeIndex = 0;
+
+        for (var _i2 = 0; _i2 < cols; _i2 += 1) {
+          nodeCols.push([]);
+        }
+
+        parents.forEach(function (node, i) {
+          var col = nodeCols[i % cols];
+          col.push(node);
         });
-      }; // calculate risk and assigned edge // TODO:
+        var X = 0; // calculate initial position
+
+        parents.forEach(function (node) {
+          var x = _this2.config.spacing + X + node.getMinWidth() / 2;
+          var y = _this2.focus.getFinalY() - _this2.focus.getMaxHeight() / 2 - _this2.config.parentFocusDistance - _this2.config.spacing * 3 - node.getMinHeight() / 2;
+          node.setFinalX(x);
+          node.setFinalY(y);
+        }); // find row spacing
+
+        var rowSpacing = 0;
+        nodeRows.forEach(function (row) {
+          var h = row.map(function (n) {
+            return n.getMinHeight();
+          });
+          var max = Math.max.apply(Math, _toConsumableArray(h));
+          rowSpacing = Math.max(rowSpacing, max);
+        }); // calculate y positions
+
+        nodeRows.forEach(function (row, i) {
+          if (i >= 1) {
+            row.forEach(function (n) {
+              var h = (rowSpacing + _this2.config.spacing) * i;
+              n.setFinalY(n.getFinalY() - h); // TODO: diff
+            });
+          }
+        }); // find col spacing
+
+        var columnSpacing = 0;
+        nodeRows.forEach(function (row) {
+          var w = row.map(function (n) {
+            return n.getMinWidth();
+          });
+          var max = Math.max.apply(Math, _toConsumableArray(w));
+          columnSpacing = Math.max(columnSpacing, max);
+        }); // calculate x positions
+
+        nodeCols.forEach(function (column, i) {
+          if (i >= 1) {
+            column.forEach(function (n) {
+              var w = (columnSpacing + _this2.config.spacing) * i;
+              n.setFinalX(n.getFinalX() + w);
+            });
+          }
+        }); // calculate container
+        // top left
+
+        var x0 = Math.min.apply(Math, _toConsumableArray(parents.map(function (n) {
+          var w = n.getMinWidth();
+          return n.getFinalX() - w / 2 - _this2.config.spacing / 1;
+        })));
+        var y0 = Math.min.apply(Math, _toConsumableArray(parents.map(function (n) {
+          var h = n.getMinHeight();
+          return n.getFinalY() - h / 2 - _this2.config.spacing / 1;
+        }))); // top right
+
+        var x1 = Math.max.apply(Math, _toConsumableArray(parents.map(function (n) {
+          var w = n.getMinWidth();
+          return n.getFinalX() + w / 2 + _this2.config.spacing / 1;
+        })));
+        var y1 = y0; // store layout width and height info
+
+        var calculateDistance = function calculateDistance(sx, sy, tx, ty) {
+          var dx = tx - sx;
+          var dy = ty - sy;
+          return Math.sqrt(dx * dx + dy * dy);
+        }; // adjust X position
 
 
-      var calculateContainerEdges = function calculateContainerEdges(risks, container) {
-        // risk
-        var riskContainer = container.find(function (c) {
-          return c.type === "riskContainer";
-        });
-        var childrenContainer = container.find(function (c) {
-          return c.type === "childrenContainer";
-        });
-        var parentContainer = container.find(function (c) {
-          return c.type === "parentContainer";
-        });
+        var adjustment = _this2.focus.getFinalX() - (x0 + x1) / 2;
+        parents.forEach(function (node) {
+          node.setFinalX(node.getFinalX() + adjustment);
+        }); // bottom right
 
-        if (riskContainer) {
-          var p0x = _this2.focus.getFinalX() + _this2.focus.config.maxWidth / 2;
+        var x2 = x1;
+        var y2 = Math.max.apply(Math, _toConsumableArray(parents.map(function (n) {
+          var h = n.getMinHeight();
+          return n.getFinalY() + h / 2 + _this2.config.spacing / 1;
+        }))); // bottom left
 
-          var p0y = _this2.focus.getFinalY(); // this.canvas.circle(5).center(p0x, p0y).fill("#f75")
+        var x3 = x0;
+        var y3 = y2;
+        var cx = (x0 + x2) / 2;
+        var cy = (y0 + y2) / 2;
+        x0 += adjustment;
+        x1 += adjustment;
+        x2 += adjustment;
+        x3 += adjustment;
+        cx += adjustment; // this.canvas.circle(5).fill("#000").center(x0, y0)
+        // this.canvas.circle(5).fill("#75f").center(x1, y1)
+        // this.canvas.circle(5).fill("#f75").center(x2, y2)
+        // this.canvas.circle(5).fill("#00f").center(x3, y3)
+        // this.canvas.circle(5).fill("#1f1").center(cx, cy)
+
+        if (parents.length <= _this2.config.parentContainerColumns) {
+          return;
+        }
+
+        var w = calculateDistance(x0, y0, x1, y1);
+        var h = calculateDistance(x1, y1, x2, y2);
+
+        var ix = _this2.focus.getFinalX();
+
+        var iy = _this2.focus.getFinalY();
+
+        var existingContainer = _this2.containers.find(function (c) {
+          return c.type === "parent";
+        }) || null;
+        var container = existingContainer === null ? new ContextualConainer(_this2.canvas, "parent", _this2.config, ix, iy, cx, cy, w, h) : existingContainer;
+
+        if (existingContainer === null) {
+          _this2.containers.push(container);
+        } else {
+          var dy = container.h - h < 0 ? container.h - h : (h - container.h) * -1;
+          container.dy = dy;
+          container.h = h;
+          container.w = w;
+          container.cx = cx;
+          container.cy = cy;
+        } // calculate expander
 
 
-          var p1x = _this2.assginedNode.getFinalX() - _this2.focus.config.minWidth / 2;
+        if (_this2.parents.length > _this2.config.parentContainerNodeLimit) {
+          var expander = _this2.expanders.find(function (e) {
+            return e.type === "parentExpander";
+          }) || null;
 
-          var p1y = _this2.assginedNode.getFinalY(); // this.canvas.circle(5).center(p1x, p1y).fill("#76f")
-          // has container
+          if (expander === null) {
+            var newExpander = new GridExpander(_this2.canvas, "parentExpander");
 
+            _this2.expanders.push(newExpander);
 
-          if (risks.length > _this2.config.riskLimitContainer) {
-            var p2x = riskContainer.cx;
-            var p2y = riskContainer.cy - riskContainer.h / 2; // this.canvas.circle(5).center(p2x, p2y).fill("#18f")
+            x3 += _this2.config.spacing;
+            y3 += _this2.config.spacing * 1.5;
+            var expanderTextColor = "#".concat(LightenDarkenColor$1(_this2.config.parentContainerBorderStrokeColor.substr(1), -50));
+            newExpander.updateConfig({
+              expanderTextColor: expanderTextColor
+            });
+            newExpander.setFinalX(x3);
+            newExpander.setFinalY(y3);
+          } else {
+            x3 += _this2.config.spacing;
+            y3 += _this2.config.spacing * 1.5;
+            expander.setFinalY(y3);
+          }
+        } else {
+          var _expander2 = _this2.expanders.find(function (e) {
+            return e.type === "parentExpander";
+          }) || null;
 
-            var p3x = p2x;
-            var p3y = p1y; // this.canvas.circle(5).center(p3x, p3y).fill("#8ff")
+          if (_expander2 !== null) {
+            x3 += _this2.config.spacing;
+            y3 += _this2.config.spacing * 1.5;
 
-            riskContainer.fromPoint = {
-              x: p2x,
-              y: p2y
-            };
-            riskContainer.toPoint = {
-              x: p3x,
-              y: p3y
-            };
+            _expander2.setFinalY(y3);
           }
         }
+      };
 
-        if (childrenContainer) {
-          // remove edges
-          console.log();
-          _this2.edges = _this2.edges.filter(function (e) {
-            return e.toNode.getId() !== _this2.focus.getId();
-          });
-
-          var _p0x = _this2.focus.getFinalX();
-
-          var _p0y = _this2.focus.getFinalY() + _this2.focus.config.maxHeight / 2; // this.canvas.circle(5).center(p0x, p0y).fill("#f75")
-
-
-          var containerSpacing = 8 * 2; // TODO:
-
-          var _p1x = _this2.focus.getFinalX();
-
-          var _p1y = _this2.children[0].getFinalY() - _this2.children[0].config.minHeight / 2 - containerSpacing; // this.canvas.circle(5).center(p1x, p1y).fill("#76f")
-
-
-          childrenContainer.setColor("#aaa");
-          childrenContainer.fromPoint = {
-            x: _p1x,
-            y: _p1y
-          };
-          childrenContainer.toPoint = {
-            x: _p0x,
-            y: _p0y
-          };
+      var calculateRiskPositions = function calculateRiskPositions() {
+        if (_this2.risks.length === 0) {
+          return;
         }
 
-        if (parentContainer) {
-          console.log("parentContainer");
-          _this2.edges = _this2.edges.filter(function (e) {
-            return e.fromNode.getId() !== _this2.focus.getId();
+        var risks = _this2.risks.slice(0, _this2.config.riskContainerNodeLimit);
+
+        var cols = _this2.config.riskContainerColumns;
+        var nodeIndex = 0;
+        var nodeCols = [];
+        var nodeRows = []; // divide risks into sets of rows
+
+        for (var i = 0; i < risks.length; i += 1) {
+          var row = [];
+
+          for (var j = 0; j < cols; j += 1) {
+            var node = risks[nodeIndex];
+
+            if (node !== undefined) {
+              row.push(node);
+              nodeIndex += 1;
+            }
+          }
+
+          if (row.length) {
+            nodeRows.push(row);
+          }
+        } // divide risks into sets of columns
+
+
+        nodeIndex = 0;
+
+        for (var _i3 = 0; _i3 < cols; _i3 += 1) {
+          nodeCols.push([]);
+        }
+
+        risks.forEach(function (node, i) {
+          var col = nodeCols[i % cols];
+          col.push(node);
+        });
+        var X = 0;
+
+        var Y = _this2.focus.getFinalY() // + this.focus.getMaxHeight() / 2
+        // + this.config.riskFocusDistance
+        + 50 + _this2.config.spacing; // calculate initial position
+
+
+        risks.forEach(function (node) {
+          var w = node.getMinWidth();
+          var h = node.getMinHeight();
+          var x = _this2.config.spacing + X + w / 2;
+          var y = _this2.config.spacing + Y + h / 2;
+          node.setFinalX(x);
+          node.setFinalY(y);
+        }); // find row spacing
+
+        var rowSpacing = 0;
+        nodeRows.forEach(function (row) {
+          var h = row.map(function (n) {
+            return n.getMinHeight();
           });
+          var max = Math.max.apply(Math, _toConsumableArray(h));
+          rowSpacing = Math.max(rowSpacing, max);
+        }); // calculate y positions
 
-          var _p0x2 = _this2.focus.getFinalX();
+        nodeRows.forEach(function (row, i) {
+          if (i >= 1) {
+            row.forEach(function (n) {
+              var h = (rowSpacing + _this2.config.spacing) * i;
+              n.setFinalY(n.getFinalY() + h);
+            });
+          }
+        }); // find col spacing
 
-          var _p0y2 = _this2.focus.getFinalY() - _this2.focus.config.maxHeight / 2;
+        var columnSpacing = 0;
+        nodeRows.forEach(function (row) {
+          var w = row.map(function (n) {
+            return n.getMinWidth();
+          });
+          var max = Math.max.apply(Math, _toConsumableArray(w));
+          columnSpacing = Math.max(columnSpacing, max);
+        }); // calculate x positions
 
-          var _containerSpacing = 8 * 2; // TODO:
+        nodeCols.forEach(function (column, i) {
+          if (i >= 1) {
+            column.forEach(function (n) {
+              var w = (columnSpacing + _this2.config.spacing) * i;
+              n.setFinalX(n.getFinalX() + w);
+            });
+          }
+        }); // calculate container
+        // top left
+
+        var x0 = Math.min.apply(Math, _toConsumableArray(risks.map(function (n) {
+          var w = n.getMinWidth();
+          return n.getFinalX() - w / 2 - _this2.config.spacing / 1;
+        })));
+        var y0 = Math.min.apply(Math, _toConsumableArray(risks.map(function (n) {
+          var h = n.getMinHeight();
+          return n.getFinalY() - h / 2 - _this2.config.spacing / 1;
+        }))); // top right
+
+        var x1 = Math.max.apply(Math, _toConsumableArray(risks.map(function (n) {
+          var w = n.getMinWidth();
+          return n.getFinalX() + w / 2 + _this2.config.spacing / 1;
+        })));
+        var y1 = y0; // store layout width and height info
+
+        var calculateDistance = function calculateDistance(sx, sy, tx, ty) {
+          var dx = tx - sx;
+          var dy = ty - sy;
+          return Math.sqrt(dx * dx + dy * dy);
+        }; // adjust X position
 
 
-          var _p1x2 = _this2.focus.getFinalX();
+        var adjustment = _this2.focus.getFinalX() - (x0 + x1) / 2 + _this2.config.riskFocusDistance;
 
-          var maxY = Math.max.apply(Math, _toConsumableArray(_this2.parents.map(function (p) {
-            return p.getFinalY();
-          })));
+        risks.forEach(function (node) {
+          node.setFinalX(node.getFinalX() + adjustment);
+        }); // bottom right
 
-          var _p1y2 = maxY + _this2.parents[0].config.minHeight / 2 + _containerSpacing;
+        var x2 = x1;
+        var y2 = Math.max.apply(Math, _toConsumableArray(risks.map(function (n) {
+          var h = n.getMinHeight();
+          return n.getFinalY() + h / 2 + _this2.config.spacing / 1;
+        }))); // bottom left
+        var cx = (x0 + x2) / 2;
+        var cy = (y0 + y2) / 2;
+        x0 += adjustment;
+        x1 += adjustment;
+        x2 += adjustment;
+        cx += adjustment; // this.canvas.circle(5).fill("#000").center(x0, y0)
+        // this.canvas.circle(5).fill("#75f").center(x1, y1)
+        // this.canvas.circle(5).fill("#f75").center(x2, y2)
+        // this.canvas.circle(5).fill("#00f").center(x3, y3)
+        // this.canvas.circle(5).fill("#1f1").center(cx, cy)
 
-          parentContainer.setColor("#aaa");
-          parentContainer.fromPoint = {
-            x: _p0x2,
-            y: _p0y2
-          };
-          parentContainer.toPoint = {
-            x: _p1x2,
-            y: _p1y2
-          };
-        } // has no container
+        if (risks.length <= _this2.config.riskContainerColumns) {
+          return;
+        }
 
+        var w = calculateDistance(x0, y0, x1, y1);
+        var h = calculateDistance(x1, y1, x2, y2);
+
+        var ix = _this2.focus.getFinalX();
+
+        var iy = _this2.focus.getFinalY();
+
+        var existingContainer = _this2.containers.find(function (c) {
+          return c.type === "risk";
+        }) || null;
+        var container = existingContainer === null ? new ContextualConainer(_this2.canvas, "risk", _this2.config, ix, iy, cx, cy, w, h) : existingContainer;
+
+        if (existingContainer === null) {
+          _this2.containers.push(container);
+        } else {
+          container.h = h;
+          container.w = w;
+          container.cx = cx;
+          container.cy = cy;
+        } // calculate expander
+
+
+        if (_this2.risks.length > _this2.config.riskContainerNodeLimit) {
+          var expander = _this2.expanders.find(function (e) {
+            return e.type === "riskExpander";
+          }) || null;
+
+          if (expander === null) {
+            var newExpander = new GridExpander(_this2.canvas, "riskExpander");
+
+            _this2.expanders.push(newExpander);
+
+            x0 += _this2.config.spacing;
+            y0 -= _this2.config.spacing * 1;
+            var expanderTextColor = "#".concat(LightenDarkenColor$1(_this2.config.riskContainerBorderStrokeColor.substr(1), -50));
+            newExpander.updateConfig({
+              expanderTextColor: expanderTextColor
+            });
+            newExpander.setFinalX(x0);
+            newExpander.setFinalY(y0);
+          } else {
+            x0 += _this2.config.spacing;
+            y0 -= _this2.config.spacing * 1;
+            expander.setFinalY(y0);
+          }
+        } else {
+          var _expander3 = _this2.expanders.find(function (e) {
+            return e.type === "riskExpander";
+          }) || null;
+
+          if (_expander3 !== null) {
+            x0 += _this2.config.spacing;
+            y0 -= _this2.config.spacing * 1;
+
+            _expander3.setFinalY(y0);
+          }
+        }
       };
 
       calculateFocusPosition();
       calculateAssignedPosition();
-      calculateParentChildRiskPositions(this.parents, "parent");
-      calculateParentChildRiskPositions(this.children, "child");
-      calculateParentChildRiskPositions(this.risks, "risk");
-      calculateParentChildEdges(this.edges);
-      calculateContainers(this.risks, this.children, this.parents);
-      calculateContainerEdges(this.risks, this.containers);
+      calculateChildPositions();
+      calculateParentPositions();
+      calculateRiskPositions();
+      return this.layoutInfo;
     }
   }, {
     key: "renderLayout",
     value: function renderLayout() {
+      var _this3 = this;
+
       this.centerX = this.config.maxLayoutWidth / 2;
       this.centerY = this.config.maxLayoutHeight / 2;
       var X = this.focus.getFinalX();
-      var Y = this.focus.getFinalY(); // render nodes
+      var Y = this.focus.getFinalY();
 
-      this.nodes.forEach(function (node) {
-        if (node.nodeSize === "max") {
-          if (node.svg === null) node.renderAsMax(X, Y);
-        } else if (node.nodeSize === "min") {
-          if (node.svg === null) node.renderAsMin(X, Y);
+      var renderContainers = function renderContainers() {
+        _this3.containers.forEach(function (container) {
+          if (container.isRendered() === false) {
+            container.render();
+          }
+
+          if (container.isRendered() === true) {
+            container.transformToFinalPosition();
+          }
+        });
+      };
+
+      var renderExpanders = function renderExpanders() {
+        _this3.expanders.forEach(function (expander) {
+          if (expander.type === "childExpander" && expander.isRendered() === false) {
+            var reRenderFunc = function reRenderFunc() {
+              if (_this3.config.cachedChildNodeLimit === undefined) {
+                _this3.config = _objectSpread2({}, _this3.config, {
+                  cachedChildNodeLimit: _this3.config.childContainerNodeLimit,
+                  childContainerNodeLimit: _this3.children.length
+                });
+
+                _this3.calculateLayout();
+
+                var childExpander = _this3.expanders.find(function (e) {
+                  return e.type === "childExpander";
+                });
+
+                childExpander.transformToFinalPosition();
+
+                _this3.containers.find(function (c) {
+                  return c.type === "child";
+                }).update();
+
+                var notRenderedNodes = _this3.children.filter(function (n) {
+                  return n.isRendered() === false;
+                });
+
+                notRenderedNodes.forEach(function (child) {
+                  child.renderAsMin(child.getFinalX(), child.getFinalY());
+                });
+                expander.changeToShowMoreText();
+              } else {
+                _this3.config = _objectSpread2({}, _this3.config, {
+                  cachedChildNodeLimit: _this3.config.childContainerNodeLimit,
+                  childContainerNodeLimit: _this3.config.cachedChildNodeLimit
+                });
+                delete _this3.config.cachedChildNodeLimit;
+
+                _this3.calculateLayout();
+
+                var _childExpander = _this3.expanders.find(function (e) {
+                  return e.type === "childExpander";
+                });
+
+                _childExpander.transformToFinalPosition();
+
+                _this3.containers.find(function (c) {
+                  return c.type === "child";
+                }).update();
+
+                var nodesToHide = _this3.children.filter(function (c, i) {
+                  return i >= _this3.config.childContainerNodeLimit;
+                });
+
+                nodesToHide.forEach(function (node) {
+                  node.removeNode(null, null, {
+                    animation: false
+                  });
+                });
+                expander.changeToHideMoreText();
+              }
+            };
+
+            expander.setReRenderFunc(reRenderFunc);
+            expander.render(X, Y);
+            expander.transformToFinalPosition();
+          }
+
+          if (expander.type === "parentExpander" && expander.isRendered() === false) {
+            var _reRenderFunc = function _reRenderFunc() {
+              if (_this3.config.cachedParentContainerNodeLimit === undefined) {
+                _this3.config = _objectSpread2({}, _this3.config, {
+                  cachedParentContainerNodeLimit: _this3.config.parentContainerNodeLimit,
+                  parentContainerNodeLimit: _this3.parents.length
+                });
+
+                _this3.calculateLayout();
+
+                var childExpander = _this3.expanders.find(function (e) {
+                  return e.type === "parentExpander";
+                });
+
+                childExpander.transformToFinalPosition();
+
+                _this3.containers.find(function (c) {
+                  return c.type === "parent";
+                }).update();
+
+                var notRenderedNodes = _this3.parents.filter(function (n) {
+                  return n.isRendered() === false;
+                });
+
+                notRenderedNodes.forEach(function (child) {
+                  child.renderAsMin(child.getFinalX(), child.getFinalY());
+                });
+                expander.changeToShowMoreText();
+              } else {
+                _this3.config = _objectSpread2({}, _this3.config, {
+                  cachedParentContainerNodeLimit: _this3.config.parentContainerNodeLimit,
+                  parentContainerNodeLimit: _this3.config.cachedParentContainerNodeLimit
+                });
+                delete _this3.config.cachedParentContainerNodeLimit;
+
+                _this3.calculateLayout();
+
+                var _childExpander2 = _this3.expanders.find(function (e) {
+                  return e.type === "parentExpander";
+                });
+
+                _childExpander2.transformToFinalPosition();
+
+                _this3.containers.find(function (c) {
+                  return c.type === "parent";
+                }).update();
+
+                var nodesToHide = _this3.parents.filter(function (c, i) {
+                  return i >= _this3.config.parentContainerNodeLimit;
+                });
+
+                nodesToHide.forEach(function (node) {
+                  node.removeNode(null, null, {
+                    animation: false
+                  });
+                });
+                expander.changeToHideMoreText();
+              }
+            };
+
+            expander.setReRenderFunc(_reRenderFunc);
+            expander.render(X, Y);
+            expander.transformToFinalPosition();
+          }
+
+          if (expander.type === "riskExpander" && expander.isRendered() === false) {
+            var _reRenderFunc2 = function _reRenderFunc2() {
+              if (_this3.config.cachedRiskContainerNodeLimit === undefined) {
+                _this3.config = _objectSpread2({}, _this3.config, {
+                  cachedRiskContainerNodeLimit: _this3.config.riskContainerNodeLimit,
+                  riskContainerNodeLimit: _this3.parents.length
+                });
+
+                _this3.calculateLayout();
+
+                var childExpander = _this3.expanders.find(function (e) {
+                  return e.type === "riskExpander";
+                });
+
+                childExpander.transformToFinalPosition();
+
+                _this3.containers.find(function (c) {
+                  return c.type === "risk";
+                }).update();
+
+                var notRenderedNodes = _this3.risks.filter(function (n) {
+                  return n.isRendered() === false;
+                });
+
+                notRenderedNodes.forEach(function (child) {
+                  child.renderAsMin(child.getFinalX(), child.getFinalY());
+                });
+                expander.changeToShowMoreText();
+              } else {
+                _this3.config = _objectSpread2({}, _this3.config, {
+                  cachedRiskContainerNodeLimit: _this3.config.riskContainerNodeLimit,
+                  riskContainerNodeLimit: _this3.config.cachedRiskContainerNodeLimit
+                });
+                delete _this3.config.cachedRiskContainerNodeLimit;
+
+                _this3.calculateLayout();
+
+                var _childExpander3 = _this3.expanders.find(function (e) {
+                  return e.type === "riskExpander";
+                });
+
+                _childExpander3.transformToFinalPosition();
+
+                _this3.containers.find(function (c) {
+                  return c.type === "risk";
+                }).update();
+
+                var nodesToHide = _this3.risks.filter(function (c, i) {
+                  return i >= _this3.config.riskContainerNodeLimit;
+                });
+
+                nodesToHide.forEach(function (node) {
+                  node.removeNode(null, null, {
+                    animation: false
+                  });
+                });
+                expander.changeToHideMoreText();
+              }
+            };
+
+            expander.setReRenderFunc(_reRenderFunc2);
+            expander.render(X, Y);
+            expander.transformToFinalPosition();
+          }
+        });
+      };
+
+      var renderNodes = function renderNodes() {
+        if (_this3.assgined.isRendered() === false) {
+          _this3.assgined.renderAsMin(X, Y);
+
+          _this3.assgined.transformToFinalPosition();
         }
 
-        node.transformToFinalPosition();
-      }); // render containers
+        if (_this3.focus.isRendered() === false) {
+          _this3.focus.renderAsMax(X, Y);
 
-      this.containers.forEach(function (container) {
-        container.render(X, Y);
-        container.transform();
-      });
-      this.edges.forEach(function (edge) {
-        if (edge.svg === null) {
-          edge.render(X, Y);
+          _this3.focus.transformToFinalPosition();
+
+          console.log(_this3.focus, _this3.focus.getFinalY());
         }
 
-        edge.transformToFinalPosition();
-      });
+        _this3.parents.forEach(function (parent, i) {
+          if (i < _this3.config.parentContainerNodeLimit) {
+            if (parent.isRendered() === false) {
+              parent.addEvent("click", function () {
+                return _this3.loadAdditionalContextualDataAsync(parent);
+              });
+              parent.renderAsMin(X, Y);
+            }
+
+            if (parent.isRendered() === true) {
+              parent.transformToFinalPosition();
+            }
+          }
+        });
+
+        _this3.children.forEach(function (child, i) {
+          if (i < _this3.config.childContainerNodeLimit) {
+            if (child.isRendered() === false) {
+              child.renderAsMin(X, Y);
+            }
+
+            if (child.isRendered() === true) {
+              child.transformToFinalPosition();
+            }
+          }
+        });
+
+        _this3.risks.forEach(function (risk, i) {
+          if (i < _this3.config.riskContainerNodeLimit) {
+            if (risk.isRendered() === false) {
+              risk.renderAsMin(X, Y);
+            }
+
+            if (risk.isRendered() === true) {
+              risk.transformToFinalPosition();
+            }
+          }
+        });
+      }; // rendering
+
+
+      renderContainers();
+      renderExpanders();
+      renderNodes(); // // render containers
+      // this.containers.forEach((container) => {
+      //   container.render(X, Y)
+      //   container.transform()
+      // })
+      // this.edges.forEach((edge) => {
+      //   if (edge.svg === null) {
+      //     edge.render(X, Y)
+      //   }
+      //   edge.transformToFinalPosition()
+      // })
     }
   }]);
 
@@ -28464,7 +29044,7 @@ var Visualization = /*#__PURE__*/function () {
     key: "render",
     value: function () {
       var _render = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee(initialGraphData, layout) {
-        var createdLayout, layouts, offset, _createdLayout;
+        var createdLayout, layouts, offset, _createdLayout, _layouts, _offset;
 
         return regeneratorRuntime.wrap(function _callee$(_context) {
           while (1) {
@@ -28503,7 +29083,7 @@ var Visualization = /*#__PURE__*/function () {
 
               case 14:
                 if (!(layout instanceof ContextualLayout)) {
-                  _context.next = 18;
+                  _context.next = 22;
                   break;
                 }
 
@@ -28512,11 +29092,22 @@ var Visualization = /*#__PURE__*/function () {
 
               case 17:
                 _createdLayout = _context.sent;
+                _layouts = this.layouts.slice(0, this.layouts.indexOf(layout));
+                _offset = _layouts.map(function (l) {
+                  return l.layoutInfo.w;
+                }).reduce(function (a, b) {
+                  return a + b;
+                }, 0);
 
-              case 18:
+                _createdLayout.calculateLayout(_offset);
+
+                _createdLayout.renderLayout(); // createdLayout.renderLayout()
+
+
+              case 22:
                 return _context.abrupt("return", layout);
 
-              case 19:
+              case 23:
               case "end":
                 return _context.stop();
             }

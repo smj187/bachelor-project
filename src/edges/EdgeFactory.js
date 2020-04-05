@@ -19,16 +19,12 @@ import ThinEdge from "./ThinEdge"
  * @param {EdgeConfig} [edgeConfig] custom config to override the default values
  */
 class EdgeFactory {
-  static create(canvas, fromNode, toNode, edgeConfig = {}) {
+  static create(rawEdge, canvas, fromNode, toNode) {
     let edge
-
-    if (edgeConfig.type === "dashed") {
-      edge = new ThinEdge(canvas, fromNode, toNode, { ...edgeConfig, type: "dashed" })
-    } else if (edgeConfig.type === "bold") {
-      edge = new BoldEdge(canvas, fromNode, toNode, edgeConfig)
-    } else {
-      edge = new ThinEdge(canvas, fromNode, toNode, { ...edgeConfig, type: "solid" })
-    }
+    if (rawEdge.type === "dashed") edge = new ThinEdge(rawEdge, canvas, fromNode, toNode, { type: "dashed" })
+    else if (rawEdge.type === "solid") edge = new ThinEdge(rawEdge, canvas, fromNode, toNode, { type: "solid" })
+    else if (rawEdge.type === "bold") edge = new BoldEdge(rawEdge, canvas, fromNode, toNode)
+    else edge = new ThinEdge(rawEdge, canvas, fromNode, toNode, { type: "solid" })
 
     return edge
   }

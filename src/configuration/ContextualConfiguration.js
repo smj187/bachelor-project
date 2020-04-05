@@ -6,15 +6,13 @@
  * @property {Number} layoutWidth=1200             - The width used by the layout representation.
  * @property {Number} layoutHeight=800             - The height used by the layout representation.
  */
-const GridLayoutConfiguration = {
-  layoutWidth: 1200,
-  layoutHeight: 800,
+const ContextualLayoutConfiguration = {
   // limit width and size
-  maxLayoutWidth: 1200,
+  maxLayoutWidth: 800,
   maxLayoutHeight: 800,
 
   // where to translate a given layout
-  translateX: 0,
+  translateX: -50,
   translateY: 0,
 
   // layout animation speed for all nodes and edges
@@ -25,34 +23,46 @@ const GridLayoutConfiguration = {
 
   // spacing between nodes
   spacing: 16,
-  parentFocusDistance: 250, // TODO: fix naming convention
-  childFocusDistance: 250,
-  translateRiskX: 450,
-  translateRiskY: -100,
-  focusRiskDistance: 400,
 
+
+  assignedFocusDistance: 800,
+
+  // how to render all nodes
+  renderingSize: "min", // min max
 
   // risk container
-  riskLimitContainer: 1,
-  riskContainderBorderRadius: 5,
-  riskContainerBorderStrokeColor: "#ff8e9e",
-  riskContainerBorderStrokeWidth: 1,
-  riskContainerBackgroundColor: "#fff",
+  riskFocusDistance: 500,
+
+  riskContainerNodeLimit: 4,
+  riskContainerColumns: 2,
+  riskContainderBorderRadius: 0,
+  riskContainerBorderStrokeColor: "#ff8e9e10",
+  riskContainerBorderStrokeWidth: 1.85,
+  riskContainerBackgroundColor: "#ff8e9e05",
+
 
   // children container
-  childrenLimitContainer: 3,
-  childrenContainderBorderRadius: 5,
-  childrenContainerBorderStrokeColor: "#555555cc",
-  childrenContainerBorderStrokeWidth: 1,
-  childrenContainerBackgroundColor: "#fff",
+  childrenFocusDistance: 80,
 
-  // container config
-  parentLimitContainer: 3,
+  childContainerNodeLimit: 6,
+  childContainerColumns: 3,
+  childContainderBorderRadius: 5,
+  childContainerBorderStrokeColor: "#888888",
+  childContainerBorderStrokeWidth: 1.85,
+  childContainerBackgroundColor: "#fff",
+
+  // parent container
+  parentFocusDistance: 80,
+
+  parentContainerNodeLimit: 6,
+  parentContainerColumns: 3,
   parentContainderBorderRadius: 5,
-  parentContainerBorderStrokeColor: "#555555cc",
-  parentContainerBorderStrokeWidth: 1,
+  parentContainerBorderStrokeColor: "#888888",
+  parentContainerBorderStrokeWidth: 1.85,
   parentContainerBackgroundColor: "#fff",
+
+
 }
 
 
-export default GridLayoutConfiguration
+export default ContextualLayoutConfiguration

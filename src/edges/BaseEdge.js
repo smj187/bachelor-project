@@ -9,8 +9,9 @@ import clamp from "clamp-js"
  * @param {BaseNode} toNode The to node
  */
 class BaseEdge {
-  constructor(canvas, fromNode, toNode) {
+  constructor(data, canvas, fromNode, toNode) {
     this.svg = null
+    this.data = data
     this.canvas = canvas
     this.fromNode = fromNode
     this.toNode = toNode

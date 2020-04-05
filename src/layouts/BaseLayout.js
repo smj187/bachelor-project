@@ -97,6 +97,15 @@ class BaseLayout {
     return this
   }
 
+  async loadAdditionalContextualDataAsync(newFocus) {
+    console.log("load", newFocus)
+    const fx = this.focus.getFinalX()
+    const fy = this.focus.getFinalY()
+    console.log(fx, fy)
+    // newFocus.transformToMax(fx, fy)
+    newFocus.transformToFinalPosition(fx, fy)
+  }
+
 
   async loadInitialContextualDataAsync() {
     // load focus and assigned info
@@ -112,10 +121,8 @@ class BaseLayout {
     ]
 
     const response1 = await RequestMultiple(request1)
-
     const focus = response1[0].data[0]
     const assignedInfo = response1[1].data
-
 
     // load parents, children, assigned, risks and edges
     const parentIds = focus.parent !== null
@@ -127,8 +134,8 @@ class BaseLayout {
       ? [...assignedInfo.risks]
       : []
 
-    const parentEdges = parentIds.map((id) => ({ fromNode: this.focusId, toNode: id }))
-    const childrenEdges = childrenIds.map((id) => ({ fromNode: id, toNode: this.focusId }))
+    const parentEdgeIds = parentIds.map((id) => ({ fromNode: this.focusId, toNode: id }))
+    const childEdgeIds = childrenIds.map((id) => ({ fromNode: id, toNode: this.focusId }))
 
     const request2 = [
       {
@@ -137,23 +144,73 @@ class BaseLayout {
       },
       {
         url: `${this.config.databaseUrl}/${this.config.edgeEndpoint}`,
-        body: [...parentEdges, ...childrenEdges],
+        body: [...parentEdgeIds, ...childEdgeIds],
       },
     ]
 
     const response2 = await RequestMultiple(request2)
-    const nodes = response2[0].data
-    const edges = response2[1].data
-    console.log(nodes, edges)
+    const nodeData = response2[0].data
+    const edgeData = response2[1].data
 
+    // create representations
+    this.createRepresentations(response1[0].data, [], "max")
+    this.createRepresentations(nodeData, edgeData, "min")
+
+    // create not existing child and parent edges manually
+    const find = (x, e) => x.fromNode === e.fromNode && x.toNode === e.toNode
+    const childEdges = edgeData.filter((e) => childEdgeIds.find((x) => find(x, e)))
+    const parentEdges = edgeData.filter((e) => parentEdgeIds.find((x) => find(x, e)))
+
+    const checkEdges = (edges, edgeIds) => {
+      const existingEdges = edges.map(({ fromNode, toNode }) => ({ fromNode, toNode }))
+      edgeIds.forEach((e) => {
+        const existingEdge = existingEdges.find((x) => x.fromNode === e.fromNode && x.toNode === e.toNode)
+        if (existingEdge === undefined) {
+          const fromNode = this.nodes.find((n) => n.id === e.fromNode)
+          const toNode = this.nodes.find((n) => n.id === e.toNode)
+          const edge = EdgeFactory.create({}, this.canvas, fromNode, toNode)
+
+          edge.setLabel(null)
+          this.edges.push(edge)
+        }
+      })
+    }
+
+    if (childEdges.length < childrenIds.length) {
+      checkEdges(childEdges, childEdgeIds)
+    }
+
+    if (parentEdges.length < parentEdgeIds.length) {
+      checkEdges(parentEdges, parentEdgeIds)
+    }
+
+
+    // assign loaded data
+    this.focus = this.nodes.find((n) => n.id === this.focusId)
+    this.parents = this.nodes.filter((n) => parentIds.includes(n.id))
+    this.children = this.nodes.filter((n) => childrenIds.includes(n.id))
+    this.assgined = this.nodes.find((n) => n.id === assignedId)
+    this.risks = this.nodes.filter((n) => riskIds.includes(n.id))
+    this.parentEdges = this.edges.filter((e) => {
+      const found = parentEdgeIds.find(({ fromNode, toNode }) => fromNode === e.fromNode.id && toNode === e.toNode.id)
+      return found
+    })
+
+    this.childEdges = this.edges.filter((e) => {
+      const found = childEdgeIds.find(({ fromNode, toNode }) => fromNode === e.fromNode.id && toNode === e.toNode.id)
+      return found
+    })
+
+
+    // console.log(this.edges)
 
     // console.log(this.focusId)
-    console.log(parentIds)
-    console.log(childrenIds)
-    console.log(assignedId)
-    console.log(riskIds)
-    console.log(parentEdges)
-    console.log(childrenEdges)
+    // console.log(parentIds)
+    // console.log(childrenIds)
+    // console.log(assignedId)
+    // console.log(riskIds)
+    // console.log(parentEdges)
+    // console.log(childrenEdges)
 
 
     return this
@@ -191,8 +248,12 @@ class BaseLayout {
     })
 
     edges.forEach((rawEdge) => {
-      const edge = EdgeFactory.create(rawEdge, this.canvas)
-      this.nodes.push(edge)
+      const fromNode = this.nodes.find((n) => n.id === rawEdge.fromNode)
+      const toNode = this.nodes.find((n) => n.id === rawEdge.toNode)
+      const edge = EdgeFactory.create(rawEdge, this.canvas, fromNode, toNode)
+
+      edge.setLabel(rawEdge.label || null)
+      this.edges.push(edge)
     })
   }
 

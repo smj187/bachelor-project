@@ -2,424 +2,731 @@ import BaseLayout from "./BaseLayout"
 import ContextualContainer from "./helpers/ContextualContainer"
 import GridExpander from "./helpers/GridExpander"
 
-const ContextualConfig = {
-  // limit width and size
-  maxLayoutWidth: 1200,
-  maxLayoutHeight: 800,
+import ContextualLayoutConfiguration from "../configuration/ContextualConfiguration"
 
-  // where to translate a given layout
-  translateX: 0,
-  translateY: 0,
 
-  // layout animation speed for all nodes and edges
-  animationSpeed: 300,
+/* eslint-disable no-bitwise */
 
-  // hide all other layouts and center selected one
-  hideOtherLayouts: false, // TODO:
-
-  // spacing between nodes
-  spacing: 16,
-  parentFocusDistance: 250, // TODO: fix naming convention
-  childFocusDistance: 250,
-  translateRiskX: 450,
-  translateRiskY: -100,
-  focusRiskDistance: 400,
-
-  // how to render all nodes
-  renderingSize: "min", // min max
-
-  // risk container
-  riskLimitContainer: 1,
-  riskContainderBorderRadius: 5,
-  riskContainerBorderStrokeColor: "#ff8e9e",
-  riskContainerBorderStrokeWidth: 1,
-  riskContainerBackgroundColor: "#fff",
-
-  // children container
-  childrenLimitContainer: 3,
-  childrenContainderBorderRadius: 5,
-  childrenContainerBorderStrokeColor: "#555555cc",
-  childrenContainerBorderStrokeWidth: 1,
-  childrenContainerBackgroundColor: "#fff",
-
-  // container config
-  parentLimitContainer: 3,
-  parentContainderBorderRadius: 5,
-  parentContainerBorderStrokeColor: "#555555cc",
-  parentContainerBorderStrokeWidth: 1,
-  parentContainerBackgroundColor: "#fff",
+const LightenDarkenColor = (col, amt) => {
+  const num = parseInt(col, 16)
+  const r = (num >> 16) + amt
+  const b = ((num >> 8) & 0x00FF) + amt
+  const g = (num & 0x0000FF) + amt
+  const newColor = g | (b << 8) | (r << 16)
+  return newColor.toString(16)
 }
+
 
 class ContextualLayout extends BaseLayout {
   constructor(customConfig = {}) {
     super()
 
-    console.log(customConfig)
-
-    this.config = { ...ContextualConfig, ...customConfig }
 
     if (customConfig.focus === undefined) {
       throw new Error("No Focus element reference id provided")
     }
 
+    this.config = { ...ContextualLayoutConfiguration, ...customConfig }
     this.focusId = customConfig.focus
 
     this.focus = null
     this.parents = []
     this.children = []
-    this.assginedNode = null
-    this.assignedRisks = []
+    this.assgined = null
+    this.risks = []
+
     this.containers = []
+    this.expanders = []
   }
 
-  calculateLayout() {
-    const centerX = this.config.maxLayoutWidth / 2
-    const centerY = this.config.maxLayoutHeight / 2
-
-
-    // calculate risk container
-    const calculateContainers = (risks, children, parents) => {
-      const createContainer = (nodes, type) => {
-        const xValues = nodes.map((r) => r.finalX)
-        const yValues = nodes.map((r) => r.finalY)
-
-        const p0x = Math.min(...xValues) - nodes[0].config.minWidth / 2 - this.config.spacing
-        const p0y = Math.min(...yValues) - nodes[0].config.minHeight / 2 - this.config.spacing
-        const p1x = Math.max(...xValues) + nodes[0].config.minWidth / 2 + this.config.spacing
-        const p1y = Math.min(...yValues) - nodes[0].config.minHeight / 2 - this.config.spacing
-        const p2x = Math.max(...xValues) + nodes[0].config.minWidth / 2 + this.config.spacing
-        const p2y = Math.max(...yValues) + nodes[0].config.minHeight / 2 + this.config.spacing
-        // this.canvas.circle(5).center(p0x, p0y)
-        // this.canvas.circle(5).center(p1x, p1y).fill("#f75")
-        // this.canvas.circle(5).center(p2x, p2y).fill("#6f7")
-
-        const w = Math.hypot(p0x - p1x, p0y - p1y)
-        const h = Math.sqrt((p2x - p1x) ** 2 + (p2y - p1y) ** 2)
-
-        const cx = (p0x + p2x) / 2
-        const cy = (p0y + p2y) / 2
-
-
-        const container = new ContextualContainer(this.canvas, this.config, type)
-        container.w = w
-        container.h = h
-        container.cx = cx
-        container.cy = cy
-        this.containers = [...this.containers, container]
-      }
-
-
-      if (risks.length > this.config.riskLimitContainer) { // FIXME: it does not render a container for one risk
-        createContainer(risks, "riskContainer")
-      }
-
-
-      if (children.length > this.config.childrenLimitContainer) {
-        createContainer(children, "childrenContainer")
-      }
-
-      if (parents.length > this.config.parentLimitContainer) {
-        createContainer(parents, "parentContainer")
-      }
-    }
-
+  calculateLayout(offset = 0) {
     // calculate focus position
     const calculateFocusPosition = () => {
-      this.focus.setFinalX(centerX - centerX / 2.5)
-      this.focus.setFinalY(centerY)
+      const w = this.focus.getMaxWidth()
+
+      this.focus.setFinalX(w + offset + this.config.translateX)
+      this.focus.setFinalY(this.config.maxLayoutHeight / 2)
     }
 
     // caculate assgined node position
     const calculateAssignedPosition = () => {
-      if (this.assginedNode) {
-        this.assginedNode.setFinalX(centerX + centerX / 1.25)
-        this.assginedNode.setFinalY(centerY)
-      }
-    }
-
-    // position parents as grid
-    const calculateParentChildRiskPositions = (nodes, location) => {
-      if (nodes.length === 0) {
+      if (this.assgined === null) {
         return
       }
 
-      let limitation
-      if (location === "risk") {
-        limitation = this.config.riskLimitContainer
-      } else if (location === "parent") {
-        limitation = this.config.parentLimitContainer
-      } else {
-        limitation = this.config.childrenLimitContainer
-      }
-
-      const fx = this.focus.getFinalX()
-      const fy = this.focus.getFinalY()
-      const rx = this.focus.getFinalY() + this.config.translateRiskX
-      const ry = this.focus.getFinalY() + this.config.translateRiskY
-
-      // arranges nodes next to each other growing to the left
-      const calculateLeftNodes = (nodeList, row, isEven = false) => {
-        let w = 0
-        nodeList.forEach((node, i) => {
-          if (isEven === false) {
-            w += node.config.minWidth + this.config.spacing
-          } else {
-            w += (node.config.minWidth / 2) + this.config.spacing
-            if (i > 0) {
-              w += (node.config.minWidth / 2)
-            } else {
-              w -= this.config.spacing / 2
-            }
-          }
-          if (location === "risk") {
-            node.setFinalX(rx - w)
-          } else {
-            node.setFinalX(fx - w)
-          }
-
-          const rowMultiplier = row * node.config.minHeight + row * this.config.spacing
-          if (location === "parent") {
-            node.setFinalY(fy - this.config.parentFocusDistance - rowMultiplier)
-          } else if (location === "child") {
-            node.setFinalY(fy + this.config.childFocusDistance + rowMultiplier)
-          } else {
-            node.setFinalY(ry + this.config.childFocusDistance + rowMultiplier)
-          }
-        })
-      }
-
-      // arranges nodes next to each other growing to the right
-      const calculateRightNodes = (nodeList, row, isEven = false) => {
-        let w = 0
-        nodeList.forEach((node, i) => {
-          if (isEven === false) {
-            w += node.config.minWidth + this.config.spacing
-          } else {
-            w += (node.config.minWidth / 2) + this.config.spacing
-            if (i > 0) {
-              w += (node.config.minWidth / 2)
-            } else {
-              w -= this.config.spacing / 2
-            }
-          }
-
-          if (location === "risk") {
-            node.setFinalX(rx + w)
-          } else {
-            node.setFinalX(fx + w)
-          }
-
-          const rowMultiplier = row * node.config.minHeight + row * this.config.spacing
-          if (location === "parent") {
-            node.setFinalY(fy - this.config.parentFocusDistance - rowMultiplier)
-          } else if (location === "child") {
-            node.setFinalY(fy + this.config.childFocusDistance + rowMultiplier)
-          } else {
-            node.setFinalY(ry + this.config.childFocusDistance + rowMultiplier)
-          }
-        })
-      }
-
-      const calculateCenterNode = (node, row) => {
-        if (location === "risk") {
-          node.setFinalX(rx)
-        } else {
-          node.setFinalX(fx)
-        }
-
-        const rowMultiplier = row * node.config.minHeight + row * this.config.spacing
-        if (location === "parent") {
-          node.setFinalY(fy - this.config.parentFocusDistance - rowMultiplier)
-        } else if (location === "child") {
-          node.setFinalY(fy + this.config.parentFocusDistance + rowMultiplier)
-        } else {
-          node.setFinalY(ry + this.config.childFocusDistance + rowMultiplier)
-        }
-      }
-
-      // arragen nodes without a container
-      if (limitation >= nodes.length) {
-        // dont create a container
-
-        if (nodes.length % 2 === 1) {
-          const mid = nodes.indexOf(nodes[Math.floor(nodes.length / 2)])
-          const leftNodes = nodes.slice(0, mid)
-          const rightNodes = nodes.slice(mid + 1)
-          const center = nodes[mid]
-          calculateCenterNode(center, 0)
-          calculateLeftNodes(leftNodes, 0)
-          calculateRightNodes(rightNodes, 0)
-        } else {
-          const mid = nodes.indexOf(nodes[Math.floor(nodes.length / 2)])
-          const leftNodes = nodes.slice(0, mid)
-          const rightNodes = nodes.slice(mid)
-          calculateLeftNodes(leftNodes, 0, true)
-          calculateRightNodes(rightNodes, 0, true)
-        }
-      }
-
-      // create nodes inside a container
-      if (limitation < nodes.length) {
-        // calculate node positions if there are more nodes than the set container limit
-        if (limitation % 2 === 0) {
-          const cols = limitation
-          const rows = Math.ceil(nodes.length / cols)
-          let nodeIndex = 0
-
-          for (let row = 0; row < rows; row += 1) {
-            const rowNodes = []
-            for (let col = 0; col < cols; col += 1) {
-              const node = nodes[nodeIndex]
-              if (node !== undefined) {
-                rowNodes.push(node)
-                nodeIndex += 1
-              }
-            }
-
-            if (rowNodes.length % 2 === 0) {
-              const mid = rowNodes.indexOf(rowNodes[Math.floor(rowNodes.length / 2)])
-              const leftNodes = rowNodes.slice(0, mid)
-              const rightNodes = rowNodes.slice(mid)
-
-              calculateLeftNodes(leftNodes, row, true)
-              calculateRightNodes(rightNodes, row, true)
-            } else {
-              const mid = rowNodes.indexOf(rowNodes[Math.floor(rowNodes.length / 2)])
-              const leftNodes = rowNodes.slice(0, mid)
-              const rightNodes = rowNodes.slice(mid + 1)
-              const center = rowNodes[mid]
-
-
-              calculateCenterNode(center, row)
-              calculateLeftNodes(leftNodes, row)
-              calculateRightNodes(rightNodes, row)
-            }
-          }
-        } else {
-          const cols = limitation
-          const rows = Math.ceil(nodes.length / cols)
-          let nodeIndex = 0
-
-          for (let row = 0; row < rows; row += 1) {
-            const rowNodes = []
-            for (let col = 0; col < cols; col += 1) {
-              const node = nodes[nodeIndex]
-              if (node !== undefined) {
-                rowNodes.push(node)
-                nodeIndex += 1
-              }
-            }
-
-            if (rowNodes.length % 2 === 1) {
-              const mid = rowNodes.indexOf(rowNodes[Math.floor(rowNodes.length / 2)])
-              const leftNodes = rowNodes.slice(0, mid)
-              const rightNodes = rowNodes.slice(mid + 1)
-              const center = rowNodes[mid]
-
-              calculateCenterNode(center, row)
-              calculateLeftNodes(leftNodes, row)
-              calculateRightNodes(rightNodes, row)
-            } else {
-              const mid = rowNodes.indexOf(rowNodes[Math.floor(rowNodes.length / 2)])
-              const leftNodes = rowNodes.slice(0, mid)
-              const rightNodes = rowNodes.slice(mid)
-
-              calculateLeftNodes(leftNodes, row, true)
-              calculateRightNodes(rightNodes, row, true)
-            }
-          }
-        }
-      }
+      this.assgined.setFinalX(this.focus.getFinalX() + this.config.assignedFocusDistance)
+      this.assgined.setFinalY(this.config.maxLayoutHeight / 2)
     }
 
-    // calculate parent and child edges
-    const calculateParentChildEdges = (edges) => {
-      edges.forEach((edge) => {
-        edge.calculateEdge()
+    const calculateChildPositions = () => {
+      if (this.children.length === 0) {
+        return
+      }
+
+      const children = this.children.slice(0, this.config.childContainerNodeLimit)
+
+
+      const cols = this.config.childContainerColumns
+      let nodeIndex = 0
+      const nodeCols = []
+      const nodeRows = []
+
+      // divide children into sets of rows
+      for (let i = 0; i < children.length; i += 1) {
+        const row = []
+        for (let j = 0; j < cols; j += 1) {
+          const node = children[nodeIndex]
+          if (node !== undefined) {
+            row.push(node)
+            nodeIndex += 1
+          }
+        }
+        if (row.length) {
+          nodeRows.push(row)
+        }
+      }
+
+      // divide children into sets of columns
+      nodeIndex = 0
+      for (let i = 0; i < cols; i += 1) {
+        nodeCols.push([])
+      }
+      children.forEach((node, i) => {
+        const col = nodeCols[i % cols]
+        col.push(node)
       })
+
+
+      const X = 0
+      const Y = this.focus.getFinalY()
+        + this.focus.getMaxHeight() / 2
+        + this.config.childrenFocusDistance
+        + this.config.spacing * 2
+
+
+      // calculate initial position
+      children.forEach((node) => {
+        const w = node.getMinWidth()
+        const h = node.getMinHeight()
+        const x = this.config.spacing + X + w / 2
+        const y = this.config.spacing + Y + h / 2
+        node.setFinalX(x)
+        node.setFinalY(y)
+      })
+
+
+      // find row spacing
+      let rowSpacing = 0
+      nodeRows.forEach((row) => {
+        const h = row.map((n) => n.getMinHeight())
+        const max = Math.max(...h)
+        rowSpacing = Math.max(rowSpacing, max)
+      })
+
+      // calculate y positions
+      nodeRows.forEach((row, i) => {
+        if (i >= 1) {
+          row.forEach((n) => {
+            const h = (rowSpacing + this.config.spacing) * i
+            n.setFinalY(n.getFinalY() + h)
+          })
+        }
+      })
+
+
+      // find col spacing
+      let columnSpacing = 0
+      nodeRows.forEach((row) => {
+        const w = row.map((n) => n.getMinWidth())
+        const max = Math.max(...w)
+        columnSpacing = Math.max(columnSpacing, max)
+      })
+
+      // calculate x positions
+      nodeCols.forEach((column, i) => {
+        if (i >= 1) {
+          column.forEach((n) => {
+            const w = (columnSpacing + this.config.spacing) * i
+            n.setFinalX(n.getFinalX() + w)
+          })
+        }
+      })
+
+
+      // calculate container
+
+
+      // top left
+      let x0 = Math.min(...children.map((n) => {
+        const w = n.getMinWidth()
+        return n.getFinalX() - w / 2 - this.config.spacing / 1
+      }))
+
+      let y0 = Math.min(...children.map((n) => {
+        const h = n.getMinHeight()
+        return n.getFinalY() - h / 2 - this.config.spacing / 1
+      }))
+
+
+      // top right
+      let x1 = Math.max(...children.map((n) => {
+        const w = n.getMinWidth()
+        return n.getFinalX() + w / 2 + this.config.spacing / 1
+      }))
+
+      const y1 = y0
+
+
+      // store layout width and height info
+      const calculateDistance = (sx, sy, tx, ty) => {
+        const dx = tx - sx
+        const dy = ty - sy
+        return Math.sqrt(dx * dx + dy * dy)
+      }
+
+
+      // adjust X position
+      const adjustment = this.focus.getFinalX() - (x0 + x1) / 2
+      children.forEach((node) => {
+        node.setFinalX(node.getFinalX() + adjustment)
+      })
+
+
+      // bottom right
+      let x2 = x1
+      const y2 = Math.max(...children.map((n) => {
+        const h = n.getMinHeight()
+        return n.getFinalY() + h / 2 + this.config.spacing / 1
+      }))
+
+
+      // bottom left
+      let x3 = x0
+      const y3 = y2
+
+      let cx = (x0 + x2) / 2
+      const cy = (y0 + y2) / 2
+
+
+      x0 += adjustment
+      x1 += adjustment
+      x2 += adjustment
+      x3 += adjustment
+      cx += adjustment
+
+
+      // this.canvas.circle(5).fill("#000").center(x0, y0)
+      // this.canvas.circle(5).fill("#75f").center(x1, y1)
+      // this.canvas.circle(5).fill("#f75").center(x2, y2)
+      // this.canvas.circle(5).fill("#00f").center(x3, y3)
+      // this.canvas.circle(5).fill("#1f1").center(cx, cy)
+
+
+      if (children.length <= this.config.childContainerColumns) {
+        return
+      }
+
+      const w = calculateDistance(x0, y0, x1, y1)
+      const h = calculateDistance(x1, y1, x2, y2)
+
+      const ix = this.focus.getFinalX()
+      const iy = this.focus.getFinalY()
+      const existingContainer = this.containers.find((c) => c.type === "child") || null
+
+      const container = existingContainer === null
+        ? new ContextualContainer(this.canvas, "child", this.config, ix, iy, cx, cy, w, h)
+        : existingContainer
+
+      if (existingContainer === null) {
+        this.containers.push(container)
+      } else {
+        container.h = h
+        container.w = w
+        container.cx = cx
+        container.cy = cy
+      }
+
+      // calculate expander
+      if (this.children.length > this.config.childContainerNodeLimit) {
+        const expander = this.expanders.find((e) => e.type === "childExpander") || null
+
+        if (expander === null) {
+          const newExpander = new GridExpander(this.canvas, "childExpander")
+          this.expanders.push(newExpander)
+          x0 += this.config.spacing
+          y0 -= this.config.spacing * 1.5
+          const expanderTextColor = `#${LightenDarkenColor(this.config.childContainerBorderStrokeColor.substr(1), -50)}`
+          newExpander.updateConfig({ expanderTextColor })
+
+          newExpander.setFinalX(x0)
+          newExpander.setFinalY(y0)
+        } else {
+          x0 += this.config.spacing
+          y0 -= this.config.spacing * 1.5
+          expander.setFinalY(y0)
+        }
+      } else {
+        const expander = this.expanders.find((e) => e.type === "childExpander") || null
+        if (expander !== null) {
+          x0 += this.config.spacing
+          y0 -= this.config.spacing * 1.5
+          expander.setFinalY(y0)
+        }
+      }
     }
 
-    // calculate risk and assigned edge // TODO:
-    const calculateContainerEdges = (risks, container) => {
-      // risk
-      const riskContainer = container.find((c) => c.type === "riskContainer")
-      const childrenContainer = container.find((c) => c.type === "childrenContainer")
-      const parentContainer = container.find((c) => c.type === "parentContainer")
-      if (riskContainer) {
-        const p0x = this.focus.getFinalX() + this.focus.config.maxWidth / 2
-        const p0y = this.focus.getFinalY()
-        // this.canvas.circle(5).center(p0x, p0y).fill("#f75")
+    const calculateParentPositions = () => {
+      if (this.parents.length === 0) {
+        return
+      }
 
-        const p1x = this.assginedNode.getFinalX() - this.focus.config.minWidth / 2
-        const p1y = this.assginedNode.getFinalY()
-        // this.canvas.circle(5).center(p1x, p1y).fill("#76f")
 
-        // has container
-        if (risks.length > this.config.riskLimitContainer) {
-          const p2x = riskContainer.cx
-          const p2y = riskContainer.cy - riskContainer.h / 2
-          // this.canvas.circle(5).center(p2x, p2y).fill("#18f")
+      const parents = this.parents.slice(0, this.config.parentContainerNodeLimit)
 
-          const p3x = p2x
-          const p3y = p1y
-          // this.canvas.circle(5).center(p3x, p3y).fill("#8ff")
 
-          riskContainer.fromPoint = { x: p2x, y: p2y }
-          riskContainer.toPoint = { x: p3x, y: p3y }
+      const cols = this.config.childContainerColumns
+      let nodeIndex = 0
+      const nodeCols = []
+      const nodeRows = []
+
+      // divide parents into sets of rows
+      for (let i = 0; i < parents.length; i += 1) {
+        const row = []
+        for (let j = 0; j < cols; j += 1) {
+          const node = parents[nodeIndex]
+          if (node !== undefined) {
+            row.push(node)
+            nodeIndex += 1
+          }
+        }
+        if (row.length) {
+          nodeRows.push(row)
         }
       }
 
-      if (childrenContainer) {
-        // remove edges
-        console.log()
-        this.edges = this.edges.filter((e) => e.toNode.getId() !== this.focus.getId())
+      // divide parents into sets of columns
+      nodeIndex = 0
+      for (let i = 0; i < cols; i += 1) {
+        nodeCols.push([])
+      }
+      parents.forEach((node, i) => {
+        const col = nodeCols[i % cols]
+        col.push(node)
+      })
 
 
-        const p0x = this.focus.getFinalX()
-        const p0y = this.focus.getFinalY() + this.focus.config.maxHeight / 2
-        // this.canvas.circle(5).center(p0x, p0y).fill("#f75")
+      const X = 0
 
 
-        const containerSpacing = 8 * 2 // TODO:
-        const p1x = this.focus.getFinalX()
-        const p1y = this.children[0].getFinalY() - this.children[0].config.minHeight / 2 - containerSpacing
-        // this.canvas.circle(5).center(p1x, p1y).fill("#76f")
+      // calculate initial position
+      parents.forEach((node) => {
+        const x = this.config.spacing + X + node.getMinWidth() / 2
+        const y = this.focus.getFinalY()
+                - this.focus.getMaxHeight() / 2
+                - this.config.parentFocusDistance
+                - this.config.spacing * 3
+                - node.getMinHeight() / 2
 
-        childrenContainer.setColor("#aaa")
-        childrenContainer.fromPoint = { x: p1x, y: p1y }
-        childrenContainer.toPoint = { x: p0x, y: p0y }
+        node.setFinalX(x)
+        node.setFinalY(y)
+      })
+
+
+      // find row spacing
+      let rowSpacing = 0
+      nodeRows.forEach((row) => {
+        const h = row.map((n) => n.getMinHeight())
+        const max = Math.max(...h)
+        rowSpacing = Math.max(rowSpacing, max)
+      })
+
+      // calculate y positions
+      nodeRows.forEach((row, i) => {
+        if (i >= 1) {
+          row.forEach((n) => {
+            const h = (rowSpacing + this.config.spacing) * i
+            n.setFinalY(n.getFinalY() - h) // TODO: diff
+          })
+        }
+      })
+
+
+      // find col spacing
+      let columnSpacing = 0
+      nodeRows.forEach((row) => {
+        const w = row.map((n) => n.getMinWidth())
+        const max = Math.max(...w)
+        columnSpacing = Math.max(columnSpacing, max)
+      })
+
+      // calculate x positions
+      nodeCols.forEach((column, i) => {
+        if (i >= 1) {
+          column.forEach((n) => {
+            const w = (columnSpacing + this.config.spacing) * i
+            n.setFinalX(n.getFinalX() + w)
+          })
+        }
+      })
+
+
+      // calculate container
+
+
+      // top left
+      let x0 = Math.min(...parents.map((n) => {
+        const w = n.getMinWidth()
+        return n.getFinalX() - w / 2 - this.config.spacing / 1
+      }))
+
+      const y0 = Math.min(...parents.map((n) => {
+        const h = n.getMinHeight()
+        return n.getFinalY() - h / 2 - this.config.spacing / 1
+      }))
+
+
+      // top right
+      let x1 = Math.max(...parents.map((n) => {
+        const w = n.getMinWidth()
+        return n.getFinalX() + w / 2 + this.config.spacing / 1
+      }))
+
+      const y1 = y0
+
+
+      // store layout width and height info
+      const calculateDistance = (sx, sy, tx, ty) => {
+        const dx = tx - sx
+        const dy = ty - sy
+        return Math.sqrt(dx * dx + dy * dy)
       }
 
-      if (parentContainer) {
-        console.log("parentContainer")
-        this.edges = this.edges.filter((e) => e.fromNode.getId() !== this.focus.getId())
 
-        const p0x = this.focus.getFinalX()
-        const p0y = this.focus.getFinalY() - this.focus.config.maxHeight / 2
+      // adjust X position
+      const adjustment = this.focus.getFinalX() - (x0 + x1) / 2
+      parents.forEach((node) => {
+        node.setFinalX(node.getFinalX() + adjustment)
+      })
 
-        const containerSpacing = 8 * 2 // TODO:
-        const p1x = this.focus.getFinalX()
-        const maxY = Math.max(...this.parents.map((p) => p.getFinalY()))
-        const p1y = maxY + this.parents[0].config.minHeight / 2 + containerSpacing
 
-        parentContainer.setColor("#aaa")
-        parentContainer.fromPoint = { x: p0x, y: p0y }
-        parentContainer.toPoint = { x: p1x, y: p1y }
+      // bottom right
+      let x2 = x1
+      const y2 = Math.max(...parents.map((n) => {
+        const h = n.getMinHeight()
+        return n.getFinalY() + h / 2 + this.config.spacing / 1
+      }))
+
+
+      // bottom left
+      let x3 = x0
+      let y3 = y2
+
+      let cx = (x0 + x2) / 2
+      const cy = (y0 + y2) / 2
+
+
+      x0 += adjustment
+      x1 += adjustment
+      x2 += adjustment
+      x3 += adjustment
+      cx += adjustment
+
+
+      // this.canvas.circle(5).fill("#000").center(x0, y0)
+      // this.canvas.circle(5).fill("#75f").center(x1, y1)
+      // this.canvas.circle(5).fill("#f75").center(x2, y2)
+      // this.canvas.circle(5).fill("#00f").center(x3, y3)
+      // this.canvas.circle(5).fill("#1f1").center(cx, cy)
+
+      if (parents.length <= this.config.parentContainerColumns) {
+        return
+      }
+
+      const w = calculateDistance(x0, y0, x1, y1)
+      const h = calculateDistance(x1, y1, x2, y2)
+
+      const ix = this.focus.getFinalX()
+      const iy = this.focus.getFinalY()
+      const existingContainer = this.containers.find((c) => c.type === "parent") || null
+
+      const container = existingContainer === null
+        ? new ContextualContainer(this.canvas, "parent", this.config, ix, iy, cx, cy, w, h)
+        : existingContainer
+
+
+      if (existingContainer === null) {
+        this.containers.push(container)
+      } else {
+        const dy = container.h - h < 0 ? container.h - h : (h - container.h) * -1
+
+        container.dy = dy
+        container.h = h
+        container.w = w
+        container.cx = cx
+        container.cy = cy
       }
 
 
-      // has no container
+      // calculate expander
+      if (this.parents.length > this.config.parentContainerNodeLimit) {
+        const expander = this.expanders.find((e) => e.type === "parentExpander") || null
+
+        if (expander === null) {
+          const newExpander = new GridExpander(this.canvas, "parentExpander")
+          this.expanders.push(newExpander)
+          x3 += this.config.spacing
+          y3 += this.config.spacing * 1.5
+          const expanderTextColor = `#${LightenDarkenColor(this.config.parentContainerBorderStrokeColor.substr(1), -50)}`
+          newExpander.updateConfig({ expanderTextColor })
+
+          newExpander.setFinalX(x3)
+          newExpander.setFinalY(y3)
+        } else {
+          x3 += this.config.spacing
+          y3 += this.config.spacing * 1.5
+          expander.setFinalY(y3)
+        }
+      } else {
+        const expander = this.expanders.find((e) => e.type === "parentExpander") || null
+        if (expander !== null) {
+          x3 += this.config.spacing
+          y3 += this.config.spacing * 1.5
+          expander.setFinalY(y3)
+        }
+      }
+    }
+
+    const calculateRiskPositions = () => {
+      if (this.risks.length === 0) {
+        return
+      }
+
+      const risks = this.risks.slice(0, this.config.riskContainerNodeLimit)
+
+
+      const cols = this.config.riskContainerColumns
+
+      let nodeIndex = 0
+      const nodeCols = []
+      const nodeRows = []
+
+      // divide risks into sets of rows
+      for (let i = 0; i < risks.length; i += 1) {
+        const row = []
+        for (let j = 0; j < cols; j += 1) {
+          const node = risks[nodeIndex]
+          if (node !== undefined) {
+            row.push(node)
+            nodeIndex += 1
+          }
+        }
+        if (row.length) {
+          nodeRows.push(row)
+        }
+      }
+
+
+      // divide risks into sets of columns
+      nodeIndex = 0
+      for (let i = 0; i < cols; i += 1) {
+        nodeCols.push([])
+      }
+      risks.forEach((node, i) => {
+        const col = nodeCols[i % cols]
+        col.push(node)
+      })
+
+
+      const X = 0
+      const Y = this.focus.getFinalY()
+        // + this.focus.getMaxHeight() / 2
+        // + this.config.riskFocusDistance
+        + 50
+        + this.config.spacing
+
+
+      // calculate initial position
+      risks.forEach((node) => {
+        const w = node.getMinWidth()
+        const h = node.getMinHeight()
+        const x = this.config.spacing + X + w / 2
+        const y = this.config.spacing + Y + h / 2
+        node.setFinalX(x)
+        node.setFinalY(y)
+      })
+
+
+      // find row spacing
+      let rowSpacing = 0
+      nodeRows.forEach((row) => {
+        const h = row.map((n) => n.getMinHeight())
+        const max = Math.max(...h)
+        rowSpacing = Math.max(rowSpacing, max)
+      })
+
+      // calculate y positions
+      nodeRows.forEach((row, i) => {
+        if (i >= 1) {
+          row.forEach((n) => {
+            const h = (rowSpacing + this.config.spacing) * i
+            n.setFinalY(n.getFinalY() + h)
+          })
+        }
+      })
+
+
+      // find col spacing
+      let columnSpacing = 0
+      nodeRows.forEach((row) => {
+        const w = row.map((n) => n.getMinWidth())
+        const max = Math.max(...w)
+        columnSpacing = Math.max(columnSpacing, max)
+      })
+
+      // calculate x positions
+      nodeCols.forEach((column, i) => {
+        if (i >= 1) {
+          column.forEach((n) => {
+            const w = (columnSpacing + this.config.spacing) * i
+            n.setFinalX(n.getFinalX() + w)
+          })
+        }
+      })
+
+
+      // calculate container
+
+
+      // top left
+      let x0 = Math.min(...risks.map((n) => {
+        const w = n.getMinWidth()
+        return n.getFinalX() - w / 2 - this.config.spacing / 1
+      }))
+
+      let y0 = Math.min(...risks.map((n) => {
+        const h = n.getMinHeight()
+        return n.getFinalY() - h / 2 - this.config.spacing / 1
+      }))
+
+
+      // top right
+      let x1 = Math.max(...risks.map((n) => {
+        const w = n.getMinWidth()
+        return n.getFinalX() + w / 2 + this.config.spacing / 1
+      }))
+
+      const y1 = y0
+
+
+      // store layout width and height info
+      const calculateDistance = (sx, sy, tx, ty) => {
+        const dx = tx - sx
+        const dy = ty - sy
+        return Math.sqrt(dx * dx + dy * dy)
+      }
+
+
+      // adjust X position
+      const adjustment = this.focus.getFinalX() - (x0 + x1) / 2 + this.config.riskFocusDistance
+      risks.forEach((node) => {
+        node.setFinalX(node.getFinalX() + adjustment)
+      })
+
+
+      // bottom right
+      let x2 = x1
+      const y2 = Math.max(...risks.map((n) => {
+        const h = n.getMinHeight()
+        return n.getFinalY() + h / 2 + this.config.spacing / 1
+      }))
+
+
+      // bottom left
+      let x3 = x0
+      const y3 = y2
+
+      let cx = (x0 + x2) / 2
+      const cy = (y0 + y2) / 2
+
+
+      x0 += adjustment
+      x1 += adjustment
+      x2 += adjustment
+      x3 += adjustment
+      cx += adjustment
+
+
+      // this.canvas.circle(5).fill("#000").center(x0, y0)
+      // this.canvas.circle(5).fill("#75f").center(x1, y1)
+      // this.canvas.circle(5).fill("#f75").center(x2, y2)
+      // this.canvas.circle(5).fill("#00f").center(x3, y3)
+      // this.canvas.circle(5).fill("#1f1").center(cx, cy)
+
+
+      if (risks.length <= this.config.riskContainerColumns) {
+        return
+      }
+
+      const w = calculateDistance(x0, y0, x1, y1)
+      const h = calculateDistance(x1, y1, x2, y2)
+
+      const ix = this.focus.getFinalX()
+      const iy = this.focus.getFinalY()
+      const existingContainer = this.containers.find((c) => c.type === "risk") || null
+
+      const container = existingContainer === null
+        ? new ContextualContainer(this.canvas, "risk", this.config, ix, iy, cx, cy, w, h)
+        : existingContainer
+
+      if (existingContainer === null) {
+        this.containers.push(container)
+      } else {
+        container.h = h
+        container.w = w
+        container.cx = cx
+        container.cy = cy
+      }
+
+
+      // calculate expander
+      if (this.risks.length > this.config.riskContainerNodeLimit) {
+        const expander = this.expanders.find((e) => e.type === "riskExpander") || null
+
+        if (expander === null) {
+          const newExpander = new GridExpander(this.canvas, "riskExpander")
+          this.expanders.push(newExpander)
+          x0 += this.config.spacing
+          y0 -= this.config.spacing * 1
+          const expanderTextColor = `#${LightenDarkenColor(this.config.riskContainerBorderStrokeColor.substr(1), -50)}`
+          newExpander.updateConfig({ expanderTextColor })
+
+          newExpander.setFinalX(x0)
+          newExpander.setFinalY(y0)
+        } else {
+          x0 += this.config.spacing
+          y0 -= this.config.spacing * 1
+          expander.setFinalY(y0)
+        }
+      } else {
+        const expander = this.expanders.find((e) => e.type === "riskExpander") || null
+        if (expander !== null) {
+          x0 += this.config.spacing
+          y0 -= this.config.spacing * 1
+          expander.setFinalY(y0)
+        }
+      }
     }
 
 
     calculateFocusPosition()
     calculateAssignedPosition()
-    calculateParentChildRiskPositions(this.parents, "parent")
-    calculateParentChildRiskPositions(this.children, "child")
-    calculateParentChildRiskPositions(this.risks, "risk")
-    calculateParentChildEdges(this.edges)
-    calculateContainers(this.risks, this.children, this.parents)
-    calculateContainerEdges(this.risks, this.containers)
+
+    calculateChildPositions()
+    calculateParentPositions()
+    calculateRiskPositions()
+
+
+    return this.layoutInfo
   }
 
 
@@ -430,30 +737,236 @@ class ContextualLayout extends BaseLayout {
     const X = this.focus.getFinalX()
     const Y = this.focus.getFinalY()
 
-    // render nodes
-    this.nodes.forEach((node) => {
-      if (node.nodeSize === "max") {
-        if (node.svg === null) node.renderAsMax(X, Y)
-      } else if (node.nodeSize === "min") {
-        if (node.svg === null) node.renderAsMin(X, Y)
+    const renderContainers = () => {
+      this.containers.forEach((container) => {
+        if (container.isRendered() === false) {
+          container.render()
+        }
+
+        if (container.isRendered() === true) {
+          container.transformToFinalPosition()
+        }
+      })
+    }
+
+    const renderExpanders = () => {
+      this.expanders.forEach((expander) => {
+        if (expander.type === "childExpander" && expander.isRendered() === false) {
+          const reRenderFunc = () => {
+            if (this.config.cachedChildNodeLimit === undefined) {
+              this.config = {
+                ...this.config,
+                cachedChildNodeLimit: this.config.childContainerNodeLimit,
+                childContainerNodeLimit: this.children.length,
+              }
+
+              this.calculateLayout()
+              const childExpander = this.expanders.find((e) => e.type === "childExpander")
+              childExpander.transformToFinalPosition()
+              this.containers.find((c) => c.type === "child").update()
+
+              const notRenderedNodes = this.children.filter((n) => n.isRendered() === false)
+              notRenderedNodes.forEach((child) => {
+                child.renderAsMin(child.getFinalX(), child.getFinalY())
+              })
+
+              expander.changeToShowMoreText()
+            } else {
+              this.config = {
+                ...this.config,
+                cachedChildNodeLimit: this.config.childContainerNodeLimit,
+                childContainerNodeLimit: this.config.cachedChildNodeLimit,
+              }
+              delete this.config.cachedChildNodeLimit
+
+              this.calculateLayout()
+              const childExpander = this.expanders.find((e) => e.type === "childExpander")
+              childExpander.transformToFinalPosition()
+              this.containers.find((c) => c.type === "child").update()
+
+              const nodesToHide = this.children.filter((c, i) => i >= this.config.childContainerNodeLimit)
+              nodesToHide.forEach((node) => {
+                node.removeNode(null, null, { animation: false })
+              })
+
+
+              expander.changeToHideMoreText()
+            }
+          }
+          expander.setReRenderFunc(reRenderFunc)
+          expander.render(X, Y)
+          expander.transformToFinalPosition()
+        }
+
+        if (expander.type === "parentExpander" && expander.isRendered() === false) {
+          const reRenderFunc = () => {
+            if (this.config.cachedParentContainerNodeLimit === undefined) {
+              this.config = {
+                ...this.config,
+                cachedParentContainerNodeLimit: this.config.parentContainerNodeLimit,
+                parentContainerNodeLimit: this.parents.length,
+              }
+
+              this.calculateLayout()
+              const childExpander = this.expanders.find((e) => e.type === "parentExpander")
+              childExpander.transformToFinalPosition()
+              this.containers.find((c) => c.type === "parent").update()
+
+              const notRenderedNodes = this.parents.filter((n) => n.isRendered() === false)
+              notRenderedNodes.forEach((child) => {
+                child.renderAsMin(child.getFinalX(), child.getFinalY())
+              })
+
+              expander.changeToShowMoreText()
+            } else {
+              this.config = {
+                ...this.config,
+                cachedParentContainerNodeLimit: this.config.parentContainerNodeLimit,
+                parentContainerNodeLimit: this.config.cachedParentContainerNodeLimit,
+              }
+              delete this.config.cachedParentContainerNodeLimit
+
+              this.calculateLayout()
+              const childExpander = this.expanders.find((e) => e.type === "parentExpander")
+              childExpander.transformToFinalPosition()
+              this.containers.find((c) => c.type === "parent").update()
+
+              const nodesToHide = this.parents.filter((c, i) => i >= this.config.parentContainerNodeLimit)
+              nodesToHide.forEach((node) => {
+                node.removeNode(null, null, { animation: false })
+              })
+
+
+              expander.changeToHideMoreText()
+            }
+          }
+          expander.setReRenderFunc(reRenderFunc)
+          expander.render(X, Y)
+          expander.transformToFinalPosition()
+        }
+
+        if (expander.type === "riskExpander" && expander.isRendered() === false) {
+          const reRenderFunc = () => {
+            if (this.config.cachedRiskContainerNodeLimit === undefined) {
+              this.config = {
+                ...this.config,
+                cachedRiskContainerNodeLimit: this.config.riskContainerNodeLimit,
+                riskContainerNodeLimit: this.parents.length,
+              }
+
+              this.calculateLayout()
+              const childExpander = this.expanders.find((e) => e.type === "riskExpander")
+              childExpander.transformToFinalPosition()
+              this.containers.find((c) => c.type === "risk").update()
+
+              const notRenderedNodes = this.risks.filter((n) => n.isRendered() === false)
+              notRenderedNodes.forEach((child) => {
+                child.renderAsMin(child.getFinalX(), child.getFinalY())
+              })
+
+              expander.changeToShowMoreText()
+            } else {
+              this.config = {
+                ...this.config,
+                cachedRiskContainerNodeLimit: this.config.riskContainerNodeLimit,
+                riskContainerNodeLimit: this.config.cachedRiskContainerNodeLimit,
+              }
+              delete this.config.cachedRiskContainerNodeLimit
+
+              this.calculateLayout()
+              const childExpander = this.expanders.find((e) => e.type === "riskExpander")
+              childExpander.transformToFinalPosition()
+              this.containers.find((c) => c.type === "risk").update()
+
+              const nodesToHide = this.risks.filter((c, i) => i >= this.config.riskContainerNodeLimit)
+              nodesToHide.forEach((node) => {
+                node.removeNode(null, null, { animation: false })
+              })
+
+
+              expander.changeToHideMoreText()
+            }
+          }
+          expander.setReRenderFunc(reRenderFunc)
+          expander.render(X, Y)
+          expander.transformToFinalPosition()
+        }
+      })
+    }
+
+
+    const renderNodes = () => {
+      if (this.assgined.isRendered() === false) {
+        this.assgined.renderAsMin(X, Y)
+        this.assgined.transformToFinalPosition()
       }
 
-      node.transformToFinalPosition()
-    })
+      if (this.focus.isRendered() === false) {
+        this.focus.renderAsMax(X, Y)
+        this.focus.transformToFinalPosition()
 
-    // render containers
-    this.containers.forEach((container) => {
-      container.render(X, Y)
-      container.transform()
-    })
-
-
-    this.edges.forEach((edge) => {
-      if (edge.svg === null) {
-        edge.render(X, Y)
+        console.log(this.focus, this.focus.getFinalY())
       }
-      edge.transformToFinalPosition()
-    })
+
+
+      this.parents.forEach((parent, i) => {
+        if (i < this.config.parentContainerNodeLimit) {
+          if (parent.isRendered() === false) {
+            parent.addEvent("click", () => this.loadAdditionalContextualDataAsync(parent))
+            parent.renderAsMin(X, Y)
+          }
+
+          if (parent.isRendered() === true) {
+            parent.transformToFinalPosition()
+          }
+        }
+      })
+
+      this.children.forEach((child, i) => {
+        if (i < this.config.childContainerNodeLimit) {
+          if (child.isRendered() === false) {
+            child.renderAsMin(X, Y)
+          }
+
+          if (child.isRendered() === true) {
+            child.transformToFinalPosition()
+          }
+        }
+      })
+
+      this.risks.forEach((risk, i) => {
+        if (i < this.config.riskContainerNodeLimit) {
+          if (risk.isRendered() === false) {
+            risk.renderAsMin(X, Y)
+          }
+
+          if (risk.isRendered() === true) {
+            risk.transformToFinalPosition()
+          }
+        }
+      })
+    }
+
+
+    // rendering
+    renderContainers()
+    renderExpanders()
+    renderNodes()
+
+
+    // // render containers
+    // this.containers.forEach((container) => {
+    //   container.render(X, Y)
+    //   container.transform()
+    // })
+
+
+    // this.edges.forEach((edge) => {
+    //   if (edge.svg === null) {
+    //     edge.render(X, Y)
+    //   }
+    //   edge.transformToFinalPosition()
+    // })
   }
 }
 

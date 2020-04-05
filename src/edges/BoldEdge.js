@@ -23,8 +23,8 @@ const BoldEdgeConfig = {
 }
 
 class BoldEdge extends BaseEdge {
-  constructor(canvas, fromNode, toNode, customBoldEdgeConfig = {}) {
-    super(canvas, fromNode, toNode)
+  constructor(data, canvas, fromNode, toNode, customBoldEdgeConfig = {}) {
+    super(data, canvas, fromNode, toNode)
 
 
     this.config = { ...BoldEdgeConfig, ...customBoldEdgeConfig }

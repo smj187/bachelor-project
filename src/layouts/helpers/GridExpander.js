@@ -20,8 +20,9 @@ const GridExpanderConfiguration = {
  * @private
  */
 class GridExpander {
-  constructor(canvas) {
+  constructor(canvas, type) {
     this.svg = null
+    this.type = type
     this.canvas = canvas
     this.config = { ...GridExpanderConfiguration }
 
@@ -29,11 +30,16 @@ class GridExpander {
     this.reRenderFunc = null
   }
 
+  updateConfig(newConfig) {
+    this.config = { ...this.config, ...newConfig }
+  }
+
 
   render(X = this.finalX + this.config.expanderWidth / 2, Y = this.finalY) {
     const svg = this.canvas.group()
     svg.css("cursor", "pointer")
     svg.id("gridExpander")
+
 
     const w = this.config.expanderWidth
     const h = this.config.expanderHeight

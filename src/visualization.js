@@ -141,6 +141,11 @@ class Visualization {
 
     if (layout instanceof ContextualLayout) {
       const createdLayout = await layout.loadInitialContextualDataAsync()
+      const layouts = this.layouts.slice(0, this.layouts.indexOf(layout))
+      const offset = layouts.map((l) => l.layoutInfo.w).reduce((a, b) => a + b, 0)
+      createdLayout.calculateLayout(offset)
+      createdLayout.renderLayout()
+      // createdLayout.renderLayout()
     }
 
 
