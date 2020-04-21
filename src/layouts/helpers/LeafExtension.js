@@ -86,7 +86,7 @@ class LeafExtenstion {
 
   render(X = this.node.finalX, Y = this.node.finalY) {
     const svg = this.canvas.group().draggable()
-    svg.css("cursor", "pointer")
+    // svg.css("cursor", "pointer")
     svg.id("leafExtenstion")
 
 
@@ -94,24 +94,24 @@ class LeafExtenstion {
     const h = this.node.nodeSize === "min" ? this.config.minHeight + 10 : this.config.maxHeight
 
 
-    const text = this.canvas.foreignObject(w, h)
-    const background = document.createElement("div")
-    const label = document.createElement("p")
-    label.innerText = `Show ${this.nodeSize} more children`
-    label.style.color = this.config.labelColor
-    label.style.textAlign = "center"
-    label.style.padding = `${this.config.offset / 2}px`
-    label.style.background = this.config.labelBackground
-    label.style.fontSize = `${this.config.labelFontSize}px`
-    label.style.fontFamily = this.config.labelFontFamily
-    label.style.fontWeight = this.config.labelFontWeight
-    label.style.fontStyle = this.config.labelFontStyle
-    background.appendChild(label)
-    text.add(background)
-    text.height(background.clientHeight)
+    // const text = this.canvas.foreignObject(w, h)
+    // const background = document.createElement("div")
+    // const label = document.createElement("p")
+    // label.innerText = `Show ${this.nodeSize} more children`
+    // label.style.color = this.config.labelColor
+    // label.style.textAlign = "center"
+    // label.style.padding = `${this.config.offset / 2}px`
+    // label.style.background = this.config.labelBackground
+    // label.style.fontSize = `${this.config.labelFontSize}px`
+    // label.style.fontFamily = this.config.labelFontFamily
+    // label.style.fontWeight = this.config.labelFontWeight
+    // label.style.fontStyle = this.config.labelFontStyle
+    // background.appendChild(label)
+    // text.add(background)
+    // text.height(background.clientHeight)
 
 
-    svg.add(text)
+    // svg.add(text)
 
     const translateY = this.node.nodeSize === "min" ? 75 : 195
     svg
@@ -161,6 +161,7 @@ class LeafExtenstion {
         width: this.config.strokeWidth,
         color: this.config.strokeColor,
       })
+      path.id(`leaf#`)
 
 
       // create a re-useable marker
@@ -179,14 +180,15 @@ class LeafExtenstion {
 
       svg.add(path)
     }
-    svg
-      .transform({ position: [this.initialX, this.initialY] })
+    svg.transform({ position: [this.initialX, this.initialY] })
     this.finalX = svg.cx()
     this.finalY = svg.cy()
 
-    this.events.forEach(({ event, func }) => {
-      svg.on(event, func)
-    })
+    // this.events.forEach(({ event, func }) => {
+    //   svg.on(event, func)
+    // })
+
+    edgesStartingLine.remove()
 
 
     this.svg = svg
@@ -195,7 +197,6 @@ class LeafExtenstion {
   transformToFinalPosition() {
     this
       .svg
-
       .attr({ opacity: 1 })
       .animate({ duration: this.config.animationSpeed })
       .transform({ position: [this.finalX, this.finalY] })

@@ -1,69 +1,77 @@
 import BaseLayout from "./BaseLayout"
+import RadialLayoutConfiguration from "../configuration/RadialLayoutConfiguration"
 
 
-const RadialConfig = {
-  maxLayoutWidth: 600,
-  maxLayoutHeight: 600,
-
-  // where to translate a given layout
-  translateX: 0,
-  translateY: 0,
-
-  // layout animation speed
-  animationSpeed: 300,
-
-  // how a layout starts
-  layoutState: "expanded", // expanded, collapsed // TODO: ask: even needed?
-
-  // hide all other layouts and center selected one
-  hideOtherLayouts: false, // TODO:
-
-  // radial radius (first radius only)
-  radialRadius: 200,
-
-  // user defined delta angle constant (second+ radius)
-  radiusDelta: 150,
-
-  hAspect: 4 / 3,
-  wAspect: 4 / 4,
-
-  // how to render all nodes
-  renderingSize: "min", // min, max
-}
-
+/**
+ * This class is calculates and renders the radial layout.
+ */
 class RadialLayout extends BaseLayout {
-  constructor(customRadialConfig = {}) {
-    super()
+  constructor(customConfig = {}, events = [], additionalNodeRepresentations) {
+    super(additionalNodeRepresentations)
+
+    if (customConfig.root === undefined) {
+      throw new Error("No Focus element reference id provided")
+    }
+
+    if (customConfig.renderDepth === undefined) {
+      throw new Error("The radial layout requires a defined render depth")
+    }
+
+    this.config = { ...RadialLayoutConfiguration, ...customConfig }
+
+    // layout specific
+    this.rootId = customConfig.root
+    this.renderDepth = customConfig.renderDepth
+    this.registerMouseEvents(events)
+
+  }
 
 
-    this.config = { ...RadialConfig, ...customRadialConfig }
+  registerMouseEvents(events) {
+
+    const loadOrHideData = async (node) => { await this.updateRadialDataAsync(node) }
+    if (events.length > 0) {
+      this.events = [
+        {
+          name: "nodeEvent",
+          func: loadOrHideData,
+          mouse: events.find(e => e.name === "nodeEvent").mouse || "dblclick",
+          modifier: events.find(e => e.name === "nodeEvent").modifier || "ctrlKey",
+        }
+      ]
+    } else {
+      this.events = [
+        {
+          name: "nodeEvent",
+          func: loadOrHideData,
+          mouse: "dblclick",
+          modifier: "ctrlKey",
+        }
+      ]
+    }
+
   }
 
   // calculates the radial layout positions for all given nodes and edges
-  calculateLayout() {
+  calculateLayout(offset = 0) {
     // construct a tree
     const constructTree = (array, parentRef, rootRef) => {
       let root = rootRef !== undefined ? rootRef : []
       const parent = parentRef !== undefined ? parentRef : { id: null }
       const children = array.filter((child) => child.parentId === parent.id)
-      // console.log("0", children, parent, parentRef)
       if (children.length > 0) {
         if (parent.id === null) {
-          // console.log("1", children)
           root = children
         } else {
           parent.children = children
-          // console.log("2", children)
         }
 
         children.forEach((child) => {
-          // console.log("chid", child, child instanceof Number)
           constructTree(array, child)
         })
       }
       return root
     }
-
 
     const updateNodeDepth = (node, depth) => {
       node.setDepth(depth)
@@ -72,13 +80,17 @@ class RadialLayout extends BaseLayout {
       })
     }
 
+    const calculateFinalPosition = (node, alfa, beta) => {
 
-    const calcRadialPositions = (node, alfa, beta) => {
+      const w = this.config.renderingSize === "max" ? node.getMaxWidth() : node.getMinWidth()
+
       // center root
-      if (node.parentId === null) {
-        node.setFinalX(this.config.maxLayoutWidth / 2 + this.config.translateX)
-        node.setFinalY(this.config.maxLayoutHeight / 2 + this.config.translateY)
+      if (node.parentId === null || node.id === this.tree.id) {
+        node.setFinalX(this.config.translateX + w / 2)
+        node.setFinalY(this.config.translateY)
       }
+
+
 
       // depth of node inside tree
       const depth = node.getDepth()
@@ -122,7 +134,6 @@ class RadialLayout extends BaseLayout {
       // number of children in the subtree
       const children = BFS(node)
 
-
       node.children.forEach((child) => {
         // number of leaves in subtree
         const lambda = BFS(child)
@@ -131,61 +142,180 @@ class RadialLayout extends BaseLayout {
         const x = radius * Math.cos((theta + mü) / 2) * this.config.hAspect
         const y = radius * Math.sin((theta + mü) / 2) * this.config.wAspect
 
-        child.setFinalX(x + this.config.maxLayoutWidth / 2 + this.config.translateX)
-        child.setFinalY(y + this.config.maxLayoutHeight / 2 + this.config.translateY)
+        child.setFinalX(x + this.config.translateX + w / 2)
+        child.setFinalY(y + this.config.translateY)
 
         if (child.children.length > 0) {
-          calcRadialPositions(child, theta, mü)
+          calculateFinalPosition(child, theta, mü)
         }
+
+        // calculate edge
+        const e = this.edges.find(e => e.fromNode.id === child.id && e.toNode.id === node.id)
+        e.calculateEdge()
+
+        node.addIncomingEdge(e)
+        child.addOutgoingEdge(e)
 
         theta = mü
       })
     }
 
+    const adjustPositions = (tree) => {
+      const toRender = [tree]
+      const rendered = []
+      while (toRender.length) {
+        const current = toRender.shift()
+        const node = this.nodes.find(n => n.id === current.id)
+        rendered.push(node)
 
-    // calculate edges
-    const calcRadialEdges = (edges) => {
-      edges.forEach((edge) => {
-        edge.calculateEdge()
+        current.children.forEach(child => {
+          toRender.push(child)
+        })
+      }
+
+      const hAdjustment = Math.min(...rendered.map(node => {
+        const w = this.config.renderingSize === "max" ? node.getMaxWidth() : node.getMinWidth()
+        return node.getFinalX() - w
+      }))
+      const vAdjustment = Math.min(...rendered.map(node => {
+        const h = this.config.renderingSize === "max" ? node.getMaxHeight() : node.getMinHeight()
+        return node.getFinalY() - h
+      }))
+
+      rendered.forEach(node => {
+        const x = ((node.getFinalX() - hAdjustment) + offset) + this.config.translateX
+        const y = (node.getFinalY() - vAdjustment) + this.config.translateY
+        node.setFinalX(x)
+        node.setFinalY(y)
       })
+      this.edges.forEach(edge => {
+        edge.finalToX = (edge.finalToX - hAdjustment) + offset + this.config.translateX
+        edge.finalFromX = (edge.finalFromX - hAdjustment) + offset + this.config.translateX
+        edge.finalToY = edge.finalToY - vAdjustment + this.config.translateY
+        edge.finalFromY = edge.finalFromY - vAdjustment + this.config.translateY
+      })
+
+      const x0 = Math.min(...rendered.map(n => {
+        const w = this.config.renderingSize === "max" ? n.getMaxWidth() : n.getMinWidth()
+        return n.getFinalX() - w
+      }))
+      const y0 = 0
+
+      const x1 = Math.max(...rendered.map(n => {
+        const w = this.config.renderingSize === "max" ? n.getMaxWidth() : n.getMinWidth()
+        return n.getFinalX() + w
+      }))
+      const y1 = 0
+
+      const x2 = x1
+      const y2 = Math.max(...rendered.map((n) => {
+        const h = this.config.renderingSize === "max" ? n.getMaxHeight() : n.getMinHeight()
+        return n.getFinalY() + h
+      }))
+
+      // this.canvas.circle(5).fill("#000").center(x0, y0)
+      // this.canvas.circle(5).fill("#75f").center(x1, y1)
+      // this.canvas.circle(5).fill("#f75").center(x2, y2)
+
+      const calculateDistance = (sx, sy, tx, ty) => {
+        const dx = tx - sx
+        const dy = ty - sy
+        return Math.sqrt(dx * dx + dy * dy)
+      }
+
+
+      this.layoutInfo = {
+        x: x0,
+        y: y0,
+        cx: (x0 + x2) / 2,
+        cy: (y0 + y2) / 2,
+        w: calculateDistance(x0, y0, x1, y1),
+        h: calculateDistance(x1, y1, x2, y2),
+      }
+
+
     }
 
-    const tree = constructTree(this.nodes)[0] // TODO: where is the root?
-    updateNodeDepth(tree, 0)
-    calcRadialPositions(tree, 0, 2 * Math.PI)
-    calcRadialEdges(this.edges)
+
+
+
+    this.tree = constructTree(this.nodes)[0]
+    updateNodeDepth(this.tree, 0)
+    calculateFinalPosition(this.tree, 0, 2 * Math.PI)
+    adjustPositions(this.tree)
+
+    // console.log("Radial", this.layoutInfo)
+    return this.layoutInfo
   }
 
   renderLayout() {
-    this.centerX = this.nodes[0].getFinalX()
-    this.centerY = this.nodes[0].getFinalY()
+
+    const X = this.nodes.find(n => n.id === this.rootId).getFinalX()
+    const Y = this.nodes.find(n => n.id === this.rootId).getFinalY()
+
+    // console.log(this.nodes)
+    // console.log(this.edges)
+
+    const renderNodes = () => {
+
+      const toRender = [this.tree]
+      while (toRender.length) {
+        const current = toRender.shift()
+        const node = this.nodes.find(n => n.id === current.id)
+
+        if (node.isRendered() === false) {
+
+          // add add or remove event
+          // node.addEvent("dblclick", () => { this.updateRadialDataAsync(node) })
+
+          if (this.config.renderingSize === "max") node.renderAsMax(X, Y)
+          if (this.config.renderingSize === "min") node.renderAsMin(X, Y)
+
+          node.svg.on(this.events[0].mouse, (e) => {
+            if (this.events[0].modifier !== null) {
+              if (this.events[0].modifier, e[this.events[0].modifier]) {
+                this.events[0].func(node)
+              }
+            }
+          })
+
+          //   this.gridExpander.svg.on(this.events[0].mouse, (e) => {
+          //   if (this.events[0].modifier !== null) {
+          //     if (this.events[0].modifier, e[this.events[0].modifier]) {
+          //       this.events[0].func()
+          //     }
+          //   } else {
+          //     this.expandGridLayoutEvent()
+          //   }
+          // })
 
 
-    this.nodes.forEach((node) => {
-      if (this.config.renderingSize === "max") {
-        if (node.svg === null) node.renderAsMax(this.centerX, this.centerY)
-      } else if (this.config.renderingSize === "min") {
-        if (node.svg === null) {
-          node.renderAsMin(this.centerX, this.centerY)
+
+          node.outgoingEdges.forEach(edge => {
+            if (edge.isRendered() === false) {
+              edge.render(X, Y)
+            }
+          })
+        } else if (node.isRendered() === true) { // update nodes
+          node.transformToFinalPosition()
         }
+
+        current.children.forEach(child => {
+          toRender.push(child)
+        })
       }
-      node.transformToFinalPosition()
-    })
 
-    // this.nodes.forEach((node) => {
-    // })
+      this.edges.forEach((edge) => {
+        if (edge.isRendered() === true) {
+          edge.transformToFinalPosition()
+        }
+      })
 
+    }
 
-    this.edges.forEach((edge) => {
-      if (edge.svg === null) {
-        edge.render(this.centerX, this.centerY)
-      }
-      edge.transformToFinalPosition()
-    })
+    renderNodes()
 
 
-    // this.edges.forEach((edge) => {
-    // })
   }
 }
 

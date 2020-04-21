@@ -1,131 +1,32 @@
 import clamp from "clamp-js"
 import BaseNode from "./BaseNode"
-
-/**
- * Default configuration for asset nodes
- * @typedef {AssetConfig} AssetConfig
- *
- * @param {Number} [maxWidth=350] The nodes maximal width
- * @param {Number} [maxHeight=225] The nodes maximal height
- * @param {Number} [minWidth=150] The nodes minimal width
- * @param {Number} [minHeight=80] The nodes minimal height
- *
- * @param {String} [iconUrl=null] The path to the image icon (if this value is null, the default icon is used)
- * @param {Number} [minIconOpacity=0.5] The basic visibility of the icon
- * @param {Number} [minIconSize=70] The width and height for the image icon
- * @param {Number} [minIconTranslateX=0] Moves the icon horizontally
- * @param {Number} [minIconTranslateY=0] Moves the icon vertically
- * @param {Number} [maxIconOpacity=0.75] The basic visibility of the icon
- * @param {Number} [maxIconSize=30] The width and height for the image icon
- * @param {Number} [maxIconTranslateX=-140] Moves the icon horizontally
- * @param {Number} [maxIconTranslateY=-85] Moves the icon vertically
- *
- * @param {Number} [offset=8] The spacing used by padding and margin
- * @param {Number} [animationSpeed=300] The animation in milliseconds
- * @param {Number} [borderRadius=5] The border radius
- * @param {Number} [borderStrokeWidth=1] The border stroke width
- * @param {String} [borderStrokeColor="#84a8f2"] The border color
- * @param {String} [borderStrokeDasharray="5"] Gaps inside border
- * @param {String} [backgroundColor="#ffffff"] The background color for the rendered node
- *
- * @param {Number} [minTextWidth=145] The minimal text width for the label
- * @param {Number} [minTextHeight=75] The minimal text height for the label
- * @param {Number} [minTextTranslateX=0] Moves the label horizontally
- * @param {Number} [minTextTranslateY=0] The the label vertically
- * @param {Number} [maxTextWidth=345] The maximal text width for the description
- * @param {Number} [maxTextHeight=220] The maximal text height for the description
- * @param {Number} [maxTextTranslateX=0] The the description horizontally
- * @param {Number} [maxTextTranslateY=0] The the description vertically
- * @param {String} [labelColor="#7fa5f5"] The label text color
- * @param {String} [labelFontFamily="Montserrat"] The label font family
- * @param {Number} [labelFontSize=16] The label font size
- * @param {Number} [labelFontWeight=600] The label font weight
- * @param {String} [labelFontStyle="normal"] The label font style
- * @param {String} [labelBackground="#ffffffcc"] The label background color
- * @param {String} [detailsColor="#7fa5f5"] The details text color
- * @param {String} [detailsFontFamily="Montserrat"] The details family
- * @param {Number} [detailsFontSize=12] The details font size
- * @param {Number} [detailsFontWeight=600] The details font weight
- * @param {String} [detailsFontStyle="normal"] The details font style
- * @param {String} [detailsBackground="#ffffff"] The details text background color
- */
-const AssetConfig = {
-  // large node
-  maxWidth: 350,
-  maxHeight: 225,
-
-
-  // small node
-  minWidth: 150,
-  minHeight: 80,
-
-
-  // icon
-  iconUrl: null,
-  minIconOpacity: 0.5,
-  minIconSize: 70,
-  minIconTranslateX: 0,
-  minIconTranslateY: 0,
-  maxIconOpacity: 0.75,
-  maxIconSize: 30,
-  maxIconTranslateX: -140,
-  maxIconTranslateY: -85,
-
-
-  // node
-  offset: 8,
-  animationSpeed: 300,
-  borderRadius: 5,
-  borderStrokeWidth: 1,
-  borderStrokeColor: "#84a8f2",
-  borderStrokeDasharray: "5",
-  backgroundColor: "#ffffff",
-
-
-  // text
-  minTextWidth: 145,
-  minTextHeight: 75,
-  minTextTranslateX: 0,
-  minTextTranslateY: 0,
-  maxTextWidth: 345,
-  maxTextHeight: 220,
-  maxTextTranslateX: 0,
-  maxTextTranslateY: 0,
-  labelColor: "#7fa5f5",
-  labelFontFamily: "Montserrat",
-  labelFontSize: 16,
-  labelFontWeight: 600,
-  labelFontStyle: "normal",
-  labelBackground: "#ffffff",
-  detailsColor: "#7fa5f5",
-  detailsFontFamily: "Montserrat",
-  detailsFontSize: 12,
-  detailsFontWeight: 600,
-  detailsFontStyle: "normal",
-  detailsBackground: "#ffffff",
-}
+import AssetNodeConfiguration from "../configuration/AssetNodeConfiguration"
 
 
 /**
- * Class representing the visualization of assets
- * @param {Data} data the raw node data
- * @param {Canvas} canvas the canvas to render the node on
- * @param {AssetConfig} customAssetConfig custom config to override default values
+ * This class is responsible for the visual representation of assets.
+ * @property {Data} data The loaded data element from a database.
+ * @property {Canvas} canvas The nested canvas to render the node on.
+ * @property {Object} layoutConfig The nested canvas to render the node on.
  *
  */
 class AssetNode extends BaseNode {
-  constructor(data, canvas, customAssetConfig = {}) {
+  constructor(data, canvas, layoutConfig = {}) {
     super(data, canvas)
 
-    this.config = { ...AssetConfig, ...customAssetConfig }
+    this.config = { ...AssetNodeConfiguration, ...data.config, ...layoutConfig }
   }
 
 
+  /**
+   * Creates the asset details description.
+   *
+   * @return {ForeignObject} text A foreign object containing some html and the node's label.
+   */
   createAssetDetails() {
     const text = this.canvas.foreignObject(this.config.maxTextWidth, this.config.maxTextHeight)
     const background = document.createElement("div")
     text.add(background)
-
     background.style.width = `${this.config.maxTextWidth}px`
     background.style.height = `${this.config.maxTextHeight}px`
     background.style.display = "grid"
@@ -150,6 +51,7 @@ class AssetNode extends BaseNode {
     label.style.fontWeight = this.config.labelFontWeight
     label.style.fontStyle = this.config.labelFontStyle
     labelBg.appendChild(label)
+
 
     const descriptionBg = document.createElement("div")
     if (this.keyValuePairs.length === 0) {
@@ -197,7 +99,6 @@ class AssetNode extends BaseNode {
       value.style.marginLeft = `${this.config.offset}px`
       kvBg.appendChild(value)
 
-
       kvH += key.clientHeight + value.clientHeight
       if (kvH > maxH) {
         kvBg.removeChild(key)
@@ -210,7 +111,14 @@ class AssetNode extends BaseNode {
   }
 
 
-  renderAsMin(X = this.initialX, Y = this.initialY) {
+  /**
+  * Renders an asset node in minimal representation.
+  * @param  {Number} IX=initialX The initial X render position.
+  * @param  {Number} IY=initialY The initial Y render position.
+  * @param  {Number} FX=finalX The final X render position.
+  * @param  {Number} FY=finalY The final Y render position.
+  */
+  renderAsMin(IX = this.initialX, IY = this.initialY, FX = this.finalX, FY = this.finalY) {
     // create svg elements
     const svg = this.createSVGElement()
     const node = this.createNode()
@@ -223,47 +131,49 @@ class AssetNode extends BaseNode {
 
 
     // animate new elements into position
-    svg
-      .center(X, Y)
-
     node
-      .center(X, Y)
-      .animate({ duration: this.config.animationSpeed })
+      .center(IX, IY)
       .width(this.config.minWidth)
       .height(this.config.minHeight)
       .dmove(-this.config.minWidth / 2, -this.config.minHeight / 2)
+      .animate({ duration: this.config.animationSpeed })
+      .center(FX, FY)
 
     icon
-      .center(X, Y)
-      .attr({ opacity: 0 })
-      .animate({ duration: this.config.animationSpeed })
+      .center(IX, IY)
       .attr({ opacity: this.config.minIconOpacity })
       .size(this.config.minIconSize, this.config.minIconSize)
-      .dx(-this.config.minIconSize / 2 + this.config.minIconTranslateX)
-      .dy(-this.config.minIconSize / 2 + this.config.minIconTranslateY)
+      .dx(-this.config.minIconSize / 2)
+      .dy(-this.config.minIconSize / 2)
+      .animate({ duration: this.config.animationSpeed })
+      .center(FX + this.config.minIconTranslateX, FY + this.config.minIconTranslateY)
 
     text
       .size(this.config.minTextWidth, text.children()[0].node.clientHeight)
-      .center(X, Y)
+      .center(IX, IY)
       .scale(0.001)
-      .attr({ opacity: 0 })
-      .animate({ duration: this.config.animationSpeed })
-      .attr({ opacity: 1 })
       .transform({ scale: 1, translate: [this.config.minTextTranslateX, this.config.minTextTranslateY] })
+      .animate({ duration: this.config.animationSpeed })
+      .center(FX, FY)
 
 
     this.currentWidth = this.config.minWidth
     this.currentHeight = this.config.minHeight
     this.nodeSize = "min"
-    this.currentX = X
-    this.currentY = Y
-    this.opacity = 1
-    this.isHidden = false
+    this.currentX = IX
+    this.currentY = IY
     this.svg = svg
   }
 
 
-  renderAsMax(X = this.initialX, Y = this.initialY) {
+  /**
+  * Renders an asset node in detailed representation.
+  * @param  {Number} IX=initialX The initial X render position.
+  * @param  {Number} IY=initialY The initial Y render position.
+  * @param  {Number} FX=finalX The final X render position.
+  * @param  {Number} FY=finalY The final Y render position.
+  */
+  renderAsMax(IX = this.initialX, IY = this.initialY, FX = this.finalX, FY = this.finalY) {
     // create svg elements
     const svg = this.createSVGElement()
     const node = this.createNode()
@@ -276,44 +186,46 @@ class AssetNode extends BaseNode {
 
 
     // animate new elements into position
-    svg
-      .center(X, Y)
-
     node
-      .center(X, Y)
-      .animate({ duration: this.config.animationSpeed })
+      .center(IX, IY)
       .width(this.config.maxWidth)
       .height(this.config.maxHeight)
       .dmove(-this.config.maxWidth / 2, -this.config.maxHeight / 2)
+      .animate({ duration: this.config.animationSpeed })
+      .center(FX, FY)
+
 
     icon
-      .center(X, Y)
-      .attr({ opacity: 0 })
-      .animate({ duration: this.config.animationSpeed })
+      .center(IX + this.config.maxIconTranslateX, IY + this.config.maxIconTranslateY)
       .attr({ opacity: this.config.maxIconOpacity })
       .size(this.config.maxIconSize, this.config.maxIconSize)
-      .dx(-this.config.maxIconSize / 2 + this.config.maxIconTranslateX)
-      .dy(-this.config.maxIconSize / 2 + this.config.maxIconTranslateY)
+      .dx(-this.config.maxIconSize / 2)
+      .dy(-this.config.maxIconSize / 2)
+      .animate({ duration: this.config.animationSpeed })
+      .center(FX + this.config.maxIconTranslateX, FY + this.config.maxIconTranslateY)
 
     text
-      .center(X, Y)
+      .center(IX, IY)
       .scale(0.001)
-      .attr({ opacity: 0 })
-      .animate({ duration: this.config.animationSpeed })
-      .attr({ opacity: 1 })
       .transform({ scale: 1, translate: [this.config.maxTextTranslateX, this.config.maxTextTranslateY] })
+      .animate({ duration: this.config.animationSpeed })
+      .center(FX, FY)
 
 
     this.currentWidth = this.config.maxWidth
     this.currentHeight = this.config.maxHeight
     this.nodeSize = "max"
-    this.currentX = X
-    this.currentY = Y
-    this.opacity = 1
-    this.isHidden = false
+    this.currentX = IX
+    this.currentY = IY
     this.svg = svg
   }
 
+
+  /**
+  * Transforms a node from minimal version to detailed representation.
+  * @param {Number} X=finalX The final Xrender position.
+  * @param {Number} Y=finalY The final Y render position.
+  */
   transformToMax(X = this.finalX, Y = this.finalY) {
     // update current elements
     this
@@ -324,6 +236,14 @@ class AssetNode extends BaseNode {
       .height(this.config.maxHeight)
       .center(X, Y)
 
+    // old icon position
+    const ix = this.svg.get(1).bbox().cx
+    const iy = this.svg.get(1).bbox().cy
+
+    // old text position
+    const tx = this.svg.get(2).bbox().cx
+    const ty = this.svg.get(2).bbox().cy
+
     this
       .svg
       .get(2)
@@ -345,8 +265,8 @@ class AssetNode extends BaseNode {
 
     // put new elements into position
     icon
-      .center(this.initialX, this.initialY)
       .attr({ opacity: 0 })
+      .center(ix, iy)
       .animate({ duration: this.config.animationSpeed })
       .attr({ opacity: this.config.maxIconOpacity })
       .size(this.config.maxIconSize, this.config.maxIconSize)
@@ -354,9 +274,9 @@ class AssetNode extends BaseNode {
       .cy(Y - this.config.maxIconSize / 2 + this.config.maxIconTranslateY + this.config.maxIconSize / 2)
 
     text
-      .center(this.initialX, this.initialY)
-      .scale(0.001)
       .attr({ opacity: 0 })
+      .center(tx, ty)
+      .scale(0.001)
       .animate({ duration: this.config.animationSpeed })
       .attr({ opacity: 1 })
       .transform({ scale: 1, translate: [this.config.maxTextTranslateX, this.config.maxTextTranslateY] })
@@ -370,8 +290,15 @@ class AssetNode extends BaseNode {
     this.currentY = Y
   }
 
+
+  /**
+  * Transforms a node from detailed representation to minimal version.
+  * @param {Number} X=finalX The final Xrender position.
+  * @param {Number} Y=finalY The final Y render position.
+  */
   transformToMin(X = this.finalX, Y = this.finalY) {
     // update current elements
+
     this
       .svg
       .get(0)
@@ -379,6 +306,16 @@ class AssetNode extends BaseNode {
       .width(this.config.minWidth)
       .height(this.config.minHeight)
       .center(X, Y)
+
+
+    // old icon position
+    const ix = this.svg.get(1).bbox().cx
+    const iy = this.svg.get(1).bbox().cy
+
+    // old text position
+    const tx = this.svg.get(2).bbox().cx
+    const ty = this.svg.get(2).bbox().cy
+
 
     this
       .svg
@@ -401,8 +338,9 @@ class AssetNode extends BaseNode {
 
     // put new elements into position
     icon
-      .center(this.initialX, this.initialY)
+      .size(1, 1)
       .attr({ opacity: 0 })
+      .center(ix, iy)
       .animate({ duration: this.config.animationSpeed })
       .attr({ opacity: this.config.minIconOpacity })
       .size(this.config.minIconSize, this.config.minIconSize)
@@ -411,10 +349,10 @@ class AssetNode extends BaseNode {
       .center(X, Y)
 
     text
-      .center(this.initialX, this.initialY)
-      .size(this.config.minTextWidth, text.children()[0].node.clientHeight)
-      .scale(0.001)
       .attr({ opacity: 0 })
+      .center(tx, ty)
+      .scale(0.001)
+      .size(this.config.minTextWidth, text.children()[0].node.clientHeight)
       .animate({ duration: this.config.animationSpeed })
       .attr({ opacity: 1 })
       .transform({ scale: 1, translate: [this.config.minTextTranslateX, this.config.minTextTranslateY] })

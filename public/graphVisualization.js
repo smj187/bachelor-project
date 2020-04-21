@@ -1795,6 +1795,19 @@ function _setPrototypeOf(o, p) {
   return _setPrototypeOf(o, p);
 }
 
+function _isNativeReflectConstruct() {
+  if (typeof Reflect === "undefined" || !Reflect.construct) return false;
+  if (Reflect.construct.sham) return false;
+  if (typeof Proxy === "function") return true;
+
+  try {
+    Date.prototype.toString.call(Reflect.construct(Date, [], function () {}));
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
 function _assertThisInitialized(self) {
   if (self === void 0) {
     throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
@@ -1811,24 +1824,58 @@ function _possibleConstructorReturn(self, call) {
   return _assertThisInitialized(self);
 }
 
+function _createSuper(Derived) {
+  return function () {
+    var Super = _getPrototypeOf(Derived),
+        result;
+
+    if (_isNativeReflectConstruct()) {
+      var NewTarget = _getPrototypeOf(this).constructor;
+
+      result = Reflect.construct(Super, arguments, NewTarget);
+    } else {
+      result = Super.apply(this, arguments);
+    }
+
+    return _possibleConstructorReturn(this, result);
+  };
+}
+
+function _readOnlyError(name) {
+  throw new Error("\"" + name + "\" is read-only");
+}
+
 function _toConsumableArray(arr) {
-  return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread();
+  return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableSpread();
 }
 
 function _arrayWithoutHoles(arr) {
-  if (Array.isArray(arr)) {
-    for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) arr2[i] = arr[i];
-
-    return arr2;
-  }
+  if (Array.isArray(arr)) return _arrayLikeToArray(arr);
 }
 
 function _iterableToArray(iter) {
-  if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter);
+  if (typeof Symbol !== "undefined" && Symbol.iterator in Object(iter)) return Array.from(iter);
+}
+
+function _unsupportedIterableToArray(o, minLen) {
+  if (!o) return;
+  if (typeof o === "string") return _arrayLikeToArray(o, minLen);
+  var n = Object.prototype.toString.call(o).slice(8, -1);
+  if (n === "Object" && o.constructor) n = o.constructor.name;
+  if (n === "Map" || n === "Set") return Array.from(n);
+  if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen);
+}
+
+function _arrayLikeToArray(arr, len) {
+  if (len == null || len > arr.length) len = arr.length;
+
+  for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i];
+
+  return arr2;
 }
 
 function _nonIterableSpread() {
-  throw new TypeError("Invalid attempt to spread non-iterable instance");
+  throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
 }
 
 var commonjsGlobal$1 = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
@@ -13232,12 +13279,12 @@ if (isForced_1(NUMBER$1, !NativeNumber$1(' 0o1') || !NativeNumber$1('0b1') || Na
   redefine(global_1, NUMBER$1, NumberWrapper$1);
 }
 
-/**
- * Minified extension. The orginal library had a lot of unwanted functionality
- * 
- * @see https://github.com/svgdotjs/svg.panzoom.js
- * @private
- */
+var normalizeEvent = function normalizeEvent(ev) {
+  return ev.touches || [{
+    clientX: ev.clientX,
+    clientY: ev.clientY
+  }];
+};
 
 extend(Svg, {
   panZoom: function panZoom(options) {
@@ -13246,6 +13293,10 @@ extend(Svg, {
         _options$zoomMin,
         _options$zoomMax,
         _options$wheelZoom,
+        _options$pinchZoom,
+        _options$panning,
+        _options$panButton,
+        _options$oneFingerPan,
         _options$margins,
         _this = this;
 
@@ -13257,7 +13308,14 @@ extend(Svg, {
     var zoomMin = (_options$zoomMin = options.zoomMin) !== null && _options$zoomMin !== void 0 ? _options$zoomMin : Number.MIN_VALUE;
     var zoomMax = (_options$zoomMax = options.zoomMax) !== null && _options$zoomMax !== void 0 ? _options$zoomMax : Number.MAX_VALUE;
     var doWheelZoom = (_options$wheelZoom = options.wheelZoom) !== null && _options$wheelZoom !== void 0 ? _options$wheelZoom : true;
+    var doPinchZoom = (_options$pinchZoom = options.pinchZoom) !== null && _options$pinchZoom !== void 0 ? _options$pinchZoom : true;
+    var doPanning = (_options$panning = options.panning) !== null && _options$panning !== void 0 ? _options$panning : true;
+    var panButton = (_options$panButton = options.panButton) !== null && _options$panButton !== void 0 ? _options$panButton : 0;
+    var oneFingerPan = (_options$oneFingerPan = options.oneFingerPan) !== null && _options$oneFingerPan !== void 0 ? _options$oneFingerPan : false;
     var margins = (_options$margins = options.margins) !== null && _options$margins !== void 0 ? _options$margins : false;
+    var lastP;
+    var lastTouches;
+    var zoomInProgress = false;
 
     var restrictToMargins = function restrictToMargins(box) {
       if (!margins) return;
@@ -13310,8 +13368,175 @@ extend(Svg, {
       }
     };
 
+    var pinchZoomStart = function pinchZoomStart(ev) {
+      lastTouches = normalizeEvent(ev); // Start panning in case only one touch is found
+
+      if (lastTouches.length < 2) {
+        if (doPanning && oneFingerPan) {
+          panStart.call(this, ev);
+        }
+
+        return;
+      } // Stop panning for more than one touch
+
+
+      if (doPanning && oneFingerPan) {
+        panStop.call(this, ev);
+      } // We call it so late, so the user is still able to scroll / reload the page via gesture
+      // In case oneFingerPan is not active
+
+
+      ev.preventDefault();
+
+      if (this.dispatch('pinchZoomStart', {
+        event: ev
+      }).defaultPrevented) {
+        return;
+      }
+
+      this.off('touchstart.panZoom', pinchZoomStart);
+      zoomInProgress = true;
+      on(document, 'touchmove.panZoom', pinchZoom, this, {
+        passive: false
+      });
+      on(document, 'touchend.panZoom', pinchZoomStop, this, {
+        passive: false
+      });
+    };
+
+    var pinchZoomStop = function pinchZoomStop(ev) {
+      ev.preventDefault();
+      var currentTouches = normalizeEvent(ev);
+
+      if (currentTouches.length > 1) {
+        return;
+      }
+
+      zoomInProgress = false;
+      this.dispatch('pinchZoomEnd', {
+        event: ev
+      });
+      off(document, 'touchmove.panZoom', pinchZoom);
+      off(document, 'touchend.panZoom', pinchZoomStop);
+      this.on('touchstart.panZoom', pinchZoomStart);
+
+      if (currentTouches.length && doPanning && oneFingerPan) {
+        panStart.call(this, ev);
+      }
+    };
+
+    var pinchZoom = function pinchZoom(ev) {
+      ev.preventDefault();
+      var currentTouches = normalizeEvent(ev);
+      var zoom = this.zoom(); // Distance Formula
+
+      var lastDelta = Math.sqrt(Math.pow(lastTouches[0].clientX - lastTouches[1].clientX, 2) + Math.pow(lastTouches[0].clientY - lastTouches[1].clientY, 2));
+      var currentDelta = Math.sqrt(Math.pow(currentTouches[0].clientX - currentTouches[1].clientX, 2) + Math.pow(currentTouches[0].clientY - currentTouches[1].clientY, 2));
+      var zoomAmount = lastDelta / currentDelta;
+
+      if (zoom < zoomMin && zoomAmount > 1 || zoom > zoomMax && zoomAmount < 1) {
+        zoomAmount = 1;
+      }
+
+      var currentFocus = {
+        x: currentTouches[0].clientX + 0.5 * (currentTouches[1].clientX - currentTouches[0].clientX),
+        y: currentTouches[0].clientY + 0.5 * (currentTouches[1].clientY - currentTouches[0].clientY)
+      };
+      var lastFocus = {
+        x: lastTouches[0].clientX + 0.5 * (lastTouches[1].clientX - lastTouches[0].clientX),
+        y: lastTouches[0].clientY + 0.5 * (lastTouches[1].clientY - lastTouches[0].clientY)
+      };
+      var p = this.point(currentFocus.x, currentFocus.y);
+      var focusP = this.point(2 * currentFocus.x - lastFocus.x, 2 * currentFocus.y - lastFocus.y);
+      var box = new Box(this.viewbox()).transform(new Matrix().translate(-focusP.x, -focusP.y).scale(zoomAmount, 0, 0).translate(p.x, p.y));
+      restrictToMargins(box);
+      this.viewbox(box);
+      lastTouches = currentTouches;
+      this.dispatch('zoom', {
+        box: box,
+        focus: focusP
+      });
+    };
+
+    var panStart = function panStart(ev) {
+      var isMouse = ev.type.indexOf('mouse') > -1; // In case panStart is called with touch, ev.button is undefined
+
+      if (isMouse && ev.button !== panButton && ev.which !== panButton + 1) {
+        return;
+      }
+
+      ev.preventDefault();
+      this.off('mousedown.panZoom', panStart);
+      lastTouches = normalizeEvent(ev);
+      if (zoomInProgress) return;
+      this.dispatch('panStart', {
+        event: ev
+      });
+      lastP = {
+        x: lastTouches[0].clientX,
+        y: lastTouches[0].clientY
+      };
+      on(document, 'touchmove.panZoom mousemove.panZoom', panning, this, {
+        passive: false
+      });
+      on(document, 'touchend.panZoom mouseup.panZoom', panStop, this, {
+        passive: false
+      });
+    };
+
+    var panStop = function panStop(ev) {
+      ev.preventDefault();
+      off(document, 'touchmove.panZoom mousemove.panZoom', panning);
+      off(document, 'touchend.panZoom mouseup.panZoom', panStop);
+      this.on('mousedown.panZoom', panStart);
+      this.dispatch('panEnd', {
+        event: ev
+      });
+    };
+
+    var panning = function panning(ev) {
+      ev.preventDefault();
+      var currentTouches = normalizeEvent(ev);
+      var currentP = {
+        x: currentTouches[0].clientX,
+        y: currentTouches[0].clientY
+      };
+      var p1 = this.point(currentP.x, currentP.y);
+      var p2 = this.point(lastP.x, lastP.y);
+      var deltaP = [p2.x - p1.x, p2.y - p1.y];
+
+      if (!deltaP[0] && !deltaP[1]) {
+        return;
+      }
+
+      var box = new Box(this.viewbox()).transform(new Matrix().translate(deltaP[0], deltaP[1]));
+      lastP = currentP;
+      restrictToMargins(box);
+
+      if (this.dispatch('panning', {
+        box: box,
+        event: ev
+      }).defaultPrevented) {
+        return;
+      }
+
+      this.viewbox(box);
+    };
+
     if (doWheelZoom) {
       this.on('wheel.panZoom', wheelZoom, this, {
+        passive: false
+      });
+    }
+
+    if (doPinchZoom) {
+      this.on('touchstart.panZoom', pinchZoomStart, this, {
+        passive: false
+      });
+    }
+
+    if (doPanning) {
+      this.on('mousedown.panZoom', panStart, this, {
         passive: false
       });
     }
@@ -13359,6 +13584,28 @@ _export({ target: 'Array', proto: true, forced: SKIPS_HOLES || !USES_TO_LENGTH$5
 
 // https://tc39.github.io/ecma262/#sec-array.prototype-@@unscopables
 addToUnscopables$1(FIND);
+
+var defineProperty$7 = objectDefineProperty.f;
+
+var FunctionPrototype$1 = Function.prototype;
+var FunctionPrototypeToString$1 = FunctionPrototype$1.toString;
+var nameRE$1 = /^\s*function ([^ (]*)/;
+var NAME$1 = 'name';
+
+// Function instances `.name` property
+// https://tc39.github.io/ecma262/#sec-function-instances-name
+if (descriptors && !(NAME$1 in FunctionPrototype$1)) {
+  defineProperty$7(FunctionPrototype$1, NAME$1, {
+    configurable: true,
+    get: function () {
+      try {
+        return FunctionPrototypeToString$1.call(this).match(nameRE$1)[1];
+      } catch (error) {
+        return '';
+      }
+    }
+  });
+}
 
 var IS_CONCAT_SPREADABLE$1 = wellKnownSymbol('isConcatSpreadable');
 var MAX_SAFE_INTEGER$2 = 0x1FFFFFFFFFFFFF;
@@ -13535,7 +13782,7 @@ var iteratorsCore$1 = {
   BUGGY_SAFARI_ITERATORS: BUGGY_SAFARI_ITERATORS$2
 };
 
-var defineProperty$7 = objectDefineProperty.f;
+var defineProperty$8 = objectDefineProperty.f;
 
 
 
@@ -13543,7 +13790,7 @@ var TO_STRING_TAG$4 = wellKnownSymbol('toStringTag');
 
 var setToStringTag$1 = function (it, TAG, STATIC) {
   if (it && !has(it = STATIC ? it : it.prototype, TO_STRING_TAG$4)) {
-    defineProperty$7(it, TO_STRING_TAG$4, { configurable: true, value: TAG });
+    defineProperty$8(it, TO_STRING_TAG$4, { configurable: true, value: TAG });
   }
 };
 
@@ -14622,7 +14869,7 @@ var collection$1 = function (CONSTRUCTOR_NAME, wrapper, common) {
   return Constructor;
 };
 
-var defineProperty$8 = objectDefineProperty.f;
+var defineProperty$9 = objectDefineProperty.f;
 
 
 
@@ -14764,7 +15011,7 @@ var collectionStrong$1 = {
         return define(this, value = value === 0 ? 0 : value, value);
       }
     });
-    if (descriptors) defineProperty$8(C.prototype, 'size', {
+    if (descriptors) defineProperty$9(C.prototype, 'size', {
       get: function () {
         return getInternalState(this).size;
       }
@@ -14966,11 +15213,11 @@ var wellKnownSymbolWrapped = {
 	f: f$9
 };
 
-var defineProperty$9 = objectDefineProperty.f;
+var defineProperty$a = objectDefineProperty.f;
 
 var defineWellKnownSymbol$1 = function (NAME) {
   var Symbol = path.Symbol || (path.Symbol = {});
-  if (!has(Symbol, NAME)) defineProperty$9(Symbol, NAME, {
+  if (!has(Symbol, NAME)) defineProperty$a(Symbol, NAME, {
     value: wellKnownSymbolWrapped.f(NAME)
   });
 };
@@ -15251,7 +15498,7 @@ setToStringTag$1($Symbol$1, SYMBOL$1);
 
 hiddenKeys[HIDDEN$1] = true;
 
-var defineProperty$a = objectDefineProperty.f;
+var defineProperty$b = objectDefineProperty.f;
 
 
 var NativeSymbol$1 = global_1.Symbol;
@@ -15278,7 +15525,7 @@ if (descriptors && typeof NativeSymbol$1 == 'function' && (!('description' in Na
   var symbolToString$1 = symbolPrototype$1.toString;
   var native$1 = String(NativeSymbol$1('test')) == 'Symbol(test)';
   var regexp$1 = /^Symbol\((.*)\)[^)]+$/;
-  defineProperty$a(symbolPrototype$1, 'description', {
+  defineProperty$b(symbolPrototype$1, 'description', {
     configurable: true,
     get: function description() {
       var symbol = isObject(this) ? this.valueOf() : this;
@@ -15611,40 +15858,6 @@ addToUnscopables$1(FIND_INDEX);
 var es_map = collection$1('Map', function (init) {
   return function Map() { return init(this, arguments.length ? arguments[0] : undefined); };
 }, collectionStrong$1);
-
-// `RegExp.prototype.flags` getter implementation
-// https://tc39.github.io/ecma262/#sec-get-regexp.prototype.flags
-var regexpFlags$1 = function () {
-  var that = anObject(this);
-  var result = '';
-  if (that.global) result += 'g';
-  if (that.ignoreCase) result += 'i';
-  if (that.multiline) result += 'm';
-  if (that.dotAll) result += 's';
-  if (that.unicode) result += 'u';
-  if (that.sticky) result += 'y';
-  return result;
-};
-
-var TO_STRING$2 = 'toString';
-var RegExpPrototype$1 = RegExp.prototype;
-var nativeToString$1 = RegExpPrototype$1[TO_STRING$2];
-
-var NOT_GENERIC$1 = fails(function () { return nativeToString$1.call({ source: 'a', flags: 'b' }) != '/a/b'; });
-// FF44- RegExp#toString has a wrong name
-var INCORRECT_NAME$1 = nativeToString$1.name != TO_STRING$2;
-
-// `RegExp.prototype.toString` method
-// https://tc39.github.io/ecma262/#sec-regexp.prototype.tostring
-if (NOT_GENERIC$1 || INCORRECT_NAME$1) {
-  redefine(RegExp.prototype, TO_STRING$2, function toString() {
-    var R = anObject(this);
-    var p = String(R.source);
-    var rf = R.flags;
-    var f = String(rf === undefined && R instanceof RegExp && !('flags' in RegExpPrototype$1) ? regexpFlags$1.call(R) : rf);
-    return '/' + p + '/' + f;
-  }, { unsafe: true });
-}
 
 class Filter extends Element {
   constructor (node) {
@@ -16098,7 +16311,42 @@ var FallbackRiskIcon = "data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.
 
 var FallbackCustomIcon = "data:image/svg+xml,%3Csvg%20enable-background%3D%22new%200%200%2060%2052%22%20height%3D%22512%22%20viewBox%3D%220%200%2060%2052%22%20width%3D%22512%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22m30%2034c-4.411%200-8-3.589-8-8s3.589-8%208-8%208%203.589%208%208-3.589%208-8%208zm0-14c-3.308%200-6%202.691-6%206s2.692%206%206%206%206-2.691%206-6-2.692-6-6-6z%22%2F%3E%3Cpath%20d%3D%22m54%2012c-3.308%200-6-2.691-6-6s2.692-6%206-6%206%202.691%206%206-2.692%206-6%206zm0-10c-2.206%200-4%201.794-4%204s1.794%204%204%204%204-1.794%204-4-1.794-4-4-4z%22%2F%3E%3Cpath%20d%3D%22m6%2052c-3.308%200-6-2.691-6-6s2.692-6%206-6%206%202.691%206%206-2.692%206-6%206zm0-10c-2.206%200-4%201.794-4%204s1.794%204%204%204%204-1.794%204-4-1.794-4-4-4z%22%2F%3E%3Cpath%20d%3D%22m8%2021c-2.206%200-4-1.794-4-4s1.794-4%204-4%204%201.794%204%204-1.794%204-4%204zm0-6c-1.103%200-2%20.897-2%202s.897%202%202%202%202-.897%202-2-.897-2-2-2z%22%2F%3E%3Cpath%20d%3D%22m28%2010c-2.206%200-4-1.794-4-4s1.794-4%204-4%204%201.794%204%204-1.794%204-4%204zm0-6c-1.103%200-2%20.897-2%202s.897%202%202%202%202-.897%202-2-.897-2-2-2z%22%2F%3E%3Cpath%20d%3D%22m46%2043c-2.206%200-4-1.794-4-4s1.794-4%204-4%204%201.794%204%204-1.794%204-4%204zm0-6c-1.103%200-2%20.897-2%202s.897%202%202%202%202-.897%202-2-.897-2-2-2z%22%2F%3E%3Cpath%20d%3D%22m29.999%2020c-.467%200-.885-.329-.979-.804l-2-10c-.108-.542.243-1.068.784-1.177.543-.108%201.068.243%201.177.784l2%2010c.108.542-.243%201.068-.784%201.177-.067.014-.133.02-.198.02z%22%2F%3E%3Cpath%20d%3D%22m35.377%2022.519c-.286%200-.571-.123-.769-.36-.354-.424-.296-1.055.128-1.408l14.783-12.318c.424-.354%201.055-.297%201.408.128.354.424.296%201.055-.128%201.408l-14.782%2012.318c-.187.156-.414.232-.64.232z%22%2F%3E%3Cpath%20d%3D%22m9.978%2043.974c-.283%200-.563-.119-.761-.351-.358-.42-.308-1.051.112-1.41l14.646-12.493c.42-.359%201.051-.309%201.41.112.358.42.308%201.051-.112%201.41l-14.647%2012.492c-.188.161-.418.24-.648.24z%22%2F%3E%3Cpath%20d%3D%22m23.52%2024.35c-.126%200-.254-.024-.378-.075l-12.746-5.214c-.511-.209-.756-.793-.547-1.304s.792-.753%201.304-.547l12.746%205.214c.511.209.756.793.547%201.304-.158.387-.532.622-.926.622z%22%2F%3E%3Cpath%20d%3D%22m43.806%2037.958c-.218%200-.437-.071-.621-.217l-8.325-6.607c-.433-.343-.505-.972-.162-1.405.343-.434.972-.506%201.405-.162l8.325%206.607c.433.343.505.972.162%201.405-.197.249-.489.379-.784.379z%22%2F%3E%3C%2Fsvg%3E";
 
-var LightenDarkenColor = function LightenDarkenColor(col, amt) {
+// `RegExp.prototype.flags` getter implementation
+// https://tc39.github.io/ecma262/#sec-get-regexp.prototype.flags
+var regexpFlags$1 = function () {
+  var that = anObject(this);
+  var result = '';
+  if (that.global) result += 'g';
+  if (that.ignoreCase) result += 'i';
+  if (that.multiline) result += 'm';
+  if (that.dotAll) result += 's';
+  if (that.unicode) result += 'u';
+  if (that.sticky) result += 'y';
+  return result;
+};
+
+var TO_STRING$2 = 'toString';
+var RegExpPrototype$1 = RegExp.prototype;
+var nativeToString$1 = RegExpPrototype$1[TO_STRING$2];
+
+var NOT_GENERIC$1 = fails(function () { return nativeToString$1.call({ source: 'a', flags: 'b' }) != '/a/b'; });
+// FF44- RegExp#toString has a wrong name
+var INCORRECT_NAME$1 = nativeToString$1.name != TO_STRING$2;
+
+// `RegExp.prototype.toString` method
+// https://tc39.github.io/ecma262/#sec-regexp.prototype.tostring
+if (NOT_GENERIC$1 || INCORRECT_NAME$1) {
+  redefine(RegExp.prototype, TO_STRING$2, function toString() {
+    var R = anObject(this);
+    var p = String(R.source);
+    var rf = R.flags;
+    var f = String(rf === undefined && R instanceof RegExp && !('flags' in RegExpPrototype$1) ? regexpFlags$1.call(R) : rf);
+    return '/' + p + '/' + f;
+  }, { unsafe: true });
+}
+
+/* eslint-disable no-bitwise */
+var Colorshift = function Colorshift(col, amt) {
   var num = parseInt(col, 16);
   var r = (num >> 16) + amt;
   var b = (num >> 8 & 0x00FF) + amt;
@@ -16106,12 +16354,13 @@ var LightenDarkenColor = function LightenDarkenColor(col, amt) {
   var newColor = g | b << 8 | r << 16;
   return newColor.toString(16);
 };
-/**
- * Base class for all node representations
- * @param {Data} data the raw data object to represent
- * @param {Canvas} canvas the svg canvas element to render the node on
- */
 
+/**
+ * This is the base class for nodes.
+ * @property {Data} data Loaded data from a database.
+ * @property {Canvas} canvas The nested canvas to render the node on.
+ *
+ */
 
 var BaseNode = /*#__PURE__*/function () {
   function BaseNode(data, canvas) {
@@ -16119,7 +16368,7 @@ var BaseNode = /*#__PURE__*/function () {
 
     this.svg = null;
     this.canvas = canvas;
-    this.config = {}; // set by class
+    this.config = _objectSpread2({}, data.config); // first add any override values 
     // node data
 
     this.id = data.id || 0;
@@ -16129,15 +16378,14 @@ var BaseNode = /*#__PURE__*/function () {
     this.description = data.description || null;
     this.keyValuePairs = data.keyValuePairs || [];
     this.state = data.state || null;
-    this.attributes = new Map(); // TODO: key value paired map
-    // layout data
+    this.attributes = new Map(); // layout data
 
     this.depth = 0;
     this.parent = null;
-    this.parentId = data.parentId || null;
+    this.parentId = data.parent || null;
     this.children = [];
-    this.childrenIds = data.childrenIds || [];
-    this.prevSibling = data.prevSibling || null;
+    this.childrenIds = data.children || [];
+    this.prevSibling = null;
     this.modifier = 0;
     this.mod = 0; // node position
 
@@ -16150,8 +16398,7 @@ var BaseNode = /*#__PURE__*/function () {
     this.x = 0;
     this.y = 0; // node info
 
-    this.nodeSize = "min"; // minimal or maximal representation
-
+    this.nodeSize = "min";
     this.opacity = 1;
     this.isHidden = false;
     this.currentWidth = 0;
@@ -16161,60 +16408,62 @@ var BaseNode = /*#__PURE__*/function () {
     this.outgoingEdges = [];
     this.incomingEdges = [];
   }
+  /**
+   * Transforms a node to its final rendered position.
+   * @param {Number} X=finalX The final X position.
+   * @param {Number} Y=finalY The final Y position.
+   */
+
 
   _createClass(BaseNode, [{
-    key: "addIncomingEdge",
-    value: function addIncomingEdge(incomingEdge) {
-      this.incomingEdges.push(incomingEdge);
-    }
-  }, {
-    key: "addOutgoingEdge",
-    value: function addOutgoingEdge(outgoingEdge) {
-      this.outgoingEdges.push(outgoingEdge);
-    }
-  }, {
-    key: "transformToPosition",
-    value: function transformToPosition() {
-      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.initialX;
-      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.initialY;
+    key: "transformToFinalPosition",
+    value: function transformToFinalPosition() {
+      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.finalX;
+      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.finalY;
+
+      if (this.isRendered() === false) {
+        return;
+      }
+
+      this.currentX = X;
+      this.currentY = Y;
       this.svg.animate({
         duration: this.config.animationSpeed
       }).transform({
         position: [X, Y]
       });
     }
-  }, {
-    key: "transformToFinalPosition",
-    value: function transformToFinalPosition() {
-      this.svg.attr({
-        opacity: 1
-      }).animate({
-        duration: this.config.animationSpeed
-      }).transform({
-        position: [this.finalX, this.finalY]
-      }).attr({
-        opacity: 1
-      });
-    }
+    /**
+     * Transforms a node from its final position to its initial rendered position.
+     * @param {Number} X=initialX The initial X position.
+     * @param {Number} Y=initialY The initial Y position.
+     */
+
   }, {
     key: "transformToInitialPosition",
     value: function transformToInitialPosition() {
+      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.initialX;
+      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.initialY;
+      this.currentX = X;
+      this.currentY = Y;
       this.svg.back();
       this.svg.attr({
         opacity: 1
       }).animate({
         duration: this.config.animationSpeed
       }).transform({
-        position: [this.initialX, this.initialY]
+        position: [X, Y]
       }).attr({
         opacity: 1
       });
     }
-  }, {
-    key: "isRendered",
-    value: function isRendered() {
-      return this.svg !== null;
-    }
+    /**
+     * Removes the rendered SVG node from the canvas.
+     * @param {Number} X The X position to move the elements before removing them. 
+     * @param {Number} Y The Y position to move the elements before removing them.
+     * @param {Object} opts An object containing additional configuration to control certain behaviours.
+     */
+
   }, {
     key: "removeNode",
     value: function removeNode() {
@@ -16223,7 +16472,8 @@ var BaseNode = /*#__PURE__*/function () {
       var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.initialX;
       var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.initialY;
       var opts = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {
-        animation: true
+        animation: true,
+        opacity: 1
       };
 
       if (opts.animation === true) {
@@ -16239,35 +16489,52 @@ var BaseNode = /*#__PURE__*/function () {
             _this.svg = null;
           });
         }
+      } else if (opts.opacity === 0) {
+        if (this.svg !== null) {
+          this.svg.attr({
+            opacity: 1
+          }).animate({
+            duration: this.config.animationSpeed
+          }).transform({
+            position: [X, Y]
+          }).attr({
+            opacity: 0
+          }).after(function () {
+            _this.svg.remove();
+
+            _this.svg = null;
+          });
+        }
       } else {
         this.svg.remove();
         this.svg = null;
       }
     }
-  }, {
-    key: "getSVGBbox",
-    value: function getSVGBbox() {
-      return this.svg.bbox();
-    } // TODO: ask: shall the library export a method where the user can change the default
-    //            mouse events for every interaction function
+    /**
+     * Adds an event and a method to the node.
+     * @param {Event} event The provided event.
+     * @param {Method} func The provided method.
+     */
 
   }, {
     key: "addEvent",
     value: function addEvent(event, func) {
-      // this.svg.on(event, func)
-      // console.log(this.svg)
       this.events = [].concat(_toConsumableArray(this.events), [{
         event: event,
         func: func
-      }]); // console.log(this.getNodeSize())
+      }]);
     }
+    /**
+     * Creates the initial SVG object reference.
+     */
+
   }, {
     key: "createSVGElement",
     value: function createSVGElement() {
       var _this2 = this;
 
-      var svg = this.canvas.group().draggable(); // const svg = this.canvas.group()
-
+      // const svg = this.canvas.group().draggable()
+      var svg = this.canvas.group();
       svg.css("cursor", "pointer");
       svg.id("node#".concat(this.id));
       svg.on("mouseover", function () {
@@ -16301,7 +16568,7 @@ var BaseNode = /*#__PURE__*/function () {
 
         node.filterWith(function (add) {
           var blur = add.offset(0, 0).in(add.$source).gaussianBlur(3);
-          var color = add.composite(add.flood("#".concat(LightenDarkenColor(toDark, -10))), blur, "in");
+          var color = add.composite(add.flood("#".concat(Colorshift(toDark, -10))), blur, "in");
           add.merge(color, add.$source);
         });
       });
@@ -16323,11 +16590,9 @@ var BaseNode = /*#__PURE__*/function () {
 
         var i = _toConsumableArray(_this2.canvas.defs().node.childNodes).findIndex(function (d) {
           return d.id === "defaultNodeBorderFilter";
-        });
+        }); // const filter = this.canvas.defs().get(i)
+        // node.filterWith(filter)
 
-        var filter = _this2.canvas.defs().get(i);
-
-        node.filterWith(filter);
       });
       this.events.forEach(function (_ref) {
         var event = _ref.event,
@@ -16336,22 +16601,30 @@ var BaseNode = /*#__PURE__*/function () {
       });
       return svg;
     }
+    /**
+     * Creates the nodes SVG shape.
+     */
+
   }, {
     key: "createNode",
     value: function createNode() {
-      var width = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
-      var height = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
       var node = null;
+      var width = 1;
+      var height = 1;
 
       if (this.type === "custom") {
+        // custom
         if (this.config.nodeType === "rect") {
           node = this.canvas.rect(width, height);
         } else if (this.config.nodeType === "ellipse") {
           node = this.canvas.ellipse(width, height);
         } else if (this.config.nodeType === "path") {
-          node = this.canvas.path(this.config.svg);
+          node = this.canvas.path(this.config.svgPathElement);
+        } else {
+          node = this.canvas.rect(width, height);
         }
       } else {
+        // default
         node = this.canvas.rect(width, height);
       }
 
@@ -16369,28 +16642,26 @@ var BaseNode = /*#__PURE__*/function () {
 
       var i = _toConsumableArray(this.canvas.defs().node.childNodes).findIndex(function (d) {
         return d.id === "defaultNodeBorderFilter";
-      });
+      }) || -1;
 
       if (i === -1) {
         var filter = new Filter();
         filter.id("defaultNodeBorderFilter");
         var blur = filter.offset(0, 0).in(filter.$source).gaussianBlur(2);
         var color = filter.composite(filter.flood("#fff"), blur, "in");
-        filter.merge(color, filter.$source);
-        this.canvas.defs().add(filter);
-        node.filterWith(filter);
-      } else {
-        var _filter = this.canvas.defs().get(i);
-
-        node.filterWith(_filter);
+        filter.merge(color, filter.$source); // this.canvas.defs().add(filter)
+        // node.filterWith(filter)
       }
 
       return node;
     }
+    /**
+     * Creates the nodes icon.
+     */
+
   }, {
     key: "createIcon",
     value: function createIcon() {
-      var size = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
       var icon = null;
 
       if (this.config.iconUrl === null) {
@@ -16413,20 +16684,29 @@ var BaseNode = /*#__PURE__*/function () {
         icon = this.canvas.image(this.config.iconUrl);
       }
 
-      icon.size(size, size);
+      icon.size(1, 1);
       return icon;
     }
+    /**
+     * Creates the nodes label.
+     */
+
   }, {
     key: "createLabel",
     value: function createLabel() {
       var textAlign = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "center";
-      // FIXME: html text gets highlighted way to often
-      var fobj = this.canvas.foreignObject(this.config.minTextWidth, 0);
+      var fobj = this.canvas.foreignObject(this.config.minTextWidth, 1);
+
+      if (this.label === "") {
+        return fobj;
+      }
+
       var background = document.createElement("div");
       background.style.background = this.config.labelBackground;
       background.style.padding = "".concat(this.config.offset / 2, "px");
       background.style.textAlign = textAlign;
       background.style.width = "".concat(this.config.minTextWidth, "px");
+      background.setAttribute("id", "min-label");
       var label = document.createElement("div");
       label.innerText = this.label;
       label.style.color = this.config.labelColor;
@@ -16442,6 +16722,31 @@ var BaseNode = /*#__PURE__*/function () {
       fobj.css("user-select", "none");
       fobj.dmove(this.config.borderStrokeWidth, this.config.borderStrokeWidth);
       return fobj;
+    }
+    /**
+     * Determins where the node is rendered or not.
+     * @returns True, if the SVG is rendered, else false.
+     */
+
+  }, {
+    key: "isRendered",
+    value: function isRendered() {
+      return this.svg !== null;
+    }
+  }, {
+    key: "addIncomingEdge",
+    value: function addIncomingEdge(incomingEdge) {
+      this.incomingEdges.push(incomingEdge);
+    }
+  }, {
+    key: "addOutgoingEdge",
+    value: function addOutgoingEdge(outgoingEdge) {
+      this.outgoingEdges.push(outgoingEdge);
+    }
+  }, {
+    key: "getSVGBbox",
+    value: function getSVGBbox() {
+      return this.svg.bbox();
     }
   }, {
     key: "isLeaf",
@@ -16652,9 +16957,39 @@ var BaseNode = /*#__PURE__*/function () {
       this.children = children;
     }
   }, {
+    key: "getIsHidden",
+    value: function getIsHidden() {
+      return this.isHidden;
+    }
+  }, {
+    key: "setIsHidden",
+    value: function setIsHidden(isHidden) {
+      this.isHidden = isHidden;
+    }
+  }, {
+    key: "getAttributes",
+    value: function getAttributes() {
+      return this.attributes;
+    }
+  }, {
+    key: "setAttributes",
+    value: function setAttributes(attributes) {
+      this.attributes = attributes;
+    }
+  }, {
     key: "setNodeSize",
     value: function setNodeSize(nodeSize) {
       this.nodeSize = nodeSize;
+    }
+  }, {
+    key: "getCurrentX",
+    value: function getCurrentX() {
+      return this.currentX;
+    }
+  }, {
+    key: "getCurrentY",
+    value: function getCurrentY() {
+      return this.currentY;
     }
   }, {
     key: "getParent",
@@ -16677,6 +17012,11 @@ var BaseNode = /*#__PURE__*/function () {
       return this.depth;
     }
   }, {
+    key: "getSVG",
+    value: function getSVG() {
+      return this.svg;
+    }
+  }, {
     key: "moveToFront",
     value: function moveToFront() {
       this.svg.front();
@@ -16697,55 +17037,54 @@ var BaseNode = /*#__PURE__*/function () {
 }();
 
 /**
- * Default configuration for risk nodes
- * @typedef {RiskConfig} RiskConfig
+ * @namespace RiskNodeConfiguration
+ * @description This object contains default configuration for risk node representations.
  *
- * @param {Number} [maxWidth=300] The nodes maximal width
- * @param {Number} [maxHeight=150] The nodes maximal height
- * @param {Number} [minWidth=150] The nodes minimal width
- * @param {Number} [minHeight=50] The nodes minimal height
+ * @property {Number} maxWidth=300                  - Sets the detailed node width.
+ * @property {Number} maxHeight=150                 - Sets the detailed height.
+ * @property {Number} minWidth=150                  - Sets the minimal node width.
+ * @property {Number} minHeight=50                  - Sets the minimal node height.
  *
- * @param {String} [iconUrl=null] The path to the image icon (if this value is null, the default icon is used)
- * @param {Number} [minIconOpacity=0.6] The basic visibility of the icon
- * @param {Number} [minIconSize=35] The width and height for the image icon
- * @param {Number} [minIconTranslateX=-50] Moves the icon horizontally
- * @param {Number} [minIconTranslateY=0] Moves the icon vertically
- * @param {Number} [maxIconOpacity=0.75] The basic visibility of the icon
- * @param {Number} [maxIconSize=30] The width and height for the image icon
- * @param {Number} [maxIconTranslateX=-120] Moves the icon horizontally
- * @param {Number} [maxIconTranslateY=-55] Moves the icon vertically
+ * @property {String} iconUrl=null                  - Determins the path to the image icon (if this value is null, the default icon is used).
+ * @property {Number} minIconOpacity=0.5            - Determins the basic visibility of the icon in minimal representation.
+ * @property {Number} minIconSize=35                - Determins the width and height for the image icon in minimal representation.
+ * @property {Number} minIconTranslateX=-45         - Determins the horizontal adjustment for the icon in minimal representation.
+ * @property {Number} minIconTranslateY=0           - Determins the vertical adjustment for the icon in minimal representation.
+ * @property {Number} maxIconOpacity=0.75           - Determins the basic visibility of the icon in detailed representation.
+ * @property {Number} maxIconSize=30                - Determins the width and height for the image icon in detailed representation.
+ * @property {Number} maxIconTranslateX=-120        - Determins the horizontal adjustment for the icon in detailed representation.
+ * @property {Number} maxIconTranslateY=-55         - Determins the vertical adjustment for the icon in detailed representation.
  *
- * @param {Number} [offset=8] The spacing used by padding and margin
- * @param {Number} [animationSpeed=300] The animation in milliseconds
- * @param {Number} [borderRadius=4] The border radius
- * @param {Number} [borderStrokeWidth=1] The border stroke width
- * @param {String} [borderStrokeColor="#F26A7C"] The border color
- * @param {String} [borderStrokeDasharray="5 10"] Gaps inside border
- * @param {String} [backgroundColor="#ffffff"] The background color for the rendered node
+ * @property {Number} offset=8                      - Determins the spacing used for padding between label and background.
+ * @property {Number} animationSpeed=300            - Determins how fast SVG elements animates inside the current layout.
+ * @property {Number} borderRadius=4                - Determins the nodes border radius.
+ * @property {Number} borderStrokeWidth=1           - Determins the nodes border stroke width.
+ * @property {String} borderStrokeColor=#F26A7C     - Determins the nodes border color.
+ * @property {String} borderStrokeDasharray="5 10"  - Determins the nodes gaps used inside the border.
+ * @property {String} backgroundColor=#ffffff       - Determins the nodes background color.
  *
- * @param {Number} [minTextWidth=100] The minimal text width for the label
- * @param {Number} [minTextHeight=45] The minimal text height for the label
- * @param {Number} [minTextTranslateX=22] Moves the label horizontally
- * @param {Number} [minTextTranslateY=0] The the label vertically
- * @param {Number} [maxTextWidth=295] The maximal text width for the description
- * @param {Number} [maxTextHeight=145] The maximal text height for the description
- * @param {Number} [maxTextTranslateX=0] The the description horizontally
- * @param {Number} [maxTextTranslateY=0] The the description vertically
- * @param {String} [labelColor="#ff8e9e"] The label text color
- * @param {String} [labelFontFamily="Montserrat"] The label font family
- * @param {Number} [labelFontSize=14] The label font size
- * @param {Number} [labelFontWeight=600] The label font weight
- * @param {String} [labelFontStyle="normal"] The label font style
- * @param {String} [labelBackground="transparent"] The label background color
- * @param {String} [detailsColor="#ff8e9e"] The details text color
- * @param {String} [detailsFontFamily="Montserrat"] The details family
- * @param {Number} [detailsFontSize=12] The details font size
- * @param {Number} [detailsFontWeight=600] The details font weight
- * @param {String} [detailsFontStyle="normal"] The details font style
- * @param {String} [detailsBackground="transparent"] The details text background color
+ * @property {Number} minTextWidth=90               - Determins the text width for the label in minimal representation.
+ * @property {Number} minTextHeight=45              - Determins the text height for the label in minimal representation.
+ * @property {Number} minTextTranslateX=22.5        - Determins the horizontal adjustment for the label in minimal representation.
+ * @property {Number} minTextTranslateY=0           - Determins the vertical adjustment for the label in minimal representation.
+ * @property {Number} maxTextWidth=295              - Determins the text width for the label in detailed representation.
+ * @property {Number} maxTextHeight=145             - Determins the text height for the label in detailed representation.
+ * @property {Number} maxTextTranslateX=0           - Determins the horizontal adjustment for the label in detailed representation.
+ * @property {Number} maxTextTranslateY=0           - Determins the vertical adjustment for the label in detailed representation.
+ * @property {String} labelColor=#ff8e9e            - Determins the color for the label.
+ * @property {String} labelFontFamily=Montserrat    - Determins the font family for the label.
+ * @property {Number} labelFontSize=14              - Determins the font size for the label.
+ * @property {Number} labelFontWeight=600           - Determins the font weight for the label.
+ * @property {String} labelFontStyle=normal         - Determins the font style for the label.
+ * @property {String} labelBackground=#ffffff       - Determins the background color for the label.
+ * @property {String} detailsColor=#ff8e9e          - Determins the color for the details description.
+ * @property {String} detailsFontFamily=Montserrat  - Determins the font family for the details description.
+ * @property {Number} detailsFontSize=12            - Determins the font size for the details description.
+ * @property {Number} detailsFontWeight=600         - Determins the font weight for the details description.
+ * @property {String} detailsFontStyle=normal       - Determins the font style for the details description.
+ * @property {String} detailsBackground=#ffffff     - Determins the background color for the details description.
  */
-
-var RiskConfig = {
+var RiskNodeConfiguration = {
   // large node
   maxWidth: 300,
   maxHeight: 150,
@@ -16754,9 +17093,9 @@ var RiskConfig = {
   minHeight: 50,
   // icon
   iconUrl: null,
-  minIconOpacity: 0.6,
+  minIconOpacity: 0.5,
   minIconSize: 35,
-  minIconTranslateX: -50,
+  minIconTranslateX: -45,
   minIconTranslateY: 0,
   maxIconOpacity: 0.75,
   maxIconSize: 30,
@@ -16771,9 +17110,9 @@ var RiskConfig = {
   borderStrokeDasharray: "5 10",
   backgroundColor: "#ffffff",
   // text
-  minTextWidth: 100,
+  minTextWidth: 90,
   minTextHeight: 45,
-  minTextTranslateX: 22,
+  minTextTranslateX: 22.5,
   minTextTranslateY: 0,
   maxTextWidth: 295,
   maxTextHeight: 145,
@@ -16784,7 +17123,7 @@ var RiskConfig = {
   labelFontSize: 14,
   labelFontWeight: 600,
   labelFontStyle: "normal",
-  labelBackground: "transparent",
+  labelBackground: "#ffffff",
   detailsColor: "#ff8e9e",
   detailsFontFamily: "Montserrat",
   detailsFontSize: 12,
@@ -16792,26 +17131,37 @@ var RiskConfig = {
   detailsFontStyle: "normal",
   detailsBackground: "transparent"
 };
+
 /**
- * Class representing the visualization of risks
- * @param {Data} data the raw node data
- * @param {Canvas} canvas the canvas to render the node on
- * @param {RiskConfig} customRiskConfig custom config to override default values
+ * This class is responsible for the visual representation of risks.
+ * @property {Data} data Loaded data from a database.
+ * @property {Canvas} canvas The nested canvas to render the node on.
+ * @property {Object} layoutConfig An object containing information to change the default visualization.
  *
  */
 
 var RiskNode = /*#__PURE__*/function (_BaseNode) {
   _inherits(RiskNode, _BaseNode);
 
-  function RiskNode(data, canvas, customRiskConfig) {
+  var _super = _createSuper(RiskNode);
+
+  function RiskNode(data, canvas) {
     var _this;
+
+    var layoutConfig = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
 
     _classCallCheck(this, RiskNode);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(RiskNode).call(this, data, canvas));
-    _this.config = _objectSpread2({}, RiskConfig, {}, customRiskConfig);
+    _this = _super.call(this, data, canvas);
+    _this.config = _objectSpread2({}, RiskNodeConfiguration, {}, data.config, {}, layoutConfig);
     return _this;
   }
+  /**
+   * Creates the risk details description.
+   *
+   * @return {ForeignObject} text A foreign object containing some html and the node's label.
+   */
+
 
   _createClass(RiskNode, [{
     key: "createRiskDetails",
@@ -16848,6 +17198,10 @@ var RiskNode = /*#__PURE__*/function (_BaseNode) {
       label.style.height = "fit-content";
       label.style.gridRow = "1";
       label.style.gridColumn = "1";
+      clamp(label, {
+        clamp: 1
+      }); // FIXME: long risk names are incorrect
+
       background.appendChild(label); // create status, if any exists
 
       if (this.state !== null) {
@@ -16904,11 +17258,21 @@ var RiskNode = /*#__PURE__*/function (_BaseNode) {
       });
       return text;
     }
+    /**
+    * Renders a risk node in minimal representation.
+    * @param  {Number} IX=initialX The initial X render position.
+    * @param  {Number} IY=initialY The initial Y render position.
+    * @param  {Number} FX=finalX The final X render position.
+    * @param  {Number} FY=finalY The final Y render position.
+    */
+
   }, {
     key: "renderAsMin",
     value: function renderAsMin() {
-      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.initialX;
-      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.initialY;
+      var IX = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.initialX;
+      var IY = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.initialY;
+      var FX = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : this.finalX;
+      var FY = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : this.finalY;
       // create svg elements
       var svg = this.createSVGElement();
       var node = this.createNode();
@@ -16918,41 +17282,42 @@ var RiskNode = /*#__PURE__*/function (_BaseNode) {
       svg.add(icon);
       svg.add(text); // animate new elements into position
 
-      svg.center(X, Y);
-      node.center(X, Y).animate({
+      node.center(IX, IY).width(this.config.minWidth).height(this.config.minHeight).dmove(-this.config.minWidth / 2, -this.config.minHeight / 2).animate({
         duration: this.config.animationSpeed
-      }).width(this.config.minWidth).height(this.config.minHeight).dmove(-this.config.minWidth / 2, -this.config.minHeight / 2);
-      icon.center(X, Y).attr({
-        opacity: 0
-      }).animate({
-        duration: this.config.animationSpeed
-      }).attr({
+      }).center(FX, FY);
+      icon.center(IX, IY).attr({
         opacity: this.config.minIconOpacity
-      }).size(this.config.minIconSize, this.config.minIconSize).dx(-this.config.minIconSize / 2 + this.config.minIconTranslateX).dy(-this.config.minIconSize / 2 + this.config.minIconTranslateY);
-      text.size(this.config.minTextWidth, text.children()[0].node.clientHeight).center(X, Y).scale(0.001).attr({
-        opacity: 0
-      }).animate({
+      }).size(this.config.minIconSize, this.config.minIconSize).dx(-this.config.minIconSize / 2).dy(-this.config.minIconSize / 2).animate({
         duration: this.config.animationSpeed
-      }).attr({
-        opacity: 1
-      }).transform({
+      }).center(FX + this.config.minIconTranslateX, FY + this.config.minIconTranslateY);
+      text.size(this.config.minTextWidth, text.children()[0].node.clientHeight).center(IX, IY).scale(0.001).transform({
         scale: 1,
         translate: [this.config.minTextTranslateX, this.config.minTextTranslateY]
-      });
+      }).animate({
+        duration: this.config.animationSpeed
+      }).center(FX, FY);
       this.currentWidth = this.config.minWidth;
       this.currentHeight = this.config.minHeight;
       this.nodeSize = "min";
-      this.currentX = X;
-      this.currentY = Y;
-      this.opacity = 1;
-      this.isHidden = false;
+      this.currentX = IX;
+      this.currentY = IY;
       this.svg = svg;
     }
+    /**
+    * Renders a risk node in detailed representation.
+    * @param  {Number} IX=initialX The initial X render position.
+    * @param  {Number} IY=initialY The initial Y render position.
+    * @param  {Number} FX=finalX The final X render position.
+    * @param  {Number} FY=finalY The final Y render position.
+    */
+
   }, {
     key: "renderAsMax",
     value: function renderAsMax() {
-      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.initialX;
-      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.initialY;
+      var IX = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.initialX;
+      var IY = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.initialY;
+      var FX = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : this.finalX;
+      var FY = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : this.finalY;
       // create svg elements
       var svg = this.createSVGElement();
       var node = this.createNode();
@@ -16962,36 +17327,33 @@ var RiskNode = /*#__PURE__*/function (_BaseNode) {
       svg.add(icon);
       svg.add(text); // animate new elements into position
 
-      svg.center(X, Y);
-      node.center(X, Y).animate({
+      node.center(IX, IY).width(this.config.maxWidth).height(this.config.maxHeight).dmove(-this.config.maxWidth / 2, -this.config.maxHeight / 2).animate({
         duration: this.config.animationSpeed
-      }).width(this.config.maxWidth).height(this.config.maxHeight).dmove(-this.config.maxWidth / 2, -this.config.maxHeight / 2);
-      icon.center(X, Y).attr({
-        opacity: 0
-      }).animate({
-        duration: this.config.animationSpeed
-      }).attr({
+      }).center(FX, FY);
+      icon.center(IX + this.config.maxIconTranslateX, IY + this.config.maxIconTranslateY).attr({
         opacity: this.config.maxIconOpacity
-      }).size(this.config.maxIconSize, this.config.maxIconSize).dx(-this.config.maxIconSize / 2 + this.config.maxIconTranslateX).dy(-this.config.maxIconSize / 2 + this.config.maxIconTranslateY);
-      text.center(X, Y).scale(0.001).attr({
-        opacity: 0
-      }).animate({
+      }).size(this.config.maxIconSize, this.config.maxIconSize).dx(-this.config.maxIconSize / 2).dy(-this.config.maxIconSize / 2).animate({
         duration: this.config.animationSpeed
-      }).attr({
-        opacity: 1
-      }).transform({
+      }).center(FX + this.config.maxIconTranslateX, FY + this.config.maxIconTranslateY);
+      text.center(IX, IY).scale(0.001).transform({
         scale: 1,
         translate: [this.config.maxTextTranslateX, this.config.maxTextTranslateY]
-      });
+      }).animate({
+        duration: this.config.animationSpeed
+      }).center(FX, FY);
       this.currentWidth = this.config.maxWidth;
       this.currentHeight = this.config.maxHeight;
       this.nodeSize = "max";
-      this.currentX = X;
-      this.currentY = Y;
-      this.opacity = 1;
-      this.isHidden = false;
+      this.currentX = IX;
+      this.currentY = IY;
       this.svg = svg;
     }
+    /**
+    * Transforms a node from minimal version to detailed representation.
+    * @param {Number} X=finalX The final Xrender position.
+    * @param {Number} Y=finalY The final Y render position.
+    */
+
   }, {
     key: "transformToMax",
     value: function transformToMax() {
@@ -17000,7 +17362,13 @@ var RiskNode = /*#__PURE__*/function (_BaseNode) {
       // update current elements
       this.svg.get(0).animate({
         duration: this.config.animationSpeed
-      }).width(this.config.maxWidth).height(this.config.maxHeight).center(X, Y);
+      }).width(this.config.maxWidth).height(this.config.maxHeight).center(X, Y); // old icon position
+
+      var ix = this.svg.get(1).bbox().cx;
+      var iy = this.svg.get(1).bbox().cy; // old text position
+
+      var tx = this.svg.get(2).bbox().cx;
+      var ty = this.svg.get(2).bbox().cy;
       this.svg.get(2).remove();
       this.svg.get(1).remove(); // create new elements
 
@@ -17009,16 +17377,16 @@ var RiskNode = /*#__PURE__*/function (_BaseNode) {
       this.svg.add(icon);
       this.svg.add(text); // put new elements into position
 
-      icon.center(this.initialX, this.initialY).attr({
+      icon.attr({
         opacity: 0
-      }).animate({
+      }).center(ix, iy).animate({
         duration: this.config.animationSpeed
       }).attr({
         opacity: this.config.maxIconOpacity
       }).size(this.config.maxIconSize, this.config.maxIconSize).cx(X - this.config.maxIconSize / 2 + this.config.maxIconTranslateX + this.config.maxIconSize / 2).cy(Y - this.config.maxIconSize / 2 + this.config.maxIconTranslateY + this.config.maxIconSize / 2);
-      text.center(this.initialX, this.initialY).scale(0.001).attr({
+      text.attr({
         opacity: 0
-      }).animate({
+      }).center(tx, ty).scale(0.001).animate({
         duration: this.config.animationSpeed
       }).attr({
         opacity: 1
@@ -17032,6 +17400,12 @@ var RiskNode = /*#__PURE__*/function (_BaseNode) {
       this.currentX = X;
       this.currentY = Y;
     }
+    /**
+    * Transforms a node from detailed representation to minimal version.
+    * @param {Number} X=finalX The final Xrender position.
+    * @param {Number} Y=finalY The final Y render position.
+    */
+
   }, {
     key: "transformToMin",
     value: function transformToMin() {
@@ -17040,7 +17414,13 @@ var RiskNode = /*#__PURE__*/function (_BaseNode) {
       // update current elements
       this.svg.get(0).animate({
         duration: this.config.animationSpeed
-      }).width(this.config.minWidth).height(this.config.minHeight).center(X, Y);
+      }).width(this.config.minWidth).height(this.config.minHeight).center(X, Y); // old icon position
+
+      var ix = this.svg.get(1).bbox().cx;
+      var iy = this.svg.get(1).bbox().cy; // old text position
+
+      var tx = this.svg.get(2).bbox().cx;
+      var ty = this.svg.get(2).bbox().cy;
       this.svg.get(2).remove();
       this.svg.get(1).remove(); // create new elements
 
@@ -17049,16 +17429,16 @@ var RiskNode = /*#__PURE__*/function (_BaseNode) {
       this.svg.add(icon);
       this.svg.add(text); // put new elements into position
 
-      icon.center(X, Y).attr({
+      icon.size(1, 1).attr({
         opacity: 0
-      }).animate({
+      }).center(ix, iy).animate({
         duration: this.config.animationSpeed
       }).attr({
         opacity: this.config.minIconOpacity
       }).size(this.config.minIconSize, this.config.minIconSize).dx(-this.config.minIconSize / 2 + this.config.minIconTranslateX).dy(-this.config.minIconSize / 2 + this.config.minIconTranslateY);
-      text.size(this.config.minTextWidth, text.children()[0].node.clientHeight).center(X, Y).scale(0.001).attr({
+      text.attr({
         opacity: 0
-      }).animate({
+      }).center(tx, ty).scale(0.001).size(this.config.minTextWidth, text.children()[0].node.clientHeight).animate({
         duration: this.config.animationSpeed
       }).attr({
         opacity: 1
@@ -17078,55 +17458,54 @@ var RiskNode = /*#__PURE__*/function (_BaseNode) {
 }(BaseNode);
 
 /**
- * Default configuration for asset nodes
- * @typedef {AssetConfig} AssetConfig
+ * @namespace AssetNodeConfiguration
+ * @description This object contains default configuration for asset node representations.
  *
- * @param {Number} [maxWidth=350] The nodes maximal width
- * @param {Number} [maxHeight=225] The nodes maximal height
- * @param {Number} [minWidth=150] The nodes minimal width
- * @param {Number} [minHeight=80] The nodes minimal height
+ * @property {Number} maxWidth=350                  - Sets the detailed node width.
+ * @property {Number} maxHeight=225                 - Sets the detailed height.
+ * @property {Number} minWidth=150                  - Sets the minimal node width.
+ * @property {Number} minHeight=80                  - Sets the minimal node height.
  *
- * @param {String} [iconUrl=null] The path to the image icon (if this value is null, the default icon is used)
- * @param {Number} [minIconOpacity=0.5] The basic visibility of the icon
- * @param {Number} [minIconSize=70] The width and height for the image icon
- * @param {Number} [minIconTranslateX=0] Moves the icon horizontally
- * @param {Number} [minIconTranslateY=0] Moves the icon vertically
- * @param {Number} [maxIconOpacity=0.75] The basic visibility of the icon
- * @param {Number} [maxIconSize=30] The width and height for the image icon
- * @param {Number} [maxIconTranslateX=-140] Moves the icon horizontally
- * @param {Number} [maxIconTranslateY=-85] Moves the icon vertically
+ * @property {String} iconUrl=null                  - Determins the path to the image icon (if this value is null, the default icon is used).
+ * @property {Number} minIconOpacity=0.5            - Determins the basic visibility of the icon in minimal representation.
+ * @property {Number} minIconSize=70                - Determins the width and height for the image icon in minimal representation.
+ * @property {Number} minIconTranslateX=0           - Determins the horizontal adjustment for the icon in minimal representation.
+ * @property {Number} minIconTranslateY=0           - Determins the vertical adjustment for the icon in minimal representation.
+ * @property {Number} maxIconOpacity=0.75           - Determins the basic visibility of the icon in detailed representation.
+ * @property {Number} maxIconSize=30                - Determins the width and height for the image icon in detailed representation.
+ * @property {Number} maxIconTranslateX=-140        - Determins the horizontal adjustment for the icon in detailed representation.
+ * @property {Number} maxIconTranslateY=-85         - Determins the vertical adjustment for the icon in detailed representation.
  *
- * @param {Number} [offset=8] The spacing used by padding and margin
- * @param {Number} [animationSpeed=300] The animation in milliseconds
- * @param {Number} [borderRadius=5] The border radius
- * @param {Number} [borderStrokeWidth=1] The border stroke width
- * @param {String} [borderStrokeColor="#84a8f2"] The border color
- * @param {String} [borderStrokeDasharray="5"] Gaps inside border
- * @param {String} [backgroundColor="#ffffff"] The background color for the rendered node
+ * @property {Number} offset=8                      - Determins the spacing used for padding between label and background.
+ * @property {Number} animationSpeed=300            - Determins how fast SVG elements animates inside the current layout.
+ * @property {Number} borderRadius=5                - Determins the nodes border radius.
+ * @property {Number} borderStrokeWidth=1           - Determins the nodes border stroke width.
+ * @property {String} borderStrokeColor=#84a8f2     - Determins the nodes border color.
+ * @property {String} borderStrokeDasharray="5"     - Determins the nodes gaps used inside the border.
+ * @property {String} backgroundColor=#ffffff       - Determins the nodes background color.
  *
- * @param {Number} [minTextWidth=145] The minimal text width for the label
- * @param {Number} [minTextHeight=75] The minimal text height for the label
- * @param {Number} [minTextTranslateX=0] Moves the label horizontally
- * @param {Number} [minTextTranslateY=0] The the label vertically
- * @param {Number} [maxTextWidth=345] The maximal text width for the description
- * @param {Number} [maxTextHeight=220] The maximal text height for the description
- * @param {Number} [maxTextTranslateX=0] The the description horizontally
- * @param {Number} [maxTextTranslateY=0] The the description vertically
- * @param {String} [labelColor="#7fa5f5"] The label text color
- * @param {String} [labelFontFamily="Montserrat"] The label font family
- * @param {Number} [labelFontSize=16] The label font size
- * @param {Number} [labelFontWeight=600] The label font weight
- * @param {String} [labelFontStyle="normal"] The label font style
- * @param {String} [labelBackground="#ffffffcc"] The label background color
- * @param {String} [detailsColor="#7fa5f5"] The details text color
- * @param {String} [detailsFontFamily="Montserrat"] The details family
- * @param {Number} [detailsFontSize=12] The details font size
- * @param {Number} [detailsFontWeight=600] The details font weight
- * @param {String} [detailsFontStyle="normal"] The details font style
- * @param {String} [detailsBackground="#ffffff"] The details text background color
+ * @property {Number} minTextWidth=145              - Determins the text width for the label in minimal representation.
+ * @property {Number} minTextHeight=75              - Determins the text height for the label in minimal representation.
+ * @property {Number} minTextTranslateX=0           - Determins the horizontal adjustment for the label in minimal representation.
+ * @property {Number} minTextTranslateY=0           - Determins the vertical adjustment for the label in minimal representation.
+ * @property {Number} maxTextWidth=345              - Determins the text width for the label in detailed representation.
+ * @property {Number} maxTextHeight=220             - Determins the text height for the label in detailed representation.
+ * @property {Number} maxTextTranslateX=0           - Determins the horizontal adjustment for the label in detailed representation.
+ * @property {Number} maxTextTranslateY=0           - Determins the vertical adjustment for the label in detailed representation.
+ * @property {String} labelColor=#7fa5f5            - Determins the color for the label.
+ * @property {String} labelFontFamily=Montserrat    - Determins the font family for the label.
+ * @property {Number} labelFontSize=16              - Determins the font size for the label.
+ * @property {Number} labelFontWeight=600           - Determins the font weight for the label.
+ * @property {String} labelFontStyle=normal         - Determins the font style for the label.
+ * @property {String} labelBackground=#ffffff       - Determins the background color for the label.
+ * @property {String} detailsColor=#7fa5f5          - Determins the color for the details description.
+ * @property {String} detailsFontFamily=Montserrat  - Determins the font family for the details description.
+ * @property {Number} detailsFontSize=12            - Determins the font size for the details description.
+ * @property {Number} detailsFontWeight=600         - Determins the font weight for the details description.
+ * @property {String} detailsFontStyle=normal       - Determins the font style for the details description.
+ * @property {String} detailsBackground=#ffffff     - Determins the background color for the details description.
  */
-
-var AssetConfig = {
+var AssetNodeConfiguration = {
   // large node
   maxWidth: 350,
   maxHeight: 225,
@@ -17145,7 +17524,7 @@ var AssetConfig = {
   maxIconTranslateY: -85,
   // node
   offset: 8,
-  animationSpeed: 300,
+  animationSpeed: 800,
   borderRadius: 5,
   borderStrokeWidth: 1,
   borderStrokeColor: "#84a8f2",
@@ -17173,28 +17552,37 @@ var AssetConfig = {
   detailsFontStyle: "normal",
   detailsBackground: "#ffffff"
 };
+
 /**
- * Class representing the visualization of assets
- * @param {Data} data the raw node data
- * @param {Canvas} canvas the canvas to render the node on
- * @param {AssetConfig} customAssetConfig custom config to override default values
+ * This class is responsible for the visual representation of assets.
+ * @property {Data} data The loaded data element from a database.
+ * @property {Canvas} canvas The nested canvas to render the node on.
+ * @property {Object} layoutConfig The nested canvas to render the node on.
  *
  */
 
 var AssetNode = /*#__PURE__*/function (_BaseNode) {
   _inherits(AssetNode, _BaseNode);
 
+  var _super = _createSuper(AssetNode);
+
   function AssetNode(data, canvas) {
     var _this;
 
-    var customAssetConfig = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+    var layoutConfig = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
 
     _classCallCheck(this, AssetNode);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(AssetNode).call(this, data, canvas));
-    _this.config = _objectSpread2({}, AssetConfig, {}, customAssetConfig);
+    _this = _super.call(this, data, canvas);
+    _this.config = _objectSpread2({}, AssetNodeConfiguration, {}, data.config, {}, layoutConfig);
     return _this;
   }
+  /**
+   * Creates the asset details description.
+   *
+   * @return {ForeignObject} text A foreign object containing some html and the node's label.
+   */
+
 
   _createClass(AssetNode, [{
     key: "createAssetDetails",
@@ -17280,11 +17668,21 @@ var AssetNode = /*#__PURE__*/function (_BaseNode) {
       });
       return text;
     }
+    /**
+    * Renders an asset node in minimal representation.
+    * @param  {Number} IX=initialX The initial X render position.
+    * @param  {Number} IY=initialY The initial Y render position.
+    * @param  {Number} FX=finalX The final X render position.
+    * @param  {Number} FY=finalY The final Y render position.
+    */
+
   }, {
     key: "renderAsMin",
     value: function renderAsMin() {
-      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.initialX;
-      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.initialY;
+      var IX = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.initialX;
+      var IY = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.initialY;
+      var FX = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : this.finalX;
+      var FY = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : this.finalY;
       // create svg elements
       var svg = this.createSVGElement();
       var node = this.createNode();
@@ -17294,41 +17692,42 @@ var AssetNode = /*#__PURE__*/function (_BaseNode) {
       svg.add(icon);
       svg.add(text); // animate new elements into position
 
-      svg.center(X, Y);
-      node.center(X, Y).animate({
+      node.center(IX, IY).width(this.config.minWidth).height(this.config.minHeight).dmove(-this.config.minWidth / 2, -this.config.minHeight / 2).animate({
         duration: this.config.animationSpeed
-      }).width(this.config.minWidth).height(this.config.minHeight).dmove(-this.config.minWidth / 2, -this.config.minHeight / 2);
-      icon.center(X, Y).attr({
-        opacity: 0
-      }).animate({
-        duration: this.config.animationSpeed
-      }).attr({
+      }).center(FX, FY);
+      icon.center(IX, IY).attr({
         opacity: this.config.minIconOpacity
-      }).size(this.config.minIconSize, this.config.minIconSize).dx(-this.config.minIconSize / 2 + this.config.minIconTranslateX).dy(-this.config.minIconSize / 2 + this.config.minIconTranslateY);
-      text.size(this.config.minTextWidth, text.children()[0].node.clientHeight).center(X, Y).scale(0.001).attr({
-        opacity: 0
-      }).animate({
+      }).size(this.config.minIconSize, this.config.minIconSize).dx(-this.config.minIconSize / 2).dy(-this.config.minIconSize / 2).animate({
         duration: this.config.animationSpeed
-      }).attr({
-        opacity: 1
-      }).transform({
+      }).center(FX + this.config.minIconTranslateX, FY + this.config.minIconTranslateY);
+      text.size(this.config.minTextWidth, text.children()[0].node.clientHeight).center(IX, IY).scale(0.001).transform({
         scale: 1,
         translate: [this.config.minTextTranslateX, this.config.minTextTranslateY]
-      });
+      }).animate({
+        duration: this.config.animationSpeed
+      }).center(FX, FY);
       this.currentWidth = this.config.minWidth;
       this.currentHeight = this.config.minHeight;
       this.nodeSize = "min";
-      this.currentX = X;
-      this.currentY = Y;
-      this.opacity = 1;
-      this.isHidden = false;
+      this.currentX = IX;
+      this.currentY = IY;
       this.svg = svg;
     }
+    /**
+    * Renders an asset node in detailed representation.
+    * @param  {Number} IX=initialX The initial X render position.
+    * @param  {Number} IY=initialY The initial Y render position.
+    * @param  {Number} FX=finalX The final X render position.
+    * @param  {Number} FY=finalY The final Y render position.
+    */
+
   }, {
     key: "renderAsMax",
     value: function renderAsMax() {
-      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.initialX;
-      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.initialY;
+      var IX = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.initialX;
+      var IY = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.initialY;
+      var FX = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : this.finalX;
+      var FY = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : this.finalY;
       // create svg elements
       var svg = this.createSVGElement();
       var node = this.createNode();
@@ -17338,36 +17737,33 @@ var AssetNode = /*#__PURE__*/function (_BaseNode) {
       svg.add(icon);
       svg.add(text); // animate new elements into position
 
-      svg.center(X, Y);
-      node.center(X, Y).animate({
+      node.center(IX, IY).width(this.config.maxWidth).height(this.config.maxHeight).dmove(-this.config.maxWidth / 2, -this.config.maxHeight / 2).animate({
         duration: this.config.animationSpeed
-      }).width(this.config.maxWidth).height(this.config.maxHeight).dmove(-this.config.maxWidth / 2, -this.config.maxHeight / 2);
-      icon.center(X, Y).attr({
-        opacity: 0
-      }).animate({
-        duration: this.config.animationSpeed
-      }).attr({
+      }).center(FX, FY);
+      icon.center(IX + this.config.maxIconTranslateX, IY + this.config.maxIconTranslateY).attr({
         opacity: this.config.maxIconOpacity
-      }).size(this.config.maxIconSize, this.config.maxIconSize).dx(-this.config.maxIconSize / 2 + this.config.maxIconTranslateX).dy(-this.config.maxIconSize / 2 + this.config.maxIconTranslateY);
-      text.center(X, Y).scale(0.001).attr({
-        opacity: 0
-      }).animate({
+      }).size(this.config.maxIconSize, this.config.maxIconSize).dx(-this.config.maxIconSize / 2).dy(-this.config.maxIconSize / 2).animate({
         duration: this.config.animationSpeed
-      }).attr({
-        opacity: 1
-      }).transform({
+      }).center(FX + this.config.maxIconTranslateX, FY + this.config.maxIconTranslateY);
+      text.center(IX, IY).scale(0.001).transform({
         scale: 1,
         translate: [this.config.maxTextTranslateX, this.config.maxTextTranslateY]
-      });
+      }).animate({
+        duration: this.config.animationSpeed
+      }).center(FX, FY);
       this.currentWidth = this.config.maxWidth;
       this.currentHeight = this.config.maxHeight;
       this.nodeSize = "max";
-      this.currentX = X;
-      this.currentY = Y;
-      this.opacity = 1;
-      this.isHidden = false;
+      this.currentX = IX;
+      this.currentY = IY;
       this.svg = svg;
     }
+    /**
+    * Transforms a node from minimal version to detailed representation.
+    * @param {Number} X=finalX The final Xrender position.
+    * @param {Number} Y=finalY The final Y render position.
+    */
+
   }, {
     key: "transformToMax",
     value: function transformToMax() {
@@ -17376,7 +17772,13 @@ var AssetNode = /*#__PURE__*/function (_BaseNode) {
       // update current elements
       this.svg.get(0).animate({
         duration: this.config.animationSpeed
-      }).width(this.config.maxWidth).height(this.config.maxHeight).center(X, Y);
+      }).width(this.config.maxWidth).height(this.config.maxHeight).center(X, Y); // old icon position
+
+      var ix = this.svg.get(1).bbox().cx;
+      var iy = this.svg.get(1).bbox().cy; // old text position
+
+      var tx = this.svg.get(2).bbox().cx;
+      var ty = this.svg.get(2).bbox().cy;
       this.svg.get(2).remove();
       this.svg.get(1).remove(); // create new elements
 
@@ -17385,16 +17787,16 @@ var AssetNode = /*#__PURE__*/function (_BaseNode) {
       this.svg.add(icon);
       this.svg.add(text); // put new elements into position
 
-      icon.center(this.initialX, this.initialY).attr({
+      icon.attr({
         opacity: 0
-      }).animate({
+      }).center(ix, iy).animate({
         duration: this.config.animationSpeed
       }).attr({
         opacity: this.config.maxIconOpacity
       }).size(this.config.maxIconSize, this.config.maxIconSize).cx(X - this.config.maxIconSize / 2 + this.config.maxIconTranslateX + this.config.maxIconSize / 2).cy(Y - this.config.maxIconSize / 2 + this.config.maxIconTranslateY + this.config.maxIconSize / 2);
-      text.center(this.initialX, this.initialY).scale(0.001).attr({
+      text.attr({
         opacity: 0
-      }).animate({
+      }).center(tx, ty).scale(0.001).animate({
         duration: this.config.animationSpeed
       }).attr({
         opacity: 1
@@ -17408,6 +17810,12 @@ var AssetNode = /*#__PURE__*/function (_BaseNode) {
       this.currentX = X;
       this.currentY = Y;
     }
+    /**
+    * Transforms a node from detailed representation to minimal version.
+    * @param {Number} X=finalX The final Xrender position.
+    * @param {Number} Y=finalY The final Y render position.
+    */
+
   }, {
     key: "transformToMin",
     value: function transformToMin() {
@@ -17416,7 +17824,13 @@ var AssetNode = /*#__PURE__*/function (_BaseNode) {
       // update current elements
       this.svg.get(0).animate({
         duration: this.config.animationSpeed
-      }).width(this.config.minWidth).height(this.config.minHeight).center(X, Y);
+      }).width(this.config.minWidth).height(this.config.minHeight).center(X, Y); // old icon position
+
+      var ix = this.svg.get(1).bbox().cx;
+      var iy = this.svg.get(1).bbox().cy; // old text position
+
+      var tx = this.svg.get(2).bbox().cx;
+      var ty = this.svg.get(2).bbox().cy;
       this.svg.get(2).remove();
       this.svg.get(1).remove(); // create new elements
 
@@ -17425,16 +17839,16 @@ var AssetNode = /*#__PURE__*/function (_BaseNode) {
       this.svg.add(icon);
       this.svg.add(text); // put new elements into position
 
-      icon.center(this.initialX, this.initialY).attr({
+      icon.size(1, 1).attr({
         opacity: 0
-      }).animate({
+      }).center(ix, iy).animate({
         duration: this.config.animationSpeed
       }).attr({
         opacity: this.config.minIconOpacity
       }).size(this.config.minIconSize, this.config.minIconSize).dx(-this.config.minIconSize / 2 + this.config.minIconTranslateX).dy(-this.config.minIconSize / 2 + this.config.minIconTranslateY).center(X, Y);
-      text.center(this.initialX, this.initialY).size(this.config.minTextWidth, text.children()[0].node.clientHeight).scale(0.001).attr({
+      text.attr({
         opacity: 0
-      }).animate({
+      }).center(tx, ty).scale(0.001).size(this.config.minTextWidth, text.children()[0].node.clientHeight).animate({
         duration: this.config.animationSpeed
       }).attr({
         opacity: 1
@@ -17453,86 +17867,64 @@ var AssetNode = /*#__PURE__*/function (_BaseNode) {
   return AssetNode;
 }(BaseNode);
 
-var defineProperty$b = objectDefineProperty.f;
-
-var FunctionPrototype$1 = Function.prototype;
-var FunctionPrototypeToString$1 = FunctionPrototype$1.toString;
-var nameRE$1 = /^\s*function ([^ (]*)/;
-var NAME$1 = 'name';
-
-// Function instances `.name` property
-// https://tc39.github.io/ecma262/#sec-function-instances-name
-if (descriptors && !(NAME$1 in FunctionPrototype$1)) {
-  defineProperty$b(FunctionPrototype$1, NAME$1, {
-    configurable: true,
-    get: function () {
-      try {
-        return FunctionPrototypeToString$1.call(this).match(nameRE$1)[1];
-      } catch (error) {
-        return '';
-      }
-    }
-  });
-}
-
 /**
- * @typedef
+ * @namespace RequirementNodeConfiguration
+ * @description This object contains default configuration for requirement node representations.
+ *
+ * @property {Number} maxWidth=350                  - Sets the detailed node width.
+ * @property {Number} maxHeight=225                 - Sets the detailed height.
+ * @property {Number} minWidth=150                  - Sets the minimal node width.
+ * @property {Number} minHeight=80                  - Sets the minimal node height.
+ * 
+ * @property {Array} states=StateArray              - Determins an array of aviable requirement states.
+ *
+ * @property {String} iconUrl=null                  - Determins the path to the image icon (if this value is null, the default icon is used).
+ * @property {Number} minIconOpacity=0.5            - Determins the basic visibility of the icon in minimal representation.
+ * @property {Number} minIconSize=70                - Determins the width and height for the image icon in minimal representation.
+ * @property {Number} minIconTranslateX=0           - Determins the horizontal adjustment for the icon in minimal representation.
+ * @property {Number} minIconTranslateY=0           - Determins the vertical adjustment for the icon in minimal representation.
+ * @property {Number} maxIconOpacity=0.75           - Determins the basic visibility of the icon in detailed representation.
+ * @property {Number} maxIconSize=30                - Determins the width and height for the image icon in detailed representation.
+ * @property {Number} maxIconTranslateX=-140        - Determins the horizontal adjustment for the icon in detailed representation.
+ * @property {Number} maxIconTranslateY=-85         - Determins the vertical adjustment for the icon in detailed representation.
+ *
+ * @property {Number} offset=8                      - Determins the spacing used for padding between label and background.
+ * @property {Number} animationSpeed=300            - Determins how fast SVG elements animates inside the current layout.
+ * @property {Number} borderRadius=5                - Determins the nodes border radius.
+ * @property {Number} borderStrokeWidth=1           - Determins the nodes border stroke width.
+ * @property {String} borderStrokeColor=#84a8f2     - Determins the nodes border color.
+ * @property {String} borderStrokeDasharray="5"     - Determins the nodes gaps used inside the border.
+ * @property {String} backgroundColor=#ffffff       - Determins the nodes background color.
+ *
+ * @property {Number} minTextWidth=145              - Determins the text width for the label in minimal representation.
+ * @property {Number} minTextHeight=75              - Determins the text height for the label in minimal representation.
+ * @property {Number} minTextTranslateX=0           - Determins the horizontal adjustment for the label in minimal representation.
+ * @property {Number} minTextTranslateY=0           - Determins the vertical adjustment for the label in minimal representation.
+ * @property {Number} maxTextWidth=345              - Determins the text width for the label in detailed representation.
+ * @property {Number} maxTextHeight=220             - Determins the text height for the label in detailed representation.
+ * @property {Number} maxTextTranslateX=0           - Determins the horizontal adjustment for the label in detailed representation.
+ * @property {Number} maxTextTranslateY=0           - Determins the vertical adjustment for the label in detailed representation.
+ * @property {String} labelColor=#7fa5f5            - Determins the color for the label.
+ * @property {String} labelFontFamily=Montserrat    - Determins the font family for the label.
+ * @property {Number} labelFontSize=16              - Determins the font size for the label.
+ * @property {Number} labelFontWeight=600           - Determins the font weight for the label.
+ * @property {String} labelFontStyle=normal         - Determins the font style for the label.
+ * @property {String} labelBackground=#ffffff       - Determins the background color for the label.
+ * @property {String} detailsColor=#7fa5f5          - Determins the color for the details description.
+ * @property {String} detailsFontFamily=Montserrat  - Determins the font family for the details description.
+ * @property {Number} detailsFontSize=12            - Determins the font size for the details description.
+ * @property {Number} detailsFontWeight=600         - Determins the font weight for the details description.
+ * @property {String} detailsFontStyle=normal       - Determins the font style for the details description.
+ * @property {String} detailsBackground=#ffffff     - Determins the background color for the details description.
  */
-
-/**
- * Default configuration for requirement nodes
- * @typedef {RequirementConfig} RequirementConfig
- *
- * @param {Number} [maxWidth=370] The nodes maximal width
- * @param {Number} [maxHeight=200] The nodes maximal height
- * @param {Number} [minWidth=155] The nodes minimal width
- * @param {Number} [minHeight=50] The nodes minimal height
- *
- * @param {Object} state // TODO: create a proper type
- * @param {String} state.state A specific requirement state
- * @param {String} state.name The display name of a specific requirement state
- * @param {String} state.color The color attached to a specifc state
- * @param {Array} [states=Array[state]] An array of aviable requirement states
- *
- * @param {Number} [offset=8] The spacing used by padding and margin
- * @param {Number} [animationSpeed=300] The animation in milliseconds
- * @param {Number} [borderRadius=8] The border radius
- * @param {Number} [borderStrokeWidth=1] The border stroke width
- * @param {String} [borderStrokeColor="#666666"] The border color
- * @param {String} [borderStrokeDasharray="0"] Gaps inside border
- * @param {String} [backgroundColor="#ffffff"] The background color for the rendered node
- *
- * @param {Number} [minTextWidth=150] The minimal text width for the label
- * @param {Number} [minTextHeight=45] The minimal text height for the label
- * @param {Number} [minTextTranslateX=0] Moves the label horizontally
- * @param {Number} [minTextTranslateY=0] The the label vertically
- * @param {Number} [maxTextWidth=365] The maximal text width for the description
- * @param {Number} [maxTextHeight=195] The maximal text height for the description
- * @param {Number} [maxTextTranslateX=0] The the description horizontally
- * @param {Number} [maxTextTranslateY=0] The the description vertically
- * @param {String} [labelColor="#222222"] The label text color for details
- * @param {String} [labelColor="#ffffff"] The label text color for minimal nodes
- * @param {String} [labelFontFamily="Montserrat"] The label font family
- * @param {Number} [labelFontSize=14] The label font size
- * @param {Number} [labelFontWeight=600] The label font weight
- * @param {String} [labelFontStyle="normal"] The label font style
- * @param {String} [labelBackground="none"] The label background color
- * @param {String} [detailsColor="#222222"] The details text color
- * @param {String} [detailsFontFamily="Montserrat"] The details family
- * @param {Number} [detailsFontSize=12] The details font size
- * @param {Number} [detailsFontWeight=600] The details font weight
- * @param {String} [detailsFontStyle="normal"] The details font style
- * @param {String} [detailsBackground="none"] The details text background color
- */
-
-var RequirementConfig = {
+var RequirementNodeConfiguration = {
   // large node
   maxWidth: 370,
   maxHeight: 200,
   // small node
   minWidth: 155,
   minHeight: 50,
-  // available node states
+  // predefined node states
   states: [{
     state: "fulfilled",
     name: "Fulfilled",
@@ -17567,43 +17959,49 @@ var RequirementConfig = {
   maxTextHeight: 195,
   maxTextTranslateX: 0,
   maxTextTranslateY: 0,
-  maxLabelColor: "#222222",
+  maxLabelColor: "#ffffff",
   labelColor: "#ffffff",
   labelFontFamily: "Montserrat",
   labelFontSize: 14,
   labelFontWeight: 600,
   labelFontStyle: "normal",
   labelBackground: "none",
-  detailsColor: "#222222",
+  detailsColor: "#ffffff",
   detailsFontFamily: "Montserrat",
   detailsFontSize: 12,
   detailsFontWeight: 600,
   detailsFontStyle: "normal",
   detailsBackground: "none"
 };
+
 /**
- * Class representing the visualization of requirements
- * @param {Data} data the raw node data
- * @param {Canvas} canvas the canvas to render the node on
- * @param {RequirementConfig} customRequirementConfig custom config to override the default values
+ * This class is responsible for the visual representation of requirements.
+ * @property {Data} data Loaded data from a database.
+ * @property {Canvas} canvas The nested canvas to render the node on.
  *
  */
 
 var RequirementNode = /*#__PURE__*/function (_BaseNode) {
   _inherits(RequirementNode, _BaseNode);
 
-  function RequirementNode(data, canvas, customRequirementConfig) {
+  var _super = _createSuper(RequirementNode);
+
+  function RequirementNode(data, canvas) {
     var _this;
+
+    var layoutConfig = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
 
     _classCallCheck(this, RequirementNode);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(RequirementNode).call(this, data, canvas));
-    _this.config = _objectSpread2({}, RequirementConfig, {}, customRequirementConfig); // map color to respected state
+    _this = _super.call(this, data, canvas);
+    _this.config = _objectSpread2({}, RequirementNodeConfiguration, {}, data.config, {}, layoutConfig); // map color to respected state
 
     if (data.state !== null || data.state !== undefined) {
       var state = _this.config.states.find(function (s) {
-        return s.state === data.state;
+        return s.state === data.state.toLowerCase();
       }) || {
+        state: data.state,
+        name: data.state,
         color: "#84a8f2"
       };
       _this.config = _objectSpread2({}, _this.config, {
@@ -17614,6 +18012,12 @@ var RequirementNode = /*#__PURE__*/function (_BaseNode) {
 
     return _this;
   }
+  /**
+   * Creates the requirements details description.
+   *
+   * @return {ForeignObject} text A foreign object containing some html and the node's label.
+   */
+
 
   _createClass(RequirementNode, [{
     key: "createRequirementDetails",
@@ -17642,20 +18046,24 @@ var RequirementNode = /*#__PURE__*/function (_BaseNode) {
       var status = document.createElement("p");
 
       if (this.state !== null) {
-        status.innerHTML = this.config.states.find(function (s) {
+        var res = this.config.states.find(function (s) {
           return s.state.toLowerCase() === _this2.state.toLowerCase();
-        }).name;
-        status.style.background = "#222";
-        status.style.color = "#fff";
-        status.style.fontSize = "".concat(this.config.labelFontSize + 2, "px");
-        status.style.fontFamily = this.config.labelFontFamily;
-        status.style.fontWeight = "normal";
-        status.style.textAlign = "center";
-        status.style.width = "fit-content";
-        status.style.padding = "".concat(this.config.offset / 2, "px ").concat(this.config.offset / 1.5, "px");
-        status.style.borderRadius = "".concat(this.config.borderRadius / 2, "px");
-        status.style.margin = "".concat(this.config.offset, "px ").concat(this.config.offset, "px");
-        background.appendChild(status);
+        });
+
+        if (res !== undefined) {
+          status.innerHTML = res.name;
+          status.style.background = "#222";
+          status.style.color = "#fff";
+          status.style.fontSize = "".concat(this.config.labelFontSize + 2, "px");
+          status.style.fontFamily = this.config.labelFontFamily;
+          status.style.fontWeight = "normal";
+          status.style.textAlign = "center";
+          status.style.width = "fit-content";
+          status.style.padding = "".concat(this.config.offset / 2, "px ").concat(this.config.offset / 1.5, "px");
+          status.style.borderRadius = "".concat(this.config.borderRadius / 2, "px");
+          status.style.margin = "".concat(this.config.offset, "px ").concat(this.config.offset, "px");
+          background.appendChild(status);
+        }
       } // create description
 
 
@@ -17683,11 +18091,21 @@ var RequirementNode = /*#__PURE__*/function (_BaseNode) {
       });
       return text;
     }
+    /**
+    * Renders a requirement node in minimal representation.
+    * @param  {Number} IX=initialX The initial X render position.
+    * @param  {Number} IY=initialY The initial Y render position.
+    * @param  {Number} FX=finalX The final X render position.
+    * @param  {Number} FY=finalY The final Y render position.
+    */
+
   }, {
     key: "renderAsMin",
     value: function renderAsMin() {
-      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.initialX;
-      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.initialY;
+      var IX = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.initialX;
+      var IY = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.initialY;
+      var FX = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : this.finalX;
+      var FY = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : this.finalY;
       // create svg elements
       var svg = this.createSVGElement();
       var node = this.createNode();
@@ -17695,34 +18113,37 @@ var RequirementNode = /*#__PURE__*/function (_BaseNode) {
       svg.add(node);
       svg.add(text); // animate new elements into position
 
-      svg.center(X, Y);
-      node.center(X, Y).animate({
+      node.center(IX, IY).width(this.config.minWidth).height(this.config.minHeight).dmove(-this.config.minWidth / 2, -this.config.minHeight / 2).animate({
         duration: this.config.animationSpeed
-      }).width(this.config.minWidth).height(this.config.minHeight).dmove(-this.config.minWidth / 2, -this.config.minHeight / 2);
-      text.size(this.config.minTextWidth, text.children()[0].node.clientHeight).center(X, Y).scale(0.001).attr({
-        opacity: 0
-      }).animate({
-        duration: this.config.animationSpeed
-      }).attr({
-        opacity: 1
-      }).transform({
+      }).center(FX, FY);
+      text.size(this.config.minTextWidth, text.children()[0].node.clientHeight).center(IX, IY).scale(0.001).transform({
         scale: 1,
         translate: [this.config.minTextTranslateX, this.config.minTextTranslateY]
-      });
+      }).animate({
+        duration: this.config.animationSpeed
+      }).center(FX, FY);
       this.currentWidth = this.config.minWidth;
       this.currentHeight = this.config.minHeight;
       this.nodeSize = "min";
-      this.currentX = X;
-      this.currentY = Y;
-      this.opacity = 1;
-      this.isHidden = false;
+      this.currentX = IX;
+      this.currentY = IY;
       this.svg = svg;
     }
+    /**
+    * Renders a requirement node in detailed representation.
+    * @param  {Number} IX=initialX The initial X render position.
+    * @param  {Number} IY=initialY The initial Y render position.
+    * @param  {Number} FX=finalX The final X render position.
+    * @param  {Number} FY=finalY The final Y render position.
+    */
+
   }, {
     key: "renderAsMax",
     value: function renderAsMax() {
-      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.initialX;
-      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.initialY;
+      var IX = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.initialX;
+      var IY = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.initialY;
+      var FX = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : this.finalX;
+      var FY = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : this.finalY;
       // create svg elements
       var svg = this.createSVGElement();
       var node = this.createNode();
@@ -17730,47 +18151,48 @@ var RequirementNode = /*#__PURE__*/function (_BaseNode) {
       svg.add(node);
       svg.add(text); // animate new elements into position
 
-      svg.center(X, Y);
-      node.center(X, Y).animate({
+      node.center(IX, IY).width(this.config.maxWidth).height(this.config.maxHeight).dmove(-this.config.maxWidth / 2, -this.config.maxHeight / 2).animate({
         duration: this.config.animationSpeed
-      }).width(this.config.maxWidth).height(this.config.maxHeight).dmove(-this.config.maxWidth / 2, -this.config.maxHeight / 2);
-      text.center(X, Y).scale(0.001).attr({
-        opacity: 0
-      }).animate({
-        duration: this.config.animationSpeed
-      }).attr({
-        opacity: 1
-      }).transform({
+      }).center(FX, FY);
+      text.center(IX + this.config.maxIconTranslateX, IY + this.config.maxIconTranslateY).scale(0.001).transform({
         scale: 1,
         translate: [this.config.maxTextTranslateX, this.config.maxTextTranslateY]
-      });
+      }).animate({
+        duration: this.config.animationSpeed
+      }).center(FX, FY);
       this.currentWidth = this.config.maxWidth;
       this.currentHeight = this.config.maxHeight;
       this.nodeSize = "max";
-      this.currentX = X;
-      this.currentY = Y;
-      this.opacity = 1;
-      this.isHidden = false;
+      this.currentX = IX;
+      this.currentY = IY;
       this.svg = svg;
     }
+    /**
+    * Transforms a node from minimal version to detailed representation.
+    * @param {Number} X=finalX The final Xrender position.
+    * @param {Number} Y=finalY The final Y render position.
+    */
+
   }, {
     key: "transformToMax",
     value: function transformToMax() {
       var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.finalX;
       var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.finalY;
       // update current elements
-      console.log("to max", X, Y);
       this.svg.get(0).animate({
         duration: this.config.animationSpeed
-      }).width(this.config.maxWidth).height(this.config.maxHeight).center(X, Y);
+      }).width(this.config.maxWidth).height(this.config.maxHeight).center(X, Y); // old text position
+
+      var tx = this.svg.get(2).bbox().cx;
+      var ty = this.svg.get(2).bbox().cy;
       this.svg.get(1).remove(); // create new elements
 
       var text = this.createRequirementDetails();
       this.svg.add(text); // put new elements into position
 
-      text.center(X, Y).scale(0.001).attr({
+      text.attr({
         opacity: 0
-      }).animate({
+      }).center(tx, ty).scale(0.001).animate({
         duration: this.config.animationSpeed
       }).attr({
         opacity: 1
@@ -17784,6 +18206,12 @@ var RequirementNode = /*#__PURE__*/function (_BaseNode) {
       this.currentX = X;
       this.currentY = Y;
     }
+    /**
+    * Transforms a node from detailed representation to minimal version.
+    * @param {Number} X=finalX The final Xrender position.
+    * @param {Number} Y=finalY The final Y render position.
+    */
+
   }, {
     key: "transformToMin",
     value: function transformToMin() {
@@ -17792,15 +18220,18 @@ var RequirementNode = /*#__PURE__*/function (_BaseNode) {
       // update current elements
       this.svg.get(0).animate({
         duration: this.config.animationSpeed
-      }).width(this.config.minWidth).height(this.config.minHeight).center(X, Y);
+      }).width(this.config.minWidth).height(this.config.minHeight).center(X, Y); // old text position
+
+      var tx = this.svg.get(1).bbox().cx;
+      var ty = this.svg.get(1).bbox().cy;
       this.svg.get(1).remove(); // create new elements
 
       var text = this.createLabel();
       this.svg.add(text); // put new elements into position
 
-      text.size(this.config.minTextWidth, text.children()[0].node.clientHeight).center(X, Y).scale(0.001).attr({
+      text.attr({
         opacity: 0
-      }).animate({
+      }).center(tx, ty).scale(0.001).size(this.config.minTextWidth, text.children()[0].node.clientHeight).animate({
         duration: this.config.animationSpeed
       }).attr({
         opacity: 1
@@ -17820,62 +18251,60 @@ var RequirementNode = /*#__PURE__*/function (_BaseNode) {
 }(BaseNode);
 
 /**
- * Default configuration for asset nodes
- * @typedef {CustomConfig} CustomConfig
+ * @namespace CustomNodeConfiguration
+ * @description This object contains default configuration for custom node representations.
+ * 
+ * @property {String} nodeType=rect                 - Determins the form the node is rendered. Available: "path", "rect" or "ellipse".
+ * @property {String} svg=null                      - Determines the custom SVG path that is rendered as node but only if nodeType is set to "path".
  *
- * @param {String} [nodeType="rect"] The form the node is rendered. "path" for a custom SVG element
- * @param {String} [svg=null] The custom SVG path that is rendered as node if nodeType is set to "path"
+ * @property {Number} maxWidth=275                  - Sets the detailed node width.
+ * @property {Number} maxHeight=175                 - Sets the detailed height.
+ * @property {Number} minWidth=200                  - Sets the minimal node width.
+ * @property {Number} minHeight=100                 - Sets the minimal node height.
  *
- * @param {Number} [maxWidth=275] The nodes maximal width
- * @param {Number} [maxHeight=175] The nodes maximal height
- * @param {Number} [minWidth=150] The nodes minimal width
- * @param {Number} [minHeight=80] The nodes minimal height
+ * @property {String} iconUrl=null                  - Determins the path to the image icon (if this value is null, the default icon is used).
+ * @property {Number} minIconOpacity=0.3            - Determins the basic visibility of the icon in minimal representation.
+ * @property {Number} minIconSize=70                - Determins the width and height for the image icon in minimal representation.
+ * @property {Number} minIconTranslateX=0           - Determins the horizontal adjustment for the icon in minimal representation.
+ * @property {Number} minIconTranslateY=0           - Determins the vertical adjustment for the icon in minimal representation.
+ * @property {Number} maxIconOpacity=0.4            - Determins the basic visibility of the icon in detailed representation.
+ * @property {Number} maxIconSize=200               - Determins the width and height for the image icon in detailed representation.
+ * @property {Number} maxIconTranslateX=0           - Determins the horizontal adjustment for the icon in detailed representation.
+ * @property {Number} maxIconTranslateY=0           - Determins the vertical adjustment for the icon in detailed representation.
  *
- * @param {String} [iconUrl=null] The path to the image icon (if this value is null, the default icon is used)
- * @param {Number} [minIconOpacity=0.3] The basic visibility of the icon
- * @param {Number} [minIconSize=70] The width and height for the image icon
- * @param {Number} [minIconTranslateX=0] Moves the icon horizontally
- * @param {Number} [minIconTranslateY=0] Moves the icon vertically
- * @param {Number} [maxIconOpacity=0.4] The basic visibility of the icon
- * @param {Number} [maxIconSize=200] The width and height for the image icon
- * @param {Number} [maxIconTranslateX=0] Moves the icon horizontally
- * @param {Number} [maxIconTranslateY=0] Moves the icon vertically
+ * @property {Number} offset=8                      - Determins the spacing used for padding between label and background.
+ * @property {Number} animationSpeed=300            - Determins how fast SVG elements animates inside the current layout.
+ * @property {Number} borderRadius=5                - Determins the nodes border radius.
+ * @property {Number} borderStrokeWidth=1           - Determins the nodes border stroke width.
+ * @property {String} borderStrokeColor=#222222     - Determins the nodes border color.
+ * @property {String} borderStrokeDasharray="0"     - Determins the nodes gaps used inside the border.
+ * @property {String} backgroundColor=#ffffff       - Determins the nodes background color.
  *
- * @param {Number} [offset=8] The spacing used by padding and margin
- * @param {Number} [animationSpeed=300] The animation in milliseconds
- * @param {Number} [borderRadius=5] The border radius
- * @param {Number} [borderStrokeWidth=1] The border stroke width
- * @param {String} [borderStrokeColor="#222222"] The border color
- * @param {String} [borderStrokeDasharray="0"] Gaps inside border
- * @param {String} [backgroundColor="#ffffff"] The background color for the rendered node
- *
- * @param {Number} [minTextWidth=145] The minimal text width for the label
- * @param {Number} [minTextHeight=75] The minimal text height for the label
- * @param {Number} [minTextTranslateX=0] Moves the label horizontally
- * @param {Number} [minTextTranslateY=0] The the label vertically
- * @param {Number} [maxTextWidth=260] The maximal text width for the description
- * @param {Number} [maxTextHeight=220] The maximal text height for the description
- * @param {Number} [maxTextTranslateX=0] The the description horizontally
- * @param {Number} [maxTextTranslateY=0] The the description vertically
- * @param {String} [labelColor="#444444"] The label text color
- * @param {String} [labelFontFamily="Montserrat"] The label font family
- * @param {Number} [labelFontSize=16] The label font size
- * @param {Number} [labelFontWeight=600] The label font weight
- * @param {String} [labelFontStyle="normal"] The label font style
- * @param {String} [labelBackground="#ffffffcc"] The label background color
- * @param {String} [detailsColor="#444444"] The details text color
- * @param {String} [detailsFontFamily="Montserrat"] The details family
- * @param {Number} [detailsFontSize=12] The details font size
- * @param {Number} [detailsFontWeight=600] The details font weight
- * @param {String} [detailsFontStyle="normal"] The details font style
- * @param {String} [detailsBackground="#ffffff"] The details text background color
- *
+ * @property {Number} minTextWidth=145              - Determins the text width for the label in minimal representation.
+ * @property {Number} minTextHeight=75              - Determins the text height for the label in minimal representation.
+ * @property {Number} minTextTranslateX=0           - Determins the horizontal adjustment for the label in minimal representation.
+ * @property {Number} minTextTranslateY=0           - Determins the vertical adjustment for the label in minimal representation.
+ * @property {Number} maxTextWidth=260              - Determins the text width for the label in detailed representation.
+ * @property {Number} maxTextHeight=220             - Determins the text height for the label in detailed representation.
+ * @property {Number} maxTextTranslateX=0           - Determins the horizontal adjustment for the label in detailed representation.
+ * @property {Number} maxTextTranslateY=0           - Determins the vertical adjustment for the label in detailed representation.
+ * @property {String} labelColor=#444444            - Determins the color for the label.
+ * @property {String} labelFontFamily=Montserrat    - Determins the font family for the label.
+ * @property {Number} labelFontSize=16              - Determins the font size for the label.
+ * @property {Number} labelFontWeight=600           - Determins the font weight for the label.
+ * @property {String} labelFontStyle=normal         - Determins the font style for the label.
+ * @property {String} labelBackground=#ffffffcc     - Determins the background color for the label.
+ * @property {String} detailsColor=#444444          - Determins the color for the details description.
+ * @property {String} detailsFontFamily=Montserrat  - Determins the font family for the details description.
+ * @property {Number} detailsFontSize=12            - Determins the font size for the details description.
+ * @property {Number} detailsFontWeight=600         - Determins the font weight for the details description.
+ * @property {String} detailsFontStyle=normal       - Determins the font style for the details description.
+ * @property {String} detailsBackground=#ffffffcc   - Determins the background color for the details description.
  */
-
-var CustomConfig = {
+var CustomNodeConfiguration = {
   nodeType: "rect",
-  // rect or path
-  svg: null,
+  // rect, ellipse or path
+  svgPathElement: null,
   // large node
   maxWidth: 275,
   maxHeight: 175,
@@ -17922,78 +18351,36 @@ var CustomConfig = {
   detailsFontStyle: "normal",
   detailsBackground: "#ffffffcc"
 };
+
 /**
- * Class representing the visualization of custom elements
- * @param {Data} data the raw node data
- * @param {Canvas} canvas the canvas to render the node on
- * @param {CustomConfig} customConfig custom config to override the default values
+ * This class is responsible for the visual representation of custom types.
+ * @property {Data} data Loaded data from a database.
+ * @property {Canvas} canvas The nested canvas to render the node on.
  *
- * @example
- * // a custom node with a given svg shape
- * const config1 = {
- *    nodeType: "path",
- *    svg: "M 0, 0 m -75, 0 a 75,75 0 1,0 150,0 a 75,75 0 1,0 -150,0",
- *    minTextWidth: 145,
- *    minIconSize: 100,
- *    minWidth: 150,
- *    minHeight: 150,
- *    maxTextWidth: 250,
- *    maxIconSize: 200,
- *    maxWidth: 300,
- *    maxHeight: 300,
- *    maxTextTranslateX: 5,
- *    maxTextTranslateY: -20
- * }
- * const custom1 = NodeFactory.create(data.find(d => d.type === "custom"), canvas)
- * custom1.setConfig(config1)
- * custom1.setInitialXY(200, 90)
- * custom1.renderAsMin()
- *
- * const custom2 = NodeFactory.create(data.find(d => d.type === "custom"), canvas)
- * custom2.setConfig(config1)
- * custom2.setInitialXY(200, 350)
- * custom2.renderAsMax()
- *
- * setTimeout(() => custom1.transformToMax(200, 350), 500)
- * setTimeout(() => custom2.transformToMin(200, 90), 500)
- *
- *
- * // or a normal custom node
- * const config2 = {
- *    maxWidth: 275,
- *    maxHeight: 175,
- *    maxIconSize: 150,
- *    maxTextWidth: 260,
- *    maxTextHeight: 175,
- *    maxTextTranslateX: 5,
- *    maxTextTranslateY: 2
- * }
- * const custom3 = NodeFactory.create(data.find(d => d.type === "custom"), canvas)
- * custom3.setConfig(config2)
- * custom3.setInitialXY(550, 110)
- * custom3.renderAsMax()
- *
- * const custom4 = NodeFactory.create(data.find(d => d.type === "custom"), canvas)
- * custom4.setConfig(config2)
- * custom4.setInitialXY(550, 350)
- * custom4.renderAsMin()
- *
- * setTimeout(() => custom4.transformToMax(550, 110), 500)
- * setTimeout(() => custom3.transformToMin(550, 350), 500)
  */
 
 var CustomNode = /*#__PURE__*/function (_BaseNode) {
   _inherits(CustomNode, _BaseNode);
 
-  function CustomNode(data, canvas, customConfig) {
+  var _super = _createSuper(CustomNode);
+
+  function CustomNode(data, canvas) {
     var _this;
+
+    var layoutConfig = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
 
     _classCallCheck(this, CustomNode);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(CustomNode).call(this, data, canvas));
-    _this.config = _objectSpread2({}, CustomConfig, {}, customConfig);
+    _this = _super.call(this, data, canvas);
+    _this.config = _objectSpread2({}, CustomNodeConfiguration, {}, data.config, {}, layoutConfig);
     return _this;
   }
+  /**
+   * Creates the custom type details description.
+   *
+   * @return {ForeignObject} text A foreign object containing some html and the node's label.
+   */
+
 
   _createClass(CustomNode, [{
     key: "createCustomDetails",
@@ -18041,66 +18428,77 @@ var CustomNode = /*#__PURE__*/function (_BaseNode) {
       });
       return text;
     }
+    /**
+    * Renders a custom node in minimal representation.
+    * @param  {Number} IX=initialX The initial X render position.
+    * @param  {Number} IY=initialY The initial Y render position.
+    * @param  {Number} FX=finalX The final X render position.
+    * @param  {Number} FY=finalY The final Y render position.
+    */
+
   }, {
     key: "renderAsMin",
     value: function renderAsMin() {
-      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.initialX;
-      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.initialY;
+      var IX = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.initialX;
+      var IY = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.initialY;
+      var FX = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : this.finalX;
+      var FY = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : this.finalY;
       // create svg elements
       var svg = this.createSVGElement();
       var node = this.createNode();
-      var icon = this.createIcon(); // FIXME: by loading the icon, on sometimes the icon is not in the correct position
-
+      var icon = this.createIcon();
       var text = this.createLabel();
       svg.add(node);
       svg.add(icon);
       svg.add(text); // animate new elements into position
 
-      svg.center(X, Y);
-
       if (this.config.nodeType === "path") {
-        node.center(X, Y).scale(0.001).animate({
+        node.center(IX, IY).scale(0.001).animate({
           duration: this.config.animationSpeed
         }).transform({
           scale: 1
-        });
+        }).center(FX, FY);
       } else {
-        node.center(X, Y).animate({
+        node.center(IX, IY).width(this.config.minWidth).height(this.config.minHeight).dmove(-this.config.minWidth / 2, -this.config.minHeight / 2).animate({
           duration: this.config.animationSpeed
-        }).width(this.config.minWidth).height(this.config.minHeight).dmove(-this.config.minWidth / 2, -this.config.minHeight / 2);
+        }).center(FX, FY);
       }
 
-      icon.center(X, Y).size(0, 0).attr({
-        opacity: 0
-      }).animate({
-        duration: this.config.animationSpeed
+      icon.center(IX, IY).attr({
+        opacity: this.config.minIconOpacity
       }).attr({
         opacity: this.config.minIconOpacity
-      }).size(this.config.minIconSize, this.config.minIconSize).dx(-this.config.minIconSize / 2 + this.config.minIconTranslateX).dy(-this.config.minIconSize / 2 + this.config.minIconTranslateY);
-      text.center(X, Y).size(this.config.minTextWidth, text.children()[0].node.clientHeight).scale(0.001).attr({
-        opacity: 0
-      }).animate({
+      }).size(this.config.minIconSize, this.config.minIconSize).dx(-this.config.minIconSize / 2).dy(-this.config.minIconSize / 2).animate({
         duration: this.config.animationSpeed
-      }).attr({
-        opacity: 1
-      }).transform({
+      }).center(FX + this.config.minIconTranslateX, FY + this.config.minIconTranslateY);
+      text.size(this.config.minTextWidth, text.children()[0].node.clientHeight).center(IX, IY).scale(0.001).transform({
         scale: 1,
         translate: [this.config.minTextTranslateX, this.config.minTextTranslateY]
-      });
+      }).animate({
+        duration: this.config.animationSpeed
+      }).center(FX, FY);
       this.currentWidth = this.config.minWidth;
       this.currentHeight = this.config.minHeight;
       this.nodeSize = "min";
-      this.currentX = X;
-      this.currentY = Y;
-      this.opacity = 1;
-      this.isHidden = false;
+      this.currentX = IX;
+      this.currentY = IY;
       this.svg = svg;
     }
+    /**
+    * Renders a custom node in detailed representation.
+    * @param  {Number} IX=initialX The initial X render position.
+    * @param  {Number} IY=initialY The initial Y render position.
+    * @param  {Number} FX=finalX The final X render position.
+    * @param  {Number} FY=finalY The final Y render position.
+    */
+
   }, {
     key: "renderAsMax",
     value: function renderAsMax() {
-      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.initialX;
-      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.initialY;
+      var IX = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.initialX;
+      var IY = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.initialY;
+      var FX = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : this.finalX;
+      var FY = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : this.finalY;
       // create svg elements
       var svg = this.createSVGElement();
       var node = this.createNode();
@@ -18110,44 +18508,41 @@ var CustomNode = /*#__PURE__*/function (_BaseNode) {
       svg.add(icon);
       svg.add(text); // animate new elements into position
 
-      svg.center(X, Y);
-
       if (this.config.nodeType === "path") {
-        node.center(X, Y).animate({
+        node.center(IX, IY).width(this.config.maxWidth).height(this.config.maxHeight).dmove(-this.config.maxWidth / 4, -this.config.maxHeight / 4).animate({
           duration: this.config.animationSpeed
-        }).width(this.config.maxWidth).height(this.config.maxHeight).dmove(-this.config.maxWidth / 4, -this.config.maxHeight / 4);
+        }).center(FX, FY);
       } else {
-        node.center(X, Y).animate({
+        node.center(IX, IY).width(this.config.maxWidth).height(this.config.maxHeight).dmove(-this.config.maxWidth / 2, -this.config.maxHeight / 2).animate({
           duration: this.config.animationSpeed
-        }).width(this.config.maxWidth).height(this.config.maxHeight).dmove(-this.config.maxWidth / 2, -this.config.maxHeight / 2);
+        }).center(FX, FY);
       }
 
-      icon.size(0, 0).center(X, Y).attr({
-        opacity: 0
-      }).animate({
-        duration: this.config.animationSpeed
-      }).attr({
+      icon.center(IX + this.config.maxIconTranslateX, IY + this.config.maxIconTranslateY).attr({
         opacity: this.config.maxIconOpacity
-      }).size(this.config.maxIconSize, this.config.maxIconSize).dx(-this.config.maxIconSize / 2 + this.config.maxIconTranslateX).dy(-this.config.maxIconSize / 2 + this.config.maxIconTranslateY);
-      text.size(this.config.maxTextWidth, text.children()[0].node.clientHeight).center(X, Y).scale(0.001).attr({
-        opacity: 0
-      }).animate({
+      }).size(this.config.maxIconSize, this.config.maxIconSize).dx(-this.config.maxIconSize / 2).dy(-this.config.maxIconSize / 2).animate({
         duration: this.config.animationSpeed
-      }).attr({
-        opacity: 1
-      }).transform({
+      }).center(FX + this.config.maxIconTranslateX, FY + this.config.maxIconTranslateY);
+      text // .size(this.config.maxTextWidth, text.children()[0].node.clientHeight)
+      .center(IX, IY).scale(0.001).transform({
         scale: 1,
         translate: [this.config.maxTextTranslateX, this.config.maxTextTranslateY]
-      });
+      }).animate({
+        duration: this.config.animationSpeed
+      }).center(FX, FY);
       this.currentWidth = this.config.maxWidth;
       this.currentHeight = this.config.maxHeight;
       this.nodeSize = "max";
-      this.currentX = X;
-      this.currentY = Y;
-      this.opacity = 1;
-      this.isHidden = false;
+      this.currentX = IX;
+      this.currentY = IY;
       this.svg = svg;
     }
+    /**
+    * Transforms a node from minimal version to detailed representation.
+    * @param {Number} X=finalX The final Xrender position.
+    * @param {Number} Y=finalY The final Y render position.
+    */
+
   }, {
     key: "transformToMax",
     value: function transformToMax() {
@@ -18156,7 +18551,13 @@ var CustomNode = /*#__PURE__*/function (_BaseNode) {
       // update current elements
       this.svg.get(0).animate({
         duration: this.config.animationSpeed
-      }).width(this.config.maxWidth).height(this.config.maxHeight).center(X, Y);
+      }).width(this.config.maxWidth).height(this.config.maxHeight).center(X, Y); // old icon position
+
+      var ix = this.svg.get(1).bbox().cx;
+      var iy = this.svg.get(1).bbox().cy; // old text position
+
+      var tx = this.svg.get(2).bbox().cx;
+      var ty = this.svg.get(2).bbox().cy;
       this.svg.get(2).remove();
       this.svg.get(1).remove(); // create new elements
 
@@ -18165,16 +18566,16 @@ var CustomNode = /*#__PURE__*/function (_BaseNode) {
       this.svg.add(icon);
       this.svg.add(text); // put new elements into position
 
-      icon.size(0, 0).center(this.initialX, this.initialY).attr({
+      icon.size(0, 0).attr({
         opacity: 0
-      }).animate({
+      }).center(ix, iy).animate({
         duration: this.config.animationSpeed
       }).attr({
         opacity: this.config.maxIconOpacity
       }).size(this.config.maxIconSize, this.config.maxIconSize).cx(X - this.config.maxIconSize / 2 + this.config.maxIconTranslateX + this.config.maxIconSize / 2).cy(Y - this.config.maxIconSize / 2 + this.config.maxIconTranslateY + this.config.maxIconSize / 2);
-      text.center(this.initialX, this.initialY).scale(0.001).attr({
+      text.attr({
         opacity: 0
-      }).animate({
+      }).center(tx, ty).scale(0.001).animate({
         duration: this.config.animationSpeed
       }).attr({
         opacity: 1
@@ -18188,6 +18589,12 @@ var CustomNode = /*#__PURE__*/function (_BaseNode) {
       this.currentX = X;
       this.currentY = Y;
     }
+    /**
+    * Transforms a node from detailed representation to minimal version.
+    * @param {Number} X=finalX The final Xrender position.
+    * @param {Number} Y=finalY The final Y render position.
+    */
+
   }, {
     key: "transformToMin",
     value: function transformToMin() {
@@ -18196,7 +18603,13 @@ var CustomNode = /*#__PURE__*/function (_BaseNode) {
       // update current elements
       this.svg.get(0).animate({
         duration: this.config.animationSpeed
-      }).width(this.config.minWidth).height(this.config.minHeight).center(X, Y);
+      }).width(this.config.minWidth).height(this.config.minHeight).center(X, Y); // old icon position
+
+      var ix = this.svg.get(1).bbox().cx;
+      var iy = this.svg.get(1).bbox().cy; // old text position
+
+      var tx = this.svg.get(2).bbox().cx;
+      var ty = this.svg.get(2).bbox().cy;
       this.svg.get(2).remove();
       this.svg.get(1).remove(); // create new elements
 
@@ -18205,16 +18618,16 @@ var CustomNode = /*#__PURE__*/function (_BaseNode) {
       this.svg.add(icon);
       this.svg.add(text); // put new elements into position
 
-      icon.center(this.initialX, this.initialY).attr({
+      icon.size(1, 1).attr({
         opacity: 0
-      }).animate({
+      }).center(ix, iy).animate({
         duration: this.config.animationSpeed
       }).attr({
         opacity: this.config.minIconOpacity
       }).size(this.config.minIconSize, this.config.minIconSize).dx(-this.config.minIconSize / 2 + this.config.minIconTranslateX).dy(-this.config.minIconSize / 2 + this.config.minIconTranslateY).center(X, Y);
-      text.center(this.initialX, this.initialY).size(this.config.minTextWidth, text.children()[0].node.clientHeight).scale(0.001).attr({
+      text.attr({
         opacity: 0
-      }).animate({
+      }).center(tx, ty).scale(0.001).size(this.config.minTextWidth, text.children()[0].node.clientHeight).animate({
         duration: this.config.animationSpeed
       }).attr({
         opacity: 1
@@ -18234,55 +18647,54 @@ var CustomNode = /*#__PURE__*/function (_BaseNode) {
 }(BaseNode);
 
 /**
- * Default configuration for asset nodes
- * @typedef {ControlConfig} ControlConfig
+ * @namespace ControlNodeConfiguration
+ * @description This object contains default configuration for control node representations.
  *
- * @param {Number} [maxWidth=400] The nodes maximal width
- * @param {Number} [maxHeight=190] The nodes maximal height
- * @param {Number} [minWidth=150] The nodes minimal width
- * @param {Number} [minHeight=80] The nodes minimal height
+ * @property {Number} maxWidth=400                  - Sets the detailed node width.
+ * @property {Number} maxHeight=190                 - Sets the detailed height.
+ * @property {Number} minWidth=150                  - Sets the minimal node width.
+ * @property {Number} minHeight=80                  - Sets the minimal node height.
  *
- * @param {String} [iconUrl=null] The path to the image icon (if this value is null, the default icon is used)
- * @param {Number} [minIconOpacity=0.5] The basic visibility of the icon
- * @param {Number} [minIconSize=64] The width and height for the image icon
- * @param {Number} [minIconTranslateX=0] Moves the icon horizontally
- * @param {Number} [minIconTranslateY=0] Moves the icon vertically
- * @param {Number} [maxIconOpacity=0.75] The basic visibility of the icon
- * @param {Number} [maxIconSize=180] The width and height for the image icon
- * @param {Number} [maxIconTranslateX=-100] Moves the icon horizontally
- * @param {Number} [maxIconTranslateY=0] Moves the icon vertically
+ * @property {String} iconUrl=null                  - Determins the path to the image icon (if this value is null, the default icon is used).
+ * @property {Number} minIconOpacity=0.5            - Determins the basic visibility of the icon in minimal representation.
+ * @property {Number} minIconSize=64                - Determins the width and height for the image icon in minimal representation.
+ * @property {Number} minIconTranslateX=0           - Determins the horizontal adjustment for the icon in minimal representation.
+ * @property {Number} minIconTranslateY=0           - Determins the vertical adjustment for the icon in minimal representation.
+ * @property {Number} maxIconOpacity=0.75           - Determins the basic visibility of the icon in detailed representation.
+ * @property {Number} maxIconSize=180               - Determins the width and height for the image icon in detailed representation.
+ * @property {Number} maxIconTranslateX=-100        - Determins the horizontal adjustment for the icon in detailed representation.
+ * @property {Number} maxIconTranslateY=0           - Determins the vertical adjustment for the icon in detailed representation.
  *
- * @param {Number} [offset=8] The spacing used by padding and margin
- * @param {Number} [animationSpeed=300] The animation in milliseconds
- * @param {Number} [borderRadius=5] The border radius
- * @param {Number} [borderStrokeWidth=1] The border stroke width
- * @param {String} [borderStrokeColor="#7daed6"] The border color
- * @param {String} [borderStrokeDasharray="0"] Gaps inside border
- * @param {String} [backgroundColor="#ffffff"] The background color for the rendered node
+ * @property {Number} offset=8                      - Determins the spacing used for padding between label and background.
+ * @property {Number} animationSpeed=300            - Determins how fast SVG elements animates inside the current layout.
+ * @property {Number} borderRadius=5                - Determins the nodes border radius.
+ * @property {Number} borderStrokeWidth=1           - Determins the nodes border stroke width.
+ * @property {String} borderStrokeColor=#7daed6     - Determins the nodes border color.
+ * @property {String} borderStrokeDasharray="0"     - Determins the nodes gaps used inside the border.
+ * @property {String} backgroundColor=#ffffff       - Determins the nodes background color.
  *
- * @param {Number} [minTextWidth=145] The minimal text width for the label
- * @param {Number} [minTextHeight=75] The minimal text height for the label
- * @param {Number} [minTextTranslateX=0] Moves the label horizontally
- * @param {Number} [minTextTranslateY=0] The the label vertically
- * @param {Number} [maxTextWidth=395] The maximal text width for the description
- * @param {Number} [maxTextHeight=185] The maximal text height for the description
- * @param {Number} [maxTextTranslateX=100] The the description horizontally
- * @param {Number} [maxTextTranslateY=0] The the description vertically
- * @param {String} [labelColor="#5b91b5"] The label text color
- * @param {String} [labelFontFamily="Montserrat"] The label font family
- * @param {Number} [labelFontSize=16] The label font size
- * @param {Number} [labelFontWeight=600] The label font weight
- * @param {String} [labelFontStyle="normal"] The label font style
- * @param {String} [labelBackground="#ffffffcc"] The label background color
- * @param {String} [detailsColor="#5b91b5"] The details text color
- * @param {String} [detailsFontFamily="Montserrat"] The details family
- * @param {Number} [detailsFontSize=12] The details font size
- * @param {Number} [detailsFontWeight=600] The details font weight
- * @param {String} [detailsFontStyle="normal"] The details font style
- * @param {String} [detailsBackground="#ffffff"] The details text background color
+ * @property {Number} minTextWidth=145              - Determins the text width for the label in minimal representation.
+ * @property {Number} minTextHeight=75              - Determins the text height for the label in minimal representation.
+ * @property {Number} minTextTranslateX=0           - Determins the horizontal adjustment for the label in minimal representation.
+ * @property {Number} minTextTranslateY=0           - Determins the vertical adjustment for the label in minimal representation.
+ * @property {Number} maxTextWidth=395              - Determins the text width for the label in detailed representation.
+ * @property {Number} maxTextHeight=185             - Determins the text height for the label in detailed representation.
+ * @property {Number} maxTextTranslateX=100         - Determins the horizontal adjustment for the label in detailed representation.
+ * @property {Number} maxTextTranslateY=0           - Determins the vertical adjustment for the label in detailed representation.
+ * @property {String} labelColor=#5b91b5            - Determins the color for the label.
+ * @property {String} labelFontFamily=Montserrat    - Determins the font family for the label.
+ * @property {Number} labelFontSize=16              - Determins the font size for the label.
+ * @property {Number} labelFontWeight=600           - Determins the font weight for the label.
+ * @property {String} labelFontStyle=normal         - Determins the font style for the label.
+ * @property {String} labelBackground=#ffffff       - Determins the background color for the label.
+ * @property {String} detailsColor=#5b91b5          - Determins the color for the details description.
+ * @property {String} detailsFontFamily=Montserrat  - Determins the font family for the details description.
+ * @property {Number} detailsFontSize=12            - Determins the font size for the details description.
+ * @property {Number} detailsFontWeight=600         - Determins the font weight for the details description.
+ * @property {String} detailsFontStyle=normal       - Determins the font style for the details description.
+ * @property {String} detailsBackground=#ffffff     - Determins the background color for the details description.
  */
-
-var ControlConfig = {
+var ControlNodeConfiguration = {
   // large node
   maxWidth: 400,
   maxHeight: 190,
@@ -18329,26 +18741,36 @@ var ControlConfig = {
   detailsFontStyle: "normal",
   detailsBackground: "#ffffff"
 };
+
 /**
- * Class representing the visualization of controls
- * @param {Data} data the raw node data
- * @param {Canvas} canvas the canvas to render the node on
- * @param {ControlConfig} customControlConfig custom config to override default values
+ * This class is responsible for the visual representation of controls.
+ * @property {Data} data Loaded data from a database.
+ * @property {Canvas} canvas The nested canvas to render the node on.
  *
  */
 
 var ControlNode = /*#__PURE__*/function (_BaseNode) {
   _inherits(ControlNode, _BaseNode);
 
-  function ControlNode(data, canvas, customControlConfig) {
+  var _super = _createSuper(ControlNode);
+
+  function ControlNode(data, canvas) {
     var _this;
+
+    var layoutConfig = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
 
     _classCallCheck(this, ControlNode);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(ControlNode).call(this, data, canvas));
-    _this.config = _objectSpread2({}, ControlConfig, {}, customControlConfig);
+    _this = _super.call(this, data, canvas);
+    _this.config = _objectSpread2({}, ControlNodeConfiguration, {}, data.config, {}, layoutConfig);
     return _this;
   }
+  /**
+   * Creates the control details description.
+   *
+   * @return {ForeignObject} text A foreign object containing some html and the node's label.
+   */
+
 
   _createClass(ControlNode, [{
     key: "createControlDetails",
@@ -18381,18 +18803,28 @@ var ControlNode = /*#__PURE__*/function (_BaseNode) {
       description.style.fontFamily = this.config.detailsFontFamily;
       description.style.fontWeight = this.config.detailsFontWeight;
       description.style.fontStyle = this.config.detailsFontStyle;
-      descriptionBg.appendChild(description); // fix overflow text
+      descriptionBg.appendChild(description); // FIXME: fix overflow text
 
       clamp(description, {
         clamp: "".concat(this.config.maxTextHeight - label.clientHeight - this.config.offset * 2.5, "px")
       });
       return text;
     }
+    /**
+    * Renders a control node in minimal representation.
+    * @param  {Number} IX=initialX The initial X render position.
+    * @param  {Number} IY=initialY The initial Y render position.
+    * @param  {Number} FX=finalX The final X render position.
+    * @param  {Number} FY=finalY The final Y render position.
+    */
+
   }, {
     key: "renderAsMin",
     value: function renderAsMin() {
-      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.initialX;
-      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.initialY;
+      var IX = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.initialX;
+      var IY = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.initialY;
+      var FX = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : this.finalX;
+      var FY = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : this.finalY;
       // create svg elements
       var svg = this.createSVGElement();
       var node = this.createNode();
@@ -18402,41 +18834,42 @@ var ControlNode = /*#__PURE__*/function (_BaseNode) {
       svg.add(icon);
       svg.add(text); // animate new elements into position
 
-      svg.center(X, Y);
-      node.center(X, Y).animate({
+      node.center(IX, IY).width(this.config.minWidth).height(this.config.minHeight).dmove(-this.config.minWidth / 2, -this.config.minHeight / 2).animate({
         duration: this.config.animationSpeed
-      }).width(this.config.minWidth).height(this.config.minHeight).dmove(-this.config.minWidth / 2, -this.config.minHeight / 2);
-      icon.center(X, Y).attr({
-        opacity: 0
-      }).animate({
-        duration: this.config.animationSpeed
-      }).attr({
+      }).center(FX, FY);
+      icon.center(IX, IY).attr({
         opacity: this.config.minIconOpacity
-      }).size(this.config.minIconSize, this.config.minIconSize).dx(-this.config.minIconSize / 2 + this.config.minIconTranslateX).dy(-this.config.minIconSize / 2 + this.config.minIconTranslateY);
-      text.size(this.config.minTextWidth, text.children()[0].node.clientHeight).center(X, Y).scale(0.001).attr({
-        opacity: 0
-      }).animate({
+      }).size(this.config.minIconSize, this.config.minIconSize).dx(-this.config.minIconSize / 2).dy(-this.config.minIconSize / 2).animate({
         duration: this.config.animationSpeed
-      }).attr({
-        opacity: 1
-      }).transform({
+      }).center(FX + this.config.minIconTranslateX, FY + this.config.minIconTranslateY);
+      text.size(this.config.minTextWidth, text.children()[0].node.clientHeight).center(IX, IY).scale(0.001).transform({
         scale: 1,
         translate: [this.config.minTextTranslateX, this.config.minTextTranslateY]
-      });
+      }).animate({
+        duration: this.config.animationSpeed
+      }).center(FX, FY);
       this.currentWidth = this.config.minWidth;
       this.currentHeight = this.config.minHeight;
       this.nodeSize = "min";
-      this.currentX = X;
-      this.currentY = Y;
-      this.opacity = 1;
-      this.isHidden = false;
+      this.currentX = IX;
+      this.currentY = IY;
       this.svg = svg;
     }
+    /**
+    * Renders a control node in detailed representation.
+    * @param  {Number} IX=initialX The initial X render position.
+    * @param  {Number} IY=initialY The initial Y render position.
+    * @param  {Number} FX=finalX The final X render position.
+    * @param  {Number} FY=finalY The final Y render position.
+    */
+
   }, {
     key: "renderAsMax",
     value: function renderAsMax() {
-      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.initialX;
-      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.initialY;
+      var IX = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.initialX;
+      var IY = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.initialY;
+      var FX = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : this.finalX;
+      var FY = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : this.finalY;
       // create svg elements
       var svg = this.createSVGElement();
       var node = this.createNode();
@@ -18446,36 +18879,33 @@ var ControlNode = /*#__PURE__*/function (_BaseNode) {
       svg.add(icon);
       svg.add(text); // animate new elements into position
 
-      svg.center(X, Y);
-      node.center(X, Y).animate({
+      node.center(IX, IY).width(this.config.maxWidth).height(this.config.maxHeight).dmove(-this.config.maxWidth / 2, -this.config.maxHeight / 2).animate({
         duration: this.config.animationSpeed
-      }).width(this.config.maxWidth).height(this.config.maxHeight).dmove(-this.config.maxWidth / 2, -this.config.maxHeight / 2);
-      icon.center(X, Y).attr({
-        opacity: 0
-      }).animate({
-        duration: this.config.animationSpeed
-      }).attr({
+      }).center(FX, FY);
+      icon.center(IX + this.config.maxIconTranslateX, IY + this.config.maxIconTranslateY).attr({
         opacity: this.config.maxIconOpacity
-      }).size(this.config.maxIconSize, this.config.maxIconSize).dx(-this.config.maxIconSize / 2 + this.config.maxIconTranslateX).dy(-this.config.maxIconSize / 2 + this.config.maxIconTranslateY);
-      text.center(X, Y).scale(0.001).attr({
-        opacity: 0
-      }).animate({
+      }).size(this.config.maxIconSize, this.config.maxIconSize).dx(-this.config.maxIconSize / 2).dy(-this.config.maxIconSize / 2).animate({
         duration: this.config.animationSpeed
-      }).attr({
-        opacity: 1
-      }).transform({
+      }).center(FX + this.config.maxIconTranslateX, FY + this.config.maxIconTranslateY);
+      text.center(IX, IY).scale(0.001).transform({
         scale: 1,
         translate: [this.config.maxTextTranslateX, this.config.maxTextTranslateY]
-      });
+      }).animate({
+        duration: this.config.animationSpeed
+      }).center(FX, FY);
       this.currentWidth = this.config.maxWidth;
       this.currentHeight = this.config.maxHeight;
       this.nodeSize = "max";
-      this.currentX = X;
-      this.currentY = Y;
-      this.opacity = 1;
-      this.isHidden = false;
+      this.currentX = IX;
+      this.currentY = IY;
       this.svg = svg;
     }
+    /**
+    * Transforms a node from minimal version to detailed representation.
+    * @param {Number} X=finalX The final Xrender position.
+    * @param {Number} Y=finalY The final Y render position.
+    */
+
   }, {
     key: "transformToMax",
     value: function transformToMax() {
@@ -18484,7 +18914,13 @@ var ControlNode = /*#__PURE__*/function (_BaseNode) {
       // update current elements
       this.svg.get(0).animate({
         duration: this.config.animationSpeed
-      }).width(this.config.maxWidth).height(this.config.maxHeight).center(X, Y);
+      }).width(this.config.maxWidth).height(this.config.maxHeight).center(X, Y); // old icon position
+
+      var ix = this.svg.get(1).bbox().cx;
+      var iy = this.svg.get(1).bbox().cy; // old text position
+
+      var tx = this.svg.get(2).bbox().cx;
+      var ty = this.svg.get(2).bbox().cy;
       this.svg.get(2).remove();
       this.svg.get(1).remove(); // create new elements
 
@@ -18493,16 +18929,16 @@ var ControlNode = /*#__PURE__*/function (_BaseNode) {
       this.svg.add(icon);
       this.svg.add(text); // put new elements into position
 
-      icon.center(this.initialX, this.initialY).attr({
+      icon.attr({
         opacity: 0
-      }).animate({
+      }).center(ix, iy).animate({
         duration: this.config.animationSpeed
       }).attr({
         opacity: this.config.maxIconOpacity
       }).size(this.config.maxIconSize, this.config.maxIconSize).cx(X - this.config.maxIconSize / 2 + this.config.maxIconTranslateX + this.config.maxIconSize / 2).cy(Y - this.config.maxIconSize / 2 + this.config.maxIconTranslateY + this.config.maxIconSize / 2);
-      text.center(this.initialX, this.initialY).scale(0.001).attr({
+      text.attr({
         opacity: 0
-      }).animate({
+      }).center(tx, ty).scale(0.001).animate({
         duration: this.config.animationSpeed
       }).attr({
         opacity: 1
@@ -18516,6 +18952,12 @@ var ControlNode = /*#__PURE__*/function (_BaseNode) {
       this.currentX = X;
       this.currentY = Y;
     }
+    /**
+    * Transforms a node from detailed representation to minimal version.
+    * @param {Number} X=finalX The final Xrender position.
+    * @param {Number} Y=finalY The final Y render position.
+    */
+
   }, {
     key: "transformToMin",
     value: function transformToMin() {
@@ -18524,7 +18966,13 @@ var ControlNode = /*#__PURE__*/function (_BaseNode) {
       // update current elements
       this.svg.get(0).animate({
         duration: this.config.animationSpeed
-      }).width(this.config.minWidth).height(this.config.minHeight).center(X, Y);
+      }).width(this.config.minWidth).height(this.config.minHeight).center(X, Y); // old icon position
+
+      var ix = this.svg.get(1).bbox().cx;
+      var iy = this.svg.get(1).bbox().cy; // old text position
+
+      var tx = this.svg.get(2).bbox().cx;
+      var ty = this.svg.get(2).bbox().cy;
       this.svg.get(2).remove();
       this.svg.get(1).remove(); // create new elements
 
@@ -18533,16 +18981,16 @@ var ControlNode = /*#__PURE__*/function (_BaseNode) {
       this.svg.add(icon);
       this.svg.add(text); // put new elements into position
 
-      icon.center(this.initialX, this.initialY).attr({
+      icon.size(1, 1).attr({
         opacity: 0
-      }).animate({
+      }).center(ix, iy).animate({
         duration: this.config.animationSpeed
       }).attr({
         opacity: this.config.minIconOpacity
       }).size(this.config.minIconSize, this.config.minIconSize).dx(-this.config.minIconSize / 2 + this.config.minIconTranslateX).dy(-this.config.minIconSize / 2 + this.config.minIconTranslateY).center(X, Y);
-      text.center(this.initialX, this.initialY).size(this.config.minTextWidth, text.children()[0].node.clientHeight).scale(0.001).attr({
+      text.attr({
         opacity: 0
-      }).animate({
+      }).center(tx, ty).scale(0.001).size(this.config.minTextWidth, text.children()[0].node.clientHeight).animate({
         duration: this.config.animationSpeed
       }).attr({
         opacity: 1
@@ -22913,10 +23361,12 @@ var intersect$1 = intersect_1;
 var shape = IntersectionParams_1.newShape;
 
 /**
- * Base class for all edge representations
- * @param {Canvas} canvas the svg canvas element to render the node on
- * @param {BaseNode} fromNode The from node
- * @param {BaseNode} toNode The to node
+ * This is the base class for edges.
+ * 
+ * @property {Data} data The loaded data element from a database.
+ * @property {Canvas} canvas The nested canvas to render the edge on.
+ * @property {BaseNode} fromNode The starting node reference.
+ * @property {BaseNode} toNode The ending node reference.
  */
 
 var BaseEdge = /*#__PURE__*/function () {
@@ -22928,7 +23378,8 @@ var BaseEdge = /*#__PURE__*/function () {
     this.canvas = canvas;
     this.fromNode = fromNode;
     this.toNode = toNode;
-    this.label = null; // node position
+    this.label = null;
+    this.config = _objectSpread2({}, data.config); // node position
 
     this.initialX = 0;
     this.initialY = 0;
@@ -22939,15 +23390,31 @@ var BaseEdge = /*#__PURE__*/function () {
     this.opacity = 1;
     this.isHidden = false;
   }
+  /**
+   * Calculates the two points indicating the starting and end point for edges.
+   * @param {Object} opts Additional configuration required for calculating certain edges.
+   */
+
 
   _createClass(BaseEdge, [{
     key: "calculateEdge",
     value: function calculateEdge() {
+      var opts = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {
+        isContextualParent: false,
+        isContextualChild: false
+      };
       var fx = this.fromNode.getFinalX();
       var fy = this.fromNode.getFinalY();
       var tx = this.toNode.getFinalX();
-      var ty = this.toNode.getFinalY(); // this.canvas.circle(5).fill("#75f").center(fx, fy)
-      // this.canvas.circle(5).fill("#000").center(tx, ty)
+      var ty = this.toNode.getFinalY();
+
+      if (opts.isContextualParent) {
+        fx = tx;
+      }
+
+      if (opts.isContextualChild) {
+        tx = fx;
+      }
 
       var line = shape("line", {
         x1: fx,
@@ -22984,8 +23451,12 @@ var BaseEdge = /*#__PURE__*/function () {
       var toPoints = intersect$1(rect1, line);
       this.finalToX = toPoints.points[0].x;
       this.finalToY = toPoints.points[0].y; // this.canvas.circle(5).fill("#75f").center(this.finalFromX, this.finalFromY)
-      // this.canvas.circle(5).fill("#000").center(this.finalToX, this.finalToY)
+      // this.canvas.circle(5).fill("#0f0").center(this.finalToX, this.finalToY)
     }
+    /**
+     * Updates the two points indicating an edge.
+     */
+
   }, {
     key: "updateEdgePosition",
     value: function updateEdgePosition() {
@@ -23032,29 +23503,51 @@ var BaseEdge = /*#__PURE__*/function () {
       this.finalToY = toPoints.points[0].y; // this.canvas.circle(5).fill("#75f").center(this.finalFromX, this.finalFromY)
       // this.canvas.circle(5).fill("#000").center(this.finalToX, this.finalToY)
     }
+    /**
+     * Removes the rendered SVG edge from the canvas.
+     * @param {Number} X The X position to move the elements before removing them.
+     * @param {Number} Y The Y position to move the elements before removing them.
+     */
+
   }, {
     key: "removeEdge",
-    value: function removeEdge(X, Y) {
+    value: function removeEdge() {
       var _this = this;
 
-      this.svg.attr({
-        opacity: 1
-      }).animate({
-        duration: this.config.animationSpeed
-      }).transform({
-        scale: 0.001,
-        position: [X, Y]
-      }).attr({
-        opacity: 0
-      }).after(function () {
-        _this.svg.remove();
+      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
+      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
 
-        _this.svg = null;
-      });
+      if (this.svg !== null) {
+        this.svg.attr({
+          opacity: 1
+        }).animate({
+          duration: this.config.animationSpeed
+        }).transform({
+          scale: 0.001,
+          position: [X, Y]
+        }).attr({
+          opacity: 0
+        }).after(function () {
+          if (_this.svg !== null) {
+            _this.svg.remove();
+
+            _this.svg = null;
+          }
+        });
+      }
     }
     /**
-     * Creates the edge label
-     * @private
+     * Determins where the edge is rendered or not.
+     * @returns True, if the SVG is rendered, else false.
+     */
+
+  }, {
+    key: "isRendered",
+    value: function isRendered() {
+      return this.svg !== null;
+    }
+    /**
+     * Creates a label responsible for holding the edge description.
      */
 
   }, {
@@ -23085,6 +23578,11 @@ var BaseEdge = /*#__PURE__*/function () {
       fobj.center(this.finalFromX, this.finalFromY);
       return fobj;
     }
+    /**
+     * Updates the new label.
+     * @param {String} label The new label.
+     */
+
   }, {
     key: "setLabel",
     value: function setLabel(label) {
@@ -23095,17 +23593,37 @@ var BaseEdge = /*#__PURE__*/function () {
   return BaseEdge;
 }();
 
-var ThinEdgeConfig = {
+/**
+ * @namespace ThinEdgeConfiguration
+ * @description This object contains default configuration for thin edge representations.
+ * 
+ * @property {Number} offset=8                                  - Sets the spacing used for padding between label and background.
+ * @property {Number} animationSpeed=300                        - Determins how fast SVG elements animates inside the current layout.
+ * @property {String} type=solid                                - Determins the edge type. Available: "solid" or "dashed".
+ * 
+ * @property {Number} strokeWidth=2                             - Determins the edges thickness.
+ * @property {String} strokeColor=#aaaaaa                       - Determins the edges color.
+ * @property {String} strokeDasharray="7 5"                     - Determins the graps in the edge line.
+ * @property {marker} strokeDasharray="M 0 0 L 6 3 L 0 6 z"     - Determins the shape of the arrow head.
+ * 
+ * @property {String} labelColor=#777777                        - Determins the color for the label.
+ * @property {String} labelFontFamily=Montserrat                - Determins the font family for the label.
+ * @property {Number} labelFontSize=16                          - Determins the font size for the label.
+ * @property {Number} labelFontWeight=600                       - Determins the font weight for the label.
+ * @property {String} labelFontStyle=normal                     - Determins the font style for the label.
+ * @property {String} labelBackground=#ffffffcc                 - Determins the background color for the label.
+ */
+var ThinEdgeConfiguration = {
   offset: 8,
   animationSpeed: 300,
   type: "solid",
   // arrow
   strokeWidth: 2,
-  strokeColor: "#aaa",
+  strokeColor: "#aaaaaa",
   strokeDasharray: "7 5",
   marker: "M 0 0 L 6 3 L 0 6 z",
   // text
-  labelColor: "#777",
+  labelColor: "#777777",
   labelFontFamily: "Montserrat",
   labelFontSize: 16,
   labelFontWeight: 600,
@@ -23113,8 +23631,20 @@ var ThinEdgeConfig = {
   labelBackground: "#ffffffcc"
 };
 
+/**
+ * This class is responsible for the visual representation of bold edges.
+ * @property {Data} data The loaded data element from a database.
+ * @property {Canvas} canvas The nested canvas to render the edge on.
+ * @property {BaseEdge} fromNode The starting node reference.
+ * @property {BaseEdge} toNode The ending node reference.
+ * @property {Object} customThinEdgeConfig An object containing information to change the default visualization.
+ *
+ */
+
 var ThinEdge = /*#__PURE__*/function (_BaseEdge) {
   _inherits(ThinEdge, _BaseEdge);
+
+  var _super = _createSuper(ThinEdge);
 
   function ThinEdge(data, canvas, fromNode, toNode) {
     var _this;
@@ -23123,12 +23653,12 @@ var ThinEdge = /*#__PURE__*/function (_BaseEdge) {
 
     _classCallCheck(this, ThinEdge);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(ThinEdge).call(this, data, canvas, fromNode, toNode));
-    _this.config = _objectSpread2({}, ThinEdgeConfig, {}, customThinEdgeConfig);
+    _this = _super.call(this, data, canvas, fromNode, toNode);
+    _this.config = _objectSpread2({}, ThinEdgeConfiguration, {}, _this.config, {}, customThinEdgeConfig);
     return _this;
   }
   /**
-   * Creates the initial SVG element and adds hover effect
+   * Creates the initial SVG element and adds hover effect.
    */
 
 
@@ -23173,14 +23703,37 @@ var ThinEdge = /*#__PURE__*/function (_BaseEdge) {
         svg.add(label);
       }
 
-      svg.attr({
-        opacity: 0
-      });
       svg.center(X, Y);
+      svg.back();
+      svg.scale(0.001).attr({
+        opacity: 1
+      }).animate({
+        duration: this.config.animationSpeed
+      }).transform({
+        scale: 1
+      });
+      svg.get(0).attr({
+        opacity: 0
+      }).animate({
+        duration: this.config.animationSpeed
+      }).plot("M".concat(this.finalFromX, ",").concat(this.finalFromY, " L").concat(this.finalToX, ",").concat(this.finalToY)).attr({
+        opacity: 1
+      });
+
+      if (this.label) {
+        svg.get(1).attr({
+          opacity: 0
+        }).animate({
+          duration: this.config.animationSpeed
+        }).center((this.finalFromX + this.finalToX) / 2, (this.finalFromY + this.finalToY) / 2).attr({
+          opacity: 1
+        });
+      }
+
       this.svg = svg;
     }
     /**
-     * Transform an edge to its final rendered position
+     * Transforms an edge to its final rendered position.
      */
 
   }, {
@@ -23213,9 +23766,9 @@ var ThinEdge = /*#__PURE__*/function (_BaseEdge) {
       }
     }
     /**
-     * Transform an edge from its visible position to its initial rendered position
-     * @param {Number} [X=finalFromX] The x-position the edge will be translated
-     * @param {Number} [Y=finalFromY] The y-position the edge will be translated
+     * Transforms an edge from its visible position to its initial rendered position.
+     * @param {Number} X=finalFromX The X position the edge will be translated.
+     * @param {Number} Y=finalFromY The Y position the edge will be translated.
      */
 
   }, {
@@ -23247,14 +23800,36 @@ var ThinEdge = /*#__PURE__*/function (_BaseEdge) {
   return ThinEdge;
 }(BaseEdge);
 
-var BoldEdgeConfig = {
+/**
+ * @namespace BoldEdgeConfiguration
+ * @description This object contains default configuration for bold edge representations.
+ * 
+ * @property {Number} offset=8                      - Sets the spacing used for padding between label and background.
+ * @property {Number} animationSpeed=300            - Determins how fast SVG elements animates inside the current layout.
+ * @property {String} color1=null                   - Sets the linear gradient starting color.
+ * @property {String} color2=null                   - Sets the linear gradient finishing color.
+ * 
+ * @property {String} blockarrowLineWidth=25        - Determins the thickness of the SVG element.
+ * @property {String} blockarrowArrowWidth=40       - Determins how long the arrow head appears.
+ * @property {String} blockarrowArrowLength=20      - Determins the thickness of the arrow head.
+ * 
+ * @property {String} labelColor=#222222            - Determins the color for the label.
+ * @property {String} labelFontFamily=Montserrat    - Determins the font family for the label.
+ * @property {Number} labelFontSize=16              - Determins the font size for the label.
+ * @property {Number} labelFontWeight=600           - Determins the font weight for the label.
+ * @property {String} labelFontStyle=normal         - Determins the font style for the label.
+ * @property {String} labelBackground=#ffffffcc     - Determins the background color for the label.
+ * @property {Number} labelTranslateX=0             - Determins the horizontal adjustment for the label.
+ * @property {Number} labelTranslateY=0             - Determins the vertical adjustment for the label.
+ */
+var BoldEdgeConfiguration = {
   offset: 8,
   animationSpeed: 300,
   color1: null,
   color2: null,
-  blockarrowLineWidth: 3,
-  blockarrowArrowWidth: 10,
-  blockarrowArrowLength: 5,
+  blockarrowLineWidth: 25,
+  blockarrowArrowWidth: 40,
+  blockarrowArrowLength: 20,
   labelColor: "#222222",
   labelFontFamily: "Montserrat",
   labelFontSize: 16,
@@ -23265,8 +23840,20 @@ var BoldEdgeConfig = {
   labelTranslateY: 0
 };
 
+/**
+ * This class is responsible for the visual representation of bold edges.
+ * @property {Data} data The loaded data element from a database.
+ * @property {Canvas} canvas The nested canvas to render the edge on.
+ * @property {BaseEdge} fromNode The starting node reference.
+ * @property {BaseEdge} toNode The ending node reference.
+ * @property {Object} customBoldEdgeConfig An object containing information to change the default visualization.
+ *
+ */
+
 var BoldEdge = /*#__PURE__*/function (_BaseEdge) {
   _inherits(BoldEdge, _BaseEdge);
+
+  var _super = _createSuper(BoldEdge);
 
   function BoldEdge(data, canvas, fromNode, toNode) {
     var _this;
@@ -23275,12 +23862,12 @@ var BoldEdge = /*#__PURE__*/function (_BaseEdge) {
 
     _classCallCheck(this, BoldEdge);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(BoldEdge).call(this, data, canvas, fromNode, toNode));
-    _this.config = _objectSpread2({}, BoldEdgeConfig, {}, customBoldEdgeConfig);
+    _this = _super.call(this, data, canvas, fromNode, toNode);
+    _this.config = _objectSpread2({}, BoldEdgeConfiguration, {}, customBoldEdgeConfig);
     return _this;
   }
   /**
-   * Creates the initial SVG element and adds hover effect
+   * Creates the initial SVG element and adds hover effect.
    */
 
 
@@ -23294,14 +23881,6 @@ var BoldEdge = /*#__PURE__*/function (_BaseEdge) {
         opacity: 0
       });
       this.svg = svg;
-    }
-    /**
-     * Transform an edge to its final rendered position
-     */
-
-  }, {
-    key: "transformToFinalPosition",
-    value: function transformToFinalPosition() {
       this.svg.attr({
         opacity: 1
       }); // create new elements
@@ -23327,8 +23906,8 @@ var BoldEdge = /*#__PURE__*/function (_BaseEdge) {
         return where.config.borderStrokeColor;
       };
 
-      var c1 = this.config.color1 !== "null" ? this.config.color1 : getColor(this.fromNode);
-      var c2 = this.config.color2 !== "null" ? this.config.color2 : getColor(this.toNode);
+      var c1 = this.config.color1 !== null ? this.config.color1 : getColor(this.fromNode);
+      var c2 = this.config.color2 !== null ? this.config.color2 : getColor(this.toNode);
       var gradient = this.canvas.gradient("linear", function (add) {
         add.stop(0, c1);
         add.stop(1, c2);
@@ -23370,9 +23949,83 @@ var BoldEdge = /*#__PURE__*/function (_BaseEdge) {
       }
     }
     /**
-     * Transform an edge from its visible position to its initial rendered position
-     * @param {Number} [X=finalFromX] The x-position the edge will be translated
-     * @param {Number} [Y=finalFromY] The y-position the edge will be translated
+     * Transforms an edge to its final rendered position.
+     */
+
+  }, {
+    key: "transformToFinalPosition",
+    value: function transformToFinalPosition() {
+      this.svg.attr({
+        opacity: 1
+      }); // create new elements
+
+      var lw = this.config.blockarrowLineWidth;
+      var aw = this.config.blockarrowArrowWidth;
+      var al = this.config.blockarrowArrowLength;
+      var dx = this.finalToX - this.finalFromX;
+      var dy = this.finalToY - this.finalFromY;
+      var len = Math.sqrt(dx * dx + dy * dy);
+      var dW = aw - lw;
+      var angle = Math.atan2(dy, dx) * 180 / Math.PI;
+      this.angle = angle;
+      var svgPath = "\n      M 0,".concat(-lw / 2, "\n      h ").concat(len - al, "\n      v ").concat(-dW / 2, "\n      L ").concat(len, ",0\n      L ").concat(len - al, ",").concat(aw / 2, "\n      v ").concat(-dW / 2, "\n      H 0\n      Z\n    ");
+      var path = this.canvas.path();
+      path.plot(svgPath);
+
+      var getColor = function getColor(where) {
+        if (where.type === "requirement") {
+          return where.config.backgroundColor;
+        }
+
+        return where.config.borderStrokeColor;
+      };
+
+      var c1 = this.config.color1 !== null ? this.config.color1 : getColor(this.fromNode);
+      var c2 = this.config.color2 !== null ? this.config.color2 : getColor(this.toNode);
+      var gradient = this.canvas.gradient("linear", function (add) {
+        add.stop(0, c1);
+        add.stop(1, c2);
+      });
+      path.fill(gradient);
+      path.center(this.finalFromX, this.finalFromY);
+      path.rotate(angle);
+      path.scale(0.0001);
+      this.svg.add(path);
+
+      if (this.label !== null) {
+        var label = this.createLabel();
+        this.svg.add(label);
+      } // put new elements into position
+
+
+      this.svg.get(0).attr({
+        opacity: 0
+      }).animate({
+        duration: this.config.animationSpeed
+      }).transform({
+        scale: 1,
+        rotate: angle,
+        position: [(this.finalFromX + this.finalToX) / 2, (this.finalFromY + this.finalToY) / 2]
+      }).attr({
+        opacity: 1
+      });
+
+      if (this.label) {
+        var cx = (this.finalFromX + this.finalToX) / 2 + this.config.labelTranslateX;
+        var cy = (this.finalFromY + this.finalToY) / 2 + this.config.labelTranslateY;
+        this.svg.get(1).attr({
+          opacity: 0
+        }).animate({
+          duration: this.config.animationSpeed
+        }).center(cx, cy).attr({
+          opacity: 1
+        });
+      }
+    }
+    /**
+     * Transforms an edge from its final position to its initial rendered position.
+     * @param {Number} X=finalFromX The X position the edge will be translated.
+     * @param {Number} Y=finalFromY The Y position the edge will be translated.
      */
 
   }, {
@@ -24863,56 +25516,8 @@ var RequestMultiple = function RequestMultiple(requests) {
   });
 };
 
-// https://enmascript.com/articles/2018/10/05/javascript-factory-pattern
-
 /**
- * Optional configuration to override default values
- *  @typedef {Config} Config
- *
- * @param {Number} [maxWidth] node size in maximal representation
- * @param {Number} [maxHeight] node size in maximal representation
- * @param {Number} [minWidth] node size in minimal representation
- * @param {Number} [minHeight] node size in minimal representation
- * @param {String} [iconUrl] path to an image icon
- * @param {Object} [iconOpacity]
- * @param {Number} [iconOpacity.minOpacity] opacity value for minimal representation
- * @param {Number} [iconOpacity.maxOpacity] opacity value for maximal representation
- * @param {Number} [offset] spacing for all elements inside the node
- * @param {Number} [animationSpeed] how long a node animations takes
- * @param {Number} [borderRadius] the border radius
- * @param {Object} [borderStroke]
- * @param {Number} [borderStroke.width] border width
- * @param {String} [borderStroke.color] border color as hex values
- * @param {Object} [backgroundColor]
- * @param {String} [backgroundColor.color] the nodes background color
- * @param {Object} [labelColor]
- * @param {String} [labelColor.color] the color for the label as hex value
- * @param {Object} [labelFont]
- * @param {String} [labelFont.family] the font family
- * @param {Number} [labelFont.size] the font size
- * @param {Number} [labelFont.weight] the font weight
- * @param {String} [labelFont.style] the font style
- * @param {Object} [labelBackground]
- * @param {String} [labelBackground.color] the label's background color as hex value
- * @param {Number} [labelBackground.opacity] the opacity of the label background
- * @param {Object} [detailsColor]
- * @param {String} [detailsColor.color] the color for the details as hex value
- * @param {Object} [detailsFont]
- * @param {Number} [detailsFont.family] the font family
- * @param {Number} [detailsFont.size] the font size
- * @param {Number} [detailsFont.weight] the font weight
- * @param {String} [detailsFont.style] the font style
- * @param {Object} [detailsBackground]
- * @param {String} [detailsBackground.color] the details background color as hex value
- * @param {Number} [detailsBackground.opacity] the details background opacity
- */
-
-/**
- * Factory to create node objects
- * @param {Data} data the raw node data
- * @param {Canvas} canvas the canvas to render the node on
- * @param {Config} [config] custom config to override the default values
- *
+ * This class makes use of the factory pattern and creates nodes based on a given type.
  */
 
 var NodeFactory = /*#__PURE__*/function () {
@@ -24922,13 +25527,22 @@ var NodeFactory = /*#__PURE__*/function () {
 
   _createClass(NodeFactory, null, [{
     key: "create",
-    value: function create(rawNode, canvas) {
+
+    /**
+     * Creates a new node class.
+     * @param {Data} data The loaded data element from a database.
+     * @param {Canvas} canvas The canvas to draw the node on.
+     * @param {Object} additionalNodeRepresentations Some additional configuration to override default behaviour.
+     * 
+     * @return {BaseNode} The base class representing the node.
+     */
+    value: function create(data, canvas, additionalNodeRepresentations) {
       var node;
-      if (rawNode.type === "risk") node = new RiskNode(rawNode, canvas);
-      if (rawNode.type === "asset") node = new AssetNode(rawNode, canvas);
-      if (rawNode.type === "custom") node = new CustomNode(rawNode, canvas);
-      if (rawNode.type === "requirement") node = new RequirementNode(rawNode, canvas);
-      if (rawNode.type === "control") node = new ControlNode(rawNode, canvas);
+      if (data.type === "risk") node = new RiskNode(data, canvas, additionalNodeRepresentations.risk);
+      if (data.type === "asset") node = new AssetNode(data, canvas, additionalNodeRepresentations.asset);
+      if (data.type === "custom") node = new CustomNode(data, canvas, additionalNodeRepresentations.custom);
+      if (data.type === "requirement") node = new RequirementNode(data, canvas, additionalNodeRepresentations.requirement);
+      if (data.type === "control") node = new ControlNode(data, canvas, additionalNodeRepresentations.control);
       return node;
     }
   }]);
@@ -24937,19 +25551,7 @@ var NodeFactory = /*#__PURE__*/function () {
 }();
 
 /**
- * Optional configuration to override default values
- *  @typedef {EdgeConfig} EdgeConfig
- *
- * TODO:
-
- */
-
-/**
- * Factory to create edge objects
- * @param {Canvas} canvas the canvas to render the node on
- * @param {BaseNode} fromNode The from node
- * @param {BaseNode} fromNode The to node
- * @param {EdgeConfig} [edgeConfig] custom config to override the default values
+ * This class makes use of the factory pattern and creates edges based on a given type.
  */
 
 var EdgeFactory = /*#__PURE__*/function () {
@@ -24959,14 +25561,26 @@ var EdgeFactory = /*#__PURE__*/function () {
 
   _createClass(EdgeFactory, null, [{
     key: "create",
-    value: function create(rawEdge, canvas, fromNode, toNode) {
+
+    /**
+     * Creates a new edge class.
+     * @param {Data} data The loaded data element from a database.
+     * @param {Canvas} canvas The canvas to draw the node on.
+     * @param {BaseNode} fromNode The starting node reference.
+     * @param {BaseNode} toNode The ending node reference.
+     * 
+     * @return {BaseEdge} The base class representing the edge.
+     */
+    value: function create(data, canvas, fromNode, toNode) {
       var edge;
-      if (rawEdge.type === "dashed") edge = new ThinEdge(rawEdge, canvas, fromNode, toNode, {
+      if (data.type === "dashed") edge = new ThinEdge(data, canvas, fromNode, toNode, {
         type: "dashed"
-      });else if (rawEdge.type === "solid") edge = new ThinEdge(rawEdge, canvas, fromNode, toNode, {
+      });
+      if (data.type === "solid") edge = new ThinEdge(data, canvas, fromNode, toNode, {
         type: "solid"
-      });else if (rawEdge.type === "bold") edge = new BoldEdge(rawEdge, canvas, fromNode, toNode);else edge = new ThinEdge(rawEdge, canvas, fromNode, toNode, {
-        type: "solid"
+      });
+      if (data.type === "bold") edge = new BoldEdge(data, canvas, fromNode, toNode, {
+        type: "bold"
       });
       return edge;
     }
@@ -24975,15 +25589,33 @@ var EdgeFactory = /*#__PURE__*/function () {
   return EdgeFactory;
 }();
 
+/**
+ * This is the base class for layouts.
+ */
+
 var BaseLayout = /*#__PURE__*/function () {
-  function BaseLayout() {
+  function BaseLayout(additionalNodeRepresentations) {
     _classCallCheck(this, BaseLayout);
 
     this.canvas = null;
     this.nodes = [];
     this.edges = [];
     this.leafs = [];
+    this.events = [];
     this.currentLayoutState = null;
+
+    if (additionalNodeRepresentations !== undefined) {
+      this.additionalNodeRepresentations = {
+        asset: additionalNodeRepresentations.asset || {},
+        control: additionalNodeRepresentations.control || {},
+        custom: additionalNodeRepresentations.custom || {},
+        requirement: additionalNodeRepresentations.requirement || {},
+        risk: additionalNodeRepresentations.risk || {}
+      };
+    } else {
+      this.additionalNodeRepresentations = {};
+    }
+
     this.layoutInfo = {
       x: 0,
       y: 0,
@@ -24994,45 +25626,44 @@ var BaseLayout = /*#__PURE__*/function () {
     };
     this.tree = null;
     this.layoutReferences = [];
-  }
+  } // GRID
+
 
   _createClass(BaseLayout, [{
     key: "loadAdditionalGridDataAsync",
     value: function () {
       var _loadAdditionalGridDataAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee() {
-        var existingNodeIds, additionalNodes, ids, _ref, nodes;
-
+        var arr1, arr2, difference, response;
         return regeneratorRuntime.wrap(function _callee$(_context) {
           while (1) {
             switch (_context.prev = _context.next) {
               case 0:
-                existingNodeIds = this.nodes.map(function (n) {
+                arr1 = this.nodeData.map(function (n) {
                   return n.id;
                 });
-                additionalNodes = this.nodeData.filter(function (n) {
-                  return !existingNodeIds.includes(n.id);
+                arr2 = this.nodes.map(function (n) {
+                  return n.id;
+                });
+                difference = arr1.filter(function (x) {
+                  return !arr2.includes(x);
                 });
 
-                if (!additionalNodes.length) {
-                  _context.next = 9;
+                if (!difference.length) {
+                  _context.next = 8;
                   break;
                 }
 
-                ids = additionalNodes.map(function (n) {
-                  return n.id;
-                });
                 _context.next = 6;
-                return Request("".concat(this.config.databaseUrl, "/").concat(this.config.nodeEndpoint), ids);
+                return Request("".concat(this.config.databaseUrl, "/").concat(this.config.nodeEndpoint), difference);
 
               case 6:
-                _ref = _context.sent;
-                nodes = _ref.data;
-                this.createRepresentations(nodes);
+                response = _context.sent;
+                this.createRepresentations(response.data);
 
-              case 9:
+              case 8:
                 return _context.abrupt("return", this);
 
-              case 10:
+              case 9:
               case "end":
                 return _context.stop();
             }
@@ -25050,8 +25681,7 @@ var BaseLayout = /*#__PURE__*/function () {
     key: "loadInitialGridDataAsync",
     value: function () {
       var _loadInitialGridDataAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee2() {
-        var limit, ids, _ref2, nodes;
-
+        var limit, ids, response;
         return regeneratorRuntime.wrap(function _callee2$(_context2) {
           while (1) {
             switch (_context2.prev = _context2.next) {
@@ -25062,7 +25692,7 @@ var BaseLayout = /*#__PURE__*/function () {
                 }).slice(0, limit);
 
                 if (!ids.length) {
-                  _context2.next = 8;
+                  _context2.next = 7;
                   break;
                 }
 
@@ -25070,14 +25700,13 @@ var BaseLayout = /*#__PURE__*/function () {
                 return Request("".concat(this.config.databaseUrl, "/").concat(this.config.nodeEndpoint), ids);
 
               case 5:
-                _ref2 = _context2.sent;
-                nodes = _ref2.data;
-                this.createRepresentations(nodes);
+                response = _context2.sent;
+                this.createRepresentations(response.data);
 
-              case 8:
+              case 7:
                 return _context2.abrupt("return", this);
 
-              case 9:
+              case 8:
               case "end":
                 return _context2.stop();
             }
@@ -25092,20 +25721,34 @@ var BaseLayout = /*#__PURE__*/function () {
       return loadInitialGridDataAsync;
     }()
   }, {
-    key: "removeGridDataAsync",
+    key: "updateGridDataWithConfigAsync",
     value: function () {
-      var _removeGridDataAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee3(newGraph) {
+      var _updateGridDataWithConfigAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee3(newGraph, newConfiguration) {
         var nodes;
         return regeneratorRuntime.wrap(function _callee3$(_context3) {
           while (1) {
             switch (_context3.prev = _context3.next) {
               case 0:
+                this.nodeData = newGraph.getNodes();
+                this.edgeData = newGraph.getEdges();
                 nodes = newGraph.getNodes().map(function (n) {
                   return n.id;
                 });
                 this.removeRepresentation(nodes);
+                this.config = _objectSpread2({}, this.config, {}, newConfiguration);
 
-              case 2:
+                if (!newConfiguration.limitColumns) {
+                  _context3.next = 8;
+                  break;
+                }
+
+                _context3.next = 8;
+                return this.removeLayoutAsync();
+
+              case 8:
+                return _context3.abrupt("return", this);
+
+              case 9:
               case "end":
                 return _context3.stop();
             }
@@ -25113,32 +25756,188 @@ var BaseLayout = /*#__PURE__*/function () {
         }, _callee3, this);
       }));
 
-      function removeGridDataAsync(_x) {
-        return _removeGridDataAsync.apply(this, arguments);
+      function updateGridDataWithConfigAsync(_x, _x2) {
+        return _updateGridDataWithConfigAsync.apply(this, arguments);
       }
 
-      return removeGridDataAsync;
-    }()
+      return updateGridDataWithConfigAsync;
+    }() // TREE
+
   }, {
-    key: "updateGraphStructure",
+    key: "loadInitialTreeDataAsync",
     value: function () {
-      var _updateGraphStructure = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee4(newGraph, newConfiguration) {
+      var _loadInitialTreeDataAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee4() {
+        var _this = this;
+
+        var request1, response1, root, nodes, childNodeIds, i, request, response, children, constructTree, trees, tree, searchForRoot, createEdgeConnections, requiredEdges, request2, response2, edges;
         return regeneratorRuntime.wrap(function _callee4$(_context4) {
           while (1) {
             switch (_context4.prev = _context4.next) {
               case 0:
-                this.nodeData = newGraph.getNodes();
-                this.edgeData = newGraph.getEdges();
-                this.removeGridDataAsync(newGraph);
-                this.config = _objectSpread2({}, this.config, {}, newConfiguration);
+                // first, load the root node
+                request1 = [{
+                  url: "".concat(this.config.databaseUrl, "/").concat(this.config.nodeEndpoint),
+                  body: [this.rootId]
+                }];
+                _context4.next = 3;
+                return RequestMultiple(request1);
 
-                if (newConfiguration.limitColumns) {
-                  this.removeLayout();
+              case 3:
+                response1 = _context4.sent;
+                root = response1[0].data[0];
+                nodes = [root];
+                childNodeIds = root.children;
+                i = 0;
+
+              case 8:
+                if (!(i < this.renderDepth)) {
+                  _context4.next = 19;
+                  break;
                 }
 
+                request = [{
+                  url: "".concat(this.config.databaseUrl, "/").concat(this.config.nodeEndpoint),
+                  body: childNodeIds
+                }];
+                _context4.next = 12;
+                return RequestMultiple(request);
+
+              case 12:
+                response = _context4.sent;
+                children = response[0].data;
+                childNodeIds = children.map(function (c) {
+                  return c.children;
+                }).flat();
+                nodes.push(children.flat());
+
+              case 16:
+                i += 1;
+                _context4.next = 8;
+                break;
+
+              case 19:
+                nodes = nodes.flat(); // construct a tree data structure to generate edges and calculate node positions
+
+                constructTree = function constructTree(array, parentRef, rootRef) {
+                  var root = rootRef !== undefined ? rootRef : [];
+                  var parent = parentRef !== undefined ? parentRef : {
+                    id: null
+                  };
+                  var children = array.filter(function (child) {
+                    return child.parent === parent.id;
+                  });
+
+                  if (children.length > 0) {
+                    if (parent.id === null) {
+                      root = children;
+                    } else {
+                      parent.children = children;
+                    }
+
+                    children.forEach(function (child) {
+                      constructTree(array, child);
+                    });
+                  }
+
+                  return root;
+                };
+
+                trees = constructTree(nodes); // search for the root tree node
+
+                searchForRoot = function searchForRoot(root) {
+                  if (root.id === _this.rootId) {
+                    tree = root;
+                    return root;
+                  }
+
+                  root.children.forEach(function (child) {
+                    searchForRoot(child);
+                  });
+                };
+
+                trees.forEach(function (tree) {
+                  searchForRoot(tree);
+                }); // // console.log(tree)
+                // let hiddenNodes = []
+                // const checkChildLimitations = (root) => {
+                //   if (root.children !== undefined) {
+                //     if (root.children.length <= this.config.childLimit) {
+                //       root.children.forEach(child => {
+                //         checkChildLimitations(child)
+                //       })
+                //     } else {
+                //       // console.log("root", root, root.children.map(c => c.id))
+                //       // root.childrenIds = root.children.map(c => c.id)
+                //       hiddenNodes = [...hiddenNodes, ...root.children.map(c => c.id)]
+                //       root.children = []
+                //     }
+                //     // console.log()
+                //   }
+                //   return root
+                // }
+                // // hiddenNodes.flat()
+                // tree = checkChildLimitations(tree)
+                // console.log("-->", tree)
+                // find edges all the layout requires
+
+                createEdgeConnections = function createEdgeConnections(root, edgeList) {
+                  if (root.children) {
+                    root.children.forEach(function (child) {
+                      edgeList.push({
+                        fromNode: child.id,
+                        toNode: root.id
+                      });
+                      createEdgeConnections(child, edgeList);
+                    });
+                  }
+
+                  return edgeList;
+                };
+
+                requiredEdges = _toConsumableArray(new Set(createEdgeConnections(tree, []))); // console.log(requiredEdges)
+
+                request2 = [{
+                  url: "".concat(this.config.databaseUrl, "/").concat(this.config.edgeEndpoint),
+                  body: requiredEdges
+                }];
+                _context4.next = 29;
+                return RequestMultiple(request2);
+
+              case 29:
+                response2 = _context4.sent;
+                edges = response2[0].data;
+                this.createRepresentations(nodes, edges); // create not existing child and parent edges manually
+
+                requiredEdges.forEach(function (e) {
+                  var existingEdge = edges.find(function (x) {
+                    return x.fromNode === e.fromNode && x.toNode === e.toNode;
+                  });
+
+                  if (existingEdge === undefined) {
+                    var fromNode = _this.nodes.find(function (n) {
+                      return n.id === e.fromNode;
+                    });
+
+                    var toNode = _this.nodes.find(function (n) {
+                      return n.id === e.toNode;
+                    });
+
+                    if (fromNode !== undefined && toNode !== undefined) {
+                      var edge = EdgeFactory.create({
+                        type: "solid",
+                        config: {
+                          animationSpeed: _this.config.animationSpeed
+                        }
+                      }, _this.canvas, fromNode, toNode);
+                      edge.setLabel(null);
+
+                      _this.edges.push(edge);
+                    }
+                  }
+                });
                 return _context4.abrupt("return", this);
 
-              case 6:
+              case 34:
               case "end":
                 return _context4.stop();
             }
@@ -25146,29 +25945,180 @@ var BaseLayout = /*#__PURE__*/function () {
         }, _callee4, this);
       }));
 
-      function updateGraphStructure(_x2, _x3) {
-        return _updateGraphStructure.apply(this, arguments);
+      function loadInitialTreeDataAsync() {
+        return _loadInitialTreeDataAsync.apply(this, arguments);
       }
 
-      return updateGraphStructure;
+      return loadInitialTreeDataAsync;
     }()
   }, {
-    key: "updateLayoutConfiguration",
+    key: "updateTreeDataAsync",
     value: function () {
-      var _updateLayoutConfiguration = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee5(newConfiguration) {
+      var _updateTreeDataAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee5(clickedNode) {
+        var _this2 = this;
+
+        var isAddOperation, requestedNodes, request1, response1, nodes, requiredEdges, request2, response2, edges, index, layouts, offset, prevW, newW;
         return regeneratorRuntime.wrap(function _callee5$(_context5) {
           while (1) {
             switch (_context5.prev = _context5.next) {
               case 0:
-                this.config = _objectSpread2({}, this.config, {}, newConfiguration);
+                // determine if the data operation is add or remove
+                isAddOperation = clickedNode.children.map(function (child) {
+                  return child.svg;
+                }).length === 0; // remove data
 
-                if (newConfiguration.limitColumns) {
-                  this.removeLayout();
+                if (!(isAddOperation === false)) {
+                  _context5.next = 5;
+                  break;
                 }
 
-                return _context5.abrupt("return", this);
+                (function () {
+                  var nodesToRemove = [];
+                  var queue = [clickedNode];
 
-              case 3:
+                  while (queue.length) {
+                    var current = queue.shift();
+
+                    if (clickedNode.id !== current.id) {
+                      nodesToRemove.push(current);
+                    }
+
+                    current.children.forEach(function (child) {
+                      queue.push(child);
+                    });
+                  }
+
+                  var X = clickedNode.getFinalX();
+                  var Y = clickedNode.getFinalY();
+                  var removedNodes = [];
+                  nodesToRemove.forEach(function (child) {
+                    child.removeNode(X, Y);
+                    removedNodes.push(child.id);
+                  });
+                  clickedNode.setChildren([]);
+                  _this2.nodes = _this2.nodes.filter(function (node) {
+                    return !removedNodes.includes(node.id);
+                  }); // find edges that we need to remove
+
+                  var edgesToRemove = _toConsumableArray(nodesToRemove.map(function (n) {
+                    return n.outgoingEdges;
+                  })).flat();
+
+                  var edgesToBeUpdated = [];
+
+                  _this2.edges.forEach(function (edge) {
+                    if (edgesToRemove.includes(edge) === false) {
+                      edgesToBeUpdated.push(edge);
+                    }
+                  }); // remove edges
+
+
+                  edgesToRemove.forEach(function (edge) {
+                    edge.removeEdge(clickedNode.getFinalX(), clickedNode.getFinalY());
+                  });
+                  _this2.edges = [];
+                  _this2.edges = [].concat(edgesToBeUpdated); // remove leafs (tree specific)
+
+                  _this2.leafs.forEach(function (leafe) {
+                    leafe.removeLeaf(clickedNode.getFinalX(), clickedNode.getFinalY());
+                  });
+
+                  _this2.leafs = [];
+                })();
+
+                _context5.next = 22;
+                break;
+
+              case 5:
+                if (!(clickedNode.childrenIds.length === 0)) {
+                  _context5.next = 7;
+                  break;
+                }
+
+                return _context5.abrupt("return");
+
+              case 7:
+                requestedNodes = clickedNode.childrenIds.map(function (n) {
+                  return isNaN(n) ? n.id : n;
+                });
+                request1 = [{
+                  url: "".concat(this.config.databaseUrl, "/").concat(this.config.nodeEndpoint),
+                  body: requestedNodes
+                }];
+                _context5.next = 11;
+                return RequestMultiple(request1);
+
+              case 11:
+                response1 = _context5.sent;
+                nodes = response1[0].data; // find edges between new children and clicked node
+
+                requiredEdges = [];
+                nodes.forEach(function (node) {
+                  requiredEdges.push({
+                    startNodeId: node.id,
+                    endNodeId: clickedNode.id
+                  });
+                });
+                request2 = [{
+                  url: "".concat(this.config.databaseUrl, "/").concat(this.config.edgeEndpoint),
+                  body: requiredEdges
+                }];
+                _context5.next = 18;
+                return RequestMultiple(request2);
+
+              case 18:
+                response2 = _context5.sent;
+                edges = response2[0].data;
+                this.createRepresentations(nodes, edges);
+                requiredEdges.forEach(function (e) {
+                  var existingEdge = edges.find(function (x) {
+                    return x.fromNode === e.fromNode && x.toNode === e.toNode;
+                  });
+
+                  if (existingEdge === undefined) {
+                    var fromNode = _this2.nodes.find(function (n) {
+                      return n.id === e.startNodeId;
+                    });
+
+                    var toNode = _this2.nodes.find(function (n) {
+                      return n.id === e.endNodeId;
+                    }); // if (fromNode !== undefined && toNode !== undefined) {
+
+
+                    var edge = EdgeFactory.create({
+                      type: "solid",
+                      config: {
+                        animationSpeed: _this2.config.animationSpeed
+                      }
+                    }, _this2.canvas, fromNode, toNode);
+                    edge.setLabel(null);
+
+                    _this2.edges.push(edge); // }
+
+                  }
+                });
+
+              case 22:
+                index = this.layoutReferences.indexOf(this);
+                layouts = this.layoutReferences.slice(0, index);
+                offset = layouts.map(function (l) {
+                  return l.layoutInfo.w;
+                }).reduce(function (a, b) {
+                  return a + b;
+                }, 0);
+                prevW = this.layoutInfo.w;
+                this.calculateLayout(offset);
+                newW = this.layoutInfo.w; // update all layouts right side
+
+                this.layoutReferences.forEach(function (llayout, i) {
+                  if (i > index) {
+                    llayout.calculateLayout(newW - prevW);
+                    llayout.renderLayout();
+                  }
+                });
+                this.renderLayout();
+
+              case 30:
               case "end":
                 return _context5.stop();
             }
@@ -25176,29 +26126,169 @@ var BaseLayout = /*#__PURE__*/function () {
         }, _callee5, this);
       }));
 
-      function updateLayoutConfiguration(_x4) {
-        return _updateLayoutConfiguration.apply(this, arguments);
+      function updateTreeDataAsync(_x3) {
+        return _updateTreeDataAsync.apply(this, arguments);
       }
 
-      return updateLayoutConfiguration;
-    }()
+      return updateTreeDataAsync;
+    }() // RADIAL
+
   }, {
-    key: "loadAdditionalContextualDataAsync",
+    key: "loadInitialRadialDataAsync",
     value: function () {
-      var _loadAdditionalContextualDataAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee6(newFocus) {
-        var fx, fy;
+      var _loadInitialRadialDataAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee6() {
+        var _this3 = this;
+
+        var request1, response1, root, nodes, childNodeIds, i, request, response, children, constructTree, trees, tree, searchForRoot, createEdgeConnections, requiredEdges, request2, response2, edges;
         return regeneratorRuntime.wrap(function _callee6$(_context6) {
           while (1) {
             switch (_context6.prev = _context6.next) {
               case 0:
-                console.log("load", newFocus);
-                fx = this.focus.getFinalX();
-                fy = this.focus.getFinalY();
-                console.log(fx, fy); // newFocus.transformToMax(fx, fy)
+                // first, load the root node
+                request1 = [{
+                  url: "".concat(this.config.databaseUrl, "/").concat(this.config.nodeEndpoint),
+                  body: [this.rootId]
+                }];
+                _context6.next = 3;
+                return RequestMultiple(request1);
 
-                newFocus.transformToFinalPosition(fx, fy);
+              case 3:
+                response1 = _context6.sent;
+                root = response1[0].data[0];
+                nodes = [root];
+                childNodeIds = root.children;
+                i = 0;
 
-              case 5:
+              case 8:
+                if (!(i < this.renderDepth)) {
+                  _context6.next = 19;
+                  break;
+                }
+
+                request = [{
+                  url: "".concat(this.config.databaseUrl, "/").concat(this.config.nodeEndpoint),
+                  body: childNodeIds
+                }];
+                _context6.next = 12;
+                return RequestMultiple(request);
+
+              case 12:
+                response = _context6.sent;
+                children = response[0].data;
+                childNodeIds = children.map(function (c) {
+                  return c.children;
+                }).flat();
+                nodes.push(children.flat());
+
+              case 16:
+                i += 1;
+                _context6.next = 8;
+                break;
+
+              case 19:
+                nodes = nodes.flat(); // console.log(nodes)
+                // construct a tree data structure to generate edges and calculate node positions
+
+                constructTree = function constructTree(array, parentRef, rootRef) {
+                  var root = rootRef !== undefined ? rootRef : [];
+                  var parent = parentRef !== undefined ? parentRef : {
+                    id: null
+                  };
+                  var children = array.filter(function (child) {
+                    return child.parent === parent.id;
+                  });
+
+                  if (children.length > 0) {
+                    if (parent.id === null) {
+                      root = children;
+                    } else {
+                      parent.children = children;
+                    }
+
+                    children.forEach(function (child) {
+                      constructTree(array, child);
+                    });
+                  }
+
+                  return root;
+                };
+
+                trees = constructTree(nodes); // search for the root tree node
+
+                searchForRoot = function searchForRoot(root) {
+                  if (root.id === _this3.rootId) {
+                    tree = root;
+                    return root;
+                  }
+
+                  root.children.forEach(function (child) {
+                    searchForRoot(child);
+                  });
+                };
+
+                trees.forEach(function (tree) {
+                  searchForRoot(tree);
+                }); // console.log(tree)
+                // find edges all the layout requires
+
+                createEdgeConnections = function createEdgeConnections(root, edgeList) {
+                  if (root.children) {
+                    root.children.forEach(function (child) {
+                      edgeList.push({
+                        fromNode: child.id,
+                        toNode: root.id
+                      });
+                      createEdgeConnections(child, edgeList);
+                    });
+                  }
+
+                  return edgeList;
+                };
+
+                requiredEdges = _toConsumableArray(new Set(createEdgeConnections(tree, [])));
+                request2 = [{
+                  url: "".concat(this.config.databaseUrl, "/").concat(this.config.edgeEndpoint),
+                  body: requiredEdges
+                }];
+                _context6.next = 29;
+                return RequestMultiple(request2);
+
+              case 29:
+                response2 = _context6.sent;
+                edges = response2[0].data; // console.log(edges)
+
+                this.createRepresentations(nodes, edges); // create not existing child and parent edges manually
+
+                requiredEdges.forEach(function (e) {
+                  var existingEdge = edges.find(function (x) {
+                    return x.fromNode === e.fromNode && x.toNode === e.toNode;
+                  });
+
+                  if (existingEdge === undefined) {
+                    var fromNode = _this3.nodes.find(function (n) {
+                      return n.id === e.fromNode;
+                    });
+
+                    var toNode = _this3.nodes.find(function (n) {
+                      return n.id === e.toNode;
+                    });
+
+                    if (fromNode !== undefined && toNode !== undefined) {
+                      var edge = EdgeFactory.create({
+                        type: "solid",
+                        config: {
+                          animationSpeed: _this3.config.animationSpeed
+                        }
+                      }, _this3.canvas, fromNode, toNode);
+                      edge.setLabel(null);
+
+                      _this3.edges.push(edge);
+                    }
+                  }
+                });
+                return _context6.abrupt("return", this);
+
+              case 34:
               case "end":
                 return _context6.stop();
             }
@@ -25206,53 +26296,509 @@ var BaseLayout = /*#__PURE__*/function () {
         }, _callee6, this);
       }));
 
-      function loadAdditionalContextualDataAsync(_x5) {
-        return _loadAdditionalContextualDataAsync.apply(this, arguments);
+      function loadInitialRadialDataAsync() {
+        return _loadInitialRadialDataAsync.apply(this, arguments);
       }
 
-      return loadAdditionalContextualDataAsync;
+      return loadInitialRadialDataAsync;
     }()
   }, {
-    key: "loadInitialContextualDataAsync",
+    key: "updateRadialDataAsync",
     value: function () {
-      var _loadInitialContextualDataAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee7() {
-        var _this = this;
+      var _updateRadialDataAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee7(clickedNode) {
+        var _this4 = this;
 
-        var request1, response1, focus, assignedInfo, parentIds, childrenIds, assignedId, riskIds, parentEdgeIds, childEdgeIds, request2, response2, nodeData, edgeData, find, childEdges, parentEdges, checkEdges;
+        var isAddOperation, requestedNodes, request1, response1, nodes, requiredEdges, request2, response2, edges, index, layouts, offset, prevW, newW;
         return regeneratorRuntime.wrap(function _callee7$(_context7) {
           while (1) {
             switch (_context7.prev = _context7.next) {
               case 0:
-                // load focus and assigned info
+                // determine if the data operation is add or remove
+                isAddOperation = clickedNode.children.map(function (child) {
+                  return child.svg;
+                }).length === 0; // remove data
+
+                if (!(isAddOperation === false)) {
+                  _context7.next = 5;
+                  break;
+                }
+
+                (function () {
+                  var nodesToRemove = [];
+                  var queue = [clickedNode];
+
+                  while (queue.length) {
+                    var current = queue.shift();
+
+                    if (clickedNode.id !== current.id) {
+                      nodesToRemove.push(current);
+                    }
+
+                    current.children.forEach(function (child) {
+                      queue.push(child);
+                    });
+                  }
+
+                  var X = clickedNode.getFinalX();
+                  var Y = clickedNode.getFinalY();
+                  var removedNodes = [];
+                  nodesToRemove.forEach(function (child) {
+                    child.removeNode(X, Y);
+                    removedNodes.push(child.id);
+                  });
+                  clickedNode.setChildren([]);
+                  _this4.nodes = _this4.nodes.filter(function (node) {
+                    return !removedNodes.includes(node.id);
+                  }); // find edges that we need to remove
+
+                  var edgesToRemove = _toConsumableArray(nodesToRemove.map(function (n) {
+                    return n.outgoingEdges;
+                  })).flat();
+
+                  var edgesToBeUpdated = [];
+
+                  _this4.edges.forEach(function (edge) {
+                    if (edgesToRemove.includes(edge) === false) {
+                      edgesToBeUpdated.push(edge);
+                    }
+                  }); // remove edges
+
+
+                  edgesToRemove.forEach(function (edge) {
+                    edge.removeEdge(clickedNode.getFinalX(), clickedNode.getFinalY());
+                  });
+                  _this4.edges = [];
+                  _this4.edges = [].concat(edgesToBeUpdated);
+                })();
+
+                _context7.next = 22;
+                break;
+
+              case 5:
+                if (!(clickedNode.childrenIds.length === 0)) {
+                  _context7.next = 7;
+                  break;
+                }
+
+                return _context7.abrupt("return");
+
+              case 7:
+                requestedNodes = clickedNode.childrenIds.map(function (n) {
+                  return isNaN(n) ? n.id : n;
+                });
                 request1 = [{
                   url: "".concat(this.config.databaseUrl, "/").concat(this.config.nodeEndpoint),
-                  body: [this.focusId]
-                }, {
-                  url: "".concat(this.config.databaseUrl, "/").concat(this.config.contextualRelationshipEndpoint),
-                  body: [this.focusId]
+                  body: requestedNodes
                 }];
-                _context7.next = 3;
+                _context7.next = 11;
+                return RequestMultiple(request1);
+
+              case 11:
+                response1 = _context7.sent;
+                nodes = response1[0].data; // find edges between new children and clicked node
+
+                requiredEdges = [];
+                nodes.forEach(function (node) {
+                  requiredEdges.push({
+                    startNodeId: node.id,
+                    endNodeId: clickedNode.id
+                  });
+                });
+                request2 = [{
+                  url: "".concat(this.config.databaseUrl, "/").concat(this.config.edgeEndpoint),
+                  body: requiredEdges
+                }];
+                _context7.next = 18;
+                return RequestMultiple(request2);
+
+              case 18:
+                response2 = _context7.sent;
+                edges = response2[0].data;
+                this.createRepresentations(nodes, edges);
+                requiredEdges.forEach(function (e) {
+                  var existingEdge = edges.find(function (x) {
+                    return x.fromNode === e.fromNode && x.toNode === e.toNode;
+                  });
+
+                  if (existingEdge === undefined) {
+                    var fromNode = _this4.nodes.find(function (n) {
+                      return n.id === e.startNodeId;
+                    });
+
+                    var toNode = _this4.nodes.find(function (n) {
+                      return n.id === e.endNodeId;
+                    }); // if (fromNode !== undefined && toNode !== undefined) {
+
+
+                    var edge = EdgeFactory.create({
+                      type: "solid",
+                      config: {
+                        animationSpeed: _this4.config.animationSpeed
+                      }
+                    }, _this4.canvas, fromNode, toNode);
+                    edge.setLabel(null);
+
+                    _this4.edges.push(edge); // }
+
+                  }
+                });
+
+              case 22:
+                index = this.layoutReferences.indexOf(this);
+                layouts = this.layoutReferences.slice(0, index);
+                offset = layouts.map(function (l) {
+                  return l.layoutInfo.w;
+                }).reduce(function (a, b) {
+                  return a + b;
+                }, 0);
+                prevW = this.layoutInfo.w;
+                this.calculateLayout(offset);
+                newW = this.layoutInfo.w; // update all layouts right side
+
+                this.layoutReferences.forEach(function (llayout, i) {
+                  if (i > index) {
+                    llayout.calculateLayout(newW - prevW);
+                    llayout.renderLayout();
+                  }
+                });
+                this.renderLayout();
+
+              case 30:
+              case "end":
+                return _context7.stop();
+            }
+          }
+        }, _callee7, this);
+      }));
+
+      function updateRadialDataAsync(_x4) {
+        return _updateRadialDataAsync.apply(this, arguments);
+      }
+
+      return updateRadialDataAsync;
+    }()
+  }, {
+    key: "updateRadialDataWithConfigAsync",
+    value: function () {
+      var _updateRadialDataWithConfigAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee8(newGraph, newConfiguration) {
+        var index, layouts, offset, prevW, newW;
+        return regeneratorRuntime.wrap(function _callee8$(_context8) {
+          while (1) {
+            switch (_context8.prev = _context8.next) {
+              case 0:
+                this.nodeData = newGraph.getNodes();
+                this.edgeData = newGraph.getEdges();
+                this.removeRepresentation(this.nodes, this.edges);
+                _context8.next = 5;
+                return this.loadInitialRadialDataAsync();
+
+              case 5:
+                index = this.layoutReferences.indexOf(this);
+                layouts = this.layoutReferences.slice(0, index);
+                offset = layouts.map(function (l) {
+                  return l.layoutInfo.w;
+                }).reduce(function (a, b) {
+                  return a + b;
+                }, 0);
+                prevW = this.layoutInfo.w;
+                this.calculateLayout(offset);
+                newW = this.layoutInfo.w; // update all layouts right side
+
+                this.layoutReferences.forEach(function (llayout, i) {
+                  if (i > index) {
+                    llayout.calculateLayout(newW - prevW);
+                    llayout.renderLayout();
+                  }
+                });
+                this.renderLayout();
+
+              case 13:
+              case "end":
+                return _context8.stop();
+            }
+          }
+        }, _callee8, this);
+      }));
+
+      function updateRadialDataWithConfigAsync(_x5, _x6) {
+        return _updateRadialDataWithConfigAsync.apply(this, arguments);
+      }
+
+      return updateRadialDataWithConfigAsync;
+    }()
+  }, {
+    key: "removeLayoutAsync",
+    value: function () {
+      var _removeLayoutAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee9() {
+        var sleep;
+        return regeneratorRuntime.wrap(function _callee9$(_context9) {
+          while (1) {
+            switch (_context9.prev = _context9.next) {
+              case 0:
+                this.nodes.forEach(function (node) {
+                  node.removeNode();
+                });
+                this.edges.forEach(function (edge) {
+                  edge.removeEdge();
+                }); // grid layout
+
+                if (this.gridExpander) {
+                  this.gridExpander.removeNode();
+                }
+
+                sleep = function sleep(time) {
+                  return new Promise(function (resolve) {
+                    return setTimeout(resolve, time);
+                  });
+                };
+
+                _context9.next = 6;
+                return sleep(this.config.animationSpeed + 25);
+
+              case 6:
+              case "end":
+                return _context9.stop();
+            }
+          }
+        }, _callee9, this);
+      }));
+
+      function removeLayoutAsync() {
+        return _removeLayoutAsync.apply(this, arguments);
+      }
+
+      return removeLayoutAsync;
+    }()
+  }, {
+    key: "updateLayoutConfiguration",
+    value: function () {
+      var _updateLayoutConfiguration = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee10(newConfiguration) {
+        return regeneratorRuntime.wrap(function _callee10$(_context10) {
+          while (1) {
+            switch (_context10.prev = _context10.next) {
+              case 0:
+                this.config = _objectSpread2({}, this.config, {}, newConfiguration);
+
+                if (newConfiguration.limitColumns) {
+                  this.removeLayout();
+                }
+
+                return _context10.abrupt("return", this);
+
+              case 3:
+              case "end":
+                return _context10.stop();
+            }
+          }
+        }, _callee10, this);
+      }));
+
+      function updateLayoutConfiguration(_x7) {
+        return _updateLayoutConfiguration.apply(this, arguments);
+      }
+
+      return updateLayoutConfiguration;
+    }()
+  }, {
+    key: "updateGridLayoutConfiguration",
+    value: function () {
+      var _updateGridLayoutConfiguration = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee11(newConfiguration) {
+        return regeneratorRuntime.wrap(function _callee11$(_context11) {
+          while (1) {
+            switch (_context11.prev = _context11.next) {
+              case 0:
+                this.config = _objectSpread2({}, this.config, {}, newConfiguration);
+                console.log("update", this);
+
+              case 2:
+              case "end":
+                return _context11.stop();
+            }
+          }
+        }, _callee11, this);
+      }));
+
+      function updateGridLayoutConfiguration(_x8) {
+        return _updateGridLayoutConfiguration.apply(this, arguments);
+      }
+
+      return updateGridLayoutConfiguration;
+    }()
+  }, {
+    key: "loadInitialTreeDataAsyncOLD",
+    value: function () {
+      var _loadInitialTreeDataAsyncOLD = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee12() {
+        var _this5 = this;
+
+        var nodeIds, request1, response1, nodeData, constructTree, trees, tree, bfs, createEdges, requiredEdges, request2, response2, edgeData;
+        return regeneratorRuntime.wrap(function _callee12$(_context12) {
+          while (1) {
+            switch (_context12.prev = _context12.next) {
+              case 0:
+                nodeIds = this.nodeData.map(function (n) {
+                  return n.id;
+                }); // const edgeIds = this.edgeData.map(e => e.id)
+
+                request1 = [{
+                  url: "".concat(this.config.databaseUrl, "/").concat(this.config.nodeEndpoint),
+                  body: nodeIds
+                }];
+                _context12.next = 4;
+                return RequestMultiple(request1);
+
+              case 4:
+                response1 = _context12.sent;
+                nodeData = response1[0].data; // construct a tree data structure to generate edges and calculate node positions
+
+                constructTree = function constructTree(array, parentRef, rootRef) {
+                  var root = rootRef !== undefined ? rootRef : [];
+                  var parent = parentRef !== undefined ? parentRef : {
+                    id: null
+                  };
+                  var children = array.filter(function (child) {
+                    return child.parent === parent.id;
+                  });
+
+                  if (children.length > 0) {
+                    if (parent.id === null) {
+                      root = children;
+                    } else {
+                      parent.children = children;
+                    }
+
+                    children.forEach(function (child) {
+                      constructTree(array, child);
+                    });
+                  }
+
+                  return root;
+                };
+
+                trees = constructTree(nodeData); //.find(t => t.id === this.rootId)
+
+                bfs = function bfs(root) {
+                  if (root.id === _this5.rootId) {
+                    tree = root;
+                    return root;
+                  }
+
+                  root.children.forEach(function (child) {
+                    bfs(child);
+                  });
+                };
+
+                trees.forEach(function (tree) {
+                  bfs(tree);
+                });
+                this.tree = tree; // find edges that the layout needs
+
+                createEdges = function createEdges(root, edgeList) {
+                  if (root.children) {
+                    root.children.forEach(function (child) {
+                      edgeList.push({
+                        fromNode: child.id,
+                        toNode: root.id
+                      });
+                      createEdges(child, edgeList);
+                    });
+                  }
+
+                  return edgeList;
+                };
+
+                requiredEdges = _toConsumableArray(new Set(createEdges(tree, [])));
+                request2 = [{
+                  url: "".concat(this.config.databaseUrl, "/").concat(this.config.edgeEndpoint),
+                  body: requiredEdges
+                }];
+                _context12.next = 16;
+                return RequestMultiple(request2);
+
+              case 16:
+                response2 = _context12.sent;
+                edgeData = response2[0].data.map(function (e) {
+                  return _objectSpread2({}, e, {
+                    type: "solid"
+                  });
+                });
+                this.createRepresentations(nodeData, edgeData); // create not existing child and parent edges manually
+
+                requiredEdges.forEach(function (e) {
+                  var existingEdge = edgeData.find(function (x) {
+                    return x.fromNode === e.fromNode && x.toNode === e.toNode;
+                  });
+
+                  if (existingEdge === undefined) {
+                    var fromNode = _this5.nodes.find(function (n) {
+                      return n.id === e.fromNode;
+                    });
+
+                    var toNode = _this5.nodes.find(function (n) {
+                      return n.id === e.toNode;
+                    });
+
+                    var edge = EdgeFactory.create({
+                      type: "solid"
+                    }, _this5.canvas, fromNode, toNode);
+                    edge.setLabel(null);
+
+                    _this5.edges.push(edge);
+                  }
+                });
+                return _context12.abrupt("return", this);
+
+              case 22:
+              case "end":
+                return _context12.stop();
+            }
+          }
+        }, _callee12, this);
+      }));
+
+      function loadInitialTreeDataAsyncOLD() {
+        return _loadInitialTreeDataAsyncOLD.apply(this, arguments);
+      }
+
+      return loadInitialTreeDataAsyncOLD;
+    }()
+  }, {
+    key: "loadAdditionalContextualDataAsync",
+    value: function () {
+      var _loadAdditionalContextualDataAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee13() {
+        var _this6 = this;
+
+        var request1, response1, assignedInfo, parentIds, childrenIds, assignedId, riskIds, parentEdgeIds, childEdgeIds, request2, response2, nodeData, edgeData, find, childEdges, parentEdges, checkEdges, layouts, offset;
+        return regeneratorRuntime.wrap(function _callee13$(_context13) {
+          while (1) {
+            switch (_context13.prev = _context13.next) {
+              case 0:
+                // load focus and assigned info
+                request1 = [{
+                  url: "".concat(this.config.databaseUrl, "/").concat(this.config.contextualRelationshipEndpoint),
+                  body: [this.focus.id]
+                }];
+                _context13.next = 3;
                 return RequestMultiple(request1);
 
               case 3:
-                response1 = _context7.sent;
-                focus = response1[0].data[0];
-                assignedInfo = response1[1].data; // load parents, children, assigned, risks and edges
+                response1 = _context13.sent;
+                assignedInfo = response1[0].data; // update focus data
+                // load parents, children, assigned, risks and edges
 
-                parentIds = focus.parent !== null ? focus.parent instanceof Array ? focus.parent : [focus.parent] : [];
-                childrenIds = focus.children;
+                parentIds = this.focus.parentId !== null ? this.focus.parentId instanceof Array ? this.focus.parentId : [this.focus.parentId] : [];
+                childrenIds = this.focus.childrenIds;
                 assignedId = assignedInfo.assigned;
-                riskIds = assignedInfo !== [] ? _toConsumableArray(assignedInfo.risks) : [];
+                riskIds = assignedInfo.assigned !== undefined ? _toConsumableArray(assignedInfo.risks) : [];
                 parentEdgeIds = parentIds.map(function (id) {
                   return {
-                    fromNode: _this.focusId,
+                    fromNode: _this6.focus.id,
                     toNode: id
                   };
                 });
                 childEdgeIds = childrenIds.map(function (id) {
                   return {
                     fromNode: id,
-                    toNode: _this.focusId
+                    toNode: _this6.focus.id
                   };
                 });
                 request2 = [{
@@ -25262,11 +26808,178 @@ var BaseLayout = /*#__PURE__*/function () {
                   url: "".concat(this.config.databaseUrl, "/").concat(this.config.edgeEndpoint),
                   body: [].concat(_toConsumableArray(parentEdgeIds), _toConsumableArray(childEdgeIds))
                 }];
-                _context7.next = 15;
+                _context13.next = 14;
+                return RequestMultiple(request2);
+
+              case 14:
+                response2 = _context13.sent;
+                nodeData = response2[0].data;
+                edgeData = response2[1].data; // create representations
+
+                this.createRepresentations(nodeData, edgeData, "min"); // create not existing child and parent edges manually
+
+                find = function find(x, e) {
+                  return x.fromNode === e.fromNode && x.toNode === e.toNode;
+                };
+
+                childEdges = edgeData.filter(function (e) {
+                  return childEdgeIds.find(function (x) {
+                    return find(x, e);
+                  });
+                });
+                parentEdges = edgeData.filter(function (e) {
+                  return parentEdgeIds.find(function (x) {
+                    return find(x, e);
+                  });
+                });
+
+                checkEdges = function checkEdges(edges, edgeIds) {
+                  var existingEdges = edges.map(function (_ref) {
+                    var fromNode = _ref.fromNode,
+                        toNode = _ref.toNode;
+                    return {
+                      fromNode: fromNode,
+                      toNode: toNode
+                    };
+                  });
+                  edgeIds.forEach(function (e) {
+                    var existingEdge = existingEdges.find(function (x) {
+                      return x.fromNode === e.fromNode && x.toNode === e.toNode;
+                    });
+
+                    if (existingEdge === undefined) {
+                      var fromNode = _this6.nodes.find(function (n) {
+                        return n.id === e.fromNode;
+                      });
+
+                      var toNode = _this6.nodes.find(function (n) {
+                        return n.id === e.toNode;
+                      });
+
+                      var edge = EdgeFactory.create({
+                        type: "bold"
+                      }, _this6.canvas, fromNode, toNode);
+                      edge.setLabel(null);
+
+                      _this6.edges.push(edge);
+                    }
+                  });
+                };
+
+                if (childEdges.length < childrenIds.length) {
+                  checkEdges(childEdges, childEdgeIds);
+                }
+
+                if (parentEdges.length < parentEdgeIds.length) {
+                  checkEdges(parentEdges, parentEdgeIds);
+                }
+
+                this.parents = this.nodes.filter(function (n) {
+                  return parentIds.includes(n.id);
+                }) || [];
+                this.children = this.nodes.filter(function (n) {
+                  return childrenIds.includes(n.id);
+                }) || [];
+                this.assgined = this.nodes.find(function (n) {
+                  return n.id === assignedId;
+                }) || null;
+                this.risks = this.nodes.filter(function (n) {
+                  return riskIds.includes(n.id);
+                }) || [];
+                this.parentEdges = this.edges.filter(function (e) {
+                  var found = parentEdgeIds.find(function (_ref2) {
+                    var fromNode = _ref2.fromNode,
+                        toNode = _ref2.toNode;
+                    return fromNode === e.fromNode.id && toNode === e.toNode.id;
+                  });
+                  return found;
+                }) || [];
+                this.childEdges = this.edges.filter(function (e) {
+                  var found = childEdgeIds.find(function (_ref3) {
+                    var fromNode = _ref3.fromNode,
+                        toNode = _ref3.toNode;
+                    return fromNode === e.fromNode.id && toNode === e.toNode.id;
+                  });
+                  return found;
+                }) || [];
+                layouts = this.layoutReferences.slice(0, this.layoutReferences.indexOf(this));
+                offset = layouts.map(function (l) {
+                  return l.layoutInfo.w;
+                }).reduce(function (a, b) {
+                  return a + b;
+                }, 0);
+                this.calculateLayout(offset);
+                this.renderLayout(); // this.focus.addEvent("click", () => makeFocus(parent))
+
+              case 34:
+              case "end":
+                return _context13.stop();
+            }
+          }
+        }, _callee13, this);
+      }));
+
+      function loadAdditionalContextualDataAsync() {
+        return _loadAdditionalContextualDataAsync.apply(this, arguments);
+      }
+
+      return loadAdditionalContextualDataAsync;
+    }()
+  }, {
+    key: "loadInitialContextualDataAsync",
+    value: function () {
+      var _loadInitialContextualDataAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee14() {
+        var _this7 = this;
+
+        var request1, response1, focus, assignedInfo, parentIds, childrenIds, assignedId, riskIds, parentEdgeIds, childEdgeIds, request2, response2, nodeData, edgeData, find, childEdges, parentEdges, checkEdges;
+        return regeneratorRuntime.wrap(function _callee14$(_context14) {
+          while (1) {
+            switch (_context14.prev = _context14.next) {
+              case 0:
+                // load focus and assigned info
+                request1 = [{
+                  url: "".concat(this.config.databaseUrl, "/").concat(this.config.nodeEndpoint),
+                  body: [this.focusId]
+                }, {
+                  url: "".concat(this.config.databaseUrl, "/").concat(this.config.contextualRelationshipEndpoint),
+                  body: [this.focusId]
+                }];
+                _context14.next = 3;
+                return RequestMultiple(request1);
+
+              case 3:
+                response1 = _context14.sent;
+                focus = response1[0].data[0];
+                assignedInfo = response1[1].data; // load parents, children, assigned, risks and edges
+
+                parentIds = focus.parent !== null ? focus.parent instanceof Array ? focus.parent : [focus.parent] : [];
+                childrenIds = focus.children;
+                assignedId = assignedInfo.assigned;
+                riskIds = assignedInfo !== [] ? _toConsumableArray(assignedInfo.risks) : [];
+                parentEdgeIds = parentIds.map(function (id) {
+                  return {
+                    fromNode: _this7.focusId,
+                    toNode: id
+                  };
+                });
+                childEdgeIds = childrenIds.map(function (id) {
+                  return {
+                    fromNode: id,
+                    toNode: _this7.focusId
+                  };
+                });
+                request2 = [{
+                  url: "".concat(this.config.databaseUrl, "/").concat(this.config.nodeEndpoint),
+                  body: [].concat(_toConsumableArray(parentIds), _toConsumableArray(childrenIds), [assignedId], _toConsumableArray(riskIds))
+                }, {
+                  url: "".concat(this.config.databaseUrl, "/").concat(this.config.edgeEndpoint),
+                  body: [].concat(_toConsumableArray(parentEdgeIds), _toConsumableArray(childEdgeIds))
+                }];
+                _context14.next = 15;
                 return RequestMultiple(request2);
 
               case 15:
-                response2 = _context7.sent;
+                response2 = _context14.sent;
                 nodeData = response2[0].data;
                 edgeData = response2[1].data; // create representations
 
@@ -25289,9 +27002,9 @@ var BaseLayout = /*#__PURE__*/function () {
                 });
 
                 checkEdges = function checkEdges(edges, edgeIds) {
-                  var existingEdges = edges.map(function (_ref3) {
-                    var fromNode = _ref3.fromNode,
-                        toNode = _ref3.toNode;
+                  var existingEdges = edges.map(function (_ref4) {
+                    var fromNode = _ref4.fromNode,
+                        toNode = _ref4.toNode;
                     return {
                       fromNode: fromNode,
                       toNode: toNode
@@ -25303,18 +27016,20 @@ var BaseLayout = /*#__PURE__*/function () {
                     });
 
                     if (existingEdge === undefined) {
-                      var fromNode = _this.nodes.find(function (n) {
+                      var fromNode = _this7.nodes.find(function (n) {
                         return n.id === e.fromNode;
                       });
 
-                      var toNode = _this.nodes.find(function (n) {
+                      var toNode = _this7.nodes.find(function (n) {
                         return n.id === e.toNode;
                       });
 
-                      var edge = EdgeFactory.create({}, _this.canvas, fromNode, toNode);
+                      var edge = EdgeFactory.create({
+                        type: "bold"
+                      }, _this7.canvas, fromNode, toNode);
                       edge.setLabel(null);
 
-                      _this.edges.push(edge);
+                      _this7.edges.push(edge);
                     }
                   });
                 };
@@ -25329,7 +27044,7 @@ var BaseLayout = /*#__PURE__*/function () {
 
 
                 this.focus = this.nodes.find(function (n) {
-                  return n.id === _this.focusId;
+                  return n.id === _this7.focusId;
                 });
                 this.parents = this.nodes.filter(function (n) {
                   return parentIds.includes(n.id);
@@ -25344,37 +27059,29 @@ var BaseLayout = /*#__PURE__*/function () {
                   return riskIds.includes(n.id);
                 });
                 this.parentEdges = this.edges.filter(function (e) {
-                  var found = parentEdgeIds.find(function (_ref4) {
-                    var fromNode = _ref4.fromNode,
-                        toNode = _ref4.toNode;
-                    return fromNode === e.fromNode.id && toNode === e.toNode.id;
-                  });
-                  return found;
-                });
-                this.childEdges = this.edges.filter(function (e) {
-                  var found = childEdgeIds.find(function (_ref5) {
+                  var found = parentEdgeIds.find(function (_ref5) {
                     var fromNode = _ref5.fromNode,
                         toNode = _ref5.toNode;
                     return fromNode === e.fromNode.id && toNode === e.toNode.id;
                   });
                   return found;
-                }); // console.log(this.edges)
-                // console.log(this.focusId)
-                // console.log(parentIds)
-                // console.log(childrenIds)
-                // console.log(assignedId)
-                // console.log(riskIds)
-                // console.log(parentEdges)
-                // console.log(childrenEdges)
-
-                return _context7.abrupt("return", this);
+                });
+                this.childEdges = this.edges.filter(function (e) {
+                  var found = childEdgeIds.find(function (_ref6) {
+                    var fromNode = _ref6.fromNode,
+                        toNode = _ref6.toNode;
+                    return fromNode === e.fromNode.id && toNode === e.toNode.id;
+                  });
+                  return found;
+                });
+                return _context14.abrupt("return", this);
 
               case 34:
               case "end":
-                return _context7.stop();
+                return _context14.stop();
             }
           }
-        }, _callee7, this);
+        }, _callee14, this);
       }));
 
       function loadInitialContextualDataAsync() {
@@ -25384,109 +27091,109 @@ var BaseLayout = /*#__PURE__*/function () {
       return loadInitialContextualDataAsync;
     }()
   }, {
-    key: "removeLayout",
-    value: function removeLayout() {
-      this.nodes.forEach(function (node) {
-        node.removeNode();
-      }); // grid
-
-      if (this.expander) {
-        this.expander.removeNode();
-      }
-
-      this.nodes = []; // this.edges.forEach((edge) => {
-      //   edge.removeEdge()
-      // })
-      // this.leafs.forEach((leaf) => {
-      //   leaf.removeLeaf()
-      // })
-    }
-  }, {
     key: "createRepresentations",
     value: function createRepresentations() {
-      var _this2 = this;
+      var _this8 = this;
 
       var nodes = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
       var edges = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
       var renderingSize = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : this.config.renderingSize;
       nodes.forEach(function (rawNode) {
-        var node = NodeFactory.create(rawNode, _this2.canvas);
+        var node = NodeFactory.create(_objectSpread2({}, rawNode, {
+          config: _objectSpread2({}, rawNode.config, {
+            animationSpeed: _this8.config.animationSpeed
+          })
+        }), _this8.canvas, _this8.additionalNodeRepresentations);
         node.setNodeSize(renderingSize);
 
-        _this2.nodes.push(node);
+        _this8.nodes.push(node);
       });
       edges.forEach(function (rawEdge) {
-        var fromNode = _this2.nodes.find(function (n) {
+        var fromNode = _this8.nodes.find(function (n) {
           return n.id === rawEdge.fromNode;
         });
 
-        var toNode = _this2.nodes.find(function (n) {
+        var toNode = _this8.nodes.find(function (n) {
           return n.id === rawEdge.toNode;
         });
 
-        var edge = EdgeFactory.create(rawEdge, _this2.canvas, fromNode, toNode);
+        var type = rawEdge.type || "solid";
+
+        var config = _objectSpread2({}, rawEdge.config, {
+          animationSpeed: _this8.config.animationSpeed
+        });
+
+        var edge = EdgeFactory.create(_objectSpread2({}, rawEdge, {
+          type: type,
+          config: config
+        }), _this8.canvas, fromNode, toNode);
         edge.setLabel(rawEdge.label || null);
 
-        _this2.edges.push(edge);
+        _this8.edges.push(edge);
       });
     }
   }, {
     key: "removeRepresentation",
     value: function removeRepresentation() {
       var nodes = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
+      var edges = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
       this.nodes = this.nodes.filter(function (node) {
         if (!nodes.includes(node.getId())) {
-          node.removeNode(undefined, undefined, {
+          node.removeNode(0, 0, {
+            animation: true
+          });
+          return false;
+        }
+
+        return true;
+      });
+      this.edges = this.edges.filter(function (edge) {
+        if (!edges.includes(edge.id)) {
+          edge.removeEdge(0, 0, {
             animation: false
           });
           return false;
         }
 
         return true;
-      }); // this.edges = this.nodes.filter((node) => {
-      //   if (!nodes.includes(node.getId())) {
-      //     node.removeNode(undefined, undefined, { animation: false })
-      //     return false
-      //   }
-      //   return true
-      // })
+      });
     }
   }, {
     key: "createContextualDataAsync",
     value: function () {
-      var _createContextualDataAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee8(nodeData, edgeData) {
-        var _this3 = this;
+      var _createContextualDataAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee15(nodeData, edgeData) {
+        var _this9 = this;
 
         var focusNode, focusFetchUrl, fetchedFocus, parentChildNodeIds, mapNodeIdsToUrl, nodeIdsToFetch, nodeFetchUrl, fetchedNodes, parentNodeIds, childNodeIds, assignedNodeDataUrl, assignedNodeData, assignedNodeId, riskIds, assignedNodeUrl, assignedNode, riskIdsToFetch, riskFetchUrl, fetchedRisks, config, connection, parentChildEdges, mapEdgeIdsToUrl, edgeIdsToFetch, edgeFetchUrl, fetchedEdges;
-        return regeneratorRuntime.wrap(function _callee8$(_context8) {
+        return regeneratorRuntime.wrap(function _callee15$(_context15) {
           while (1) {
-            switch (_context8.prev = _context8.next) {
+            switch (_context15.prev = _context15.next) {
               case 0:
                 this.nodeData = nodeData;
                 this.edgeData = edgeData; // in order to load parents and children, the data of the focus node has to be loaded first
 
                 focusNode = this.nodeData.find(function (n) {
-                  return n.id === _this3.startNodeId;
+                  return n.id === _this9.startNodeId;
                 });
                 focusFetchUrl = "".concat(this.config.databaseUrl, "/nodes?id=").concat(focusNode.id);
-                _context8.next = 6;
+                _context15.next = 6;
                 return fetch(focusFetchUrl).then(function (data) {
                   return data.json();
                 });
 
               case 6:
-                fetchedFocus = _context8.sent;
+                fetchedFocus = _context15.sent;
                 this.createNodeFromData(fetchedFocus[0], "max");
                 this.focus = this.nodes.find(function (n) {
-                  return n.id === _this3.startNodeId;
+                  return n.id === _this9.startNodeId;
                 }); // load parents and children passed on edges inside the graph structure
 
                 parentChildNodeIds = this.edgeData.map(function (e) {
-                  if (e.startNodeId === _this3.startNodeId) {
+                  if (e.startNodeId === _this9.startNodeId) {
                     return e.endNodeId;
                   }
 
-                  if (e.endNodeId === _this3.startNodeId) {
+                  if (e.endNodeId === _this9.startNodeId) {
                     return e.startNodeId;
                   }
 
@@ -25501,23 +27208,23 @@ var BaseLayout = /*#__PURE__*/function () {
 
                 nodeIdsToFetch = parentChildNodeIds.map(mapNodeIdsToUrl).join("").slice(0, -1);
                 nodeFetchUrl = "".concat(this.config.databaseUrl, "/nodes?").concat(nodeIdsToFetch);
-                _context8.next = 15;
+                _context15.next = 15;
                 return fetch(nodeFetchUrl).then(function (data) {
                   return data.json();
                 });
 
               case 15:
-                fetchedNodes = _context8.sent;
+                fetchedNodes = _context15.sent;
                 fetchedNodes.forEach(function (rawNode) {
-                  _this3.createNodeFromData(rawNode, "min");
+                  _this9.createNodeFromData(rawNode, "min");
                 });
                 parentNodeIds = this.edgeData.filter(function (e) {
-                  return e.startNodeId === _this3.startNodeId;
+                  return e.startNodeId === _this9.startNodeId;
                 }).map(function (e) {
                   return e.endNodeId;
                 });
                 childNodeIds = this.edgeData.filter(function (e) {
-                  return e.endNodeId === _this3.startNodeId;
+                  return e.endNodeId === _this9.startNodeId;
                 }).map(function (e) {
                   return e.startNodeId;
                 });
@@ -25529,38 +27236,38 @@ var BaseLayout = /*#__PURE__*/function () {
                 }); // here we load attached risks which are attached to a different node
 
                 assignedNodeDataUrl = "".concat(this.config.databaseUrl, "/RiskEdgeConnectionTable?startNodeId=").concat(this.startNodeId);
-                _context8.next = 24;
+                _context15.next = 24;
                 return fetch(assignedNodeDataUrl).then(function (data) {
                   return data.json();
                 });
 
               case 24:
-                assignedNodeData = _context8.sent;
+                assignedNodeData = _context15.sent;
                 assignedNodeId = assignedNodeData[0].endNodeId;
                 riskIds = assignedNodeData[0].risks;
                 assignedNodeUrl = "".concat(this.config.databaseUrl, "/nodes?id=").concat(assignedNodeId);
-                _context8.next = 30;
+                _context15.next = 30;
                 return fetch(assignedNodeUrl).then(function (data) {
                   return data.json();
                 });
 
               case 30:
-                assignedNode = _context8.sent;
+                assignedNode = _context15.sent;
                 this.createNodeFromData(assignedNode[0], "min");
                 this.assginedNode = this.nodes.find(function (n) {
                   return n.id === assignedNodeId;
                 });
                 riskIdsToFetch = riskIds.map(mapNodeIdsToUrl).join("").slice(0, -1);
                 riskFetchUrl = "".concat(this.config.databaseUrl, "/nodes?").concat(riskIdsToFetch);
-                _context8.next = 37;
+                _context15.next = 37;
                 return fetch(riskFetchUrl).then(function (data) {
                   return data.json();
                 });
 
               case 37:
-                fetchedRisks = _context8.sent;
+                fetchedRisks = _context15.sent;
                 fetchedRisks.forEach(function (rawNode) {
-                  _this3.createNodeFromData(rawNode, "min");
+                  _this9.createNodeFromData(rawNode, "min");
                 });
                 this.risks = this.nodes.filter(function (n) {
                   return riskIds.includes(n.id);
@@ -25576,11 +27283,11 @@ var BaseLayout = /*#__PURE__*/function () {
                 this.edges.push(connection); // load edges
 
                 parentChildEdges = this.edgeData.filter(function (e) {
-                  if (e.startNodeId === _this3.startNodeId) {
+                  if (e.startNodeId === _this9.startNodeId) {
                     return true;
                   }
 
-                  if (e.endNodeId === _this3.startNodeId) {
+                  if (e.endNodeId === _this9.startNodeId) {
                     return true;
                   }
 
@@ -25593,38 +27300,38 @@ var BaseLayout = /*#__PURE__*/function () {
 
                 edgeIdsToFetch = parentChildEdges.map(mapEdgeIdsToUrl).join("").slice(0, -1);
                 edgeFetchUrl = "".concat(this.config.databaseUrl, "/edges?").concat(edgeIdsToFetch);
-                _context8.next = 50;
+                _context15.next = 50;
                 return fetch(edgeFetchUrl).then(function (data) {
                   return data.json();
                 });
 
               case 50:
-                fetchedEdges = _context8.sent;
+                fetchedEdges = _context15.sent;
                 // create new edges
                 fetchedEdges.forEach(function (rawEdge) {
-                  var fromNode = _this3.nodes.find(function (n) {
+                  var fromNode = _this9.nodes.find(function (n) {
                     return n.id === rawEdge.startNodeId;
                   });
 
-                  var toNode = _this3.nodes.find(function (n) {
+                  var toNode = _this9.nodes.find(function (n) {
                     return n.id === rawEdge.endNodeId;
                   });
 
                   var edge = null;
-                  if (rawEdge.type === "solid") edge = new ThinEdge(_this3.canvas, fromNode, toNode, {
+                  if (rawEdge.type === "solid") edge = new ThinEdge(_this9.canvas, fromNode, toNode, {
                     type: "solid"
-                  });else if (rawEdge.type === "dashed") edge = new ThinEdge(_this3.canvas, fromNode, toNode, {
+                  });else if (rawEdge.type === "dashed") edge = new ThinEdge(_this9.canvas, fromNode, toNode, {
                     type: "dashed"
-                  });else if (rawEdge.type === "bold") edge = new BoldEdge(_this3.canvas, fromNode, toNode, {
+                  });else if (rawEdge.type === "bold") edge = new BoldEdge(_this9.canvas, fromNode, toNode, {
                     type: "bold"
-                  });else edge = new ThinEdge(_this3.canvas, fromNode, toNode, {
+                  });else edge = new ThinEdge(_this9.canvas, fromNode, toNode, {
                     type: "solid"
                   });
                   fromNode.addOutgoingEdge(edge);
                   toNode.addIncomingEdge(edge);
                   edge.setLabel(rawEdge.label);
 
-                  _this3.edges.push(edge);
+                  _this9.edges.push(edge);
                 }); // re-calculate and re-render layout
 
                 this.calculateLayout();
@@ -25632,13 +27339,13 @@ var BaseLayout = /*#__PURE__*/function () {
 
               case 54:
               case "end":
-                return _context8.stop();
+                return _context15.stop();
             }
           }
-        }, _callee8, this);
+        }, _callee15, this);
       }));
 
-      function createContextualDataAsync(_x6, _x7) {
+      function createContextualDataAsync(_x9, _x10) {
         return _createContextualDataAsync.apply(this, arguments);
       }
 
@@ -25647,11 +27354,11 @@ var BaseLayout = /*#__PURE__*/function () {
   }, {
     key: "manageContextualDataAsync",
     value: function () {
-      var _manageContextualDataAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee9(clickedNode) {
+      var _manageContextualDataAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee16(clickedNode) {
         var removedNodes, nodesToRemove, X, Y;
-        return regeneratorRuntime.wrap(function _callee9$(_context9) {
+        return regeneratorRuntime.wrap(function _callee16$(_context16) {
           while (1) {
-            switch (_context9.prev = _context9.next) {
+            switch (_context16.prev = _context16.next) {
               case 0:
                 // remove all elements but the clicked node
                 removedNodes = [];
@@ -25738,13 +27445,13 @@ var BaseLayout = /*#__PURE__*/function () {
 
               case 19:
               case "end":
-                return _context9.stop();
+                return _context16.stop();
             }
           }
-        }, _callee9, this);
+        }, _callee16, this);
       }));
 
-      function manageContextualDataAsync(_x8) {
+      function manageContextualDataAsync(_x11) {
         return _manageContextualDataAsync.apply(this, arguments);
       }
 
@@ -25753,7 +27460,7 @@ var BaseLayout = /*#__PURE__*/function () {
   }, {
     key: "createNodeFromData",
     value: function createNodeFromData(data, renderingSize) {
-      var _this4 = this;
+      var _this10 = this;
 
       var node;
       if (data.type === "risk") node = new RiskNode(data, this.canvas);
@@ -25766,22 +27473,22 @@ var BaseLayout = /*#__PURE__*/function () {
 
       if (data.type === "control") {
         node.addEvent("dblclick", function () {
-          _this4.manageContextualDataAsync(node);
+          _this10.manageContextualDataAsync(node);
         });
       }
 
       this.nodes.push(node);
     }
   }, {
-    key: "createRadialDataAsync",
+    key: "createTreeDataAsync",
     value: function () {
-      var _createRadialDataAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee10(nodeData, edgeData) {
-        var _this5 = this;
+      var _createTreeDataAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee17(nodeData, edgeData) {
+        var _this11 = this;
 
         var mapNodeIdsToUrl, nodeIdsToFetch, nodeFetchUrl, fetchedNodes, constructTree, tree, createEdges, requiredEdges, mapEdgeIdsToUrl, edgeIdsToFetch, edgeFetchUrl, fetchedEdges;
-        return regeneratorRuntime.wrap(function _callee10$(_context10) {
+        return regeneratorRuntime.wrap(function _callee17$(_context17) {
           while (1) {
-            switch (_context10.prev = _context10.next) {
+            switch (_context17.prev = _context17.next) {
               case 0:
                 // FIXME: ask: what if an edge dose not exist?
                 this.nodeData = nodeData;
@@ -25793,28 +27500,28 @@ var BaseLayout = /*#__PURE__*/function () {
 
                 nodeIdsToFetch = nodeData.map(mapNodeIdsToUrl).join("").slice(0, -1);
                 nodeFetchUrl = "".concat(this.config.databaseUrl, "/nodes?").concat(nodeIdsToFetch);
-                _context10.next = 7;
+                _context17.next = 7;
                 return fetch(nodeFetchUrl).then(function (data) {
                   return data.json();
                 });
 
               case 7:
-                fetchedNodes = _context10.sent;
+                fetchedNodes = _context17.sent;
                 // create new nodes
                 fetchedNodes.forEach(function (rawNode) {
                   var node;
-                  if (rawNode.type === "risk") node = new RiskNode(rawNode, _this5.canvas);
-                  if (rawNode.type === "asset") node = new AssetNode(rawNode, _this5.canvas);
-                  if (rawNode.type === "custom") node = new CustomNode(rawNode, _this5.canvas);
-                  if (rawNode.type === "requirement") node = new RequirementNode(rawNode, _this5.canvas);
-                  if (rawNode.type === "control") node = new ControlNode(rawNode, _this5.canvas); // sets the currently used rendering size
+                  if (rawNode.type === "risk") node = new RiskNode(rawNode, _this11.canvas);
+                  if (rawNode.type === "asset") node = new AssetNode(rawNode, _this11.canvas);
+                  if (rawNode.type === "custom") node = new CustomNode(rawNode, _this11.canvas);
+                  if (rawNode.type === "requirement") node = new RequirementNode(rawNode, _this11.canvas);
+                  if (rawNode.type === "control") node = new ControlNode(rawNode, _this11.canvas); // sets the currently used rendering size
 
-                  node.setNodeSize(_this5.config.renderingSize);
+                  node.setNodeSize(_this11.config.renderingSize);
                   node.addEvent("dblclick", function () {
-                    _this5.manageTreeDataAsync(node);
+                    _this11.manageTreeDataAsync(node);
                   });
 
-                  _this5.nodes.push(node);
+                  _this11.nodes.push(node);
                 }); // construct a tree data structure to generate edges and calculate node positions
 
                 constructTree = function constructTree(array, parentRef, rootRef) {
@@ -25866,38 +27573,38 @@ var BaseLayout = /*#__PURE__*/function () {
 
                 edgeIdsToFetch = requiredEdges.map(mapEdgeIdsToUrl).join("").slice(0, -1);
                 edgeFetchUrl = "".concat(this.config.databaseUrl, "/edges?").concat(edgeIdsToFetch);
-                _context10.next = 18;
+                _context17.next = 18;
                 return fetch(edgeFetchUrl).then(function (data) {
                   return data.json();
                 });
 
               case 18:
-                fetchedEdges = _context10.sent;
+                fetchedEdges = _context17.sent;
                 // create new edges
                 fetchedEdges.forEach(function (rawEdge) {
-                  var fromNode = _this5.nodes.find(function (n) {
+                  var fromNode = _this11.nodes.find(function (n) {
                     return n.id === rawEdge.startNodeId;
                   });
 
-                  var toNode = _this5.nodes.find(function (n) {
+                  var toNode = _this11.nodes.find(function (n) {
                     return n.id === rawEdge.endNodeId;
                   });
 
                   var edge = null;
-                  if (rawEdge.type === "solid") edge = new ThinEdge(_this5.canvas, fromNode, toNode, {
+                  if (rawEdge.type === "solid") edge = new ThinEdge(_this11.canvas, fromNode, toNode, {
                     type: "solid"
-                  });else if (rawEdge.type === "dashed") edge = new ThinEdge(_this5.canvas, fromNode, toNode, {
+                  });else if (rawEdge.type === "dashed") edge = new ThinEdge(_this11.canvas, fromNode, toNode, {
                     type: "dashed"
-                  });else if (rawEdge.type === "bold") edge = new BoldEdge(_this5.canvas, fromNode, toNode, {
+                  });else if (rawEdge.type === "bold") edge = new BoldEdge(_this11.canvas, fromNode, toNode, {
                     type: "bold"
-                  });else edge = new ThinEdge(_this5.canvas, fromNode, toNode, {
+                  });else edge = new ThinEdge(_this11.canvas, fromNode, toNode, {
                     type: "solid"
                   });
                   fromNode.addOutgoingEdge(edge);
                   toNode.addIncomingEdge(edge);
                   edge.setLabel(rawEdge.label);
 
-                  _this5.edges.push(edge);
+                  _this11.edges.push(edge);
                 }); // re-calculate and re-render layout
 
                 this.calculateLayout();
@@ -25905,28 +27612,28 @@ var BaseLayout = /*#__PURE__*/function () {
 
               case 22:
               case "end":
-                return _context10.stop();
+                return _context17.stop();
             }
           }
-        }, _callee10, this);
+        }, _callee17, this);
       }));
 
-      function createRadialDataAsync(_x9, _x10) {
-        return _createRadialDataAsync.apply(this, arguments);
+      function createTreeDataAsync(_x12, _x13) {
+        return _createTreeDataAsync.apply(this, arguments);
       }
 
-      return createRadialDataAsync;
+      return createTreeDataAsync;
     }()
   }, {
     key: "manageTreeDataAsync",
     value: function () {
-      var _manageTreeDataAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee11(clickedNode) {
-        var _this6 = this;
+      var _manageTreeDataAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee18(clickedNode) {
+        var _this12 = this;
 
         var BFS, isAddOperation, requestedNodes, existingNodes, mapNodeIdsToUrl, nodeIdsToFetch, nodeFetchUrl, fetchedNodes, requiredEdges, mapEdgeIdsToUrl, edgeIdsToFetch, edgeFetchUrl, fetchedEdges, removedNodes, nodesToRemove, X, Y, edgesToRemove, edgesToBeUpdated;
-        return regeneratorRuntime.wrap(function _callee11$(_context11) {
+        return regeneratorRuntime.wrap(function _callee18$(_context18) {
           while (1) {
-            switch (_context11.prev = _context11.next) {
+            switch (_context18.prev = _context18.next) {
               case 0:
                 BFS = function BFS(root) {
                   var remove = [];
@@ -25952,11 +27659,11 @@ var BaseLayout = /*#__PURE__*/function () {
 
 
                 if (!(clickedNode.childrenIds.length === 0)) {
-                  _context11.next = 3;
+                  _context18.next = 3;
                   break;
                 }
 
-                return _context11.abrupt("return");
+                return _context18.abrupt("return");
 
               case 3:
                 isAddOperation = clickedNode.children.map(function (child) {
@@ -25964,7 +27671,7 @@ var BaseLayout = /*#__PURE__*/function () {
                 }).length === 0; // add new data
 
                 if (!isAddOperation) {
-                  _context11.next = 28;
+                  _context18.next = 28;
                   break;
                 }
 
@@ -25990,28 +27697,28 @@ var BaseLayout = /*#__PURE__*/function () {
 
                 nodeIdsToFetch = requestedNodes.map(mapNodeIdsToUrl).join("").slice(0, -1);
                 nodeFetchUrl = "".concat(this.config.databaseUrl, "/nodes?").concat(nodeIdsToFetch);
-                _context11.next = 15;
+                _context18.next = 15;
                 return fetch(nodeFetchUrl).then(function (data) {
                   return data.json();
                 });
 
               case 15:
-                fetchedNodes = _context11.sent;
+                fetchedNodes = _context18.sent;
                 // create new children nodes
                 fetchedNodes.forEach(function (rawNode) {
                   var node;
-                  if (rawNode.type === "risk") node = new RiskNode(rawNode, _this6.canvas);
-                  if (rawNode.type === "asset") node = new AssetNode(rawNode, _this6.canvas);
-                  if (rawNode.type === "custom") node = new CustomNode(rawNode, _this6.canvas);
-                  if (rawNode.type === "requirement") node = new RequirementNode(rawNode, _this6.canvas);
-                  if (rawNode.type === "control") node = new ControlNode(rawNode, _this6.canvas); // sets the currently used rendering size
+                  if (rawNode.type === "risk") node = new RiskNode(rawNode, _this12.canvas);
+                  if (rawNode.type === "asset") node = new AssetNode(rawNode, _this12.canvas);
+                  if (rawNode.type === "custom") node = new CustomNode(rawNode, _this12.canvas);
+                  if (rawNode.type === "requirement") node = new RequirementNode(rawNode, _this12.canvas);
+                  if (rawNode.type === "control") node = new ControlNode(rawNode, _this12.canvas); // sets the currently used rendering size
 
-                  node.setNodeSize(_this6.config.renderingSize);
+                  node.setNodeSize(_this12.config.renderingSize);
                   node.addEvent("dblclick", function () {
-                    _this6.manageTreeDataAsync(node);
+                    _this12.manageTreeDataAsync(node);
                   });
 
-                  _this6.nodes.push(node);
+                  _this12.nodes.push(node);
                 }); // find edges between new children and clicked node
 
                 requiredEdges = [];
@@ -26028,38 +27735,38 @@ var BaseLayout = /*#__PURE__*/function () {
 
                 edgeIdsToFetch = requiredEdges.map(mapEdgeIdsToUrl).join("").slice(0, -1);
                 edgeFetchUrl = "".concat(this.config.databaseUrl, "/edges?").concat(edgeIdsToFetch);
-                _context11.next = 24;
+                _context18.next = 24;
                 return fetch(edgeFetchUrl).then(function (data) {
                   return data.json();
                 });
 
               case 24:
-                fetchedEdges = _context11.sent;
+                fetchedEdges = _context18.sent;
                 // create new edges
                 fetchedEdges.forEach(function (rawEdge) {
-                  var fromNode = _this6.nodes.find(function (n) {
+                  var fromNode = _this12.nodes.find(function (n) {
                     return n.id === rawEdge.startNodeId;
                   });
 
-                  var toNode = _this6.nodes.find(function (n) {
+                  var toNode = _this12.nodes.find(function (n) {
                     return n.id === rawEdge.endNodeId;
                   });
 
                   var edge = null;
-                  if (rawEdge.type === "solid") edge = new ThinEdge(_this6.canvas, fromNode, toNode, {
+                  if (rawEdge.type === "solid") edge = new ThinEdge(_this12.canvas, fromNode, toNode, {
                     type: "solid"
-                  });else if (rawEdge.type === "dashed") edge = new ThinEdge(_this6.canvas, fromNode, toNode, {
+                  });else if (rawEdge.type === "dashed") edge = new ThinEdge(_this12.canvas, fromNode, toNode, {
                     type: "dashed"
-                  });else if (rawEdge.type === "bold") edge = new BoldEdge(_this6.canvas, fromNode, toNode, {
+                  });else if (rawEdge.type === "bold") edge = new BoldEdge(_this12.canvas, fromNode, toNode, {
                     type: "bold"
-                  });else edge = new ThinEdge(_this6.canvas, fromNode, toNode, {
+                  });else edge = new ThinEdge(_this12.canvas, fromNode, toNode, {
                     type: "solid"
                   });
                   fromNode.addOutgoingEdge(edge);
                   toNode.addIncomingEdge(edge);
                   edge.setLabel(rawEdge.label);
 
-                  _this6.edges.push(edge);
+                  _this12.edges.push(edge);
                 }); // re-calculate and re-render layout
 
                 this.calculateLayout();
@@ -26114,13 +27821,13 @@ var BaseLayout = /*#__PURE__*/function () {
 
               case 29:
               case "end":
-                return _context11.stop();
+                return _context18.stop();
             }
           }
-        }, _callee11, this);
+        }, _callee18, this);
       }));
 
-      function manageTreeDataAsync(_x11) {
+      function manageTreeDataAsync(_x14) {
         return _manageTreeDataAsync.apply(this, arguments);
       }
 
@@ -26149,7 +27856,7 @@ var BaseLayout = /*#__PURE__*/function () {
   }, {
     key: "setCanvas",
     value: function setCanvas(canvas) {
-      this.canvas = canvas.nested();
+      this.canvas = canvas.nested().draggable();
     }
   }, {
     key: "setNodes",
@@ -26209,10 +27916,10 @@ var GridExpanderConfiguration = {
   expanderBackground: "#fff"
 };
 /**
- * Class representing the option to collapse or expand the grid layout
+ * Class representing the option to collapse or expand the grid layout.
  *
- * @param {Canvas} canvas The canvas to render this expander on
- * @private
+ * @param {Canvas} canvas The canvas to render this expander on.
+ * @param {String} type The type the expander is. 
  */
 
 var GridExpander = /*#__PURE__*/function () {
@@ -26226,13 +27933,14 @@ var GridExpander = /*#__PURE__*/function () {
 
     this.reRenderFunc = null;
   }
+  /**
+  * Renders the expander.
+  * @param  {Number} IX=finalX The initial X render position.
+  * @param  {Number} IY=finalY The initial Y render position.
+  */
+
 
   _createClass(GridExpander, [{
-    key: "updateConfig",
-    value: function updateConfig(newConfig) {
-      this.config = _objectSpread2({}, this.config, {}, newConfig);
-    }
-  }, {
     key: "render",
     value: function render() {
       var _this = this;
@@ -26318,12 +28026,17 @@ var GridExpander = /*#__PURE__*/function () {
       });
 
       if (this.reRenderFunc) {
-        svg.on("click", this.reRenderFunc); // svg.on("dblclick", this.reRenderFunc)
+        svg.on("click", this.reRenderFunc); // svg.on("click", () => svg.fire('myevent'))
+        // svg.on("dblclick", this.reRenderFunc)
       }
 
       this.isExpanded = false;
       this.svg = svg;
     }
+    /**
+     * Changes the expanders label.
+     */
+
   }, {
     key: "changeToShowMoreText",
     value: function changeToShowMoreText() {
@@ -26335,6 +28048,10 @@ var GridExpander = /*#__PURE__*/function () {
       });
       this.isExpanded = true;
     }
+    /**
+     * Changes the expanders label.
+     */
+
   }, {
     key: "changeToHideMoreText",
     value: function changeToHideMoreText() {
@@ -26346,29 +28063,33 @@ var GridExpander = /*#__PURE__*/function () {
       });
       this.isExpanded = false;
     }
+    /**
+     * Transforms the expander from its final position to its initial rendered position.
+     */
+
   }, {
     key: "transformToFinalPosition",
     value: function transformToFinalPosition() {
-      this.svg.attr({
-        opacity: 1
-      }).animate({
+      this.svg.animate({
         duration: this.config.animationSpeed
       }).transform({
         position: [this.finalX + this.config.expanderWidth / 2, this.finalY]
-      }).attr({
-        opacity: 1
       });
     }
+    /**
+     * Determins where the expander is rendered or not.
+     * @returns True, if the SVG is rendered, else false.
+     */
+
   }, {
     key: "isRendered",
     value: function isRendered() {
       return this.svg !== null;
     }
-  }, {
-    key: "setReRenderFunc",
-    value: function setReRenderFunc(reRenderFunc) {
-      this.reRenderFunc = reRenderFunc;
-    }
+    /**
+     * Removes the rendered SVG expander from the canvas.
+     */
+
   }, {
     key: "removeNode",
     value: function removeNode() {
@@ -26376,6 +28097,16 @@ var GridExpander = /*#__PURE__*/function () {
         this.svg.remove();
         this.svg = null;
       }
+    }
+  }, {
+    key: "setReRenderFunc",
+    value: function setReRenderFunc(reRenderFunc) {
+      this.reRenderFunc = reRenderFunc;
+    }
+  }, {
+    key: "updateConfig",
+    value: function updateConfig(newConfig) {
+      this.config = _objectSpread2({}, this.config, {}, newConfig);
     }
   }, {
     key: "getIsExpanded",
@@ -26415,8 +28146,8 @@ var GridExpander = /*#__PURE__*/function () {
  * @property {Number} limitNodes=null            - Limits how many nodes are rendered.
  * @property {Number} translateX=0               - Adds additional X translation for all SVG elements before rendering.
  * @property {Number} translateY=0               - Adds additional Y translation for all SVG elements before rendering.
- * @property {Number} animationSpeed=300         - Determins how fast SVG elements animates inside the current layout.
- * @property {Boolean} hideOtherLayouts=false    - If set to true, other layouts are not visible.
+ * @property {Number} animationSpeed=300         - Determins how fast SVG elements animates inside the current layout. 
+ *                                                Note: this configuration can only be changed within the constructor.
  * @property {Number} spacing=32                 - Determins the minimal spacing between nodes.
  * @property {String} renderingSize=min          - Determins the node render representation. Available: "min" or "max".
  */
@@ -26426,50 +28157,159 @@ var GridLayoutConfiguration = {
   translateX: 0,
   translateY: 0,
   animationSpeed: 300,
-  hideOtherLayouts: false,
-  // TODO:
   spacing: 32,
   renderingSize: "min"
 };
 
+/**
+ * This class calculates and renders the grid layout.
+ */
+
 var GridLayout = /*#__PURE__*/function (_BaseLayout) {
   _inherits(GridLayout, _BaseLayout);
+
+  var _super = _createSuper(GridLayout);
 
   function GridLayout() {
     var _this;
 
     var customConfig = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    var events = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
+    var additionalNodeRepresentations = arguments.length > 2 ? arguments[2] : undefined;
 
     _classCallCheck(this, GridLayout);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(GridLayout).call(this));
-    _this.config = _objectSpread2({}, GridLayoutConfiguration, {}, customConfig);
-    _this.expander = null;
+    _this = _super.call(this, additionalNodeRepresentations);
+    _this.config = _objectSpread2({}, GridLayoutConfiguration, {}, customConfig); // layout specific
+
+    _this.gridExpander = null;
+
+    _this.registerMouseEvents(events);
+
     return _this;
   }
+  /**
+   * Overrides the default mouse behaviour for the grid layout.
+   * @param {Object} events The events to be added.
+   */
+
 
   _createClass(GridLayout, [{
-    key: "calculateLayout",
-    value: function calculateLayout() {
+    key: "registerMouseEvents",
+    value: function registerMouseEvents(events) {
       var _this2 = this;
 
+      var expandGridLayoutEvent = /*#__PURE__*/function () {
+        var _ref = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee() {
+          var tooltip, prevW, newW;
+          return regeneratorRuntime.wrap(function _callee$(_context) {
+            while (1) {
+              switch (_context.prev = _context.next) {
+                case 0:
+                  if (_this2.currentLayoutState === "show more") {
+                    _this2.currentLayoutState = "show less";
+                    _this2.config = _objectSpread2({}, _this2.config, {
+                      limitNodes: _this2.config.cachedLimit
+                    });
+                    delete _this2.config.cachedLimit;
+
+                    _this2.gridExpander.changeToHideMoreText();
+                  } else {
+                    _this2.currentLayoutState = "show more";
+                    _this2.config = _objectSpread2({}, _this2.config, {
+                      cachedLimit: _this2.config.limitNodes,
+                      limitNodes: _this2.nodeData.length
+                    });
+
+                    _this2.gridExpander.changeToShowMoreText();
+                  }
+
+                  tooltip = document.getElementById("tooltip");
+                  tooltip.style.display = "none";
+                  _context.next = 5;
+                  return _this2.loadAdditionalGridDataAsync();
+
+                case 5:
+                  console.log("rerender"); // update all layouts to the right
+
+                  prevW = _this2.layoutInfo.w;
+
+                  _this2.calculateLayout();
+
+                  newW = _this2.layoutInfo.w;
+
+                  _this2.renderLayout(); // update all layouts right side
+
+
+                  _this2.layoutReferences.forEach(function (llayout, i) {
+                    if (i > _this2.layoutReferences.indexOf(_this2)) {
+                      llayout.calculateLayout(newW - prevW);
+                      llayout.renderLayout();
+                    }
+                  });
+
+                case 11:
+                case "end":
+                  return _context.stop();
+              }
+            }
+          }, _callee);
+        }));
+
+        return function expandGridLayoutEvent() {
+          return _ref.apply(this, arguments);
+        };
+      }();
+
+      if (events.length > 0) {
+        this.events = [{
+          name: "expandGridLayoutEvent",
+          func: expandGridLayoutEvent,
+          mouse: events.find(function (e) {
+            return e.name === "expandGridLayoutEvent";
+          }).mouse || "click",
+          modifier: events.find(function (e) {
+            return e.name === "expandGridLayoutEvent";
+          }).modifier || "shiftKey"
+        }];
+      } else {
+        this.events = [{
+          name: "expandGridLayoutEvent",
+          func: expandGridLayoutEvent,
+          mouse: "click",
+          modifier: "shiftKey"
+        }];
+      }
+    }
+    /**
+     * Calulates the layout.
+     * @param {Number} offset=0 The width from other layouts.
+     */
+
+  }, {
+    key: "calculateLayout",
+    value: function calculateLayout() {
+      var _this3 = this;
+
       var offset = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
+      // add additional translation towards X
       this.config = _objectSpread2({}, this.config, {
         translateX: this.config.translateX + offset
-      });
+      }); // calculate nodes' final position
 
       var calculateFinalPosition = function calculateFinalPosition() {
-        var limit = _this2.config.limitNodes ? _this2.config.limitNodes : _this2.nodes.length;
+        var limit = _this3.config.limitNodes ? _this3.config.limitNodes : _this3.nodes.length;
 
-        var nodes = _this2.nodes.slice(0, limit); // create grid expander only if required
+        var nodes = _this3.nodes.slice(0, limit); // create and assign a grid expander only if required
 
 
-        if (_this2.config.limitNodes < _this2.nodeData.length && _this2.expander === null) {
-          var expander = new GridExpander(_this2.canvas);
-          _this2.expander = expander;
-        }
+        if (_this3.config.limitNodes < _this3.nodeData.length && _this3.gridExpander === null) {
+          var expander = new GridExpander(_this3.canvas);
+          _this3.gridExpander = expander;
+        } // calculate columns and rows
 
-        var cols = _this2.config.limitColumns;
+
+        var cols = _this3.config.limitColumns;
         var nodeIndex = 0;
         var nodeCols = [];
         var nodeRows = []; // divide nodes into sets of rows
@@ -26501,17 +28341,13 @@ var GridLayout = /*#__PURE__*/function (_BaseLayout) {
         nodes.forEach(function (node, i) {
           var col = nodeCols[i % cols];
           col.push(node);
-        }); // console.log(nodeRows)
-        // console.log(nodeCols)
-        // console.log("----")
-        // calculate initial position
+        }); // set initial position
 
-        _this2.nodes.forEach(function (node) {
-          var w = _this2.config.renderingSize === "max" ? node.getMaxWidth() : node.getMinWidth();
-          var h = _this2.config.renderingSize === "max" ? node.getMaxHeight() : node.getMinHeight();
-          var x = _this2.config.spacing + _this2.config.translateX + w / 2; // +w / 1
-
-          var y = _this2.config.spacing + _this2.config.translateY + h / 2;
+        _this3.nodes.forEach(function (node) {
+          var w = _this3.config.renderingSize === "max" ? node.getMaxWidth() : node.getMinWidth();
+          var h = _this3.config.renderingSize === "max" ? node.getMaxHeight() : node.getMinHeight();
+          var x = _this3.config.spacing + _this3.config.translateX + w / 2;
+          var y = _this3.config.spacing + _this3.config.translateY + h / 2;
           node.setFinalX(x);
           node.setFinalY(y);
         }); // find row spacing
@@ -26520,7 +28356,7 @@ var GridLayout = /*#__PURE__*/function (_BaseLayout) {
         var rowSpacing = 0;
         nodeRows.forEach(function (row) {
           var h = row.map(function (n) {
-            return _this2.config.renderingSize === "max" ? n.getMaxHeight() : n.getMinHeight();
+            return _this3.config.renderingSize === "max" ? n.getMaxHeight() : n.getMinHeight();
           });
           var max = Math.max.apply(Math, _toConsumableArray(h));
           rowSpacing = Math.max(rowSpacing, max);
@@ -26529,7 +28365,7 @@ var GridLayout = /*#__PURE__*/function (_BaseLayout) {
         nodeRows.forEach(function (row, i) {
           if (i >= 1) {
             row.forEach(function (n) {
-              var h = (rowSpacing + _this2.config.spacing) * i;
+              var h = (rowSpacing + _this3.config.spacing) * i;
               n.setFinalY(n.getFinalY() + h);
             });
           }
@@ -26538,7 +28374,7 @@ var GridLayout = /*#__PURE__*/function (_BaseLayout) {
         var columnSpacing = 0;
         nodeRows.forEach(function (row) {
           var w = row.map(function (n) {
-            return _this2.config.renderingSize === "max" ? n.getMaxWidth() : n.getMinWidth();
+            return _this3.config.renderingSize === "max" ? n.getMaxWidth() : n.getMinWidth();
           });
           var max = Math.max.apply(Math, _toConsumableArray(w));
           columnSpacing = Math.max(columnSpacing, max);
@@ -26547,89 +28383,84 @@ var GridLayout = /*#__PURE__*/function (_BaseLayout) {
         nodeCols.forEach(function (column, i) {
           if (i >= 1) {
             column.forEach(function (n) {
-              var w = (columnSpacing + _this2.config.spacing) * i;
+              var w = (columnSpacing + _this3.config.spacing) * i;
               n.setFinalX(n.getFinalX() + w);
             });
           }
         });
-      };
+      }; // calculate an expander button
+
 
       var calculateExpander = function calculateExpander() {
-        // collapsed state
-        if (_this2.expander === null) {
-          return;
-        }
-
-        if (_this2.config.limitNodes === null) {
+        if (_this3.gridExpander === null || _this3.config.limitNodes === null) {
           return;
         } // get lowest X coordinate
 
 
-        var minX = Math.min.apply(Math, _toConsumableArray(_this2.nodes.map(function (n) {
+        var minX = Math.min.apply(Math, _toConsumableArray(_this3.nodes.map(function (n) {
           return n.getFinalX();
         })));
 
-        var minNode = _this2.nodes.find(function (n) {
+        var minNode = _this3.nodes.find(function (n) {
           return n.getFinalX() === minX;
         });
 
-        var w = _this2.config.renderingSize === "max" ? minNode.getMaxWidth() : minNode.getMinWidth();
+        var w = _this3.config.renderingSize === "max" ? minNode.getMaxWidth() : minNode.getMinWidth();
         var x = minX - w / 2; // get deepest Y coordinate
 
-        var maxY = Math.max.apply(Math, _toConsumableArray(_this2.nodes.map(function (n) {
+        var maxY = Math.max.apply(Math, _toConsumableArray(_this3.nodes.map(function (n) {
           return n.getFinalY();
         })));
 
-        var maxNode = _this2.nodes.find(function (n) {
+        var maxNode = _this3.nodes.find(function (n) {
           return n.getFinalY() === maxY;
         });
 
-        var h = _this2.config.renderingSize === "max" ? maxNode.getMaxHeight() : maxNode.getMinHeight();
-        var y = maxY + h + _this2.config.spacing; // this.canvas.circle(5).fill("#f75").center(x, y)
+        var h = _this3.config.renderingSize === "max" ? maxNode.getMaxHeight() : maxNode.getMinHeight();
+        var y = maxY + h + _this3.config.spacing;
 
-        _this2.expander.setFinalX(x);
+        _this3.gridExpander.setFinalX(x);
 
-        _this2.expander.setFinalY(y);
-      };
+        _this3.gridExpander.setFinalY(y);
+      }; // calculate the layout dimensions
 
-      var calculateBackground = function calculateBackground() {
+
+      var calculateLayoutInfo = function calculateLayoutInfo() {
         // top left
-        var nodes = _this2.nodes;
-        var x0 = Math.min.apply(Math, _toConsumableArray(nodes.map(function (n) {
-          var w = _this2.config.renderingSize === "max" ? n.getMaxWidth() : n.getMinWidth();
-          return n.getFinalX() - w / 2 - _this2.config.spacing / 2;
+        var x0 = Math.min.apply(Math, _toConsumableArray(_this3.nodes.map(function (n) {
+          var w = _this3.config.renderingSize === "max" ? n.getMaxWidth() : n.getMinWidth();
+          return n.getFinalX() - w / 2 - _this3.config.spacing / 2;
         })));
-        var y0 = Math.min.apply(Math, _toConsumableArray(nodes.map(function (n) {
-          var h = _this2.config.renderingSize === "max" ? n.getMaxHeight() : n.getMinHeight();
-          return n.getFinalY() - h / 2 - _this2.config.spacing / 2;
-        }))); // this.canvas.circle(5).fill("#000").center(x0, y0)
-        // top right
+        var y0 = 0; // top right
 
-        var x1 = Math.max.apply(Math, _toConsumableArray(nodes.map(function (n) {
-          var w = _this2.config.renderingSize === "max" ? n.getMaxWidth() : n.getMinWidth();
-          return n.getFinalX() + w / 2 + _this2.config.spacing / 2;
+        var x1 = Math.max.apply(Math, _toConsumableArray(_this3.nodes.map(function (n) {
+          var w = _this3.config.renderingSize === "max" ? n.getMaxWidth() : n.getMinWidth();
+          return n.getFinalX() + w / 2 + _this3.config.spacing / 2;
         })));
-        var y1 = y0; // this.canvas.circle(5).fill("#75f").center(x1, y1)
-        // bottom right
+        var y1 = y0; // bottom right
 
         var x2 = x1;
-        var y2 = Math.max.apply(Math, _toConsumableArray(nodes.map(function (n) {
-          var h = _this2.config.renderingSize === "max" ? n.getMaxHeight() : n.getMinHeight();
-          return n.getFinalY() + h / 2 + _this2.config.spacing / 2;
+        var y2 = Math.max.apply(Math, _toConsumableArray(_this3.nodes.map(function (n) {
+          var h = _this3.config.renderingSize === "max" ? n.getMaxHeight() : n.getMinHeight();
+          return n.getFinalY() + h / 2 + _this3.config.spacing / 2;
         })));
 
-        if (_this2.expander !== null && _this2.config.limitNodes !== null) {
-          y2 = _this2.expander.getFinalY() + _this2.config.spacing / 2 + _this2.expander.config.expanderHeight / 2;
-        } // this.canvas.circle(5).fill("#f75").center(x2, y2)
-        // store layout width and height info
+        if (_this3.gridExpander !== null && _this3.config.limitNodes !== null) {
+          y2 = _this3.gridExpander.getFinalY() + _this3.config.spacing / 2 + _this3.gridExpander.config.expanderHeight / 2;
+        } // store layout width and height info
+
 
         var calculateDistance = function calculateDistance(sx, sy, tx, ty) {
           var dx = tx - sx;
           var dy = ty - sy;
           return Math.sqrt(dx * dx + dy * dy);
-        };
+        }; // this.canvas.circle(5).fill("#000").center(x0, y0)
+        // this.canvas.circle(5).fill("#75f").center(x1, y1)
+        // this.canvas.circle(5).fill("#f75").center(x2, y2)
+        // this.canvas.circle(5).fill("#1f1").center((x0 + x2) / 2, (y0 + y2) / 2)
 
-        _this2.layoutInfo = {
+
+        _this3.layoutInfo = {
           x: x0,
           y: y0,
           cx: (x0 + x2) / 2,
@@ -26641,120 +28472,73 @@ var GridLayout = /*#__PURE__*/function (_BaseLayout) {
 
       calculateFinalPosition();
       calculateExpander();
-      calculateBackground();
+      calculateLayoutInfo();
+      console.log("Grid", this.layoutInfo);
       return this.layoutInfo;
     }
+    /**
+     * Renders the layout. First, it renders the grid expander, but only if required. Second, it renders
+     * all required nodes and transforms them into position.
+     */
+
   }, {
     key: "renderLayout",
     value: function renderLayout() {
-      var _this3 = this;
+      var _this4 = this;
 
       var limit = this.config.limitNodes ? this.config.limitNodes : this.nodes.length;
       var X = this.layoutInfo.cx;
-      var Y = this.layoutInfo.cy;
+      var Y = this.layoutInfo.cy; // renders the grid expander
 
       var renderExpander = function renderExpander() {
-        if (_this3.config.limitNodes === null && _this3.expander.isRendered() === true) {
-          _this3.expander.removeNode();
+        if (_this4.config.limitNodes === null && _this4.gridExpander.isRendered() === true) {
+          _this4.gridExpander.removeNode();
 
           return;
         }
 
-        if (_this3.expander === null) {
+        if (_this4.gridExpander === null || _this4.config.limitNodes === null) {
           return;
         }
 
-        if (_this3.expander.isRendered() === true) {
-          _this3.expander.transformToFinalPosition();
+        if (_this4.gridExpander.isRendered() === true) {
+          _this4.gridExpander.transformToFinalPosition();
 
           return;
         }
 
-        if (_this3.config.limitNodes === null) {
-          return;
-        }
-
-        var reRenderFunc = /*#__PURE__*/function () {
-          var _ref = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee() {
-            var tooltip, prevW, newW;
-            return regeneratorRuntime.wrap(function _callee$(_context) {
-              while (1) {
-                switch (_context.prev = _context.next) {
-                  case 0:
-                    if (_this3.currentLayoutState === "show more") {
-                      _this3.currentLayoutState = "show less";
-                      _this3.config = _objectSpread2({}, _this3.config, {
-                        limitNodes: _this3.config.cachedLimit
-                      });
-                      delete _this3.config.cachedLimit;
-
-                      _this3.expander.changeToHideMoreText();
-                    } else {
-                      _this3.currentLayoutState = "show more";
-                      _this3.config = _objectSpread2({}, _this3.config, {
-                        cachedLimit: _this3.config.limitNodes,
-                        limitNodes: _this3.nodeData.length
-                      });
-
-                      _this3.expander.changeToShowMoreText();
-                    }
-
-                    tooltip = document.getElementById("tooltip");
-                    tooltip.style.display = "none";
-                    _context.next = 5;
-                    return _this3.loadInitialGridDataAsync();
-
-                  case 5:
-                    // update all layouts to the right
-                    prevW = _this3.layoutInfo.w;
-
-                    _this3.calculateLayout();
-
-                    newW = _this3.layoutInfo.w;
-
-                    _this3.renderLayout(); // update all layouts right side
+        if (_this4.gridExpander.svg === null) {
+          _this4.gridExpander.render(X, Y); // add event to expander
 
 
-                    _this3.layoutReferences.forEach(function (llayout, i) {
-                      if (i > _this3.layoutReferences.indexOf(_this3)) {
-                        llayout.calculateLayout(newW - prevW);
-                        llayout.renderLayout();
-                      }
-                    });
-
-                  case 10:
-                  case "end":
-                    return _context.stop();
-                }
+          _this4.gridExpander.svg.on(_this4.events[0].mouse, function (e) {
+            if (_this4.events[0].modifier !== null) {
+              if (_this4.events[0].modifier, e[_this4.events[0].modifier]) {
+                _this4.events[0].func();
               }
-            }, _callee);
-          }));
-
-          return function reRenderFunc() {
-            return _ref.apply(this, arguments);
-          };
-        }();
-
-        if (_this3.expander.svg === null) {
-          _this3.expander.setReRenderFunc(reRenderFunc);
-
-          _this3.expander.render(X, Y);
+            } else {
+              _this4.expandGridLayoutEvent();
+            }
+          });
         }
 
-        _this3.expander.transformToFinalPosition();
-      };
+        _this4.gridExpander.transformToFinalPosition();
+      }; // renders visual node representations
+
 
       var renderNodes = function renderNodes() {
-        _this3.nodes.forEach(function (node, i) {
-          // render new nodes
+        _this4.nodes.forEach(function (node, i) {
+          // console.log(node)
           if (i <= limit && node.isRendered() === false) {
-            if (node.isRendered() === false) {
-              if (_this3.config.renderingSize === "max") node.renderAsMax(X, Y);
-              if (_this3.config.renderingSize === "min") node.renderAsMin(X, Y);
-            }
-          }
+            // create non-existing nodes
+            if (_this4.config.renderingSize === "max") node.renderAsMax(X, Y);
 
-          if (node.isRendered() === true) {
+            if (_this4.config.renderingSize === "min") {
+              node.renderAsMin(X, Y);
+            }
+          } else if (node.isRendered() === true) {
+            // update nodes
+            // console.log("trf", node)
             node.transformToFinalPosition();
           } // remove existing nodes
 
@@ -26775,51 +28559,122 @@ var GridLayout = /*#__PURE__*/function (_BaseLayout) {
   return GridLayout;
 }(BaseLayout);
 
-var RadialConfig = {
-  maxLayoutWidth: 600,
-  maxLayoutHeight: 600,
-  // where to translate a given layout
+/**
+ * @namespace RadialLayoutConfiguration
+ * @description This object contains default configuration for radial layout representations.
+ *
+ * @property {Number} translateX=0                      - Adds additional X translation for all SVG elements before rendering.
+ * @property {Number} translateY=0                      - Adds additional Y translation for all SVG elements before rendering.
+ * @property {Number} animationSpeed=300                - Determins how fast SVG elements animates inside the current layout.
+ * @property {Number} radialRadius=200                  - Determins the initial radial radius (limited to the first circle).
+ * @property {Number} radiusDelta=350                   - Determins the remaining radial radius (starting on the second+ circle).
+ * @property {Number} hAspect=4/3                       - Determins the horizontal aspect ratio.
+ * @property {Number} wAspect=4/4                       - Determins the verrtical aspect ratio.
+ * @property {String} renderingSize=min                 - Determins the node render representation. Available: "min" or "max".
+ */
+var RadialLayoutConfiguration = {
   translateX: 0,
   translateY: 0,
-  // layout animation speed
   animationSpeed: 300,
-  // how a layout starts
-  layoutState: "expanded",
-  // expanded, collapsed // TODO: ask: even needed?
-  // hide all other layouts and center selected one
-  hideOtherLayouts: false,
-  // TODO:
-  // radial radius (first radius only)
   radialRadius: 200,
-  // user defined delta angle constant (second+ radius)
   radiusDelta: 150,
   hAspect: 4 / 3,
   wAspect: 4 / 4,
-  // how to render all nodes
-  renderingSize: "min" // min, max
-
+  renderingSize: "min"
 };
+
+/**
+ * This class is calculates and renders the radial layout.
+ */
 
 var RadialLayout = /*#__PURE__*/function (_BaseLayout) {
   _inherits(RadialLayout, _BaseLayout);
 
+  var _super = _createSuper(RadialLayout);
+
   function RadialLayout() {
     var _this;
 
-    var customRadialConfig = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    var customConfig = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    var events = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
+    var additionalNodeRepresentations = arguments.length > 2 ? arguments[2] : undefined;
 
     _classCallCheck(this, RadialLayout);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(RadialLayout).call(this));
-    _this.config = _objectSpread2({}, RadialConfig, {}, customRadialConfig);
-    return _this;
-  } // calculates the radial layout positions for all given nodes and edges
+    _this = _super.call(this, additionalNodeRepresentations);
 
+    if (customConfig.root === undefined) {
+      throw new Error("No Focus element reference id provided");
+    }
+
+    if (customConfig.renderDepth === undefined) {
+      throw new Error("The radial layout requires a defined render depth");
+    }
+
+    _this.config = _objectSpread2({}, RadialLayoutConfiguration, {}, customConfig); // layout specific
+
+    _this.rootId = customConfig.root;
+    _this.renderDepth = customConfig.renderDepth;
+
+    _this.registerMouseEvents(events);
+
+    return _this;
+  }
 
   _createClass(RadialLayout, [{
+    key: "registerMouseEvents",
+    value: function registerMouseEvents(events) {
+      var _this2 = this;
+
+      var loadOrHideData = /*#__PURE__*/function () {
+        var _ref = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee(node) {
+          return regeneratorRuntime.wrap(function _callee$(_context) {
+            while (1) {
+              switch (_context.prev = _context.next) {
+                case 0:
+                  _context.next = 2;
+                  return _this2.updateRadialDataAsync(node);
+
+                case 2:
+                case "end":
+                  return _context.stop();
+              }
+            }
+          }, _callee);
+        }));
+
+        return function loadOrHideData(_x) {
+          return _ref.apply(this, arguments);
+        };
+      }();
+
+      if (events.length > 0) {
+        this.events = [{
+          name: "nodeEvent",
+          func: loadOrHideData,
+          mouse: events.find(function (e) {
+            return e.name === "nodeEvent";
+          }).mouse || "dblclick",
+          modifier: events.find(function (e) {
+            return e.name === "nodeEvent";
+          }).modifier || "ctrlKey"
+        }];
+      } else {
+        this.events = [{
+          name: "nodeEvent",
+          func: loadOrHideData,
+          mouse: "dblclick",
+          modifier: "ctrlKey"
+        }];
+      }
+    } // calculates the radial layout positions for all given nodes and edges
+
+  }, {
     key: "calculateLayout",
     value: function calculateLayout() {
-      var _this2 = this;
+      var _this3 = this;
+
+      var offset = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
 
       // construct a tree
       var constructTree = function constructTree(array, parentRef, rootRef) {
@@ -26829,18 +28684,16 @@ var RadialLayout = /*#__PURE__*/function (_BaseLayout) {
         };
         var children = array.filter(function (child) {
           return child.parentId === parent.id;
-        }); // console.log("0", children, parent, parentRef)
+        });
 
         if (children.length > 0) {
           if (parent.id === null) {
-            // console.log("1", children)
             root = children;
           } else {
-            parent.children = children; // console.log("2", children)
+            parent.children = children;
           }
 
           children.forEach(function (child) {
-            // console.log("chid", child, child instanceof Number)
             constructTree(array, child);
           });
         }
@@ -26855,11 +28708,12 @@ var RadialLayout = /*#__PURE__*/function (_BaseLayout) {
         });
       };
 
-      var calcRadialPositions = function calcRadialPositions(node, alfa, beta) {
-        // center root
-        if (node.parentId === null) {
-          node.setFinalX(_this2.config.maxLayoutWidth / 2 + _this2.config.translateX);
-          node.setFinalY(_this2.config.maxLayoutHeight / 2 + _this2.config.translateY);
+      var calculateFinalPosition = function calculateFinalPosition(node, alfa, beta) {
+        var w = _this3.config.renderingSize === "max" ? node.getMaxWidth() : node.getMinWidth(); // center root
+
+        if (node.parentId === null || node.id === _this3.tree.id) {
+          node.setFinalX(_this3.config.translateX + w / 2);
+          node.setFinalY(_this3.config.translateY);
         } // depth of node inside tree
 
 
@@ -26867,9 +28721,9 @@ var RadialLayout = /*#__PURE__*/function (_BaseLayout) {
 
         var theta = alfa; // multipler for depth levels after the first circle
 
-        var delta = _this2.config.radiusDelta; // innermost circle radius + delta angle
+        var delta = _this3.config.radiusDelta; // innermost circle radius + delta angle
 
-        var radius = _this2.config.radialRadius + delta * depth;
+        var radius = _this3.config.radialRadius + delta * depth;
 
         var BFS = function BFS(root) {
           var queue = [];
@@ -26899,62 +28753,186 @@ var RadialLayout = /*#__PURE__*/function (_BaseLayout) {
           var lambda = BFS(child);
           var mü = theta + lambda / children * (beta - alfa);
 
-          var x = radius * Math.cos((theta + mü) / 2) * _this2.config.hAspect;
+          var x = radius * Math.cos((theta + mü) / 2) * _this3.config.hAspect;
 
-          var y = radius * Math.sin((theta + mü) / 2) * _this2.config.wAspect;
+          var y = radius * Math.sin((theta + mü) / 2) * _this3.config.wAspect;
 
-          child.setFinalX(x + _this2.config.maxLayoutWidth / 2 + _this2.config.translateX);
-          child.setFinalY(y + _this2.config.maxLayoutHeight / 2 + _this2.config.translateY);
+          child.setFinalX(x + _this3.config.translateX + w / 2);
+          child.setFinalY(y + _this3.config.translateY);
 
           if (child.children.length > 0) {
-            calcRadialPositions(child, theta, mü);
-          }
+            calculateFinalPosition(child, theta, mü);
+          } // calculate edge
 
+
+          var e = _this3.edges.find(function (e) {
+            return e.fromNode.id === child.id && e.toNode.id === node.id;
+          });
+
+          e.calculateEdge();
+          node.addIncomingEdge(e);
+          child.addOutgoingEdge(e);
           theta = mü;
-        });
-      }; // calculate edges
-
-
-      var calcRadialEdges = function calcRadialEdges(edges) {
-        edges.forEach(function (edge) {
-          edge.calculateEdge();
         });
       };
 
-      var tree = constructTree(this.nodes)[0]; // TODO: where is the root?
+      var adjustPositions = function adjustPositions(tree) {
+        var toRender = [tree];
+        var rendered = [];
 
-      updateNodeDepth(tree, 0);
-      calcRadialPositions(tree, 0, 2 * Math.PI);
-      calcRadialEdges(this.edges);
+        var _loop = function _loop() {
+          var current = toRender.shift();
+
+          var node = _this3.nodes.find(function (n) {
+            return n.id === current.id;
+          });
+
+          rendered.push(node);
+          current.children.forEach(function (child) {
+            toRender.push(child);
+          });
+        };
+
+        while (toRender.length) {
+          _loop();
+        }
+
+        var hAdjustment = Math.min.apply(Math, _toConsumableArray(rendered.map(function (node) {
+          var w = _this3.config.renderingSize === "max" ? node.getMaxWidth() : node.getMinWidth();
+          return node.getFinalX() - w;
+        })));
+        var vAdjustment = Math.min.apply(Math, _toConsumableArray(rendered.map(function (node) {
+          var h = _this3.config.renderingSize === "max" ? node.getMaxHeight() : node.getMinHeight();
+          return node.getFinalY() - h;
+        })));
+        rendered.forEach(function (node) {
+          var x = node.getFinalX() - hAdjustment + offset + _this3.config.translateX;
+
+          var y = node.getFinalY() - vAdjustment + _this3.config.translateY;
+
+          node.setFinalX(x);
+          node.setFinalY(y);
+        });
+
+        _this3.edges.forEach(function (edge) {
+          edge.finalToX = edge.finalToX - hAdjustment + offset + _this3.config.translateX;
+          edge.finalFromX = edge.finalFromX - hAdjustment + offset + _this3.config.translateX;
+          edge.finalToY = edge.finalToY - vAdjustment + _this3.config.translateY;
+          edge.finalFromY = edge.finalFromY - vAdjustment + _this3.config.translateY;
+        });
+
+        var x0 = Math.min.apply(Math, _toConsumableArray(rendered.map(function (n) {
+          var w = _this3.config.renderingSize === "max" ? n.getMaxWidth() : n.getMinWidth();
+          return n.getFinalX() - w;
+        })));
+        var y0 = 0;
+        var x1 = Math.max.apply(Math, _toConsumableArray(rendered.map(function (n) {
+          var w = _this3.config.renderingSize === "max" ? n.getMaxWidth() : n.getMinWidth();
+          return n.getFinalX() + w;
+        })));
+        var y1 = 0;
+        var x2 = x1;
+        var y2 = Math.max.apply(Math, _toConsumableArray(rendered.map(function (n) {
+          var h = _this3.config.renderingSize === "max" ? n.getMaxHeight() : n.getMinHeight();
+          return n.getFinalY() + h;
+        }))); // this.canvas.circle(5).fill("#000").center(x0, y0)
+        // this.canvas.circle(5).fill("#75f").center(x1, y1)
+        // this.canvas.circle(5).fill("#f75").center(x2, y2)
+
+        var calculateDistance = function calculateDistance(sx, sy, tx, ty) {
+          var dx = tx - sx;
+          var dy = ty - sy;
+          return Math.sqrt(dx * dx + dy * dy);
+        };
+
+        _this3.layoutInfo = {
+          x: x0,
+          y: y0,
+          cx: (x0 + x2) / 2,
+          cy: (y0 + y2) / 2,
+          w: calculateDistance(x0, y0, x1, y1),
+          h: calculateDistance(x1, y1, x2, y2)
+        };
+      };
+
+      this.tree = constructTree(this.nodes)[0];
+      updateNodeDepth(this.tree, 0);
+      calculateFinalPosition(this.tree, 0, 2 * Math.PI);
+      adjustPositions(this.tree); // console.log("Radial", this.layoutInfo)
+
+      return this.layoutInfo;
     }
   }, {
     key: "renderLayout",
     value: function renderLayout() {
-      var _this3 = this;
+      var _this4 = this;
 
-      this.centerX = this.nodes[0].getFinalX();
-      this.centerY = this.nodes[0].getFinalY();
-      this.nodes.forEach(function (node) {
-        if (_this3.config.renderingSize === "max") {
-          if (node.svg === null) node.renderAsMax(_this3.centerX, _this3.centerY);
-        } else if (_this3.config.renderingSize === "min") {
-          if (node.svg === null) {
-            node.renderAsMin(_this3.centerX, _this3.centerY);
+      var X = this.nodes.find(function (n) {
+        return n.id === _this4.rootId;
+      }).getFinalX();
+      var Y = this.nodes.find(function (n) {
+        return n.id === _this4.rootId;
+      }).getFinalY(); // console.log(this.nodes)
+      // console.log(this.edges)
+
+      var renderNodes = function renderNodes() {
+        var toRender = [_this4.tree];
+
+        var _loop2 = function _loop2() {
+          var current = toRender.shift();
+
+          var node = _this4.nodes.find(function (n) {
+            return n.id === current.id;
+          });
+
+          if (node.isRendered() === false) {
+            // add add or remove event
+            // node.addEvent("dblclick", () => { this.updateRadialDataAsync(node) })
+            if (_this4.config.renderingSize === "max") node.renderAsMax(X, Y);
+            if (_this4.config.renderingSize === "min") node.renderAsMin(X, Y);
+            node.svg.on(_this4.events[0].mouse, function (e) {
+              if (_this4.events[0].modifier !== null) {
+                if (_this4.events[0].modifier, e[_this4.events[0].modifier]) {
+                  _this4.events[0].func(node);
+                }
+              }
+            }); //   this.gridExpander.svg.on(this.events[0].mouse, (e) => {
+            //   if (this.events[0].modifier !== null) {
+            //     if (this.events[0].modifier, e[this.events[0].modifier]) {
+            //       this.events[0].func()
+            //     }
+            //   } else {
+            //     this.expandGridLayoutEvent()
+            //   }
+            // })
+
+            node.outgoingEdges.forEach(function (edge) {
+              if (edge.isRendered() === false) {
+                edge.render(X, Y);
+              }
+            });
+          } else if (node.isRendered() === true) {
+            // update nodes
+            node.transformToFinalPosition();
           }
+
+          current.children.forEach(function (child) {
+            toRender.push(child);
+          });
+        };
+
+        while (toRender.length) {
+          _loop2();
         }
 
-        node.transformToFinalPosition();
-      }); // this.nodes.forEach((node) => {
-      // })
+        _this4.edges.forEach(function (edge) {
+          if (edge.isRendered() === true) {
+            edge.transformToFinalPosition();
+          }
+        });
+      };
 
-      this.edges.forEach(function (edge) {
-        if (edge.svg === null) {
-          edge.render(_this3.centerX, _this3.centerY);
-        }
-
-        edge.transformToFinalPosition();
-      }); // this.edges.forEach((edge) => {
-      // })
+      renderNodes();
     }
   }]);
 
@@ -27038,27 +29016,27 @@ var LeafExtenstion = /*#__PURE__*/function () {
 
       var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.node.finalX;
       var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.node.finalY;
-      var svg = this.canvas.group().draggable();
-      svg.css("cursor", "pointer");
+      var svg = this.canvas.group().draggable(); // svg.css("cursor", "pointer")
+
       svg.id("leafExtenstion");
       var w = this.node.nodeSize === "min" ? this.config.minWidth : this.config.maxWidth;
-      var h = this.node.nodeSize === "min" ? this.config.minHeight + 10 : this.config.maxHeight;
-      var text = this.canvas.foreignObject(w, h);
-      var background = document.createElement("div");
-      var label = document.createElement("p");
-      label.innerText = "Show ".concat(this.nodeSize, " more children");
-      label.style.color = this.config.labelColor;
-      label.style.textAlign = "center";
-      label.style.padding = "".concat(this.config.offset / 2, "px");
-      label.style.background = this.config.labelBackground;
-      label.style.fontSize = "".concat(this.config.labelFontSize, "px");
-      label.style.fontFamily = this.config.labelFontFamily;
-      label.style.fontWeight = this.config.labelFontWeight;
-      label.style.fontStyle = this.config.labelFontStyle;
-      background.appendChild(label);
-      text.add(background);
-      text.height(background.clientHeight);
-      svg.add(text);
+      var h = this.node.nodeSize === "min" ? this.config.minHeight + 10 : this.config.maxHeight; // const text = this.canvas.foreignObject(w, h)
+      // const background = document.createElement("div")
+      // const label = document.createElement("p")
+      // label.innerText = `Show ${this.nodeSize} more children`
+      // label.style.color = this.config.labelColor
+      // label.style.textAlign = "center"
+      // label.style.padding = `${this.config.offset / 2}px`
+      // label.style.background = this.config.labelBackground
+      // label.style.fontSize = `${this.config.labelFontSize}px`
+      // label.style.fontFamily = this.config.labelFontFamily
+      // label.style.fontWeight = this.config.labelFontWeight
+      // label.style.fontStyle = this.config.labelFontStyle
+      // background.appendChild(label)
+      // text.add(background)
+      // text.height(background.clientHeight)
+      // svg.add(text)
+
       var translateY = this.node.nodeSize === "min" ? 75 : 195;
       svg.center(X, Y + translateY);
       var tx = this.node.getFinalX();
@@ -27096,7 +29074,8 @@ var LeafExtenstion = /*#__PURE__*/function () {
         var path = this.canvas.path("M".concat(fx, ",").concat(fy, " L").concat(points[0].x, ",").concat(points[0].y)).stroke({
           width: this.config.strokeWidth,
           color: this.config.strokeColor
-        }); // create a re-useable marker
+        });
+        path.id("leaf#"); // create a re-useable marker
 
         var index = _toConsumableArray(this.canvas.defs().node.childNodes).findIndex(function (d) {
           return d.id === "defaultThinMarker";
@@ -27122,12 +29101,11 @@ var LeafExtenstion = /*#__PURE__*/function () {
         position: [this.initialX, this.initialY]
       });
       this.finalX = svg.cx();
-      this.finalY = svg.cy();
-      this.events.forEach(function (_ref) {
-        var event = _ref.event,
-            func = _ref.func;
-        svg.on(event, func);
-      });
+      this.finalY = svg.cy(); // this.events.forEach(({ event, func }) => {
+      //   svg.on(event, func)
+      // })
+
+      edgesStartingLine.remove();
       this.svg = svg;
     }
   }, {
@@ -27154,55 +29132,130 @@ var LeafExtenstion = /*#__PURE__*/function () {
   return LeafExtenstion;
 }();
 
-var TreeConfig = {
-  maxLayoutWidth: 600,
-  minHeight: window.innerHeight - 10,
-  // where to translate a given layout
+/**
+ * @namespace TreeLayoutConfiguration
+ * @description This object contains default configuration for tree layout representations.
+ *
+ * @property {Number} translateX=0                      - Adds additional X translation for all SVG elements before rendering.
+ * @property {Number} translateY=0                      - Adds additional Y translation for all SVG elements before rendering.
+ * @property {Number} animationSpeed=300                - Determins how fast SVG elements animates inside the current layout.
+ * @property {Number} orientation=vertical              - Determins how tree orientation. Available: "vertical" or "horizontal"
+ * @property {Number} vSpacing=100                      - Determins the vertical spacing between nodes.
+ * @property {Number} hSpacing=25                       - Determins the horizontal spacing between nodes.
+ * @property {String} renderingSize=min                 - Determins the node render representation. Available: "min" or "max".
+ * @property {Boolean} showAdditionEdges=true           - Renders additional edges to indicate loadable nodes.
+ */
+var TreeLayoutConfiguration = {
   translateX: 0,
   translateY: 0,
-  // layout animation speed
   animationSpeed: 300,
-  // how a layout starts
-  layoutState: "expanded",
-  // expanded, collapsed // TODO: ask: even needed?
-  // tree orientation
   orientation: "vertical",
-  // vertical, horizontal
-  // hide all other layouts and center selected one
-  hideOtherLayouts: false,
-  // TODO:
-  // node spacing
   vSpacing: 100,
   hSpacing: 25,
-  // how to render all nodes
   renderingSize: "min",
   // min, max
   // renders additional edges to indicate loadable nodes
-  showAdditionEdges: true // true, false
-
+  showLeafNodes: true,
+  childLimit: 5
 };
+
+/**
+ * This class is calculates and renders the tree layout.
+ */
 
 var TreeLayout = /*#__PURE__*/function (_BaseLayout) {
   _inherits(TreeLayout, _BaseLayout);
 
+  var _super = _createSuper(TreeLayout);
+
   function TreeLayout() {
     var _this;
 
-    var customTreeConfig = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    var customConfig = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    var events = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
+    var additionalNodeRepresentations = arguments.length > 2 ? arguments[2] : undefined;
 
     _classCallCheck(this, TreeLayout);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(TreeLayout).call(this));
-    _this.config = _objectSpread2({}, TreeConfig, {}, customTreeConfig);
+    _this = _super.call(this, additionalNodeRepresentations);
+
+    if (customConfig.root === undefined) {
+      throw new Error("No Focus element reference id provided");
+    }
+
+    if (customConfig.renderDepth === undefined) {
+      throw new Error("The tree layout requires a defined render depth");
+    }
+
+    _this.config = _objectSpread2({}, TreeLayoutConfiguration, {}, customConfig); // layout specific
+
+    _this.rootId = customConfig.root;
+    _this.renderDepth = customConfig.renderDepth;
     _this.leafs = [];
+
+    _this.registerMouseEvents(events);
+
     return _this;
   }
 
   _createClass(TreeLayout, [{
-    key: "calculateLayout",
-    value: function calculateLayout() {
+    key: "registerMouseEvents",
+    value: function registerMouseEvents(events) {
       var _this2 = this;
 
+      var loadOrHideData = /*#__PURE__*/function () {
+        var _ref = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee(node) {
+          return regeneratorRuntime.wrap(function _callee$(_context) {
+            while (1) {
+              switch (_context.prev = _context.next) {
+                case 0:
+                  _this2.leafs.forEach(function (leaf) {
+                    leaf.removeLeaf();
+                  });
+
+                  _this2.leafs = [];
+                  _context.next = 4;
+                  return _this2.updateTreeDataAsync(node);
+
+                case 4:
+                case "end":
+                  return _context.stop();
+              }
+            }
+          }, _callee);
+        }));
+
+        return function loadOrHideData(_x) {
+          return _ref.apply(this, arguments);
+        };
+      }();
+
+      if (events.length > 0) {
+        this.events = [{
+          name: "nodeEvent",
+          func: loadOrHideData,
+          mouse: events.find(function (e) {
+            return e.name === "nodeEvent";
+          }).mouse || "dblclick",
+          modifier: events.find(function (e) {
+            return e.name === "nodeEvent";
+          }).modifier || "ctrlKey"
+        }];
+      } else {
+        this.events = [{
+          name: "nodeEvent",
+          func: loadOrHideData,
+          mouse: "dblclick",
+          modifier: "ctrlKey"
+        }];
+      }
+    }
+  }, {
+    key: "calculateLayout",
+    value: function calculateLayout() {
+      var _this3 = this;
+
+      var offset = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
       var isVertical = this.config.orientation === "vertical"; // construct a tree
 
       var constructTree = function constructTree(array, parentRef, rootRef) {
@@ -27229,7 +29282,7 @@ var TreeLayout = /*#__PURE__*/function (_BaseLayout) {
         return root;
       };
 
-      var InitializeNodes = function InitializeNodes(node, parent, prevSibling, depth) {
+      var initializeNodes = function initializeNodes(node, parent, prevSibling, depth) {
         node.setDepth(depth);
         node.setParent(parent);
         node.setPrevSibling(prevSibling);
@@ -27242,23 +29295,28 @@ var TreeLayout = /*#__PURE__*/function (_BaseLayout) {
 
         if (node.getChildren() === undefined) {
           node.setChildren([]);
-        }
+        } // if (node.children.length <= this.config.childLimit) {
+
 
         node.children.forEach(function (child, i) {
           var prev = i >= 1 ? node.children[i - 1] : null;
-          InitializeNodes(child, node, prev, depth + 1);
-        });
+          initializeNodes(child, node, prev, depth + 1);
+        }); // } else {
+        // node.childrenIds = node.children.map(c => c.id)
+        // node.children = []
+        // this.nodes = this.nodes
+        // }
       };
 
       var finalizeTree = function finalizeTree(node) {
-        node.setFinalX(node.getFinalX() + _this2.config.translateX);
-        node.setFinalY(node.getFinalY() + _this2.config.translateY);
+        node.setFinalX(node.getFinalX() + _this3.config.translateX);
+        node.setFinalY(node.getFinalY() + _this3.config.translateY);
         node.children.forEach(function (child) {
           finalizeTree(child);
         });
       };
 
-      var CalculateFinalPositions = function CalculateFinalPositions(node, modifier) {
+      var calculateFinalPositions = function calculateFinalPositions(node, modifier) {
         if (isVertical) {
           node.setFinalX(node.getFinalX() + modifier);
         } else {
@@ -27266,18 +29324,18 @@ var TreeLayout = /*#__PURE__*/function (_BaseLayout) {
         }
 
         node.children.forEach(function (child) {
-          CalculateFinalPositions(child, node.modifier + modifier);
+          calculateFinalPositions(child, node.modifier + modifier);
         });
       };
 
-      var CalculateInitialX = function CalculateInitialX(node) {
+      var calculateInitialX = function calculateInitialX(node) {
         node.children.forEach(function (child) {
-          CalculateInitialX(child);
+          calculateInitialX(child);
         });
-        var w = _this2.config.renderingSize === "max" ? node.config.maxWidth : node.config.minWidth;
-        var h = _this2.config.renderingSize === "max" ? node.config.maxHeight : node.config.minHeight;
-        w += _this2.config.hSpacing;
-        h += _this2.config.vSpacing;
+        var w = _this3.config.renderingSize === "max" ? node.config.maxWidth : node.config.minWidth;
+        var h = _this3.config.renderingSize === "max" ? node.config.maxHeight : node.config.minHeight;
+        w += _this3.config.hSpacing;
+        h += _this3.config.vSpacing;
 
         if (isVertical) {
           node.setFinalY(node.getDepth() * h); // if node has no children
@@ -27407,13 +29465,13 @@ var TreeLayout = /*#__PURE__*/function (_BaseLayout) {
         };
 
         var distance = 0;
-        var w = _this2.config.renderingSize === "max" ? node.config.maxWidth : node.config.minWidth;
-        var h = _this2.config.renderingSize === "max" ? node.config.maxHeight : node.config.minHeight;
+        var w = _this3.config.renderingSize === "max" ? node.config.maxWidth : node.config.minWidth;
+        var h = _this3.config.renderingSize === "max" ? node.config.maxHeight : node.config.minHeight;
 
         if (isVertical) {
-          distance = w + _this2.config.hSpacing;
+          distance = w + _this3.config.hSpacing;
         } else {
-          distance = h + _this2.config.vSpacing;
+          distance = h + _this3.config.vSpacing;
         }
 
         for (var i = 0; i < node.children.length - 1; i += 1) {
@@ -27471,22 +29529,19 @@ var TreeLayout = /*#__PURE__*/function (_BaseLayout) {
       };
 
       var addLeaf = function addLeaf(node, initialX, initialY) {
-        if (_this2.config.showAdditionEdges === false) {
+        if (_this3.config.showLeafNodes === false) {
           return;
         }
 
         if (node.children.length === 0 && node.childrenIds.length > 0) {
-          var leaf = new LeafExtenstion(_this2.canvas, node);
+          var leaf = new LeafExtenstion(_this3.canvas, node);
           leaf.finalX = node.finalX;
-          var h = _this2.config.renderingSize === "max" ? node.config.maxHeight : node.config.minHeight;
+          var h = _this3.config.renderingSize === "max" ? node.config.maxHeight : node.config.minHeight;
           leaf.finalY = node.finalY + h + 35;
           leaf.initialX = initialX;
-          leaf.initialY = initialY;
-          leaf.addEvent("dblclick", function () {
-            _this2.manageDataAsync(node);
-          });
+          leaf.initialY = initialY; // leaf.addEvent("dblclick", () => { this.manageDataAsync(node) })
 
-          _this2.leafs.push(leaf);
+          _this3.leafs.push(leaf);
         }
 
         node.children.forEach(function (child) {
@@ -27494,46 +29549,162 @@ var TreeLayout = /*#__PURE__*/function (_BaseLayout) {
         });
       };
 
-      var root = constructTree(this.nodes)[0]; // TODO: filter for root
+      var adjustPositions = function adjustPositions(tree) {
+        var toRender = [tree];
+        var rendered = [];
 
-      InitializeNodes(root, null, null, 0);
-      CalculateInitialX(root);
-      CalculateFinalPositions(root, 0);
+        var _loop = function _loop() {
+          var current = toRender.shift();
+
+          var node = _this3.nodes.find(function (n) {
+            return n.id === current.id;
+          });
+
+          rendered.push(node);
+          current.children.forEach(function (child) {
+            toRender.push(child);
+          });
+        };
+
+        while (toRender.length) {
+          _loop();
+        }
+
+        var hAdjustment = Math.min.apply(Math, _toConsumableArray(rendered.map(function (node) {
+          var w = _this3.config.renderingSize === "max" ? node.getMaxWidth() : node.getMinWidth();
+          return node.getFinalX() - w;
+        })));
+        var vAdjustment = Math.min.apply(Math, _toConsumableArray(rendered.map(function (node) {
+          var h = _this3.config.renderingSize === "max" ? node.getMaxHeight() : node.getMinHeight();
+          return node.getFinalY() - h;
+        })));
+        rendered.forEach(function (node) {
+          var x = node.getFinalX() - hAdjustment + offset + _this3.config.translateX;
+
+          var y = node.getFinalY() - vAdjustment + _this3.config.translateY;
+
+          node.setFinalX(x);
+          node.setFinalY(y);
+        });
+
+        _this3.edges.forEach(function (edge) {
+          edge.finalToX = edge.finalToX - hAdjustment + offset + _this3.config.translateX;
+          edge.finalFromX = edge.finalFromX - hAdjustment + offset + _this3.config.translateX;
+          edge.finalToY = edge.finalToY - vAdjustment + _this3.config.translateY;
+          edge.finalFromY = edge.finalFromY - vAdjustment + _this3.config.translateY;
+        });
+
+        var x0 = Math.min.apply(Math, _toConsumableArray(rendered.map(function (n) {
+          var w = _this3.config.renderingSize === "max" ? n.getMaxWidth() : n.getMinWidth();
+          return n.getFinalX() - w;
+        })));
+        var y0 = 0;
+        var x1 = Math.max.apply(Math, _toConsumableArray(rendered.map(function (n) {
+          var w = _this3.config.renderingSize === "max" ? n.getMaxWidth() : n.getMinWidth();
+          return n.getFinalX() + w;
+        })));
+        var y1 = 0;
+        var x2 = x1;
+        var y2 = Math.max.apply(Math, _toConsumableArray(rendered.map(function (n) {
+          var h = _this3.config.renderingSize === "max" ? n.getMaxHeight() : n.getMinHeight();
+          return n.getFinalY() + h;
+        }))); // this.canvas.circle(5).fill("#000").center(x0, y0)
+        // this.canvas.circle(5).fill("#75f").center(x1, y1)
+        // this.canvas.circle(5).fill("#f75").center(x2, y2)
+
+        var calculateDistance = function calculateDistance(sx, sy, tx, ty) {
+          var dx = tx - sx;
+          var dy = ty - sy;
+          return Math.sqrt(dx * dx + dy * dy);
+        };
+
+        _this3.layoutInfo = {
+          x: x0,
+          y: y0,
+          cx: (x0 + x2) / 2,
+          cy: (y0 + y2) / 2,
+          w: calculateDistance(x0, y0, x1, y1),
+          h: calculateDistance(x1, y1, x2, y2)
+        };
+      };
+
+      var addEdgeReferences = function addEdgeReferences(node) {
+        node.children.forEach(function (child) {
+          var e = _this3.edges.find(function (e) {
+            return e.fromNode.id === child.id && e.toNode.id === node.id;
+          });
+
+          node.addIncomingEdge(e);
+          child.addOutgoingEdge(e);
+          addEdgeReferences(child);
+        });
+      };
+
+      var root = constructTree(this.nodes)[0]; // TODO: re-write
+
+      initializeNodes(root, null, null, 0);
+      calculateInitialX(root);
+      calculateFinalPositions(root, 0);
       fixOverlappingConflicts(root);
       centerRoot(root);
       finalizeTree(root);
       calcRadialEdges(this.edges);
-      addLeaf(root, root.getFinalX(), root.getFinalY()); // console.log(root)
+      addLeaf(root, root.getFinalX(), root.getFinalY());
+      adjustPositions(root);
+      addEdgeReferences(root); // console.log(root)
     }
   }, {
     key: "renderLayout",
     value: function renderLayout() {
-      var _this3 = this;
+      var _this4 = this;
 
-      this.centerX = this.nodes[0].getFinalX();
-      this.centerY = this.nodes[0].getFinalY();
-      this.nodes.forEach(function (node) {
-        if (_this3.config.renderingSize === "max") {
-          if (node.svg === null) node.renderAsMax(_this3.centerX, _this3.centerY);
-        } else if (_this3.config.renderingSize === "min") {
-          if (node.svg === null) {
-            node.renderAsMin(_this3.centerX, _this3.centerY);
+      var X = this.nodes.find(function (n) {
+        return n.id === _this4.rootId;
+      }).getFinalX();
+      var Y = this.nodes.find(function (n) {
+        return n.id === _this4.rootId;
+      }).getFinalY();
+
+      var renderNodes = function renderNodes() {
+        _this4.nodes.forEach(function (node) {
+          if (node.isRendered() === false) {
+            if (_this4.config.renderingSize === "max") node.renderAsMax(X, Y);
+            if (_this4.config.renderingSize === "min") node.renderAsMin(X, Y);
+
+            if (node.children.length > _this4.config.childLimit) ;
+
+            node.svg.on(_this4.events[0].mouse, function (e) {
+              if (_this4.events[0].modifier !== null) {
+                if (_this4.events[0].modifier, e[_this4.events[0].modifier]) {
+                  _this4.events[0].func(node);
+                }
+              }
+            });
+            node.outgoingEdges.forEach(function (edge) {
+              if (edge.isRendered() === false) {
+                edge.render(X, Y);
+              }
+            });
+          } else if (node.isRendered() === true) {
+            node.transformToFinalPosition();
           }
-        }
+        });
 
-        node.transformToFinalPosition();
-      });
-      this.leafs.forEach(function (leaf) {
-        leaf.render();
-        leaf.transformToFinalPosition();
-      });
-      this.edges.forEach(function (edge) {
-        if (edge.svg === null) {
-          edge.render(_this3.centerX, _this3.centerY);
-        }
+        _this4.leafs.forEach(function (leaf) {
+          leaf.render();
+          leaf.transformToFinalPosition();
+        });
 
-        edge.transformToFinalPosition();
-      });
+        _this4.edges.forEach(function (edge) {
+          if (edge.isRendered() === false) {
+            edge.render(X, Y);
+          } else if (edge.isRendered() === true) {
+            edge.transformToFinalPosition();
+          }
+        });
+      };
+
+      renderNodes();
     }
   }]);
 
@@ -27644,11 +29815,14 @@ var ContextualConainer = /*#__PURE__*/function () {
       var _this2 = this;
 
       if (this.svg !== null) {
-        this.svg.animate({
+        this.svg.attr({
+          opacity: 1
+        }).animate({
           duration: this.config.animationSpeed
         }).transform({
-          scale: 0.001,
           position: [X, Y]
+        }).attr({
+          opacity: 0
         }).after(function () {
           _this2.svg.remove();
 
@@ -27661,75 +29835,362 @@ var ContextualConainer = /*#__PURE__*/function () {
     value: function isRendered() {
       return this.svg !== null;
     }
+  }, {
+    key: "getFinalX",
+    value: function getFinalX() {
+      return this.finalX;
+    }
+  }, {
+    key: "getFinalY",
+    value: function getFinalY() {
+      return this.finalY;
+    }
   }]);
 
   return ContextualConainer;
+}();
+
+var Config = {
+  offset: 8,
+  animationSpeed: 300,
+  color: "#F26A7C",
+  strokeWidth: 20,
+  blockarrowLineWidth: 20,
+  blockarrowArrowWidth: 35,
+  blockarrowArrowLength: 15,
+  labelColor: "#222",
+  labelFontFamily: "Montserrat",
+  labelFontSize: 16,
+  labelFontWeight: 600,
+  labelFontStyle: "normal",
+  labelBackground: "#ffffffcc",
+  labelTranslateX: 0,
+  labelTranslateY: 0
+};
+
+var ContextualAssigned = /*#__PURE__*/function () {
+  function ContextualAssigned(canvas, ix, iy, fx, fy, tx, ty, dx, dy, rx, ry) {
+    _classCallCheck(this, ContextualAssigned);
+
+    this.canvas = canvas;
+    this.svg = null;
+    this.config = _objectSpread2({}, Config);
+    this.initialX = ix;
+    this.initialY = iy;
+    this.fx = fx;
+    this.fy = fy;
+    this.tx = tx;
+    this.ty = ty;
+    this.dx = dx;
+    this.dy = dy;
+    this.rx = rx;
+    this.ry = ry;
+    this.color = this.config.color;
+  }
+
+  _createClass(ContextualAssigned, [{
+    key: "render",
+    value: function render() {
+      var svg = this.canvas.group();
+
+      var calculateDistance = function calculateDistance(sx, sy, tx, ty) {
+        var dx = tx - sx;
+        var dy = ty - sy;
+        return Math.sqrt(dx * dx + dy * dy);
+      };
+
+      this.h = calculateDistance(this.fx, this.fy, this.tx, this.ty);
+      var cx = (this.fx + this.tx) / 2;
+      var cy = (this.fy + this.ty) / 2; // create new elements
+
+      var lw = this.config.blockarrowLineWidth;
+      var aw = this.config.blockarrowArrowWidth;
+      var al = this.config.blockarrowArrowLength;
+      var dx = this.tx - this.fx;
+      var dy = this.ty - this.fy;
+      var len = Math.sqrt(dx * dx + dy * dy);
+      var dW = aw - lw;
+      var angle = Math.atan2(dy, dx) * 180 / Math.PI;
+      this.angle = angle;
+      var svgPath = "\n          M 0,".concat(-lw / 2, "\n          h ").concat(len - al, "\n          v ").concat(-dW / 2, "\n          L ").concat(len, ",0\n          L ").concat(len - al, ",").concat(aw / 2, "\n          v ").concat(-dW / 2, "\n          H 0\n          Z\n        ");
+      var path = this.canvas.path();
+      path.plot(svgPath);
+      path.fill(this.config.color);
+      path.center(cx, cy);
+      path.dy(this.offset);
+      path.rotate(angle);
+      path.scale(0.0001);
+      path.attr({
+        opacity: 0
+      });
+      svg.add(path);
+      var line = "M".concat(this.dx, ",").concat(this.dy, " L").concat(this.rx, ",").concat(this.ry);
+      var path2 = this.canvas.path(line).stroke({
+        width: this.config.strokeWidth,
+        color: this.config.color,
+        dasharray: "0"
+      });
+      path2.scale(0.0001);
+      path2.attr({
+        opacity: 0
+      });
+      svg.add(path2);
+      this.svg = svg;
+    }
+  }, {
+    key: "transformToFinalPosition",
+    value: function transformToFinalPosition() {
+      this.svg.get(0).back();
+      this.svg.get(1).back();
+      this.svg.get(0).animate({
+        duration: this.config.animationSpeed
+      }).dx(this.offset).transform({
+        scale: 1,
+        rotate: this.angle
+      }).attr({
+        opacity: 1
+      });
+      this.svg.get(1).animate({
+        duration: this.config.animationSpeed
+      }).transform({
+        scale: 1
+      }).attr({
+        opacity: 1
+      });
+    }
+  }, {
+    key: "transformToInitialPosition",
+    value: function transformToInitialPosition() {}
+  }, {
+    key: "removeConnection",
+    value: function removeConnection(X, Y) {
+      if (this.svg !== null) {
+        this.svg.attr({
+          opacity: 0
+        });
+        this.svg.remove();
+        this.svg = null;
+      }
+    }
+  }, {
+    key: "isRendered",
+    value: function isRendered() {
+      return this.svg !== null;
+    }
+  }, {
+    key: "getFinalX",
+    value: function getFinalX() {
+      return this.fx;
+    }
+  }, {
+    key: "getFinalY",
+    value: function getFinalY() {
+      return this.fy;
+    }
+  }]);
+
+  return ContextualAssigned;
+}();
+
+var ContextualConnectionConfig = {
+  offset: 8,
+  animationSpeed: 300,
+  color1: null,
+  color2: null,
+  blockarrowLineWidth: 25,
+  blockarrowArrowWidth: 40,
+  blockarrowArrowLength: 20,
+  labelColor: "#222",
+  labelFontFamily: "Montserrat",
+  labelFontSize: 16,
+  labelFontWeight: 600,
+  labelFontStyle: "normal",
+  labelBackground: "#ffffffcc",
+  labelTranslateX: 0,
+  labelTranslateY: 0
+};
+
+var ContextualContainerConnection = /*#__PURE__*/function () {
+  function ContextualContainerConnection(canvas, ix, iy, fx, fy, tx, ty, color1, color2, offset) {
+    _classCallCheck(this, ContextualContainerConnection);
+
+    this.canvas = canvas;
+    this.svg = null;
+    this.config = _objectSpread2({}, ContextualConnectionConfig);
+    this.initialX = ix;
+    this.initialY = iy;
+    this.fx = fx;
+    this.fy = fy;
+    this.tx = tx;
+    this.ty = ty;
+    this.color1 = color1;
+    this.color2 = color2;
+    this.offset = offset;
+  }
+
+  _createClass(ContextualContainerConnection, [{
+    key: "render",
+    value: function render() {
+      var _this = this;
+
+      // this.canvas.circle(5).fill(this.color).center(this.tx, this.ty)
+      // this.canvas.circle(5).fill(this.color).center(this.fx, this.fy)
+      var calculateDistance = function calculateDistance(sx, sy, tx, ty) {
+        var dx = tx - sx;
+        var dy = ty - sy;
+        return Math.sqrt(dx * dx + dy * dy);
+      };
+
+      this.h = calculateDistance(this.fx, this.fy, this.tx, this.ty);
+      var cx = (this.fx + this.tx) / 2;
+      var cy = (this.fy + this.ty) / 2; // create new elements
+
+      var lw = this.config.blockarrowLineWidth;
+      var aw = this.config.blockarrowArrowWidth;
+      var al = this.config.blockarrowArrowLength;
+      var dx = this.tx - this.fx;
+      var dy = this.ty - this.fy;
+      var len = Math.sqrt(dx * dx + dy * dy);
+      var dW = aw - lw;
+      var angle = Math.atan2(dy, dx) * 180 / Math.PI;
+      this.angle = angle;
+      var svgPath = "\n          M 0,".concat(-lw / 2, "\n          h ").concat(len - al, "\n          v ").concat(-dW / 2, "\n          L ").concat(len, ",0\n          L ").concat(len - al, ",").concat(aw / 2, "\n          v ").concat(-dW / 2, "\n          H 0\n          Z\n        ");
+      var path = this.canvas.path();
+      path.plot(svgPath);
+      var gradient = this.canvas.gradient("linear", function (add) {
+        add.stop(0, _this.color1);
+        add.stop(1, _this.color2);
+      });
+      path.fill(gradient);
+      path.center(cx, cy);
+      path.dy(this.offset);
+      path.rotate(angle);
+      path.scale(0.0001);
+      path.attr({
+        opacity: 0
+      });
+      this.svg = path;
+    }
+  }, {
+    key: "transformToFinalPosition",
+    value: function transformToFinalPosition() {
+      this.svg.back();
+      this.svg.animate({
+        duration: this.config.animationSpeed
+      }).dx(this.offset).transform({
+        scale: 1,
+        rotate: this.angle
+      }).attr({
+        opacity: 1
+      });
+    }
+  }, {
+    key: "transformToInitialPosition",
+    value: function transformToInitialPosition() {}
+  }, {
+    key: "removeConnection",
+    value: function removeConnection(X, Y) {
+      if (this.svg !== null) {
+        this.svg.remove();
+        this.svg = null;
+      }
+    }
+  }, {
+    key: "isRendered",
+    value: function isRendered() {
+      return this.svg !== null;
+    }
+  }, {
+    key: "getFinalX",
+    value: function getFinalX() {
+      return this.fx;
+    }
+  }, {
+    key: "getFinalY",
+    value: function getFinalY() {
+      return this.fy;
+    }
+  }]);
+
+  return ContextualContainerConnection;
 }();
 
 /**
  * @namespace ContextualLayoutConfiguration
  * @description This object contains default configuration for contextual layout representations.
  *
- * @property {Number} layoutWidth=1200             - The width used by the layout representation.
- * @property {Number} layoutHeight=800             - The height used by the layout representation.
+ * @property {Number} layoutWidth=1200                            - The width used by the layout representation.
+ * @property {Number} layoutHeight=800                            - The height used by the layout representation.
+ * @property {Number} translateX=-50                              - Adds additional X translation for all SVG elements before rendering.
+ * @property {Number} translateY=0                                - Adds additional Y translation for all SVG elements before rendering.
+ * @property {Number} animationSpeed=300                          - Determins how fast SVG elements animates inside the current layout.
+ * @property {Boolean} hideOtherLayouts=false                     - If set to true, other layouts are not visible.
+ * @property {Number} spacing=32                                  - Determins the minimal spacing between nodes.
+ * @property {String} renderingSize=min                           - Determins the node render representation. Available: "min" or "max".
+ * @property {Number} assignedFocusDistance=800                   - Determins the distance between the assigned and focus node.
+ * @property {Number} riskFocusDistance=500                       - Determins the distance between all risk nodes and focus node.
+ * @property {Number} parentFocusDistance=80                      - Determins the distance between all parent nodes and focus node.
+ * @property {Number} riskContainerNodeLimit=3                    - Limits how many nodes the risk container renderes.
+ * @property {Number} riskContainerColumns=2                      - Limits how many columns the risk container has.
+ * @property {Number} riskContainderBorderRadius=2                - Determins the containers border radius.
+ * @property {String} riskContainerBorderStrokeColor=#888888cc    - Determins the containers border color.
+ * @property {Number} riskContainerBorderStrokeWidth=1.85         - Determins the containers border width.
+ * @property {String} riskContainerBackgroundColor=#ff8e9e05      - Determins the containers background color.
+ * @property {Number} childContainerNodeLimit=6                   - Limits how many nodes the child container renderes.
+ * @property {Number} childContainerColumns=3                     - Limits how many columns the child container has.
+ * @property {Number} childContainderBorderRadius=5               - Determins the containers border radius.
+ * @property {String} childContainerBorderStrokeColor=#888888cc   - Determins the containers border color.
+ * @property {Number} childContainerBorderStrokeWidth=1.85        - Determins the containers border width.
+ * @property {String} childContainerBackgroundColor=#fff          - Determins the containers background color.
+ * @property {Number} parentContainerNodeLimit=6                  - Limits how many nodes the child container renderes.
+ * @property {Number} parentContainerColumns=3                    - Limits how many columns the child container has.
+ * @property {Number} parentContainderBorderRadius=5              - Determins the containers border radius.
+ * @property {String} parentContainerBorderStrokeColor=#888888cc  - Determins the containers border color.
+ * @property {Number} parentContainerBorderStrokeWidth=1.85       - Determins the containers border width.
+ * @property {String} parentContainerBackgroundColor=#fff         - Determins the containers background color.
  */
 var ContextualLayoutConfiguration = {
-  // limit width and size
-  maxLayoutWidth: 800,
+  maxLayoutWidth: 1200,
   maxLayoutHeight: 800,
-  // where to translate a given layout
   translateX: -50,
   translateY: 0,
-  // layout animation speed for all nodes and edges
   animationSpeed: 300,
-  // hide all other layouts and center selected one
   hideOtherLayouts: false,
   // TODO:
-  // spacing between nodes
   spacing: 16,
-  assignedFocusDistance: 800,
-  // how to render all nodes
   renderingSize: "min",
-  // min max
-  // risk container
+  assignedFocusDistance: 800,
   riskFocusDistance: 500,
-  riskContainerNodeLimit: 4,
+  childrenFocusDistance: 80,
+  parentFocusDistance: 80,
+  riskContainerNodeLimit: 3,
   riskContainerColumns: 2,
-  riskContainderBorderRadius: 0,
-  riskContainerBorderStrokeColor: "#ff8e9e10",
+  riskContainderBorderRadius: 5,
+  riskContainerBorderStrokeColor: "#888888cc",
   riskContainerBorderStrokeWidth: 1.85,
   riskContainerBackgroundColor: "#ff8e9e05",
-  // children container
-  childrenFocusDistance: 80,
   childContainerNodeLimit: 6,
   childContainerColumns: 3,
   childContainderBorderRadius: 5,
-  childContainerBorderStrokeColor: "#888888",
+  childContainerBorderStrokeColor: "#888888cc",
   childContainerBorderStrokeWidth: 1.85,
   childContainerBackgroundColor: "#fff",
-  // parent container
-  parentFocusDistance: 80,
   parentContainerNodeLimit: 6,
   parentContainerColumns: 3,
   parentContainderBorderRadius: 5,
-  parentContainerBorderStrokeColor: "#888888",
+  parentContainerBorderStrokeColor: "#888888cc",
   parentContainerBorderStrokeWidth: 1.85,
   parentContainerBackgroundColor: "#fff"
 };
 
-/* eslint-disable no-bitwise */
-
-var LightenDarkenColor$1 = function LightenDarkenColor(col, amt) {
-  var num = parseInt(col, 16);
-  var r = (num >> 16) + amt;
-  var b = (num >> 8 & 0x00FF) + amt;
-  var g = (num & 0x0000FF) + amt;
-  var newColor = g | b << 8 | r << 16;
-  return newColor.toString(16);
-};
+/**
+ * This class calculates and renders the contextual layout.
+ */
 
 var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
   _inherits(ContextualLayout, _BaseLayout);
+
+  var _super = _createSuper(ContextualLayout);
 
   function ContextualLayout() {
     var _this;
@@ -27738,14 +30199,15 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
 
     _classCallCheck(this, ContextualLayout);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(ContextualLayout).call(this));
+    _this = _super.call(this);
 
     if (customConfig.focus === undefined) {
       throw new Error("No Focus element reference id provided");
     }
 
     _this.config = _objectSpread2({}, ContextualLayoutConfiguration, {}, customConfig);
-    _this.focusId = customConfig.focus;
+    _this.focusId = customConfig.focus; // layout specific
+
     _this.focus = null;
     _this.parents = [];
     _this.children = [];
@@ -27753,6 +30215,7 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
     _this.risks = [];
     _this.containers = [];
     _this.expanders = [];
+    _this.connections = [];
     return _this;
   }
 
@@ -27953,7 +30416,7 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
 
             x0 += _this2.config.spacing;
             y0 -= _this2.config.spacing * 1.5;
-            var expanderTextColor = "#".concat(LightenDarkenColor$1(_this2.config.childContainerBorderStrokeColor.substr(1), -50));
+            var expanderTextColor = "#".concat(Colorshift(_this2.config.childContainerBorderStrokeColor.substr(1), -50));
             newExpander.updateConfig({
               expanderTextColor: expanderTextColor
             });
@@ -28151,7 +30614,7 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
 
             x3 += _this2.config.spacing;
             y3 += _this2.config.spacing * 1.5;
-            var expanderTextColor = "#".concat(LightenDarkenColor$1(_this2.config.parentContainerBorderStrokeColor.substr(1), -50));
+            var expanderTextColor = "#".concat(Colorshift(_this2.config.parentContainerBorderStrokeColor.substr(1), -50));
             newExpander.updateConfig({
               expanderTextColor: expanderTextColor
             });
@@ -28351,7 +30814,7 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
 
             x0 += _this2.config.spacing;
             y0 -= _this2.config.spacing * 1;
-            var expanderTextColor = "#".concat(LightenDarkenColor$1(_this2.config.riskContainerBorderStrokeColor.substr(1), -50));
+            var expanderTextColor = "#".concat(Colorshift(_this2.config.riskContainerBorderStrokeColor.substr(1), -50));
             newExpander.updateConfig({
               expanderTextColor: expanderTextColor
             });
@@ -28376,11 +30839,210 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
         }
       };
 
+      var calculateParentEdges = function calculateParentEdges() {
+        if (_this2.parents.length > _this2.config.parentContainerColumns) {
+          _this2.parentEdges = [];
+
+          var con = _this2.containers.find(function (c) {
+            return c.type === "parent";
+          });
+
+          var tx = con.finalX;
+          var ty = con.finalY + con.h / 2 + 4;
+
+          var fx = _this2.focus.getFinalX();
+
+          var fy = _this2.focus.getFinalY() - _this2.focus.getMaxHeight() / 2 - 4;
+
+          var ix = _this2.focus.getFinalX();
+
+          var iy = _this2.focus.getFinalY();
+
+          var color2 = _this2.parents.map(function (p) {
+            return p.config.borderStrokeColor;
+          });
+
+          var mostCommon = function mostCommon(array) {
+            if (array.length == 0) return null;
+            var modeMap = {};
+            var maxEl = array[0],
+                maxCount = 1;
+
+            for (var i = 0; i < array.length; i++) {
+              var el = array[i];
+              if (modeMap[el] == null) modeMap[el] = 1;else modeMap[el]++;
+
+              if (modeMap[el] > maxCount) {
+                maxEl = el;
+                maxCount = modeMap[el];
+              }
+            }
+
+            return maxEl;
+          };
+
+          var color1 = _this2.focus.config.borderStrokeColor;
+
+          _this2.connections.push(new ContextualContainerConnection(_this2.canvas, ix, iy, fx, fy, tx, ty, color1, mostCommon(color2), 100));
+        }
+
+        _this2.parentEdges.forEach(function (edge) {
+          edge.calculateEdge({
+            isContextualParent: true
+          });
+        });
+      };
+
+      var calculateChildEdges = function calculateChildEdges() {
+        if (_this2.children.length > _this2.config.childContainerColumns) {
+          _this2.childEdges = [];
+
+          var con = _this2.containers.find(function (c) {
+            return c.type === "child";
+          });
+
+          var fx = con.finalX;
+          var fy = con.finalY - con.h / 2 - 4;
+
+          var tx = _this2.focus.getFinalX();
+
+          var ty = _this2.focus.getFinalY() + _this2.focus.getMaxHeight() / 2 + 4;
+
+          var ix = _this2.focus.getFinalX();
+
+          var iy = _this2.focus.getFinalY();
+
+          var color2 = _this2.children.map(function (p) {
+            return p.config.borderStrokeColor;
+          });
+
+          var mostCommon = function mostCommon(array) {
+            if (array.length == 0) return null;
+            var modeMap = {};
+            var maxEl = array[0],
+                maxCount = 1;
+
+            for (var i = 0; i < array.length; i++) {
+              var el = array[i];
+              if (modeMap[el] == null) modeMap[el] = 1;else modeMap[el]++;
+
+              if (modeMap[el] > maxCount) {
+                maxEl = el;
+                maxCount = modeMap[el];
+              }
+            }
+
+            return maxEl;
+          };
+
+          var color1 = _this2.focus.config.borderStrokeColor;
+
+          _this2.connections.push(new ContextualContainerConnection(_this2.canvas, ix, iy, fx, fy, tx, ty, color1, mostCommon(color2), -100));
+        }
+
+        _this2.childEdges.forEach(function (edge) {
+          edge.calculateEdge({
+            isContextualChild: true
+          });
+        });
+      };
+
+      var calculateFocusAssginedEdge = function calculateFocusAssginedEdge() {
+        if (_this2.assgined === null) {
+          return;
+        }
+
+        var fx = _this2.focus.getFinalX() + _this2.focus.getMaxWidth() / 2 + 4;
+
+        var fy = _this2.focus.getFinalY();
+
+        var tx = _this2.assgined.getFinalX() - _this2.focus.getMinWidth() / 2 - 4;
+
+        var ty = _this2.assgined.getFinalY();
+
+        var ix = _this2.focus.getFinalX();
+
+        var iy = _this2.focus.getFinalY();
+
+        var dx = _this2.focus.getFinalX() + _this2.config.riskFocusDistance;
+
+        var dy = (fy + ty) / 2;
+
+        var rx = _this2.focus.getFinalX() + _this2.config.riskFocusDistance;
+
+        var ry = _this2.focus.getFinalY() + 50 + _this2.config.spacing - 4;
+
+        if (_this2.containers.find(function (c) {
+          return c.type === "risk";
+        }) === undefined) {
+          ry += _this2.config.spacing / 2;
+        }
+
+        _this2.connections.push(new ContextualAssigned(_this2.canvas, ix, iy, fx, fy, tx, ty, dx, dy, rx, ry));
+      };
+
+      var calculateLayoutInfo = function calculateLayoutInfo() {
+        var nodes = [].concat(_toConsumableArray(_this2.parents.slice(0, _this2.config.parentContainerNodeLimit)), _toConsumableArray(_this2.children.slice(0, _this2.config.childContainerNodeLimit)), _toConsumableArray(_this2.risks.slice(0, _this2.config.riskContainerNodeLimit)), [_this2.assgined]);
+        var x0 = Math.min.apply(Math, _toConsumableArray(nodes.map(function (n) {
+          var w = n.getMinWidth();
+          return n.getFinalX() - w / 2 - _this2.config.spacing * 2;
+        })));
+
+        if (_this2.parents.length === 0 && _this2.children.length === 0) {
+          x0 = _this2.focus.getFinalX() - _this2.focus.getMaxWidth() / 2 - _this2.config.spacing * 2;
+        }
+
+        var y0 = 0; // this.canvas.circle(5).fill("#f75").center(x0, y0)
+        // top right
+
+        var x1 = Math.max.apply(Math, _toConsumableArray(nodes.map(function (n) {
+          var w = n.getMinWidth();
+          return n.getFinalX() + w / 2 + _this2.config.spacing / 2;
+        })));
+
+        if (_this2.parents.length === 0 && _this2.children.length === 0) {
+          x1 = _this2.focus.getFinalX() + _this2.focus.getMaxWidth() / 2 + _this2.config.spacing * 2;
+        }
+
+        var y1 = y0; // this.canvas.circle(5).fill("#75f").center(x1, y1)
+        // bottom right
+
+        var x2 = x1;
+        var y2 = Math.max.apply(Math, _toConsumableArray(_this2.nodes.map(function (n) {
+          var h = n.getMinHeight();
+          return n.getFinalY() + h / 2 + _this2.config.spacing / 2;
+        })));
+
+        if (_this2.risks.length === 0 && _this2.children.length === 0) {
+          y2 = (_readOnlyError("y2"), _this2.focus.getFinalY() + _this2.focus.getMaxHeight() / 2 + _this2.config.spacing * 2);
+        } // this.canvas.circle(5).fill("#f75").center(x2, y2)
+        // store layout width and height info
+
+        var calculateDistance = function calculateDistance(sx, sy, tx, ty) {
+          var dx = tx - sx;
+          var dy = ty - sy;
+          return Math.sqrt(dx * dx + dy * dy);
+        };
+
+        _this2.layoutInfo = {
+          x: x0,
+          y: y0,
+          cx: (x0 + x2) / 2,
+          cy: (y0 + y2) / 2,
+          w: calculateDistance(x0, y0, x1, y1),
+          h: calculateDistance(x1, y1, x2, y2)
+        };
+      };
+
       calculateFocusPosition();
       calculateAssignedPosition();
       calculateChildPositions();
       calculateParentPositions();
       calculateRiskPositions();
+      calculateParentEdges();
+      calculateChildEdges();
+      calculateFocusAssginedEdge();
+      calculateLayoutInfo();
       return this.layoutInfo;
     }
   }, {
@@ -28542,7 +31204,7 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
               if (_this3.config.cachedRiskContainerNodeLimit === undefined) {
                 _this3.config = _objectSpread2({}, _this3.config, {
                   cachedRiskContainerNodeLimit: _this3.config.riskContainerNodeLimit,
-                  riskContainerNodeLimit: _this3.parents.length
+                  riskContainerNodeLimit: _this3.risks.length
                 });
 
                 _this3.calculateLayout();
@@ -28562,6 +31224,7 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
                 });
 
                 notRenderedNodes.forEach(function (child) {
+                  // console.log(child.getFinalX(), child.getFinalY())
                   child.renderAsMin(child.getFinalX(), child.getFinalY());
                 });
                 expander.changeToShowMoreText();
@@ -28604,31 +31267,154 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
         });
       };
 
-      var renderNodes = function renderNodes() {
-        if (_this3.assgined.isRendered() === false) {
-          _this3.assgined.renderAsMin(X, Y);
+      var renderConnections = function renderConnections() {
+        _this3.connections.forEach(function (connection) {
+          if (connection.isRendered() === false) {
+            connection.render();
+          }
 
-          _this3.assgined.transformToFinalPosition();
+          if (connection.isRendered() === true) {
+            connection.transformToFinalPosition();
+          }
+        });
+      };
+
+      var makeFocus = /*#__PURE__*/function () {
+        var _ref = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee(node) {
+          var nodesToRemove, fx, fy;
+          return regeneratorRuntime.wrap(function _callee$(_context) {
+            while (1) {
+              switch (_context.prev = _context.next) {
+                case 0:
+                  // remove event
+                  node.svg.off("click"); // close expander (if open)
+
+                  if (_this3.config.cachedChildNodeLimit !== undefined) {
+                    _this3.config = _objectSpread2({}, _this3.config, {
+                      cachedChildNodeLimit: _this3.config.childContainerNodeLimit,
+                      childContainerNodeLimit: _this3.config.cachedChildNodeLimit
+                    });
+                    delete _this3.config.cachedChildNodeLimit;
+                  }
+
+                  if (_this3.config.cachedParentContainerNodeLimit !== undefined) {
+                    _this3.config = _objectSpread2({}, _this3.config, {
+                      cachedParentContainerNodeLimit: _this3.config.parentContainerNodeLimit,
+                      parentContainerNodeLimit: _this3.config.cachedParentContainerNodeLimit
+                    });
+                    delete _this3.config.cachedParentContainerNodeLimit;
+                  }
+
+                  if (_this3.config.cachedRiskContainerNodeLimit !== undefined) {
+                    _this3.config = _objectSpread2({}, _this3.config, {
+                      cachedRiskContainerNodeLimit: _this3.config.riskContainerNodeLimit,
+                      riskContainerNodeLimit: _this3.config.cachedRiskContainerNodeLimit
+                    });
+                    delete _this3.config.cachedRiskContainerNodeLimit;
+                  } // remove nodes
+
+
+                  nodesToRemove = _this3.nodes.filter(function (n) {
+                    if (n.id === node.id) {
+                      return false;
+                    } // if (n.id === this.focus.id) {
+                    //   return false
+                    // }
+
+
+                    return true;
+                  });
+                  nodesToRemove.forEach(function (nodeToRemove) {
+                    nodeToRemove.removeNode(nodeToRemove.getFinalX(), nodeToRemove.getFinalY() + 100, {
+                      opacity: 0
+                    });
+                  });
+                  _this3.assgined = null;
+                  _this3.risks = [];
+                  _this3.parents = [];
+                  _this3.children = []; // remove other stuff
+
+                  _this3.containers.forEach(function (container) {
+                    container.removeContainer(container.getFinalX(), container.getFinalY() + 100);
+                  });
+
+                  _this3.containers = [];
+
+                  _this3.expanders.forEach(function (expander) {
+                    expander.removeNode();
+                  });
+
+                  _this3.expanders = [];
+
+                  _this3.connections.forEach(function (connection) {
+                    connection.removeConnection();
+                  });
+
+                  _this3.connections = []; // remove edges
+
+                  _this3.parentEdges.forEach(function (edge) {
+                    edge.removeEdge();
+                  });
+
+                  _this3.parentEdges = [];
+
+                  _this3.childEdges.forEach(function (edge) {
+                    edge.removeEdge();
+                  });
+
+                  _this3.childEdges = []; // console.log(this.focus)
+
+                  _this3.nodes = _this3.nodes.filter(function (n) {
+                    return n.id === node.id;
+                  });
+                  _this3.edges = [];
+                  fx = _this3.focus.getFinalX();
+                  fy = _this3.focus.getFinalY();
+                  node.transformToMax(fx, fy);
+                  node.transformToFinalPosition(fx, fy);
+
+                  _this3.focus.transformToMin();
+
+                  _this3.focus = node;
+                  _context.next = 30;
+                  return _this3.loadAdditionalContextualDataAsync();
+
+                case 30:
+                case "end":
+                  return _context.stop();
+              }
+            }
+          }, _callee);
+        }));
+
+        return function makeFocus(_x) {
+          return _ref.apply(this, arguments);
+        };
+      }();
+
+      var renderNodes = function renderNodes() {
+        if (_this3.assgined !== null) {
+          if (_this3.assgined.isRendered() === false) {
+            _this3.assgined.renderAsMin(X, Y);
+          } else if (_this3.assgined.isRendered() === true) {
+            _this3.assgined.transformToFinalPosition();
+          }
         }
 
         if (_this3.focus.isRendered() === false) {
           _this3.focus.renderAsMax(X, Y);
-
+        } else if (_this3.focus.isRendered() === true) {
           _this3.focus.transformToFinalPosition();
-
-          console.log(_this3.focus, _this3.focus.getFinalY());
         }
 
         _this3.parents.forEach(function (parent, i) {
           if (i < _this3.config.parentContainerNodeLimit) {
             if (parent.isRendered() === false) {
               parent.addEvent("click", function () {
-                return _this3.loadAdditionalContextualDataAsync(parent);
+                return makeFocus(parent);
               });
               parent.renderAsMin(X, Y);
-            }
-
-            if (parent.isRendered() === true) {
+            } else if (parent.isRendered() === true) {
               parent.transformToFinalPosition();
             }
           }
@@ -28637,10 +31423,11 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
         _this3.children.forEach(function (child, i) {
           if (i < _this3.config.childContainerNodeLimit) {
             if (child.isRendered() === false) {
+              child.addEvent("click", function () {
+                return makeFocus(child);
+              });
               child.renderAsMin(X, Y);
-            }
-
-            if (child.isRendered() === true) {
+            } else if (child.isRendered() === true) {
               child.transformToFinalPosition();
             }
           }
@@ -28650,11 +31437,27 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
           if (i < _this3.config.riskContainerNodeLimit) {
             if (risk.isRendered() === false) {
               risk.renderAsMin(X, Y);
-            }
-
-            if (risk.isRendered() === true) {
+            } else if (risk.isRendered() === true) {
               risk.transformToFinalPosition();
             }
+          }
+        });
+      };
+
+      var renderEdges = function renderEdges() {
+        _this3.parentEdges.forEach(function (edge) {
+          if (edge.isRendered() === false) {
+            edge.render(X, Y);
+          } else if (edge.isRendered() === true) {
+            edge.transformToFinalPosition();
+          }
+        });
+
+        _this3.childEdges.forEach(function (edge) {
+          if (edge.isRendered() === false) {
+            edge.render(X, Y);
+          } else if (edge.isRendered() === true) {
+            edge.transformToFinalPosition();
           }
         });
       }; // rendering
@@ -28662,7 +31465,9 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
 
       renderContainers();
       renderExpanders();
-      renderNodes(); // // render containers
+      renderConnections();
+      renderNodes();
+      renderEdges(); // // render containers
       // this.containers.forEach((container) => {
       //   container.render(X, Y)
       //   container.transform()
@@ -28941,20 +31746,33 @@ var Graph = /*#__PURE__*/function () {
 }();
 
 /**
- * The canvas element where all svgs are held
+ * @description The canvas element where all svgs are held.
  * @typedef {Canvas} Canvas
  *
  * @see https://svgjs.com/docs/3.0/container-elements/#svg-svg
  */
 
 /**
- * The raw data object to create a node
+ * @description A foreign object.
+ * 
+ * @typedef {ForeignObject} ForeignObject
+ * 
+ * @see https://svgjs.com/docs/3.0/shape-elements/#svg-foreignobject
+ */
+
+/**
+ * @description This object contains data that was loaded from the backend.
  * @typedef {Data} Data
  *
- * @property {Number} id the node id
- * @property {String} label the node label
- * @property {String} type the node type (asset, control, risk requirement, custom)
- * @property {String} tooltipText the tooltip text that is shown while hovering a specific node
+ * @property {Number} id The id of the node.
+ * @property {String} label The label of the node. Available: string, null or empty string.
+ * @property {String} description The description of the node. Available: string, null or empty string.
+ * @property {String} type The type of the node. Available asset, control, risk requirement or custom.
+ * @property {Object} attributes An object containing a key-value-pair list.
+ * @property {String} tooltipText Some tooltip text that is shown while hovering a specific node.
+ * @property {Number|Number[]} parent One parent id reference or multiple parent ids references.
+ * @property {Number[]} children An array containing child node id references.
+ * @property {Object} config An object, which is contains key-value entries to override default node representations.
  */
 
 /**
@@ -28964,6 +31782,8 @@ var Graph = /*#__PURE__*/function () {
 
 var Visualization = /*#__PURE__*/function () {
   function Visualization(config) {
+    var _this = this;
+
     _classCallCheck(this, Visualization);
 
     // TODO: this constructor should receive custom overrides for all nodes, edges and layouts
@@ -28992,30 +31812,84 @@ var Visualization = /*#__PURE__*/function () {
     element.appendChild(tooltip); // canvas set up
 
     this.zoomLevel = 1;
-    this.canvas = SVG().addTo(element).size(window.innerWidth - 10, window.innerHeight - 10).viewbox(0, 0, window.innerWidth - 10, window.innerHeight - 10).panZoom({
+    var w = window.innerWidth - 10;
+    var h = window.innerHeight - 10;
+    this.canvas = SVG().addTo(element).size(w, h).viewbox(0, 0, w, h).panZoom({
       zoomMin: 0.25,
       zoomMax: 10,
       zoomFactor: 0.25
+    }).zoom(config.zoom.lvl, {
+      x: config.zoom.x,
+      y: config.zoom.y
+    }); // const event = {
+    //   event: "grid.expander",
+    //   mouse: "click",
+    //   modifier: "shiftKey"
+    // }
+    // const test = this.canvas.rect(100, 100).dmove(200, 300)
+    // const func = () => test.fill("#f75")
+    // test.on(event.mouse, (e) => {
+    //   if (event.modifier !== null) {
+    //     if (event.modifier, e[event.modifier]) {
+    //       func()
+    //     }
+    //   }
+    // })
+    // // .on("grid.expander", () => {
+    // //   test.fill("#f75")
+    // // })
+    // remove text labels when zoomed-in
+
+    var textState = null;
+    this.canvas.on("zoom", function (ev) {
+      var currentLevel = ev.detail.level;
+
+      if (currentLevel <= 0.75 && textState !== "hidden") {
+        var labels = document.querySelectorAll("#min-label");
+        labels.forEach(function (doc) {
+          doc.style.opacity = "0";
+        });
+        textState = "hidden";
+      }
+
+      if (currentLevel > 0.75 && textState === "hidden") {
+        var _labels = document.querySelectorAll("#min-label");
+
+        _labels.forEach(function (doc) {
+          doc.style.opacity = "1";
+        });
+
+        textState = null;
+      }
+
+      _this.zoomLevel = currentLevel;
     });
     this.layouts = [];
-    this.lastLayoutWidth = 0;
+    this.lastLayoutWidth = 0; // TODO: talk about this in the thesis ( its required)
+
     this.config = _objectSpread2({}, config, {
       nodeEndpoint: "node-data",
       edgeEndpoint: "edge-data",
       contextualRelationshipEndpoint: "contextual-relationships",
-      layoutSpacing: 200
+      layoutSpacing: 50
     }); // stores all loaded nodes
 
     this.loadedNodes = [];
     this.knownGraph = new Graph();
     this.fetchedNodes = [];
-    this.fetchedEdges = [];
+    this.fetchedEdges = []; // TODO: further work: implement a store (like in react useState that holds references to all currently knwon nodes in a database
+    //       and to reduce calling a database -> performance improvement)
   }
 
   _createClass(Visualization, [{
+    key: "test",
+    value: function test() {
+      this.canvas.rect(100, 100);
+    }
+  }, {
     key: "createInitialGraph",
     value: function createInitialGraph() {
-      var _this = this;
+      var _this2 = this;
 
       var nodeIds = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
       var edgeIds = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
@@ -29024,13 +31898,13 @@ var Visualization = /*#__PURE__*/function () {
       nodeIds.forEach(function (id) {
         graph.includeNode(id);
 
-        _this.knownGraph.includeNode(id);
+        _this2.knownGraph.includeNode(id);
       }); // add edges
 
       edgeIds.forEach(function (ids) {
         graph.includeEdge(ids[0], ids[1]);
 
-        _this.knownGraph.includeEdge(ids[0], ids[1]);
+        _this2.knownGraph.includeEdge(ids[0], ids[1]);
       });
       return graph;
     }
@@ -29044,7 +31918,7 @@ var Visualization = /*#__PURE__*/function () {
     key: "render",
     value: function () {
       var _render = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee(initialGraphData, layout) {
-        var createdLayout, layouts, offset, _createdLayout, _layouts, _offset;
+        var createdLayout, index, layouts, offset, _createdLayout, _layouts, _offset, _createdLayout2, _layouts2, _offset2, _createdLayout3, _layouts3, _offset3;
 
         return regeneratorRuntime.wrap(function _callee$(_context) {
           while (1) {
@@ -29063,7 +31937,7 @@ var Visualization = /*#__PURE__*/function () {
                 layout.setLayoutReferences(this.layouts);
 
                 if (!(layout instanceof GridLayout)) {
-                  _context.next = 14;
+                  _context.next = 15;
                   break;
                 }
 
@@ -29072,7 +31946,8 @@ var Visualization = /*#__PURE__*/function () {
 
               case 9:
                 createdLayout = _context.sent;
-                layouts = this.layouts.slice(0, this.layouts.indexOf(layout));
+                index = this.layouts.indexOf(layout);
+                layouts = this.layouts.slice(0, index);
                 offset = layouts.map(function (l) {
                   return l.layoutInfo.w;
                 }).reduce(function (a, b) {
@@ -29081,16 +31956,16 @@ var Visualization = /*#__PURE__*/function () {
                 createdLayout.calculateLayout(offset);
                 createdLayout.renderLayout();
 
-              case 14:
+              case 15:
                 if (!(layout instanceof ContextualLayout)) {
-                  _context.next = 22;
+                  _context.next = 23;
                   break;
                 }
 
-                _context.next = 17;
+                _context.next = 18;
                 return layout.loadInitialContextualDataAsync();
 
-              case 17:
+              case 18:
                 _createdLayout = _context.sent;
                 _layouts = this.layouts.slice(0, this.layouts.indexOf(layout));
                 _offset = _layouts.map(function (l) {
@@ -29101,13 +31976,56 @@ var Visualization = /*#__PURE__*/function () {
 
                 _createdLayout.calculateLayout(_offset);
 
-                _createdLayout.renderLayout(); // createdLayout.renderLayout()
-
-
-              case 22:
-                return _context.abrupt("return", layout);
+                _createdLayout.renderLayout();
 
               case 23:
+                if (!(layout instanceof RadialLayout)) {
+                  _context.next = 31;
+                  break;
+                }
+
+                _context.next = 26;
+                return layout.loadInitialRadialDataAsync();
+
+              case 26:
+                _createdLayout2 = _context.sent;
+                _layouts2 = this.layouts.slice(0, this.layouts.indexOf(layout));
+                _offset2 = _layouts2.map(function (l) {
+                  return l.layoutInfo.w;
+                }).reduce(function (a, b) {
+                  return a + b;
+                }, 0);
+
+                _createdLayout2.calculateLayout(_offset2);
+
+                _createdLayout2.renderLayout();
+
+              case 31:
+                if (!(layout instanceof TreeLayout)) {
+                  _context.next = 39;
+                  break;
+                }
+
+                _context.next = 34;
+                return layout.loadInitialTreeDataAsync();
+
+              case 34:
+                _createdLayout3 = _context.sent;
+                _layouts3 = this.layouts.slice(0, this.layouts.indexOf(layout));
+                _offset3 = _layouts3.map(function (l) {
+                  return l.layoutInfo.w;
+                }).reduce(function (a, b) {
+                  return a + b;
+                }, 0);
+
+                _createdLayout3.calculateLayout(_offset3);
+
+                _createdLayout3.renderLayout();
+
+              case 39:
+                return _context.abrupt("return", layout);
+
+              case 40:
               case "end":
                 return _context.stop();
             }
@@ -29125,15 +32043,17 @@ var Visualization = /*#__PURE__*/function () {
     key: "update",
     value: function () {
       var _update = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee2(layout, graphOrConfig) {
-        var _this2 = this;
+        var _this3 = this;
 
         var config,
-            updatedLayout,
+            layouts,
+            offset,
             prevW,
             newW,
-            _updatedLayout,
             _prevW,
             _newW,
+            _prevW2,
+            _newW2,
             _args2 = arguments;
 
         return regeneratorRuntime.wrap(function _callee2$(_context2) {
@@ -29142,60 +32062,105 @@ var Visualization = /*#__PURE__*/function () {
               case 0:
                 config = _args2.length > 2 && _args2[2] !== undefined ? _args2[2] : {};
 
-                if (!(graphOrConfig instanceof Graph)) {
-                  _context2.next = 14;
+                if (!(layout instanceof RadialLayout)) {
+                  _context2.next = 18;
                   break;
                 }
 
-                _context2.next = 4;
-                return layout.updateGraphStructure(graphOrConfig, config);
+                if (!(graphOrConfig instanceof Graph)) {
+                  _context2.next = 8;
+                  break;
+                }
 
-              case 4:
+                console.log("update radial graph");
                 _context2.next = 6;
-                return layout.loadAdditionalGridDataAsync();
+                return layout.updateRadialDataWithConfigAsync(graphOrConfig, config);
 
               case 6:
-                updatedLayout = _context2.sent;
-                prevW = updatedLayout.layoutInfo.w;
-                updatedLayout.calculateLayout();
-                newW = updatedLayout.layoutInfo.w; // update all layouts right side
+                _context2.next = 18;
+                break;
+
+              case 8:
+                layout.setConfig(graphOrConfig);
+                _context2.next = 11;
+                return layout.removeLayoutAsync();
+
+              case 11:
+                layouts = this.layouts.slice(0, this.layouts.indexOf(layout));
+                offset = layouts.map(function (l) {
+                  return l.layoutInfo.w;
+                }).reduce(function (a, b) {
+                  return a + b;
+                }, 0);
+                prevW = layout.layoutInfo.w;
+                layout.calculateLayout(offset);
+                newW = layout.layoutInfo.w; // update all layouts right side
 
                 this.layouts.forEach(function (llayout, i) {
-                  if (i > _this2.layouts.indexOf(layout)) {
+                  if (i > _this3.layouts.indexOf(layout)) {
                     llayout.calculateLayout(newW - prevW);
                     llayout.renderLayout();
                   }
                 });
-                updatedLayout.renderLayout();
+                layout.renderLayout();
+
+              case 18:
+                if (!(layout instanceof GridLayout)) {
+                  _context2.next = 41;
+                  break;
+                }
+
+                if (!(graphOrConfig instanceof Graph)) {
+                  _context2.next = 31;
+                  break;
+                }
+
+                _context2.next = 22;
+                return layout.updateGridDataWithConfigAsync(graphOrConfig, config);
+
+              case 22:
                 _context2.next = 24;
-                break;
+                return layout.loadAdditionalGridDataAsync();
 
-              case 14:
-                _context2.next = 16;
-                return layout.updateLayoutConfiguration(graphOrConfig);
-
-              case 16:
-                _updatedLayout = _context2.sent;
-                _context2.next = 19;
-                return _updatedLayout.loadAdditionalGridDataAsync();
-
-              case 19:
-                _prevW = _updatedLayout.layoutInfo.w;
-
-                _updatedLayout.calculateLayout();
-
-                _newW = _updatedLayout.layoutInfo.w; // update all layouts right side
+              case 24:
+                _prevW = layout.layoutInfo.w;
+                layout.calculateLayout();
+                _newW = layout.layoutInfo.w; // update all layouts right side
 
                 this.layouts.forEach(function (llayout, i) {
-                  if (i > _this2.layouts.indexOf(layout)) {
+                  if (i > _this3.layouts.indexOf(layout)) {
                     llayout.calculateLayout(_newW - _prevW);
                     llayout.renderLayout();
                   }
                 });
+                layout.renderLayout();
+                _context2.next = 41;
+                break;
 
-                _updatedLayout.renderLayout();
+              case 31:
+                // update only configuration
+                layout.setConfig(graphOrConfig);
+                _context2.next = 34;
+                return layout.removeLayoutAsync();
 
-              case 24:
+              case 34:
+                _context2.next = 36;
+                return layout.loadAdditionalGridDataAsync();
+
+              case 36:
+                _prevW2 = layout.layoutInfo.w;
+                layout.calculateLayout();
+                _newW2 = layout.layoutInfo.w; // update all layouts right side
+
+                this.layouts.forEach(function (llayout, i) {
+                  if (i > _this3.layouts.indexOf(layout)) {
+                    llayout.calculateLayout(_newW2 - _prevW2);
+                    llayout.renderLayout();
+                  }
+                });
+                layout.renderLayout();
+
+              case 41:
               case "end":
                 return _context2.stop();
             }
@@ -29209,6 +32174,9 @@ var Visualization = /*#__PURE__*/function () {
 
       return update;
     }()
+  }, {
+    key: "updateMouseEvents",
+    value: function updateMouseEvents(event, func) {}
     /**
      * Transforms a layout from one type into another type
      * @param {Layout} currentLayout
@@ -29288,5 +32256,14 @@ var Visualization = /*#__PURE__*/function () {
   return Visualization;
 }();
 
-export { ContextualLayout, EdgeFactory, Graph, GridLayout, NodeFactory, RadialLayout, TreeLayout, Visualization };
+var createTestCanvas = function createTestCanvas() {
+  var doc = window.document;
+  var body = doc.body;
+  var div = doc.createElement("div");
+  div.setAttribute("id", "canvas");
+  body.appendChild(div);
+  return SVG().addTo(element).size(window.innerWidth - 10, window.innerHeight - 10).viewbox(0, 0, window.innerWidth - 10, window.innerHeight - 10);
+};
+
+export { AssetNode as Asset, createTestCanvas as Canvas, ContextualLayout, EdgeFactory, Graph, GridLayout, NodeFactory, RadialLayout, TreeLayout, Visualization };
 //# sourceMappingURL=graphVisualization.js.map

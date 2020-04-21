@@ -1,33 +1,25 @@
-/* eslint-disable no-bitwise */
 import Filter from "@svgdotjs/svg.filter.js"
 import clamp from "clamp-js"
 import FallbackControlIcon from "../resources/fallbackControlIcon.svg"
 import FallbackAssetIcon from "../resources/fallbackAssetIcon.svg"
 import FallbackRiskIcon from "../resources/fallbackRiskIcon.svg"
 import FallbackCustomIcon from "../resources/fallbackCustomIcon.svg"
+import Colorshift from "../utils/Colorshift"
 
-// https://medium.com/@yuribett/javascript-abstract-method-with-es6-5dbea4b00027
 
-
-const LightenDarkenColor = (col, amt) => {
-  const num = parseInt(col, 16)
-  const r = (num >> 16) + amt
-  const b = ((num >> 8) & 0x00FF) + amt
-  const g = (num & 0x0000FF) + amt
-  const newColor = g | (b << 8) | (r << 16)
-  return newColor.toString(16)
-}
 
 /**
- * Base class for all node representations
- * @param {Data} data the raw data object to represent
- * @param {Canvas} canvas the svg canvas element to render the node on
+ * This is the base class for nodes.
+ * @property {Data} data Loaded data from a database.
+ * @property {Canvas} canvas The nested canvas to render the node on.
+ *
  */
 class BaseNode {
   constructor(data, canvas) {
+
     this.svg = null
     this.canvas = canvas
-    this.config = {} // set by class
+    this.config = { ...data.config } // first add any override values 
 
     // node data
     this.id = data.id || 0
@@ -37,17 +29,17 @@ class BaseNode {
     this.description = data.description || null
     this.keyValuePairs = data.keyValuePairs || []
     this.state = data.state || null
-    this.attributes = new Map() // TODO: key value paired map
+    this.attributes = new Map()
 
 
     // layout data
     this.depth = 0
     this.parent = null
-    this.parentId = data.parentId || null
+    this.parentId = data.parent || null
 
     this.children = []
-    this.childrenIds = data.childrenIds || []
-    this.prevSibling = data.prevSibling || null
+    this.childrenIds = data.children || []
+    this.prevSibling = null
     this.modifier = 0
     this.mod = 0
 
@@ -59,14 +51,12 @@ class BaseNode {
     this.finalY = 0
     this.currentX = 0
     this.currentY = 0
-
-
     this.x = 0
     this.y = 0
 
 
     // node info
-    this.nodeSize = "min" // minimal or maximal representation
+    this.nodeSize = "min"
     this.opacity = 1
     this.isHidden = false
     this.currentWidth = 0
@@ -80,51 +70,77 @@ class BaseNode {
   }
 
 
-  addIncomingEdge(incomingEdge) {
-    this.incomingEdges.push(incomingEdge)
-  }
 
-  addOutgoingEdge(outgoingEdge) {
-    this.outgoingEdges.push(outgoingEdge)
-  }
 
-  transformToPosition(X = this.initialX, Y = this.initialY) {
+
+
+  /**
+   * Transforms a node to its final rendered position.
+   * @param {Number} X=finalX The final X position.
+   * @param {Number} Y=finalY The final Y position.
+   */
+  transformToFinalPosition(X = this.finalX, Y = this.finalY) {
+    if (this.isRendered() === false) {
+      return
+    }
+
+    this.currentX = X
+    this.currentY = Y
+
     this
       .svg
       .animate({ duration: this.config.animationSpeed })
       .transform({ position: [X, Y] })
   }
 
-  transformToFinalPosition() {
-    this
-      .svg
-      .attr({ opacity: 1 })
-      .animate({ duration: this.config.animationSpeed })
-      .transform({ position: [this.finalX, this.finalY] })
-      .attr({ opacity: 1 })
-  }
 
-  transformToInitialPosition() {
+  /**
+   * Transforms a node from its final position to its initial rendered position.
+   * @param {Number} X=initialX The initial X position.
+   * @param {Number} Y=initialY The initial Y position.
+   */
+  transformToInitialPosition(X = this.initialX, Y = this.initialY) {
+    this.currentX = X
+    this.currentY = Y
+
     this.svg.back()
     this
       .svg
       .attr({ opacity: 1 })
       .animate({ duration: this.config.animationSpeed })
-      .transform({ position: [this.initialX, this.initialY] })
+      .transform({ position: [X, Y] })
       .attr({ opacity: 1 })
   }
 
-  isRendered() {
-    return this.svg !== null
-  }
 
-  removeNode(X = this.initialX, Y = this.initialY, opts = { animation: true }) {
+
+
+  /**
+   * Removes the rendered SVG node from the canvas.
+   * @param {Number} X The X position to move the elements before removing them. 
+   * @param {Number} Y The Y position to move the elements before removing them.
+   * @param {Object} opts An object containing additional configuration to control certain behaviours.
+   */
+  removeNode(X = this.initialX, Y = this.initialY, opts = { animation: true, opacity: 1 }) {
     if (opts.animation === true) {
       if (this.svg !== null) {
         this
           .svg
           .animate({ duration: this.config.animationSpeed })
           .transform({ scale: 0.001, position: [X, Y] })
+          .after(() => {
+            this.svg.remove()
+            this.svg = null
+          })
+      }
+    } else if (opts.opacity === 0) {
+      if (this.svg !== null) {
+        this
+          .svg
+          .attr({ opacity: 1 })
+          .animate({ duration: this.config.animationSpeed })
+          .transform({ position: [X, Y] })
+          .attr({ opacity: 0 })
           .after(() => {
             this.svg.remove()
             this.svg = null
@@ -137,24 +153,23 @@ class BaseNode {
   }
 
 
-  getSVGBbox() {
-    return this.svg.bbox()
-  }
 
-
-  // TODO: ask: shall the library export a method where the user can change the default
-  //            mouse events for every interaction function
+  /**
+   * Adds an event and a method to the node.
+   * @param {Event} event The provided event.
+   * @param {Method} func The provided method.
+   */
   addEvent(event, func) {
-    // this.svg.on(event, func)
-    // console.log(this.svg)
     this.events = [...this.events, { event, func }]
-    // console.log(this.getNodeSize())
   }
 
 
+  /**
+   * Creates the initial SVG object reference.
+   */
   createSVGElement() {
-    const svg = this.canvas.group().draggable()
-    // const svg = this.canvas.group()
+    // const svg = this.canvas.group().draggable()
+    const svg = this.canvas.group()
     svg.css("cursor", "pointer")
     svg.id(`node#${this.id}`)
 
@@ -163,7 +178,7 @@ class BaseNode {
 
       if (this.tooltipText !== null && this.nodeSize === "min") {
         svg.on("mousemove", (ev) => {
-        // show tooltip
+          // show tooltip
           const tooltip = document.getElementById("tooltip")
           tooltip.innerHTML = this.tooltipText
           tooltip.style.display = "block"
@@ -190,7 +205,7 @@ class BaseNode {
 
       node.filterWith((add) => {
         const blur = add.offset(0, 0).in(add.$source).gaussianBlur(3)
-        const color = add.composite(add.flood(`#${LightenDarkenColor(toDark, -10)}`), blur, "in")
+        const color = add.composite(add.flood(`#${Colorshift(toDark, -10)}`), blur, "in")
         add.merge(color, add.$source)
       })
     })
@@ -213,8 +228,8 @@ class BaseNode {
       // remove hover highlight
       node.filterer().remove()
       const i = [...this.canvas.defs().node.childNodes].findIndex((d) => d.id === "defaultNodeBorderFilter")
-      const filter = this.canvas.defs().get(i)
-      node.filterWith(filter)
+      // const filter = this.canvas.defs().get(i)
+      // node.filterWith(filter)
     })
 
     this.events.forEach(({ event, func }) => {
@@ -226,17 +241,24 @@ class BaseNode {
   }
 
 
-  createNode(width = 0, height = 0) {
+  /**
+   * Creates the nodes SVG shape.
+   */
+  createNode() {
     let node = null
-    if (this.type === "custom") {
+    const width = 1
+    const height = 1
+    if (this.type === "custom") { // custom
       if (this.config.nodeType === "rect") {
         node = this.canvas.rect(width, height)
       } else if (this.config.nodeType === "ellipse") {
         node = this.canvas.ellipse(width, height)
       } else if (this.config.nodeType === "path") {
-        node = this.canvas.path(this.config.svg)
+        node = this.canvas.path(this.config.svgPathElement)
+      } else {
+        node = this.canvas.rect(width, height)
       }
-    } else {
+    } else { // default
       node = this.canvas.rect(width, height)
     }
 
@@ -251,27 +273,30 @@ class BaseNode {
     }
 
     // add a re-usable light and color highlight
-    const i = [...this.canvas.defs().node.childNodes].findIndex((d) => d.id === "defaultNodeBorderFilter")
+    const i = [...this.canvas.defs().node.childNodes].findIndex((d) => d.id === "defaultNodeBorderFilter") || -1
     if (i === -1) {
       const filter = new Filter()
       filter.id("defaultNodeBorderFilter")
       const blur = filter.offset(0, 0).in(filter.$source).gaussianBlur(2)
       const color = filter.composite(filter.flood("#fff"), blur, "in")
       filter.merge(color, filter.$source)
-      this.canvas.defs().add(filter)
-      node.filterWith(filter)
+      // this.canvas.defs().add(filter)
+      // node.filterWith(filter)
     } else {
-      const filter = this.canvas.defs().get(i)
-      node.filterWith(filter)
+      // const filter = this.canvas.defs().get(i)
+      // node.filterWith(filter)
     }
-
 
     return node
   }
 
 
-  createIcon(size = 0) {
+  /**
+   * Creates the nodes icon.
+   */
+  createIcon() {
     let icon = null
+
     if (this.config.iconUrl === null) {
       if (this.type === "control") {
         icon = this.canvas.image(FallbackControlIcon)
@@ -289,19 +314,28 @@ class BaseNode {
       icon = this.canvas.image(this.config.iconUrl)
     }
 
-    icon.size(size, size)
+    icon.size(1, 1)
     return icon
   }
 
 
-  createLabel(textAlign = "center") { // FIXME: html text gets highlighted way to often
-    const fobj = this.canvas.foreignObject(this.config.minTextWidth, 0)
+  /**
+   * Creates the nodes label.
+   */
+  createLabel(textAlign = "center") {
+    const fobj = this.canvas.foreignObject(this.config.minTextWidth, 1)
+
+
+    if (this.label === "") {
+      return fobj
+    }
 
     const background = document.createElement("div")
     background.style.background = this.config.labelBackground
     background.style.padding = `${this.config.offset / 2}px`
     background.style.textAlign = textAlign
     background.style.width = `${this.config.minTextWidth}px`
+    background.setAttribute("id", "min-label")
 
     const label = document.createElement("div")
     label.innerText = this.label
@@ -321,6 +355,27 @@ class BaseNode {
     return fobj
   }
 
+
+  /**
+   * Determins where the node is rendered or not.
+   * @returns True, if the SVG is rendered, else false.
+   */
+  isRendered() {
+    return this.svg !== null
+  }
+
+
+  addIncomingEdge(incomingEdge) {
+    this.incomingEdges.push(incomingEdge)
+  }
+
+  addOutgoingEdge(outgoingEdge) {
+    this.outgoingEdges.push(outgoingEdge)
+  }
+
+  getSVGBbox() {
+    return this.svg.bbox()
+  }
 
   isLeaf() {
     return this.children.length === 0
@@ -398,7 +453,6 @@ class BaseNode {
     return this.modifier
   }
 
-
   getMinWidth() {
     return this.config.minWidth
   }
@@ -415,68 +469,55 @@ class BaseNode {
     return this.config.maxHeight
   }
 
-
   setConfig(config) {
     this.config = { ...this.config, ...config }
   }
-
 
   getConfig() {
     return this.config
   }
 
-
   getFinalX() {
     return this.finalX
   }
-
 
   getFinalY() {
     return this.finalY
   }
 
-
   setFinalX(finalX) {
     this.finalX = finalX
   }
 
-
   setFinalY(finalY) {
     this.finalY = finalY
   }
-
 
   setFinalXY(finalX, finalY) {
     this.finalX = finalX
     this.finalY = finalY
   }
 
-
   getInitialX() {
     return this.initialX
   }
-
 
   getInitialY() {
     return this.initialY
   }
 
-
   setInitialX(initialX) {
     this.initialX = initialX
   }
-
 
   setInitialY(initialY) {
     this.initialY = initialY
   }
 
-
   setInitialXY(initialX, initialY) {
     this.initialX = initialX
     this.initialY = initialY
   }
-
 
   getCurrentWidth() {
     return this.currentWidth
@@ -486,7 +527,6 @@ class BaseNode {
   getCurrentHeight() {
     return this.currentHeight
   }
-
 
   getNodeSize() {
     return this.nodeSize
@@ -504,9 +544,31 @@ class BaseNode {
     this.children = children
   }
 
+  getIsHidden() {
+    return this.isHidden
+  }
+
+  setIsHidden(isHidden) {
+    this.isHidden = isHidden
+  }
+
+  getAttributes() {
+    return this.attributes
+  }
+
+  setAttributes(attributes) {
+    this.attributes = attributes
+  }
 
   setNodeSize(nodeSize) {
     this.nodeSize = nodeSize
+  }
+
+  getCurrentX() {
+    return this.currentX
+  }
+  getCurrentY() {
+    return this.currentY
   }
 
   getParent() {
@@ -523,6 +585,10 @@ class BaseNode {
 
   getDepth() {
     return this.depth
+  }
+
+  getSVG() {
+    return this.svg
   }
 
   moveToFront() {

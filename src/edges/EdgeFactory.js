@@ -3,28 +3,24 @@ import ThinEdge from "./ThinEdge"
 
 
 /**
- * Optional configuration to override default values
- *  @typedef {EdgeConfig} EdgeConfig
- *
- * TODO:
-
- */
-
-
-/**
- * Factory to create edge objects
- * @param {Canvas} canvas the canvas to render the node on
- * @param {BaseNode} fromNode The from node
- * @param {BaseNode} fromNode The to node
- * @param {EdgeConfig} [edgeConfig] custom config to override the default values
+ * This class makes use of the factory pattern and creates edges based on a given type.
  */
 class EdgeFactory {
-  static create(rawEdge, canvas, fromNode, toNode) {
+
+  /**
+   * Creates a new edge class.
+   * @param {Data} data The loaded data element from a database.
+   * @param {Canvas} canvas The canvas to draw the node on.
+   * @param {BaseNode} fromNode The starting node reference.
+   * @param {BaseNode} toNode The ending node reference.
+   * 
+   * @return {BaseEdge} The base class representing the edge.
+   */
+  static create(data, canvas, fromNode, toNode) {
     let edge
-    if (rawEdge.type === "dashed") edge = new ThinEdge(rawEdge, canvas, fromNode, toNode, { type: "dashed" })
-    else if (rawEdge.type === "solid") edge = new ThinEdge(rawEdge, canvas, fromNode, toNode, { type: "solid" })
-    else if (rawEdge.type === "bold") edge = new BoldEdge(rawEdge, canvas, fromNode, toNode)
-    else edge = new ThinEdge(rawEdge, canvas, fromNode, toNode, { type: "solid" })
+    if (data.type === "dashed") edge = new ThinEdge(data, canvas, fromNode, toNode, { type: "dashed" })
+    if (data.type === "solid") edge = new ThinEdge(data, canvas, fromNode, toNode, { type: "solid" })
+    if (data.type === "bold") edge = new BoldEdge(data, canvas, fromNode, toNode, { type: "bold" })
 
     return edge
   }

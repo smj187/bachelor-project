@@ -1,0 +1,17 @@
+{
+    "grid-layout": {
+        "title": "Grid Layout Examples"
+    },
+    "radial-layout": {
+        "title": "Radial Layout Examples"
+    },
+    "tree-layout": {
+        "title": "Tree Layout Examples"
+    },
+    "contextual-layout": {
+        "title": "Contextual Layout Examples"
+    },
+    "advanced-layouts": {
+        "title": "Advanced Layout Examples"
+    }
+}

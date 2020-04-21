@@ -1,45 +1,72 @@
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    
     <meta charset="utf-8">
-    <title>layouts/helpers/GridExpander.js - Documentation</title>
+    <title>JSDoc: layouts/helpers/GridExpander.js</title>
 
-    <script src="scripts/prettify/prettify.js"></script>
-    <script src="scripts/prettify/lang-css.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="./build/entry.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <!--[if lt IE 9]>
       <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
-    <link type="text/css" rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
-    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
-    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+    <link href="https://fonts.googleapis.com/css?family=Muli:100,400,700|Oswald:300|Inconsolata,700" rel="stylesheet">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
+    <link type="text/css" rel="stylesheet" href="https://jmblog.github.io/color-themes-for-google-code-prettify/themes/tomorrow-night.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/app.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/iframe.css">
 </head>
+
 <body>
-
-<input type="checkbox" id="nav-trigger" class="nav-trigger" />
-<label for="nav-trigger" class="navicon-button x">
-  <div class="navicon"></div>
-</label>
-
-<label for="nav-trigger" class="overlay"></label>
-
-<nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="AssetNode.html">AssetNode</a></li><li><a href="BaseEdge.html">BaseEdge</a></li><li><a href="BaseNode.html">BaseNode</a></li><li><a href="ControlNode.html">ControlNode</a></li><li><a href="CustomNode.html">CustomNode</a></li><li><a href="EdgeFactory.html">EdgeFactory</a></li><li><a href="NodeFactory.html">NodeFactory</a></li><li><a href="RequirementNode.html">RequirementNode</a></li><li><a href="RiskNode.html">RiskNode</a></li><li><a href="Visualization.html">Visualization</a><ul class='methods'><li data-type='method'><a href="Visualization.html#getCanvas">getCanvas</a></li><li data-type='method'><a href="Visualization.html#render">render</a></li><li data-type='method'><a href="Visualization.html#setZoom">setZoom</a></li><li data-type='method'><a href="Visualization.html#transform">transform</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="GridLayoutConfiguration.html">GridLayoutConfiguration</a></li></ul><h3><a href="global.html">Global</a></h3>
-</nav>
-
-<div id="main">
-    
-    <h1 class="page-title">layouts/helpers/GridExpander.js</h1>
-    
-    
+    <div id="stickyNavbarOverlay"></div>
+    <div class="top-navbar">
+        <div class="container">
+            <nav class="navbar" role="navigation" aria-label="main navigation">
+                <div class="navbar-brand">
+                    
+                     
+                        <h1 class="navbar-item">Interactive Visualization for Information Security Analysis: JavaScript Documentation</h1>
+                    
+                    <a id="hamburger" role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
+                        <span aria-hidden="true"></span>
+                        <span aria-hidden="true"></span>
+                        <span aria-hidden="true"></span>
+                    </a>
+                </div>
+                
+            </nav>
+        </div>
+    </div>
+    <div class="container">
+        <div class="columns">
+            <div class="column is-3" id="sidebarNav">
+                <div class="sidebar">
+                    <nav>
+                        <h2><a href="index.html">Home</a></h2><div class="category"><h3>Tutorials</h3><ul><li><a href="tutorial-advanced-layouts.html">Advanced Layout Examples</a></li><li><a href="tutorial-contextual-layout.html">Contextual Layout Examples</a></li><li><a href="tutorial-grid-layout.html">Grid Layout Examples</a></li><li><a href="tutorial-radial-layout.html">Radial Layout Examples</a></li><li><a href="tutorial-tree-layout.html">Tree Layout Examples</a></li></ul><h3>Namespaces</h3><ul><li><a href="AssetNodeConfiguration.html">AssetNodeConfiguration</a></li><li><a href="BoldEdgeConfiguration.html">BoldEdgeConfiguration</a></li><li><a href="ContextualLayoutConfiguration.html">ContextualLayoutConfiguration</a></li><li><a href="ControlNodeConfiguration.html">ControlNodeConfiguration</a></li><li><a href="CustomNodeConfiguration.html">CustomNodeConfiguration</a></li><li><a href="GridLayoutConfiguration.html">GridLayoutConfiguration</a></li><li><a href="RadialLayoutConfiguration.html">RadialLayoutConfiguration</a></li><li><a href="RequirementNodeConfiguration.html">RequirementNodeConfiguration</a></li><li><a href="RiskNodeConfiguration.html">RiskNodeConfiguration</a></li><li><a href="ThinEdgeConfiguration.html">ThinEdgeConfiguration</a></li><li><a href="TreeLayoutConfiguration.html">TreeLayoutConfiguration</a></li></ul><h3>Classes</h3><ul><li><a href="AssetNode.html">AssetNode</a></li><li><a href="BaseEdge.html">BaseEdge</a></li><li><a href="BaseLayout.html">BaseLayout</a></li><li><a href="BaseNode.html">BaseNode</a></li><li><a href="BoldEdge.html">BoldEdge</a></li><li><a href="ContextualLayout.html">ContextualLayout</a></li><li><a href="ControlNode.html">ControlNode</a></li><li><a href="CustomNode.html">CustomNode</a></li><li><a href="EdgeFactory.html">EdgeFactory</a></li><li><a href="Graph.html">Graph</a></li><li><a href="GraphEdge.html">GraphEdge</a></li><li><a href="GraphNode.html">GraphNode</a></li><li><a href="GridExpander.html">GridExpander</a></li><li><a href="GridLayout.html">GridLayout</a></li><li><a href="NodeFactory.html">NodeFactory</a></li><li><a href="RadialLayout.html">RadialLayout</a></li><li><a href="RequirementNode.html">RequirementNode</a></li><li><a href="RiskNode.html">RiskNode</a></li><li><a href="ThinEdge.html">ThinEdge</a></li><li><a href="TreeLayout.html">TreeLayout</a></li><li><a href="Visualization.html">Visualization</a></li></ul><h3><a href="global.html">Global</a></h3></div>
+                    </nav>
+                </div>
+            </div>
+            <div class="column is-9-desktop">
+                <div class="content" id="main-content-wrapper">
+                    <header class="page-title">
+                        <p>Source</p>
+                        <h1>layouts/helpers/GridExpander.js</h1>
+                    </header>
+                    
+                    
 
 
 
     
     <section>
         <article>
-            <pre class="prettyprint source linenums"><code>
-const GridExpanderConfiguration = {
-  expanderWidth: 80,
+            <pre class="prettyprint source linenums"><code>const GridExpanderConfiguration = {
+  animationSpeed: 300,
+  expanderWidth: 105,
   expanderHeight: 40,
   expanderTextColor: "#222",
   expanderPadding: 8,
@@ -47,99 +74,58 @@ const GridExpanderConfiguration = {
   expanderFontSize: 12,
   expanderFontWeight: 700,
   expanderFontStyle: "normal",
-  expanderBackground: "#aaa",
+  expanderBackground: "#fff",
 }
 
+
 /**
- * Class representing the option to collapse or expand the grid layout
+ * Class representing the option to collapse or expand the grid layout.
  *
- * @param {Canvas} canvas The canvas to render this expander on
- * @private
+ * @param {Canvas} canvas The canvas to render this expander on.
+ * @param {String} type The type the expander is. 
  */
 class GridExpander {
-  constructor(canvas) {
+  constructor(canvas, type) {
     this.svg = null
+    this.type = type
     this.canvas = canvas
     this.config = { ...GridExpanderConfiguration }
-
-    // position for hide representation
-    this.expandedX = 0
-    this.expandedY = 0
-
-    // position for show representation
-    this.collapsedX = 0
-    this.collapsedY = 0
-
-    // current state
-    this.isExpanded = false
 
     // the re-render function reference
     this.reRenderFunc = null
   }
 
 
-  renderAsMin() {
-    this.render()
-  }
-
-  renderAsMax() {
-    this.render()
-  }
-
 
   /**
-   * Sets the final X position
-   * @param {Number} finalX the final X position
-   */
-  setFinalX(finalX) {
-    this.finalX = finalX
-  }
-
-  getFinalY() {
-    return this.finalY
-  }
-
-
-  /**
-   * Sets the final Y position
-   * @param {Number} finalY the final Y position
-   */
-  setFinalY(finalY) {
-    this.finalY = finalY
-  }
-
-
-  /**
-   * Renders the grid expander
-   *
-   * @param {Number} X The X position for collapsed representation
-   * @param {Number} Y The Y position for collapsed representation
-   * @private
-   */
-  render(X = this.finalX + this.config.width / 2, Y = this.finalY) {
-    const svg = this.canvas.group().draggable()
+  * Renders the expander.
+  * @param  {Number} IX=finalX The initial X render position.
+  * @param  {Number} IY=finalY The initial Y render position.
+  */
+  render(X = this.finalX + this.config.expanderWidth / 2, Y = this.finalY) {
+    const svg = this.canvas.group()
     svg.css("cursor", "pointer")
     svg.id("gridExpander")
 
-    const w = this.config.width
-    const h = this.config.height
+
+    const w = this.config.expanderWidth
+    const h = this.config.expanderHeight
 
     const createText = (innerText) => {
       const fobj = this.canvas.foreignObject(w, h)
 
       const background = document.createElement("div")
-      background.style.background = this.config.labelBackground
-      background.style.padding = `${this.config.offset / 2}px`
+      background.style.background = this.config.expanderBackground
+      background.style.padding = `${this.config.expanderPadding / 2}px`
       background.style.textAlign = "left"
-      background.style.width = `${this.config.minTextWidth}px`
 
       const label = document.createElement("div")
       label.innerText = innerText
-      label.style.color = this.config.labelColor
-      label.style.fontSize = `${this.config.labelFontSize}px`
-      label.style.fontFamily = this.config.labelFontFamily
-      label.style.fontWeight = this.config.labelFontWeight
-      label.style.fontStyle = this.config.labelFontStyle
+      label.style.color = this.config.expanderTextColor
+      label.style.fontSize = `${this.config.expanderFontSize}px`
+      label.style.fontFamily = this.config.expanderFontFamily
+      label.style.fontWeight = this.config.expanderFontWeight
+      label.style.fontStyle = this.config.expanderFontStyle
 
       background.appendChild(label)
       fobj.add(background)
@@ -151,7 +137,7 @@ class GridExpander {
 
     // create new elements
     const showMore = createText("Load more data")
-    const showLess = createText("Hide data")
+    const showLess = createText("Show less data")
 
     svg.add(showMore)
     svg.add(showLess)
@@ -177,36 +163,43 @@ class GridExpander {
 
     // add tooltip
     svg.on("mouseover", (ev) => {
-      const tooltip = document.getElementById("tooltip")
-      tooltip.innerHTML = this.isExpanded ? "Collapse layout" : "Expand layout"
-      tooltip.style.display = "block"
+      // const tooltip = document.getElementById("tooltip")
+      // tooltip.innerHTML = this.isExpanded ? "Collapse layout" : "Expand layout"
+      // tooltip.style.display = "block"
 
-      tooltip.style.left = `${ev.clientX - tooltip.clientWidth / 2}px`
-      tooltip.style.top = `${ev.clientY - tooltip.clientHeight - 20}px`
+      // tooltip.style.left = `${ev.clientX - tooltip.clientWidth / 2}px`
+      // tooltip.style.top = `${ev.clientY - tooltip.clientHeight - 20}px`
 
-      showLess
-        .transform({ scale: 1.05, position: [X, Y] })
+      showLess.transform({ scale: 1.05, position: [X, Y] })
+      showMore.transform({ scale: 1.05, position: [X, Y] })
     })
 
     // remove tooltip
     svg.on("mouseout", () => {
-      const tooltip = document.getElementById("tooltip")
-      tooltip.style.display = "none"
+      // const tooltip = document.getElementById("tooltip")
+      // tooltip.style.display = "none"
 
-      showLess
-        .transform({ scale: 0.95, position: [X, Y] })
+      showLess.transform({ scale: 0.95, position: [X, Y] })
+      showMore.transform({ scale: 0.95, position: [X, Y] })
     })
 
 
     if (this.reRenderFunc) {
       svg.on("click", this.reRenderFunc)
+      // svg.on("click", () => svg.fire('myevent'))
       // svg.on("dblclick", this.reRenderFunc)
     }
+
+
 
     this.isExpanded = false
     this.svg = svg
   }
 
+
+  /**
+   * Changes the expanders label.
+   */
   changeToShowMoreText() {
     this
       .svg
@@ -222,6 +215,10 @@ class GridExpander {
     this.isExpanded = true
   }
 
+
+  /**
+   * Changes the expanders label.
+   */
   changeToHideMoreText() {
     this
       .svg
@@ -238,80 +235,64 @@ class GridExpander {
   }
 
 
+  /**
+   * Transforms the expander from its final position to its initial rendered position.
+   */
   transformToFinalPosition() {
     this
       .svg
-      .attr({ opacity: 0 })
       .animate({ duration: this.config.animationSpeed })
-      .transform({ position: [this.finalX + this.config.width / 2, this.finalY] })
-      .attr({ opacity: 1 })
+      .transform({ position: [this.finalX + this.config.expanderWidth / 2, this.finalY] })
   }
 
 
   /**
-   * Function to determine if the expander is already rendered
+   * Determins where the expander is rendered or not.
+   * @returns True, if the SVG is rendered, else false.
    */
   isRendered() {
     return this.svg !== null
   }
 
 
+
+
   /**
-   * Function to assign the grid re-render function to this expander
-   * @param {Function} reRenderFunc The re-render function
+   * Removes the rendered SVG expander from the canvas.
    */
+  removeNode() {
+    if (this.svg !== null) {
+      this.svg.remove()
+      this.svg = null
+    }
+  }
+
   setReRenderFunc(reRenderFunc) {
     this.reRenderFunc = reRenderFunc
   }
 
-
-  removeNode() {
-    this.svg.remove()
-    this.svg = null
+  updateConfig(newConfig) {
+    this.config = { ...this.config, ...newConfig }
   }
 
   getIsExpanded() {
     return this.isExpanded
   }
 
-  setExpandedX(expandedX) {
-    this.expandedX = expandedX
+  getFinalX() {
+    return this.finalX
   }
 
-  setExpandedY(expandedY) {
-    this.expandedY = expandedY
+  setFinalX(finalX) {
+    this.finalX = finalX
   }
 
-  setCollapsedX(collapsedX) {
-    this.collapsedX = collapsedX
+  getFinalY() {
+    return this.finalY
   }
 
-  setCollapsedY(collapsedY) {
-    this.collapsedY = collapsedY
-  }
-
-  getCollapsedX() {
-    return this.collapsedX
-  }
-
-  getCollapsedY() {
-    return this.collapsedY
-  }
-
-  getMinWidth() {
-    return this.config.width
-  }
-
-  getMaxWidth() {
-    return this.config.width
-  }
-
-  getMinHeight() {
-    return this.config.height
-  }
-
-  getMaxHeight() {
-    return this.config.height
+  setFinalY(finalY) {
+    this.finalY = finalY
   }
 }
 
@@ -324,15 +305,24 @@ export default GridExpander
 
 
 
-</div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<br class="clear">
 
-<footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.3</a> on Tue Mar 31 2020 07:45:06 GMT+0200 (GMT+02:00) using the Toast theme.
+<footer class="footer">
+    <div class="content has-text-centered">
+        <p>Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.3</a> on Fri Apr 17 2020 10:40:10 GMT+0200 (GMT+02:00)</p>
+        <p class="sidebar-created-by">
+            <a href="https://github.com/SoftwareBrothers/better-docs" target="_blank">BetterDocs theme</a> provided with <i class="fas fa-heart"></i> by 
+            <a href="http://softwarebrothers.co" target="_blank">SoftwareBrothers - JavaScript Development Agency</a>
+        </p>
+    </div>
 </footer>
 
-<script>prettyPrint();</script>
-<script src="scripts/linenumber.js"></script>
+
+<script src="scripts/app.min.js"></script>
+<script src="scripts/linenumber.js"> </script>
 </body>
 </html>

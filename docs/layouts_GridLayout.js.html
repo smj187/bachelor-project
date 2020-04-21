@@ -1,0 +1,436 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+    <meta charset="utf-8">
+    <title>JSDoc: layouts/GridLayout.js</title>
+
+    <script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="./build/entry.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link href="https://fonts.googleapis.com/css?family=Muli:100,400,700|Oswald:300|Inconsolata,700" rel="stylesheet">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
+    <link type="text/css" rel="stylesheet" href="https://jmblog.github.io/color-themes-for-google-code-prettify/themes/tomorrow-night.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/app.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/iframe.css">
+</head>
+
+<body>
+    <div id="stickyNavbarOverlay"></div>
+    <div class="top-navbar">
+        <div class="container">
+            <nav class="navbar" role="navigation" aria-label="main navigation">
+                <div class="navbar-brand">
+                    
+                     
+                        <h1 class="navbar-item">Interactive Visualization for Information Security Analysis: JavaScript Documentation</h1>
+                    
+                    <a id="hamburger" role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
+                        <span aria-hidden="true"></span>
+                        <span aria-hidden="true"></span>
+                        <span aria-hidden="true"></span>
+                    </a>
+                </div>
+                
+            </nav>
+        </div>
+    </div>
+    <div class="container">
+        <div class="columns">
+            <div class="column is-3" id="sidebarNav">
+                <div class="sidebar">
+                    <nav>
+                        <h2><a href="index.html">Home</a></h2><div class="category"><h3>Tutorials</h3><ul><li><a href="tutorial-advanced-layouts.html">Advanced Layout Examples</a></li><li><a href="tutorial-contextual-layout.html">Contextual Layout Examples</a></li><li><a href="tutorial-grid-layout.html">Grid Layout Examples</a></li><li><a href="tutorial-radial-layout.html">Radial Layout Examples</a></li><li><a href="tutorial-tree-layout.html">Tree Layout Examples</a></li></ul><h3>Namespaces</h3><ul><li><a href="AssetNodeConfiguration.html">AssetNodeConfiguration</a></li><li><a href="BoldEdgeConfiguration.html">BoldEdgeConfiguration</a></li><li><a href="ContextualLayoutConfiguration.html">ContextualLayoutConfiguration</a></li><li><a href="ControlNodeConfiguration.html">ControlNodeConfiguration</a></li><li><a href="CustomNodeConfiguration.html">CustomNodeConfiguration</a></li><li><a href="GridLayoutConfiguration.html">GridLayoutConfiguration</a></li><li><a href="RadialLayoutConfiguration.html">RadialLayoutConfiguration</a></li><li><a href="RequirementNodeConfiguration.html">RequirementNodeConfiguration</a></li><li><a href="RiskNodeConfiguration.html">RiskNodeConfiguration</a></li><li><a href="ThinEdgeConfiguration.html">ThinEdgeConfiguration</a></li><li><a href="TreeLayoutConfiguration.html">TreeLayoutConfiguration</a></li></ul><h3>Classes</h3><ul><li><a href="AssetNode.html">AssetNode</a></li><li><a href="BaseEdge.html">BaseEdge</a></li><li><a href="BaseLayout.html">BaseLayout</a></li><li><a href="BaseNode.html">BaseNode</a></li><li><a href="BoldEdge.html">BoldEdge</a></li><li><a href="ContextualLayout.html">ContextualLayout</a></li><li><a href="ControlNode.html">ControlNode</a></li><li><a href="CustomNode.html">CustomNode</a></li><li><a href="EdgeFactory.html">EdgeFactory</a></li><li><a href="Graph.html">Graph</a></li><li><a href="GraphEdge.html">GraphEdge</a></li><li><a href="GraphNode.html">GraphNode</a></li><li><a href="GridExpander.html">GridExpander</a></li><li><a href="GridLayout.html">GridLayout</a></li><li><a href="NodeFactory.html">NodeFactory</a></li><li><a href="RadialLayout.html">RadialLayout</a></li><li><a href="RequirementNode.html">RequirementNode</a></li><li><a href="RiskNode.html">RiskNode</a></li><li><a href="ThinEdge.html">ThinEdge</a></li><li><a href="TreeLayout.html">TreeLayout</a></li><li><a href="Visualization.html">Visualization</a></li></ul><h3><a href="global.html">Global</a></h3></div>
+                    </nav>
+                </div>
+            </div>
+            <div class="column is-9-desktop">
+                <div class="content" id="main-content-wrapper">
+                    <header class="page-title">
+                        <p>Source</p>
+                        <h1>layouts/GridLayout.js</h1>
+                    </header>
+                    
+                    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>import BaseLayout from "./BaseLayout"
+import GridExpander from "./helpers/GridExpander"
+import GridLayoutConfiguration from "../configuration/GridLayoutConfiguration"
+
+
+/**
+ * This class calculates and renders the grid layout.
+ */
+class GridLayout extends BaseLayout {
+  constructor(customConfig = {}, events = [], additionalNodeRepresentations) {
+    super(additionalNodeRepresentations)
+    this.config = { ...GridLayoutConfiguration, ...customConfig }
+
+    // layout specific
+    this.gridExpander = null
+    this.registerMouseEvents(events)
+  }
+
+
+  /**
+   * Overrides the default mouse behaviour for the grid layout.
+   * @param {Object} events The events to be added.
+   */
+  registerMouseEvents(events) {
+
+
+    const expandGridLayoutEvent = async () => {
+      if (this.currentLayoutState === "show more") {
+        this.currentLayoutState = "show less"
+        this.config = { ...this.config, limitNodes: this.config.cachedLimit }
+        delete this.config.cachedLimit
+        this.gridExpander.changeToHideMoreText()
+      } else {
+        this.currentLayoutState = "show more"
+        this.config = { ...this.config, cachedLimit: this.config.limitNodes, limitNodes: this.nodeData.length }
+        this.gridExpander.changeToShowMoreText()
+      }
+
+      const tooltip = document.getElementById("tooltip")
+      tooltip.style.display = "none"
+
+      await this.loadAdditionalGridDataAsync()
+      console.log("rerender")
+
+      // update all layouts to the right
+      const prevW = this.layoutInfo.w
+      this.calculateLayout()
+      const newW = this.layoutInfo.w
+      this.renderLayout()
+
+
+
+      // update all layouts right side
+      this.layoutReferences.forEach((llayout, i) => {
+        if (i > this.layoutReferences.indexOf(this)) {
+          llayout.calculateLayout(newW - prevW)
+          llayout.renderLayout()
+        }
+      })
+    }
+
+    if (events.length > 0) {
+      this.events = [
+        {
+          name: "expandGridLayoutEvent",
+          func: expandGridLayoutEvent,
+          mouse: events.find(e => e.name === "expandGridLayoutEvent").mouse || "click",
+          modifier: events.find(e => e.name === "expandGridLayoutEvent").modifier || "shiftKey",
+        }
+      ]
+    } else {
+      this.events = [
+        {
+          name: "expandGridLayoutEvent",
+          func: expandGridLayoutEvent,
+          mouse: "click",
+          modifier: "shiftKey"
+        }
+      ]
+    }
+  }
+
+
+  /**
+   * Calulates the layout.
+   * @param {Number} offset=0 The width from other layouts.
+   */
+  calculateLayout(offset = 0) {
+    // add additional translation towards X
+    this.config = { ...this.config, translateX: this.config.translateX + offset }
+
+    // calculate nodes' final position
+    const calculateFinalPosition = () => {
+      const limit = this.config.limitNodes ? this.config.limitNodes : this.nodes.length
+      const nodes = this.nodes.slice(0, limit)
+
+      // create and assign a grid expander only if required
+      if (this.config.limitNodes &lt; this.nodeData.length &amp;&amp; this.gridExpander === null) {
+        const expander = new GridExpander(this.canvas)
+        this.gridExpander = expander
+      }
+
+
+      // calculate columns and rows
+      const cols = this.config.limitColumns
+      let nodeIndex = 0
+      const nodeCols = []
+      const nodeRows = []
+
+      // divide nodes into sets of rows
+      for (let i = 0; i &lt; nodes.length; i += 1) {
+        const row = []
+        for (let j = 0; j &lt; cols; j += 1) {
+          const node = nodes[nodeIndex]
+          if (node !== undefined) {
+            row.push(node)
+            nodeIndex += 1
+          }
+        }
+        if (row.length) {
+          nodeRows.push(row)
+        }
+      }
+
+      // divide nodes into sets of columns
+      nodeIndex = 0
+      for (let i = 0; i &lt; cols; i += 1) {
+        nodeCols.push([])
+      }
+      nodes.forEach((node, i) => {
+        const col = nodeCols[i % cols]
+        col.push(node)
+      })
+
+      // set initial position
+      this.nodes.forEach((node) => {
+        const w = this.config.renderingSize === "max" ? node.getMaxWidth() : node.getMinWidth()
+        const h = this.config.renderingSize === "max" ? node.getMaxHeight() : node.getMinHeight()
+        const x = this.config.spacing + this.config.translateX + w / 2
+        const y = this.config.spacing + this.config.translateY + h / 2
+        node.setFinalX(x)
+        node.setFinalY(y)
+      })
+
+      // find row spacing
+      let rowSpacing = 0
+      nodeRows.forEach((row) => {
+        const h = row.map((n) => (this.config.renderingSize === "max" ? n.getMaxHeight() : n.getMinHeight()))
+        const max = Math.max(...h)
+        rowSpacing = Math.max(rowSpacing, max)
+      })
+
+      // calculate y positions
+      nodeRows.forEach((row, i) => {
+        if (i >= 1) {
+          row.forEach((n) => {
+            const h = (rowSpacing + this.config.spacing) * i
+            n.setFinalY(n.getFinalY() + h)
+          })
+        }
+      })
+
+      // find col spacing
+      let columnSpacing = 0
+      nodeRows.forEach((row) => {
+        const w = row.map((n) => (this.config.renderingSize === "max" ? n.getMaxWidth() : n.getMinWidth()))
+        const max = Math.max(...w)
+        columnSpacing = Math.max(columnSpacing, max)
+      })
+
+      // calculate x positions
+      nodeCols.forEach((column, i) => {
+        if (i >= 1) {
+          column.forEach((n) => {
+            const w = (columnSpacing + this.config.spacing) * i
+            n.setFinalX(n.getFinalX() + w)
+          })
+        }
+      })
+    }
+
+    // calculate an expander button
+    const calculateExpander = () => {
+      if (this.gridExpander === null || this.config.limitNodes === null) {
+        return
+      }
+
+      // get lowest X coordinate
+      const minX = Math.min(...this.nodes.map((n) => n.getFinalX()))
+      const minNode = this.nodes.find((n) => n.getFinalX() === minX)
+      const w = this.config.renderingSize === "max" ? minNode.getMaxWidth() : minNode.getMinWidth()
+      const x = minX - w / 2
+
+      // get deepest Y coordinate
+      const maxY = Math.max(...this.nodes.map((n) => n.getFinalY()))
+      const maxNode = this.nodes.find((n) => n.getFinalY() === maxY)
+      const h = this.config.renderingSize === "max" ? maxNode.getMaxHeight() : maxNode.getMinHeight()
+      const y = maxY + h + this.config.spacing
+
+      this.gridExpander.setFinalX(x)
+      this.gridExpander.setFinalY(y)
+    }
+
+    // calculate the layout dimensions
+    const calculateLayoutInfo = () => {
+      // top left
+      const x0 = Math.min(...this.nodes.map((n) => {
+        const w = this.config.renderingSize === "max" ? n.getMaxWidth() : n.getMinWidth()
+        return n.getFinalX() - w / 2 - this.config.spacing / 2
+      }))
+      const y0 = 0
+
+
+      // top right
+      const x1 = Math.max(...this.nodes.map((n) => {
+        const w = this.config.renderingSize === "max" ? n.getMaxWidth() : n.getMinWidth()
+        return n.getFinalX() + w / 2 + this.config.spacing / 2
+      }))
+
+      const y1 = y0
+
+
+      // bottom right
+      const x2 = x1
+      let y2 = Math.max(...this.nodes.map((n) => {
+        const h = this.config.renderingSize === "max" ? n.getMaxHeight() : n.getMinHeight()
+        return n.getFinalY() + h / 2 + this.config.spacing / 2
+      }))
+
+      if (this.gridExpander !== null &amp;&amp; this.config.limitNodes !== null) {
+        y2 = this.gridExpander.getFinalY() + this.config.spacing / 2 + this.gridExpander.config.expanderHeight / 2
+      }
+
+
+      // store layout width and height info
+      const calculateDistance = (sx, sy, tx, ty) => {
+        const dx = tx - sx
+        const dy = ty - sy
+        return Math.sqrt(dx * dx + dy * dy)
+      }
+
+
+      // this.canvas.circle(5).fill("#000").center(x0, y0)
+      // this.canvas.circle(5).fill("#75f").center(x1, y1)
+      // this.canvas.circle(5).fill("#f75").center(x2, y2)
+      // this.canvas.circle(5).fill("#1f1").center((x0 + x2) / 2, (y0 + y2) / 2)
+
+      this.layoutInfo = {
+        x: x0,
+        y: y0,
+        cx: (x0 + x2) / 2,
+        cy: (y0 + y2) / 2,
+        w: calculateDistance(x0, y0, x1, y1),
+        h: calculateDistance(x1, y1, x2, y2),
+      }
+    }
+
+    calculateFinalPosition()
+    calculateExpander()
+    calculateLayoutInfo()
+
+    console.log("Grid", this.layoutInfo)
+    return this.layoutInfo
+  }
+
+
+  /**
+   * Renders the layout. First, it renders the grid expander, but only if required. Second, it renders
+   * all required nodes and transforms them into position.
+   */
+  renderLayout() {
+    const limit = this.config.limitNodes ? this.config.limitNodes : this.nodes.length
+    const X = this.layoutInfo.cx
+    const Y = this.layoutInfo.cy
+
+    // renders the grid expander
+    const renderExpander = () => {
+      if (this.config.limitNodes === null &amp;&amp; this.gridExpander.isRendered() === true) {
+        this.gridExpander.removeNode()
+        return
+      }
+
+      if (this.gridExpander === null || this.config.limitNodes === null) {
+        return
+      }
+
+
+      if (this.gridExpander.isRendered() === true) {
+        this.gridExpander.transformToFinalPosition()
+        return
+      }
+
+
+      if (this.gridExpander.svg === null) {
+
+        this.gridExpander.render(X, Y)
+        // add event to expander
+        this.gridExpander.svg.on(this.events[0].mouse, (e) => {
+          if (this.events[0].modifier !== null) {
+            if (this.events[0].modifier, e[this.events[0].modifier]) {
+              this.events[0].func()
+            }
+          } else {
+            this.expandGridLayoutEvent()
+          }
+        })
+      }
+      this.gridExpander.transformToFinalPosition()
+    }
+
+    // renders visual node representations
+    const renderNodes = () => {
+      this.nodes.forEach((node, i) => {
+        // console.log(node)
+        if (i &lt;= limit &amp;&amp; node.isRendered() === false) { // create non-existing nodes
+
+          if (this.config.renderingSize === "max") node.renderAsMax(X, Y)
+          if (this.config.renderingSize === "min") {
+            node.renderAsMin(X, Y)
+          }
+
+        } else if (node.isRendered() === true) { // update nodes
+          // console.log("trf", node)
+          node.transformToFinalPosition()
+        }
+
+        // remove existing nodes
+        if (i >= limit &amp;&amp; node.isRendered() === true) {
+          node.removeNode(null, null, { animation: false })
+        }
+      })
+    }
+
+    renderExpander()
+    renderNodes()
+
+
+  }
+}
+
+
+export default GridLayout
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+<footer class="footer">
+    <div class="content has-text-centered">
+        <p>Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.3</a> on Fri Apr 17 2020 10:40:10 GMT+0200 (GMT+02:00)</p>
+        <p class="sidebar-created-by">
+            <a href="https://github.com/SoftwareBrothers/better-docs" target="_blank">BetterDocs theme</a> provided with <i class="fas fa-heart"></i> by 
+            <a href="http://softwarebrothers.co" target="_blank">SoftwareBrothers - JavaScript Development Agency</a>
+        </p>
+    </div>
+</footer>
+
+
+<script src="scripts/app.min.js"></script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

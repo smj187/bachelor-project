@@ -3,39 +3,59 @@
 <head>
     
     <meta charset="utf-8">
-    <title>GridExpander - Documentation</title>
-    
-    
-    <script src="scripts/prettify/prettify.js"></script>
-    <script src="scripts/prettify/lang-css.js"></script>
+    <title>JSDoc: GridExpander</title>
+
+    <script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="./build/entry.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <!--[if lt IE 9]>
       <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
-    <link type="text/css" rel="stylesheet" href="styles/prettify.css">
-    <link type="text/css" rel="stylesheet" href="styles/jsdoc.css">
-    <script src="scripts/nav.js" defer></script>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css?family=Muli:100,400,700|Oswald:300|Inconsolata,700" rel="stylesheet">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
+    <link type="text/css" rel="stylesheet" href="https://jmblog.github.io/color-themes-for-google-code-prettify/themes/tomorrow-night.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/app.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/iframe.css">
 </head>
+
 <body>
-
-<input type="checkbox" id="nav-trigger" class="nav-trigger" />
-<label for="nav-trigger" class="navicon-button x">
-  <div class="navicon"></div>
-</label>
-
-<label for="nav-trigger" class="overlay"></label>
-
-<nav >
-    
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="AssetNode.html">AssetNode</a><ul class='methods'><li data-type='method'><a href="AssetNode.html#createAssetDetails">createAssetDetails</a></li><li data-type='method'><a href="AssetNode.html#renderAsMax">renderAsMax</a></li><li data-type='method'><a href="AssetNode.html#renderAsMin">renderAsMin</a></li><li data-type='method'><a href="AssetNode.html#transformToMax">transformToMax</a></li><li data-type='method'><a href="AssetNode.html#transformToMin">transformToMin</a></li></ul></li><li><a href="BaseEdge.html">BaseEdge</a><ul class='methods'><li data-type='method'><a href="BaseEdge.html#createLabel">createLabel</a></li></ul></li><li><a href="BaseNode.html">BaseNode</a><ul class='methods'><li data-type='method'><a href="BaseNode.html#createIcon">createIcon</a></li><li data-type='method'><a href="BaseNode.html#createLabel">createLabel</a></li><li data-type='method'><a href="BaseNode.html#createNode">createNode</a></li><li data-type='method'><a href="BaseNode.html#createSVGElement">createSVGElement</a></li><li data-type='method'><a href="BaseNode.html#getConfig">getConfig</a></li><li data-type='method'><a href="BaseNode.html#getCurrentHeight">getCurrentHeight</a></li><li data-type='method'><a href="BaseNode.html#getCurrentWidth">getCurrentWidth</a></li><li data-type='method'><a href="BaseNode.html#getFinalX">getFinalX</a></li><li data-type='method'><a href="BaseNode.html#getFinalY">getFinalY</a></li><li data-type='method'><a href="BaseNode.html#getInitialX">getInitialX</a></li><li data-type='method'><a href="BaseNode.html#getInitialY">getInitialY</a></li><li data-type='method'><a href="BaseNode.html#setConfig">setConfig</a></li><li data-type='method'><a href="BaseNode.html#setFinalX">setFinalX</a></li><li data-type='method'><a href="BaseNode.html#setFinalXY">setFinalXY</a></li><li data-type='method'><a href="BaseNode.html#setFinalY">setFinalY</a></li><li data-type='method'><a href="BaseNode.html#setInitialX">setInitialX</a></li><li data-type='method'><a href="BaseNode.html#setInitialXY">setInitialXY</a></li><li data-type='method'><a href="BaseNode.html#setInitialY">setInitialY</a></li></ul></li><li><a href="ControlNode.html">ControlNode</a><ul class='methods'><li data-type='method'><a href="ControlNode.html#createControlDetails">createControlDetails</a></li><li data-type='method'><a href="ControlNode.html#renderAsMax">renderAsMax</a></li><li data-type='method'><a href="ControlNode.html#renderAsMin">renderAsMin</a></li><li data-type='method'><a href="ControlNode.html#transformToMax">transformToMax</a></li><li data-type='method'><a href="ControlNode.html#transformToMin">transformToMin</a></li></ul></li><li><a href="CustomNode.html">CustomNode</a><ul class='methods'><li data-type='method'><a href="CustomNode.html#createCustomDetails">createCustomDetails</a></li><li data-type='method'><a href="CustomNode.html#renderAsMax">renderAsMax</a></li><li data-type='method'><a href="CustomNode.html#renderAsMin">renderAsMin</a></li><li data-type='method'><a href="CustomNode.html#transformToMax">transformToMax</a></li><li data-type='method'><a href="CustomNode.html#transformToMin">transformToMin</a></li></ul></li><li><a href="EdgeFactory.html">EdgeFactory</a></li><li><a href="GridExpander.html">GridExpander</a><ul class='methods'><li data-type='method'><a href="GridExpander.html#isRendered">isRendered</a></li><li data-type='method'><a href="GridExpander.html#render">render</a></li><li data-type='method'><a href="GridExpander.html#setFinalX">setFinalX</a></li><li data-type='method'><a href="GridExpander.html#setFinalY">setFinalY</a></li><li data-type='method'><a href="GridExpander.html#setReRenderFunc">setReRenderFunc</a></li></ul></li><li><a href="NodeFactory.html">NodeFactory</a></li><li><a href="RequirementNode.html">RequirementNode</a><ul class='methods'><li data-type='method'><a href="RequirementNode.html#createRequirementDetails">createRequirementDetails</a></li><li data-type='method'><a href="RequirementNode.html#renderAsMax">renderAsMax</a></li><li data-type='method'><a href="RequirementNode.html#renderAsMin">renderAsMin</a></li><li data-type='method'><a href="RequirementNode.html#transformToMax">transformToMax</a></li><li data-type='method'><a href="RequirementNode.html#transformToMin">transformToMin</a></li></ul></li><li><a href="RiskNode.html">RiskNode</a><ul class='methods'><li data-type='method'><a href="RiskNode.html#createRiskDetails">createRiskDetails</a></li><li data-type='method'><a href="RiskNode.html#renderAsMax">renderAsMax</a></li><li data-type='method'><a href="RiskNode.html#renderAsMin">renderAsMin</a></li><li data-type='method'><a href="RiskNode.html#transformToMax">transformToMax</a></li><li data-type='method'><a href="RiskNode.html#transformToMin">transformToMin</a></li></ul></li><li><a href="Visualization.html">Visualization</a><ul class='methods'><li data-type='method'><a href="Visualization.html#getCanvas">getCanvas</a></li><li data-type='method'><a href="Visualization.html#render">render</a></li><li data-type='method'><a href="Visualization.html#setZoom">setZoom</a></li><li data-type='method'><a href="Visualization.html#transform">transform</a></li></ul></li></ul><h3><a href="global.html">Global</a></h3>
-</nav>
-
-<div id="main">
-    
-    <h1 class="page-title">GridExpander</h1>
-    
-
-    
+    <div id="stickyNavbarOverlay"></div>
+    <div class="top-navbar">
+        <div class="container">
+            <nav class="navbar" role="navigation" aria-label="main navigation">
+                <div class="navbar-brand">
+                    
+                     
+                        <h1 class="navbar-item">Interactive Visualization for Information Security Analysis: JavaScript Documentation</h1>
+                    
+                    <a id="hamburger" role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
+                        <span aria-hidden="true"></span>
+                        <span aria-hidden="true"></span>
+                        <span aria-hidden="true"></span>
+                    </a>
+                </div>
+                
+            </nav>
+        </div>
+    </div>
+    <div class="container">
+        <div class="columns">
+            <div class="column is-3" id="sidebarNav">
+                <div class="sidebar">
+                    <nav>
+                        <h2><a href="index.html">Home</a></h2><div class="category"><h3>Tutorials</h3><ul><li><a href="tutorial-advanced-layouts.html">Advanced Layout Examples</a></li><li><a href="tutorial-contextual-layout.html">Contextual Layout Examples</a></li><li><a href="tutorial-grid-layout.html">Grid Layout Examples</a></li><li><a href="tutorial-radial-layout.html">Radial Layout Examples</a></li><li><a href="tutorial-tree-layout.html">Tree Layout Examples</a></li></ul><h3>Namespaces</h3><ul><li><a href="AssetNodeConfiguration.html">AssetNodeConfiguration</a></li><li><a href="BoldEdgeConfiguration.html">BoldEdgeConfiguration</a></li><li><a href="ContextualLayoutConfiguration.html">ContextualLayoutConfiguration</a></li><li><a href="ControlNodeConfiguration.html">ControlNodeConfiguration</a></li><li><a href="CustomNodeConfiguration.html">CustomNodeConfiguration</a></li><li><a href="GridLayoutConfiguration.html">GridLayoutConfiguration</a></li><li><a href="RadialLayoutConfiguration.html">RadialLayoutConfiguration</a></li><li><a href="RequirementNodeConfiguration.html">RequirementNodeConfiguration</a></li><li><a href="RiskNodeConfiguration.html">RiskNodeConfiguration</a></li><li><a href="ThinEdgeConfiguration.html">ThinEdgeConfiguration</a></li><li><a href="TreeLayoutConfiguration.html">TreeLayoutConfiguration</a></li></ul><h3>Classes</h3><ul><li><a href="AssetNode.html">AssetNode</a></li><li><a href="BaseEdge.html">BaseEdge</a></li><li><a href="BaseLayout.html">BaseLayout</a></li><li><a href="BaseNode.html">BaseNode</a></li><li><a href="BoldEdge.html">BoldEdge</a></li><li><a href="ContextualLayout.html">ContextualLayout</a></li><li><a href="ControlNode.html">ControlNode</a></li><li><a href="CustomNode.html">CustomNode</a></li><li><a href="EdgeFactory.html">EdgeFactory</a></li><li><a href="Graph.html">Graph</a></li><li><a href="GraphEdge.html">GraphEdge</a></li><li><a href="GraphNode.html">GraphNode</a></li><li><a href="GridExpander.html">GridExpander</a></li><li><a href="GridLayout.html">GridLayout</a></li><li><a href="NodeFactory.html">NodeFactory</a></li><li><a href="RadialLayout.html">RadialLayout</a></li><li><a href="RequirementNode.html">RequirementNode</a></li><li><a href="RiskNode.html">RiskNode</a></li><li><a href="ThinEdge.html">ThinEdge</a></li><li><a href="TreeLayout.html">TreeLayout</a></li><li><a href="Visualization.html">Visualization</a></li></ul><h3><a href="global.html">Global</a></h3></div>
+                    </nav>
+                </div>
+            </div>
+            <div class="column is-9-desktop">
+                <div class="content" id="main-content-wrapper">
+                    <header class="page-title">
+                        <p>Class</p>
+                        <h1>GridExpander</h1>
+                    </header>
+                    
+                    
 
 
 
@@ -44,77 +64,37 @@
 
 <header>
     
-        <h2>
-        GridExpander
-        </h2>
+        <h2><span class="attribs"><span class="type-signature"></span></span>GridExpander<span class="signature">(canvas, type)</span><span class="type-signature"></span></h2>
         
-            <div class="class-description usertext"><p>Class representing the option to collapse or expand the grid layout</p></div>
+            <div class="class-description"><p>Class representing the option to collapse or expand the grid layout.</p></div>
         
     
 </header>
 
 <article>
+    <div class="container-overview">
     
-        <div class="container-overview">
         
+            <div class='vertical-section'>
+                <h3 class="title"><span>Constructor</span></h3>
+                <div class="members">
+                    <div class="member">
+
+
+    
+    <h4 class="name" id="GridExpander">
+        <a class="href-link" href="#GridExpander">#</a>
+        
+        <span class="code-name">
             
-
-    
-    <h2>Constructor</h2>
-    
-
-    <h4 class="name" id="GridExpander"><span class="type-signature">(private) </span>new GridExpander<span class="signature">(canvas)</span><span class="type-signature"></span></h4>
-
-    
-
-
-
-
-<dl class="details">
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="layouts_helpers_GridExpander.js.html">layouts/helpers/GridExpander.js</a>, <a href="layouts_helpers_GridExpander.js.html#line11">line 11</a>
-    </li></ul></dd>
+                new GridExpander<span class="signature">(canvas, type)</span><span class="type-signature"></span>
+            
+        </span>
+    </h4>
     
 
     
-
     
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
 
 
 
@@ -147,26 +127,53 @@
     <tbody>
     
 
-        <tr>
-            
-                <td class="name"><code>canvas</code></td>
-            
+        
+<tr class="deep-level-0">
+  
+      <td class="name"><code>canvas</code></td>
+  
 
-            <td class="type">
-            
-                
+  <td class="type">
+  
+      
 <span class="param-type"><a href="global.html#Canvas">Canvas</a></span>
 
 
-            
-            </td>
+  
+  </td>
 
-            
+  
 
-            
+  
 
-            <td class="description last"><p>The canvas to render this expander on</p></td>
-        </tr>
+  <td class="description last"><p>The canvas to render this expander on.</p></td>
+</tr>
+
+
+    
+
+        
+<tr class="deep-level-0">
+  
+      <td class="name"><code>type</code></td>
+  
+
+  <td class="type">
+  
+      
+<span class="param-type">String</span>
+
+
+  
+  </td>
+
+  
+
+  
+
+  <td class="description last"><p>The type the expander is.</p></td>
+</tr>
+
 
     
     </tbody>
@@ -176,6 +183,46 @@
 
 
 
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    
+
+    
+
+    
+
+    
+        <p class="tag-source">
+            <a href="layouts_helpers_GridExpander.js.html" class="button">View Source</a>
+            <span>
+                <a href="layouts_helpers_GridExpander.js.html">layouts/helpers/GridExpander.js</a>, <a href="layouts_helpers_GridExpander.js.html#line22">line 22</a>
+            </span>
+        </p>
+    
+</dl>
 
 
 
@@ -190,35 +237,385 @@
 
 
 
+
+
+
+
+
+
+
+</div>
+                </div>
+            </div>
         
+    
+    </div>
+    
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <div class='vertical-section'>
+            <h3 class="title"><span>Methods</span></h3>
+            <div class="members">
+            
+                <div class="member">
+
+
+    
+    <h4 class="name" id="changeToHideMoreText">
+        <a class="href-link" href="#changeToHideMoreText">#</a>
+        
+        <span class="code-name">
+            
+                changeToHideMoreText<span class="signature">()</span><span class="type-signature"></span>
+            
+        </span>
+    </h4>
+    
+
+    
+    <p class="summary">Changes the expanders label.</p>
+    
+    
+    <div class="description">
+        <p>Changes the expanders label.</p>
+    </div>
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    
+
+    
+
+    
+
+    
+        <p class="tag-source">
+            <a href="layouts_helpers_GridExpander.js.html" class="button">View Source</a>
+            <span>
+                <a href="layouts_helpers_GridExpander.js.html">layouts/helpers/GridExpander.js</a>, <a href="layouts_helpers_GridExpander.js.html#line156">line 156</a>
+            </span>
+        </p>
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</div>
+            
+                <div class="member">
+
+
+    
+    <h4 class="name" id="changeToShowMoreText">
+        <a class="href-link" href="#changeToShowMoreText">#</a>
+        
+        <span class="code-name">
+            
+                changeToShowMoreText<span class="signature">()</span><span class="type-signature"></span>
+            
+        </span>
+    </h4>
+    
+
+    
+    <p class="summary">Changes the expanders label.</p>
+    
+    
+    <div class="description">
+        <p>Changes the expanders label.</p>
+    </div>
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    
+
+    
+
+    
+
+    
+        <p class="tag-source">
+            <a href="layouts_helpers_GridExpander.js.html" class="button">View Source</a>
+            <span>
+                <a href="layouts_helpers_GridExpander.js.html">layouts/helpers/GridExpander.js</a>, <a href="layouts_helpers_GridExpander.js.html#line137">line 137</a>
+            </span>
+        </p>
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</div>
+            
+                <div class="member">
+
+
+    
+    <h4 class="name" id="isRendered">
+        <a class="href-link" href="#isRendered">#</a>
+        
+        <span class="code-name">
+            
+                isRendered<span class="signature">()</span><span class="type-signature"></span>
+            
+        </span>
+    </h4>
+    
+
+    
+    <p class="summary">Determins where the expander is rendered or not.</p>
+    
+    
+    <div class="description">
+        <p>Determins where the expander is rendered or not.</p>
+    </div>
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    
+
+    
+
+    
+
+    
+        <p class="tag-source">
+            <a href="layouts_helpers_GridExpander.js.html" class="button">View Source</a>
+            <span>
+                <a href="layouts_helpers_GridExpander.js.html">layouts/helpers/GridExpander.js</a>, <a href="layouts_helpers_GridExpander.js.html#line187">line 187</a>
+            </span>
+        </p>
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div class='columns method-parameter'>
+        <div class="column is-2"><label>Returns:</label></div>
+        <div class="column is-10">
+            
+                    
+
+<div class="columns">
+    
+    <div class='param-desc column is-7'><p>True, if the SVG is rendered, else false.</p></div>
+    
+    
+</div>
+
+                
         </div>
-    
+    </div>
 
-    
 
-    
 
-    
-    
-    
 
-     
-
-    
-
-    
-
-    
-        <h3 class="subsection-title">Methods</h3>
-
-        
+</div>
             
+                <div class="member">
+
 
     
-
-    <h4 class="name" id="isRendered"><span class="type-signature"></span>isRendered<span class="signature">()</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="removeNode">
+        <a class="href-link" href="#removeNode">#</a>
+        
+        <span class="code-name">
+            
+                removeNode<span class="signature">()</span><span class="type-signature"></span>
+            
+        </span>
+    </h4>
+    
 
     
+    <p class="summary">Removes the rendered SVG expander from the canvas.</p>
+    
+    
+    <div class="description">
+        <p>Removes the rendered SVG expander from the canvas.</p>
+    </div>
+    
+
+
+
+
+
+
+
+
+
 
 
 
@@ -226,11 +623,6 @@
 <dl class="details">
 
     
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="layouts_helpers_GridExpander.js.html">layouts/helpers/GridExpander.js</a>, <a href="layouts_helpers_GridExpander.js.html#line205">line 205</a>
-    </li></ul></dd>
-    
 
     
 
@@ -253,13 +645,19 @@
     
 
     
-
     
 
     
 
     
 
+    
+        <p class="tag-source">
+            <a href="layouts_helpers_GridExpander.js.html" class="button">View Source</a>
+            <span>
+                <a href="layouts_helpers_GridExpander.js.html">layouts/helpers/GridExpander.js</a>, <a href="layouts_helpers_GridExpander.js.html#line197">line 197</a>
+            </span>
+        </p>
     
 </dl>
 
@@ -267,98 +665,47 @@
 
 
 
-<div class="description usertext">
-    <p>Function to determine if the expander is already rendered</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 </div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
             
+                <div class="member">
+
 
     
-
-    <h4 class="name" id="render"><span class="type-signature">(private) </span>render<span class="signature">(X, Y)</span><span class="type-signature"></span></h4>
-
-    
-
-
-
-
-<dl class="details">
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="layouts_helpers_GridExpander.js.html">layouts/helpers/GridExpander.js</a>, <a href="layouts_helpers_GridExpander.js.html#line70">line 70</a>
-    </li></ul></dd>
+    <h4 class="name" id="render">
+        <a class="href-link" href="#render">#</a>
+        
+        <span class="code-name">
+            
+                render<span class="signature">(IX, IY)</span><span class="type-signature"></span>
+            
+        </span>
+    </h4>
     
 
     
-
+    <p class="summary">Renders the expander.</p>
     
-
     
-
+    <div class="description">
+        <p>Renders the expander.</p>
+    </div>
     
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-<div class="description usertext">
-    <p>Renders the grid expander</p>
-</div>
-
-
 
 
 
@@ -383,6 +730,8 @@
         
 
         
+        <th>Default</th>
+        
 
         <th class="last">Description</th>
     </tr>
@@ -391,80 +740,70 @@
     <tbody>
     
 
-        <tr>
-            
-                <td class="name"><code>X</code></td>
-            
+        
+<tr class="deep-level-0">
+  
+      <td class="name"><code>IX</code></td>
+  
 
-            <td class="type">
-            
-                
+  <td class="type">
+  
+      
 <span class="param-type">Number</span>
 
 
-            
-            </td>
+  
+  </td>
 
-            
+  
 
-            
+  
+      <td class="default">
+      
+          finalX
+      
+      </td>
+  
 
-            <td class="description last"><p>The X position for collapsed representation</p></td>
-        </tr>
+  <td class="description last"><p>The initial X render position.</p></td>
+</tr>
+
 
     
 
-        <tr>
-            
-                <td class="name"><code>Y</code></td>
-            
+        
+<tr class="deep-level-0">
+  
+      <td class="name"><code>IY</code></td>
+  
 
-            <td class="type">
-            
-                
+  <td class="type">
+  
+      
 <span class="param-type">Number</span>
 
 
-            
-            </td>
+  
+  </td>
 
-            
+  
 
-            
+  
+      <td class="default">
+      
+          finalY
+      
+      </td>
+  
 
-            <td class="description last"><p>The Y position for collapsed representation</p></td>
-        </tr>
+  <td class="description last"><p>The initial Y render position.</p></td>
+</tr>
+
 
     
     </tbody>
 </table>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-            
-
-    
-
-    <h4 class="name" id="setFinalX"><span class="type-signature"></span>setFinalX<span class="signature">(finalX)</span><span class="type-signature"></span></h4>
-
-    
 
 
 
@@ -472,11 +811,6 @@
 <dl class="details">
 
     
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="layouts_helpers_GridExpander.js.html">layouts/helpers/GridExpander.js</a>, <a href="layouts_helpers_GridExpander.js.html#line45">line 45</a>
-    </li></ul></dd>
-    
 
     
 
@@ -499,13 +833,19 @@
     
 
     
-
     
 
     
 
     
 
+    
+        <p class="tag-source">
+            <a href="layouts_helpers_GridExpander.js.html" class="button">View Source</a>
+            <span>
+                <a href="layouts_helpers_GridExpander.js.html">layouts/helpers/GridExpander.js</a>, <a href="layouts_helpers_GridExpander.js.html#line39">line 39</a>
+            </span>
+        </p>
     
 </dl>
 
@@ -513,94 +853,56 @@
 
 
 
-<div class="description usertext">
-    <p>Sets the final X position</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 </div>
-
-
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
             
-                <td class="name"><code>finalX</code></td>
-            
+                <div class="member">
 
-            <td class="type">
-            
-                
-<span class="param-type">Number</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>the final X position</p></td>
-        </tr>
 
     
-    </tbody>
-</table>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    <h4 class="name" id="transformToFinalPosition">
+        <a class="href-link" href="#transformToFinalPosition">#</a>
         
+        <span class="code-name">
             
-
+                transformToFinalPosition<span class="signature">()</span><span class="type-signature"></span>
+            
+        </span>
+    </h4>
     
 
-    <h4 class="name" id="setFinalY"><span class="type-signature"></span>setFinalY<span class="signature">(finalY)</span><span class="type-signature"></span></h4>
-
     
+    <p class="summary">Transforms the expander from its final position to its initial rendered position.</p>
+    
+    
+    <div class="description">
+        <p>Transforms the expander from its final position to its initial rendered position.</p>
+    </div>
+    
+
+
+
+
+
+
+
+
+
 
 
 
@@ -608,11 +910,6 @@
 <dl class="details">
 
     
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="layouts_helpers_GridExpander.js.html">layouts/helpers/GridExpander.js</a>, <a href="layouts_helpers_GridExpander.js.html#line58">line 58</a>
-    </li></ul></dd>
-    
 
     
 
@@ -635,7 +932,6 @@
     
 
     
-
     
 
     
@@ -643,141 +939,12 @@
     
 
     
-</dl>
-
-
-
-
-
-<div class="description usertext">
-    <p>Sets the final Y position</p>
-</div>
-
-
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>finalY</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Number</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>the final Y position</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-            
-
-    
-
-    <h4 class="name" id="setReRenderFunc"><span class="type-signature"></span>setReRenderFunc<span class="signature">(reRenderFunc)</span><span class="type-signature"></span></h4>
-
-    
-
-
-
-
-<dl class="details">
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="layouts_helpers_GridExpander.js.html">layouts/helpers/GridExpander.js</a>, <a href="layouts_helpers_GridExpander.js.html#line214">line 214</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
+        <p class="tag-source">
+            <a href="layouts_helpers_GridExpander.js.html" class="button">View Source</a>
+            <span>
+                <a href="layouts_helpers_GridExpander.js.html">layouts/helpers/GridExpander.js</a>, <a href="layouts_helpers_GridExpander.js.html#line175">line 175</a>
+            </span>
+        </p>
     
 </dl>
 
@@ -785,87 +952,26 @@
 
 
 
-<div class="description usertext">
-    <p>Function to assign the grid re-render function to this expander</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 </div>
-
-
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
             
-                <td class="name"><code>reRenderFunc</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">function</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The re-render function</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
+            </div>
+        </div>
     
 
     
@@ -878,21 +984,24 @@
 
 
 
-    
-    
-</div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<br class="clear">
 
-<footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.3</a> on Tue Mar 31 2020 05:52:29 GMT+0200 (GMT+02:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+<footer class="footer">
+    <div class="content has-text-centered">
+        <p>Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.3</a> on Fri Apr 17 2020 10:40:10 GMT+0200 (GMT+02:00)</p>
+        <p class="sidebar-created-by">
+            <a href="https://github.com/SoftwareBrothers/better-docs" target="_blank">BetterDocs theme</a> provided with <i class="fas fa-heart"></i> by 
+            <a href="http://softwarebrothers.co" target="_blank">SoftwareBrothers - JavaScript Development Agency</a>
+        </p>
+    </div>
 </footer>
 
-<script>prettyPrint();</script>
-<script src="scripts/polyfill.js"></script>
-<script src="scripts/linenumber.js"></script>
 
-
-
+<script src="scripts/app.min.js"></script>
+<script src="scripts/linenumber.js"> </script>
 </body>
 </html>

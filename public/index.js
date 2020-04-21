@@ -1,141 +1,285 @@
-/* eslint-disable no-unused-vars */
-/* eslint-disable max-len */
-/* eslint-disable import/extensions */
-/* eslint-disable max-classes-per-file */
+// /* eslint-disable no-unused-vars */
+// /* eslint-disable max-len */
+// /* eslint-disable import/extensions */
+// /* eslint-disable max-classes-per-file */
 
-import {
-  Visualization, RadialLayout, GridLayout, TreeLayout, ContextualLayout,
-} from "./graphVisualization.js"
+import { Visualization, TreeLayout, ContextualLayout, GridLayout, RadialLayout, Asset } from "./graphVisualization.js"
 
 
-// TODO: pass default override config for layouts, nodes and edges here
-// TODO: ask: more details about the process of loading data from the database -> i can delegate
-const vis = new Visualization({ databaseUrl: "http://localhost:3001" }) // this is the visualization
+// const visualization = new Visualization({
+//   databaseUrl: "http://localhost:3001",
+//   nodeEndpoint: "node-data",
+//   edgeEndpoint: "edge-data",
+//   zoom: { lvl: 1, x: 100, y: 100 }
+// })
+
+// const data = { "id": 74, "label": "TEST ASSET 1", "description": "Lorem ipsum dolor sit amet consectetur adipisicing elit. Quibusdam maxime cupiditate fugiat deserunt libero, ab temporibus delectus sunt et doloribus. Voluptate expedita dicta neque harum debitis laudantium molestias velit aut, quos impedit consequatur est libero aliquam enim quibusdam optio nisi aspernatur. Voluptates iure reiciendis, eos illo explicabo sequi architecto! Iure numquam officia temporibus et, mollitia, dolore quas eos non quibusdam quia hic dolores impedit debitis eligendi? Sequi a maxime provident tenetur eveniet modi animi consectetur vitae, nostrum amet ad iusto accusamus placeat, beatae saepe voluptatum! Veritatis architecto error cum eaque. Ipsam blanditiis ab, tenetur eveniet modi doloribus aspernatur aliquid dicta.", "type": "asset", "keyValuePairs": [{ "key": "key 1", "value": "key value pair: value 1" }, { "key": "key 2", "value": "key value pair: value 2" }, { "key": "key 3", "value": "key value pair: value 3" }, { "key": "key 4", "value": "key value pair: value 4" }, { "key": "key 5", "value": "key value pair: value 5" }, { "key": "key 6", "value": "key value pair: value 6" }], "tooltip": "Asset with <br> tooltip", "parent": null, "children": [], "config": null }
+// const asset = new Asset(data, visualization.canvas)
+// // asset.renderAsMax(300, 400, 400, 300)
+// asset.renderAsMin(100, 50, 150, 100)
 
 
-// create an initial subgraph by passing node and edge ids as paramaters
-// const graph1 = vis.createInitialGraph([10, 11, 12], [[10, 12], [10, 11], [11, 12]])
+// // setTimeout(() => asset.transformToMin(100, 50), 1000)
+// setTimeout(() => asset.transformToMax(500, 500), 1000)
 
-// or by manually adding them
-const graph1 = vis.createInitialGraph()
-for (let i = 0; i < 15; i += 1) {
-  graph1.includeNode(i)
+
+
+// const asset = new Asset(data, visualization.canvas)
+// asset.setFinalXY(300, 300)
+// asset.renderAsMin(250, 250, 300, 300)
+
+
+const basicGridLayout = () => {
+  // create the underlying graph structure which holds references to our data
+  const graph = visualization.createInitialGraph()
+
+  // add nodes
+  // for (let i = 0; i < 30; i += 1) {
+  // }
+
+  graph.includeNode(74)
+  // remove nodes
+  // graph.excludeNode(4)
+  // graph.excludeNode(5)
+
+  // create a grid layout with additional layout configuration
+  const grid = new GridLayout({ limitNodes: 10, limitColumns: 5 })
+
+  // render the layout 
+  visualization.render(graph, grid)
 }
 
-// remove and add nodes
-graph1.excludeNode(0)
-graph1.excludeNode(1)
-graph1.excludeNode(2)
-graph1.excludeNode(3)
-graph1.excludeNode(4)
-graph1.excludeNode(5)
+const updateGridLayout = () => {
+  const graph = visualization.createInitialGraph()
 
-graph1.includeNode(4)
-graph1.includeNode(5)
+  // add nodes
+  for (let i = 0; i < 30; i += 1) {
+    graph.includeNode(i)
+  }
 
-/** Grid 1 */
-const grid1 = new GridLayout({ limitNodes: null, limitColumns: 3 })
-// vis.render(graph1, grid1)
+  // remove nodes
+  graph.excludeNode(4)
+  graph.excludeNode(5)
 
+  // create a grid layout with additional layout configuration
+  const grid = new GridLayout({ limitNodes: 10, limitColumns: 5 })
 
-// // add or remove nodes to the graph and update the visualization
-// setTimeout(() => {
-//   graph1.excludeNode(4)
-//   graph1.excludeNode(5)
-
-//   graph1.includeNode(0)
-//   graph1.includeNode(1)
-//   graph1.includeNode(2)
-//   graph1.includeNode(3)
-
-//   vis.update(grid1, graph1)
-// }, 2000)
-
-// // and re-ranage the layout into 4 columns
-// setTimeout(() => {
-//   vis.update(grid1, { limitColumns: 4 })
-// }, 1000)
-
-// // remove two nodes and re-ranage the layout into 4 columns without any limitations
-// setTimeout(() => {
-//   graph1.excludeNode(4)
-//   graph1.excludeNode(5)
-
-//   vis.update(grid1, graph1, { limitNodes: null, limitColumns: 4 })
-// }, 1000)
+  // render the layout 
+  visualization.render(graph, grid)
 
 
-/** Multiple Layouts 2 */
-const graph2 = vis.createInitialGraph([0, 1, 2, 3])
-const graph3 = vis.createInitialGraph([13, 14, 15])
-const graph4 = vis.createInitialGraph([4, 5])
-const graph5 = vis.createInitialGraph([0, 1, 4, 8, 10, 14])
-const grid2 = new GridLayout({ limitNodes: 4, limitColumns: 2, translateX: 0 })
-const grid3 = new GridLayout({ limitNodes: 1, limitColumns: 1, translateY: 0 })
-const grid4 = new GridLayout({ limitNodes: null, limitColumns: 1, translateY: 0 })
-const grid5 = new GridLayout({ limitNodes: null, limitColumns: 1, translateX: 0 })
+  // or update both, the underlying data and the layout configuration
+  setTimeout(() => {
 
-// vis.render(graph2, grid2)
-// vis.render(graph3, grid3)
-// vis.render(graph4, grid4)
-// vis.render(graph5, grid5)
+    // add nodes
+    graph.includeNode(4)
+    graph.includeNode(5)
 
-// // remove node 0 from all layouts
-// setTimeout(() => {
-//   graph2.excludeNode(0)
-//   graph5.excludeNode(0)
-
-//   vis.update(grid2, graph2)
-//   vis.update(grid5, graph5)
-// }, 3000)
-
-// // and re-ranage the first layout from one into a two column grid
-// setTimeout(() => {
-//   vis.update(grid2, { limitColumns: 1 })
-// }, 1000)
+    // update the graph and the layout
+    visualization.update(grid, graph, { limitColumns: 8, limitNodes: null })
+  }, 1000)
 
 
-/** Contextual 1 */
-const graph6 = vis.createInitialGraph()
-for (let i = 16; i <= 39; i += 1) {
-  graph6.includeNode(i)
+  setTimeout(() => {
+
+    // update the layout
+    visualization.update(grid, { limitNodes: 8, limitColumns: 4 })
+
+  }, 3000)
+
 }
 
-const contextual1 = new ContextualLayout({ focus: 36 })
-vis.render(graph6, contextual1)
+const changeGridMouseEvent = () => {
+  // create the underlying graph structure which holds references to our data
+  const graph = visualization.createInitialGraph()
 
-// const grid2 = vis.render(graph, new GridLayout({
-//   limitNodes: 3, limitColumns: 3, translateX: 0, translateY: 200,
-// }))
+  // add nodes
+  for (let i = 0; i < 30; i += 1) {
+    graph.includeNode(i)
+  }
 
-/*
-// TODO: showNode() // redundant?
-*/
+  // remove nodes
+  graph.excludeNode(4)
+  graph.excludeNode(5)
 
-// const vis = new Visualization({ databaseUrl: "http://localhost:3000" })
+  // create a grid layout with additional layout configuration
+  const events = [{ name: "expandGridLayoutEvent", mouse: "dblclick", modifier: "shiftKey" }]
+  const grid = new GridLayout({ limitNodes: 10, limitColumns: 5 }, event)
 
-// // setTimeout(() => {
-// //   vis.updateConfiguration(grid1, { maxColumns: 3, maxRows: 15 })
-// // }, 1000)
+  // render the layout 
+  visualization.render(graph, grid)
+}
+const manyElementsRendered = () => {
 
-// // TODO: setLayout // updates the layout configuration: example: change gridl cols from 4 to 3
+
+  // or by manually adding them
+  const graph1 = visualization.createInitialGraph()
+  for (let i = 0; i < 75; i += 1) {
+    graph1.includeNode(i)
+  }
+  for (let i = 0; i < 25; i += 1) {
+    graph1.includeNode(i)
+  }
+
+  for (let i = 0; i < 75; i += 1) {
+    graph1.includeNode(i)
+  }
+  for (let i = 0; i < 25; i += 1) {
+    graph1.includeNode(i)
+  }
 
 
-// const contextualGraph = new Graph() // das ist subgraph; was ist wenn nodes nicht existieren?; es braucht ref zum übergeordneten; daten können auch kopiert werden
-// contextualGraph.addNode(100) // TODO: includeNode(); includier node zu graphen ; // addNode(); erstell neue node
-// contextualGraph.addNode(101) // TODO: exclude() zum entfernen
-// contextualGraph.addNode(102)
-// contextualGraph.addNode(103)
-// contextualGraph.addNode(104)
-// contextualGraph.addNode(105)
-// contextualGraph.addNode(106)
+  for (let i = 0; i < 75; i += 1) {
+    graph1.includeNode(i)
+  }
+  for (let i = 0; i < 25; i += 1) {
+    graph1.includeNode(i)
+  }
 
-// // FIXME: here (contextual layout), edges are created automatically, addEdge only adds a label or overrides the default configuration
-// contextualGraph.addEdge(102, 100)
-// contextualGraph.addEdge(102, 101)
-// contextualGraph.addEdge(103, 102)
-// contextualGraph.addEdge(104, 102)
-// contextualGraph.addEdge(105, 104)
-// contextualGraph.addEdge(106, 104)
+  // for (let i = 0; i < 75; i += 1) {
+  //   graph1.includeNode(i)
+  // }
+  // for (let i = 0; i < 25; i += 1) {
+  //   graph1.includeNode(i)
+  // }
 
-// // const contextual1 = vis.render(contextualGraph, new ContextualLayout({ startNodeId: 106 }))
+
+  // for (let i = 0; i < 75; i += 1) {
+  //   graph1.includeNode(i)
+  // }
+  // for (let i = 0; i < 25; i += 1) {
+  //   graph1.includeNode(i)
+  // }
+
+
+
+  /** Grid 1 */
+  const grid1 = new GridLayout({ limitNodes: null, animationSpeed: 300, limitColumns: 20 })
+  visualization.render(graph1, grid1)
+}
+
+const multipleLayoutsSideBySide = () => {
+  const graph2 = visualization.createInitialGraph([0, 1, 2, 3])
+  const graph3 = visualization.createInitialGraph([13, 14, 15])
+  const graph4 = visualization.createInitialGraph([4, 5])
+  const graph5 = visualization.createInitialGraph([0, 1, 4, 8, 10, 14])
+  const grid2 = new GridLayout({ limitNodes: 4, limitColumns: 1, translateX: 0 })
+  const grid3 = new GridLayout(
+    { limitNodes: 1, limitColumns: 3, translateY: 0 },
+    [{ name: "expandGridLayoutEvent", mouse: "dblclick", modifier: "shiftKey" }],
+    { asset: { borderStrokeColor: "#fff", borderStrokeDasharray: "0" } }
+  )
+  const grid4 = new GridLayout({ limitNodes: null, limitColumns: 1, translateY: 0 })
+  const grid5 = new GridLayout({ limitNodes: null, limitColumns: 1, translateX: 0 })
+
+  visualization.render(graph3, grid3)
+  visualization.render(graph2, grid2)
+  visualization.render(graph4, grid4)
+  visualization.render(graph5, grid5)
+}
+
+
+const radialLayout = () => {
+  // create the underlying graph structure which holds references to our data
+  const graph = visualization.createInitialGraph()
+
+  // add nodes
+  for (let i = 110; i <= 149; i += 1) {
+    graph.includeNode(i)
+  }
+
+  // add edges
+  graph.includeEdge(111, 110)
+  graph.includeEdge(112, 110)
+  graph.includeEdge(113, 110)
+
+  // create a radial layout with a root and a rendering depth
+  const radial = new RadialLayout({ root: 110, renderDepth: 3 })
+
+  // render the layout 
+  visualization.render(graph, radial)
+}
+const updateRadialLayout = () => {
+
+  const graph = visualization.createInitialGraph()
+
+  // add nodes
+  for (let i = 110; i <= 149; i += 1) {
+    graph.includeNode(i)
+  }
+
+  // add edges
+  graph.includeEdge(111, 110)
+  graph.includeEdge(112, 110)
+  graph.includeEdge(113, 110)
+
+  // create a radial layout with a root and a rendering depth
+  const radial = new RadialLayout({ root: 110, renderDepth: 3 })
+
+  // render the layout 
+  visualization.render(graph, radial)
+
+  setTimeout(() => {
+
+    // update the layout
+    visualization.update(radial, { translateX: 100, translateY: 0, radialRadius: 200, radiusDelta: 150, hAspect: 4 / 2 })
+
+  }, 1000)
+}
+
+
+const contextualLayout = () => {
+  const graph6 = visualization.createInitialGraph()
+  for (let i = 16; i <= 39; i += 1) {
+    graph6.includeNode(i)
+  }
+
+  graph6.includeEdge(36, 34)
+  graph6.includeEdge(37, 36)
+
+
+  const contextual1 = new ContextualLayout({ focus: 36, animationSpeed: 1 })
+  visualization.render(graph6, contextual1)
+}
+
+
+const treeLayout = () => {
+  // create the underlying graph structure that holds references to our data
+  const graph = visualization.createInitialGraph()
+
+  // add nodes
+  for (let i = 110; i <= 149; i += 1) {
+    graph.includeNode(i)
+  }
+
+  // add edges
+  graph.includeEdge(111, 110)
+  graph.includeEdge(112, 110)
+  graph.includeEdge(113, 110)
+
+  // create a radial layout with a root and a rendering depth
+  const events = [{ name: "nodeEvent", mouse: "click", modifier: "ctrlKey" }]
+  const tree = new TreeLayout({ root: 110, renderDepth: 1 }, events)
+  visualization.render(graph, tree)
+}
+
+
+
+// basicGridLayout()
+// changeGridMouseEvent()
+// updateGridLayout()
+
+// manyElementsRendered()
+
+// radialLayout()
+// updateRadialLayout()
+
+
+// treeLayout()
+
+// multipleLayoutsSideBySide()
+// contextualLayout()
+
+
+
+

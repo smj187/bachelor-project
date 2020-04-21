@@ -1,0 +1,43 @@
+{
+    "id": 74,
+    "label": "TEST ASSET 1",
+    "description": "Lorem",
+    "type": "asset",
+    "keyValuePairs": [
+        {
+            "key": "key 1",
+            "value": "key value pair: value 1"
+        },
+        {
+            "key": "key 2",
+            "value": "key value pair: value 2"
+        },
+        {
+            "key": "key 3",
+            "value": "key value pair: value 3"
+        },
+        {
+            "key": "key 4",
+            "value": "key value pair: value 4"
+        },
+        {
+            "key": "key 5",
+            "value": "key value pair: value 5"
+        },
+        {
+            "key": "key 6",
+            "value": "key value pair: value 6"
+        }
+    ],
+    "tooltip": "Asset with <br> tooltip",
+    "parent": null,
+    "children": [],
+    "config": {
+        "maxWidth": 350,
+        "maxHeight": 225,
+        "minWidth": 150,
+        "minHeight": 80,
+        "labelColor": "#222",
+        "animationSpeed": 700
+    }
+}

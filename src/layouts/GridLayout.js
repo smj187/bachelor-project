@@ -1,29 +1,107 @@
 import BaseLayout from "./BaseLayout"
 import GridExpander from "./helpers/GridExpander"
-import GridConfiguration from "../configuration/GridConfiguration"
+import GridLayoutConfiguration from "../configuration/GridLayoutConfiguration"
 
 
+/**
+ * This class calculates and renders the grid layout.
+ */
 class GridLayout extends BaseLayout {
-  constructor(customConfig = {}) {
-    super()
-    this.config = { ...GridConfiguration, ...customConfig }
-    this.expander = null
+  constructor(customConfig = {}, events = [], additionalNodeRepresentations) {
+    super(additionalNodeRepresentations)
+    this.config = { ...GridLayoutConfiguration, ...customConfig }
+
+    // layout specific
+    this.gridExpander = null
+    this.registerMouseEvents(events)
   }
 
+
+  /**
+   * Overrides the default mouse behaviour for the grid layout.
+   * @param {Object} events The events to be added.
+   */
+  registerMouseEvents(events) {
+
+
+    const expandGridLayoutEvent = async () => {
+      if (this.currentLayoutState === "show more") {
+        this.currentLayoutState = "show less"
+        this.config = { ...this.config, limitNodes: this.config.cachedLimit }
+        delete this.config.cachedLimit
+        this.gridExpander.changeToHideMoreText()
+      } else {
+        this.currentLayoutState = "show more"
+        this.config = { ...this.config, cachedLimit: this.config.limitNodes, limitNodes: this.nodeData.length }
+        this.gridExpander.changeToShowMoreText()
+      }
+
+      const tooltip = document.getElementById("tooltip")
+      tooltip.style.display = "none"
+
+      await this.loadAdditionalGridDataAsync()
+      console.log("rerender")
+
+      // update all layouts to the right
+      const prevW = this.layoutInfo.w
+      this.calculateLayout()
+      const newW = this.layoutInfo.w
+      this.renderLayout()
+
+
+
+      // update all layouts right side
+      this.layoutReferences.forEach((llayout, i) => {
+        if (i > this.layoutReferences.indexOf(this)) {
+          llayout.calculateLayout(newW - prevW)
+          llayout.renderLayout()
+        }
+      })
+    }
+
+    if (events.length > 0) {
+      this.events = [
+        {
+          name: "expandGridLayoutEvent",
+          func: expandGridLayoutEvent,
+          mouse: events.find(e => e.name === "expandGridLayoutEvent").mouse || "click",
+          modifier: events.find(e => e.name === "expandGridLayoutEvent").modifier || "shiftKey",
+        }
+      ]
+    } else {
+      this.events = [
+        {
+          name: "expandGridLayoutEvent",
+          func: expandGridLayoutEvent,
+          mouse: "click",
+          modifier: "shiftKey"
+        }
+      ]
+    }
+  }
+
+
+  /**
+   * Calulates the layout.
+   * @param {Number} offset=0 The width from other layouts.
+   */
   calculateLayout(offset = 0) {
+    // add additional translation towards X
     this.config = { ...this.config, translateX: this.config.translateX + offset }
+
+    // calculate nodes' final position
     const calculateFinalPosition = () => {
       const limit = this.config.limitNodes ? this.config.limitNodes : this.nodes.length
       const nodes = this.nodes.slice(0, limit)
 
-
-      // create grid expander only if required
-      if (this.config.limitNodes < this.nodeData.length && this.expander === null) {
+      // create and assign a grid expander only if required
+      if (this.config.limitNodes < this.nodeData.length && this.gridExpander === null) {
         const expander = new GridExpander(this.canvas)
-        this.expander = expander
+        this.gridExpander = expander
       }
 
 
+      // calculate columns and rows
       const cols = this.config.limitColumns
       let nodeIndex = 0
       const nodeCols = []
@@ -54,21 +132,15 @@ class GridLayout extends BaseLayout {
         col.push(node)
       })
 
-
-      // console.log(nodeRows)
-      // console.log(nodeCols)
-      // console.log("----")
-
-      // calculate initial position
+      // set initial position
       this.nodes.forEach((node) => {
         const w = this.config.renderingSize === "max" ? node.getMaxWidth() : node.getMinWidth()
         const h = this.config.renderingSize === "max" ? node.getMaxHeight() : node.getMinHeight()
-        const x = this.config.spacing + this.config.translateX + w / 2// +w / 1
+        const x = this.config.spacing + this.config.translateX + w / 2
         const y = this.config.spacing + this.config.translateY + h / 2
         node.setFinalX(x)
         node.setFinalY(y)
       })
-
 
       // find row spacing
       let rowSpacing = 0
@@ -87,7 +159,6 @@ class GridLayout extends BaseLayout {
           })
         }
       })
-
 
       // find col spacing
       let columnSpacing = 0
@@ -108,16 +179,11 @@ class GridLayout extends BaseLayout {
       })
     }
 
+    // calculate an expander button
     const calculateExpander = () => {
-      // collapsed state
-      if (this.expander === null) {
+      if (this.gridExpander === null || this.config.limitNodes === null) {
         return
       }
-
-      if (this.config.limitNodes === null) {
-        return
-      }
-
 
       // get lowest X coordinate
       const minX = Math.min(...this.nodes.map((n) => n.getFinalX()))
@@ -125,67 +191,46 @@ class GridLayout extends BaseLayout {
       const w = this.config.renderingSize === "max" ? minNode.getMaxWidth() : minNode.getMinWidth()
       const x = minX - w / 2
 
-
       // get deepest Y coordinate
       const maxY = Math.max(...this.nodes.map((n) => n.getFinalY()))
       const maxNode = this.nodes.find((n) => n.getFinalY() === maxY)
       const h = this.config.renderingSize === "max" ? maxNode.getMaxHeight() : maxNode.getMinHeight()
       const y = maxY + h + this.config.spacing
 
-
-      // this.canvas.circle(5).fill("#f75").center(x, y)
-
-      this.expander.setFinalX(x)
-      this.expander.setFinalY(y)
+      this.gridExpander.setFinalX(x)
+      this.gridExpander.setFinalY(y)
     }
 
-    const calculateBackground = () => {
+    // calculate the layout dimensions
+    const calculateLayoutInfo = () => {
       // top left
-      const { nodes } = this
-      const x0 = Math.min(...nodes.map((n) => {
+      const x0 = Math.min(...this.nodes.map((n) => {
         const w = this.config.renderingSize === "max" ? n.getMaxWidth() : n.getMinWidth()
         return n.getFinalX() - w / 2 - this.config.spacing / 2
       }))
-      const y0 = Math.min(...nodes.map((n) => {
-        const h = this.config.renderingSize === "max" ? n.getMaxHeight() : n.getMinHeight()
-        return n.getFinalY() - h / 2 - this.config.spacing / 2
-      }))
-
-      // this.canvas.circle(5).fill("#000").center(x0, y0)
+      const y0 = 0
 
 
       // top right
-      const x1 = Math.max(...nodes.map((n) => {
+      const x1 = Math.max(...this.nodes.map((n) => {
         const w = this.config.renderingSize === "max" ? n.getMaxWidth() : n.getMinWidth()
         return n.getFinalX() + w / 2 + this.config.spacing / 2
       }))
 
       const y1 = y0
-      // this.canvas.circle(5).fill("#75f").center(x1, y1)
 
 
       // bottom right
       const x2 = x1
-      let y2 = Math.max(...nodes.map((n) => {
+      let y2 = Math.max(...this.nodes.map((n) => {
         const h = this.config.renderingSize === "max" ? n.getMaxHeight() : n.getMinHeight()
         return n.getFinalY() + h / 2 + this.config.spacing / 2
       }))
 
-      if (this.expander !== null && this.config.limitNodes !== null) {
-        y2 = this.expander.getFinalY() + this.config.spacing / 2 + this.expander.config.expanderHeight / 2
+      if (this.gridExpander !== null && this.config.limitNodes !== null) {
+        y2 = this.gridExpander.getFinalY() + this.config.spacing / 2 + this.gridExpander.config.expanderHeight / 2
       }
-      // this.canvas.circle(5).fill("#f75").center(x2, y2)
 
-
-      // bottom left
-      // const x3 = x0
-      // const y3 = y2
-      // this.canvas.circle(5).fill("#000").center(x3, y3)
-
-
-      const cx = (x0 + x2) / 2
-      const cy = (y0 + y2) / 2
-      // this.canvas.circle(5).fill("#1f1").center(cx, cy)
 
       // store layout width and height info
       const calculateDistance = (sx, sy, tx, ty) => {
@@ -194,6 +239,11 @@ class GridLayout extends BaseLayout {
         return Math.sqrt(dx * dx + dy * dy)
       }
 
+
+      // this.canvas.circle(5).fill("#000").center(x0, y0)
+      // this.canvas.circle(5).fill("#75f").center(x1, y1)
+      // this.canvas.circle(5).fill("#f75").center(x2, y2)
+      // this.canvas.circle(5).fill("#1f1").center((x0 + x2) / 2, (y0 + y2) / 2)
 
       this.layoutInfo = {
         x: x0,
@@ -207,87 +257,70 @@ class GridLayout extends BaseLayout {
 
     calculateFinalPosition()
     calculateExpander()
-    calculateBackground()
+    calculateLayoutInfo()
 
+    console.log("Grid", this.layoutInfo)
     return this.layoutInfo
   }
 
 
+  /**
+   * Renders the layout. First, it renders the grid expander, but only if required. Second, it renders
+   * all required nodes and transforms them into position.
+   */
   renderLayout() {
     const limit = this.config.limitNodes ? this.config.limitNodes : this.nodes.length
     const X = this.layoutInfo.cx
     const Y = this.layoutInfo.cy
 
-
+    // renders the grid expander
     const renderExpander = () => {
-      if (this.config.limitNodes === null && this.expander.isRendered() === true) {
-        this.expander.removeNode()
+      if (this.config.limitNodes === null && this.gridExpander.isRendered() === true) {
+        this.gridExpander.removeNode()
         return
       }
 
-      if (this.expander === null) {
+      if (this.gridExpander === null || this.config.limitNodes === null) {
         return
       }
 
 
-      if (this.expander.isRendered() === true) {
-        this.expander.transformToFinalPosition()
+      if (this.gridExpander.isRendered() === true) {
+        this.gridExpander.transformToFinalPosition()
         return
       }
 
-      if (this.config.limitNodes === null) {
-        return
-      }
 
-      const reRenderFunc = async () => {
-        if (this.currentLayoutState === "show more") {
-          this.currentLayoutState = "show less"
-          this.config = { ...this.config, limitNodes: this.config.cachedLimit }
-          delete this.config.cachedLimit
-          this.expander.changeToHideMoreText()
-        } else {
-          this.currentLayoutState = "show more"
-          this.config = { ...this.config, cachedLimit: this.config.limitNodes, limitNodes: this.nodeData.length }
-          this.expander.changeToShowMoreText()
-        }
+      if (this.gridExpander.svg === null) {
 
-        const tooltip = document.getElementById("tooltip")
-        tooltip.style.display = "none"
-
-        await this.loadInitialGridDataAsync() // update all layouts to the right
-
-
-        const prevW = this.layoutInfo.w
-        this.calculateLayout()
-        const newW = this.layoutInfo.w
-        this.renderLayout()
-
-        // update all layouts right side
-        this.layoutReferences.forEach((llayout, i) => {
-          if (i > this.layoutReferences.indexOf(this)) {
-            llayout.calculateLayout(newW - prevW)
-            llayout.renderLayout()
+        this.gridExpander.render(X, Y)
+        // add event to expander
+        this.gridExpander.svg.on(this.events[0].mouse, (e) => {
+          if (this.events[0].modifier !== null) {
+            if (this.events[0].modifier, e[this.events[0].modifier]) {
+              this.events[0].func()
+            }
+          } else {
+            this.expandGridLayoutEvent()
           }
         })
       }
-      if (this.expander.svg === null) {
-        this.expander.setReRenderFunc(reRenderFunc)
-        this.expander.render(X, Y)
-      }
-      this.expander.transformToFinalPosition()
+      this.gridExpander.transformToFinalPosition()
     }
 
+    // renders visual node representations
     const renderNodes = () => {
       this.nodes.forEach((node, i) => {
-      // render new nodes
-        if (i <= limit && node.isRendered() === false) {
-          if (node.isRendered() === false) {
-            if (this.config.renderingSize === "max") node.renderAsMax(X, Y)
-            if (this.config.renderingSize === "min") node.renderAsMin(X, Y)
-          }
-        }
+        // console.log(node)
+        if (i <= limit && node.isRendered() === false) { // create non-existing nodes
 
-        if (node.isRendered() === true) {
+          if (this.config.renderingSize === "max") node.renderAsMax(X, Y)
+          if (this.config.renderingSize === "min") {
+            node.renderAsMin(X, Y)
+          }
+
+        } else if (node.isRendered() === true) { // update nodes
+          // console.log("trf", node)
           node.transformToFinalPosition()
         }
 
@@ -300,6 +333,8 @@ class GridLayout extends BaseLayout {
 
     renderExpander()
     renderNodes()
+
+
   }
 }
 

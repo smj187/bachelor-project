@@ -29,6 +29,7 @@ class Graph {
     const node = this.nodes.find((n) => n.id === id)
     this.nodes = this.nodes.filter((n) => n !== node)
 
+
     // remove edge references
     node.neighbors.forEach((neighbor) => {
       // edge from end node to removed node

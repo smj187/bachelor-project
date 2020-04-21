@@ -20,7 +20,7 @@
     ],
     "templates": {
         "better-docs": {
-            "name": "Graph visualization"
+            "name": "Interactive Visualization for Information Security Analysis: JavaScript Documentation"
         },
         "resources": {
             "svgdotjs": "https://github.com/svgdotjs/svg.js"
@@ -31,6 +31,7 @@
         "encoding": "utf8",
         "recurse": true,
         "verbose": true,
-        "template": "./node_modules/toast-jsdoc"
+        "tutorials": "./examples",
+        "template": "node_modules/better-docs/"
     }
 }

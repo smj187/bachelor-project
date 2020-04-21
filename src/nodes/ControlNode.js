@@ -1,127 +1,26 @@
 import clamp from "clamp-js"
 import BaseNode from "./BaseNode"
+import ControlNodeConfiguration from "../configuration/ControlNodeConfiguration"
 
 
 /**
- * Default configuration for asset nodes
- * @typedef {ControlConfig} ControlConfig
- *
- * @param {Number} [maxWidth=400] The nodes maximal width
- * @param {Number} [maxHeight=190] The nodes maximal height
- * @param {Number} [minWidth=150] The nodes minimal width
- * @param {Number} [minHeight=80] The nodes minimal height
- *
- * @param {String} [iconUrl=null] The path to the image icon (if this value is null, the default icon is used)
- * @param {Number} [minIconOpacity=0.5] The basic visibility of the icon
- * @param {Number} [minIconSize=64] The width and height for the image icon
- * @param {Number} [minIconTranslateX=0] Moves the icon horizontally
- * @param {Number} [minIconTranslateY=0] Moves the icon vertically
- * @param {Number} [maxIconOpacity=0.75] The basic visibility of the icon
- * @param {Number} [maxIconSize=180] The width and height for the image icon
- * @param {Number} [maxIconTranslateX=-100] Moves the icon horizontally
- * @param {Number} [maxIconTranslateY=0] Moves the icon vertically
- *
- * @param {Number} [offset=8] The spacing used by padding and margin
- * @param {Number} [animationSpeed=300] The animation in milliseconds
- * @param {Number} [borderRadius=5] The border radius
- * @param {Number} [borderStrokeWidth=1] The border stroke width
- * @param {String} [borderStrokeColor="#7daed6"] The border color
- * @param {String} [borderStrokeDasharray="0"] Gaps inside border
- * @param {String} [backgroundColor="#ffffff"] The background color for the rendered node
- *
- * @param {Number} [minTextWidth=145] The minimal text width for the label
- * @param {Number} [minTextHeight=75] The minimal text height for the label
- * @param {Number} [minTextTranslateX=0] Moves the label horizontally
- * @param {Number} [minTextTranslateY=0] The the label vertically
- * @param {Number} [maxTextWidth=395] The maximal text width for the description
- * @param {Number} [maxTextHeight=185] The maximal text height for the description
- * @param {Number} [maxTextTranslateX=100] The the description horizontally
- * @param {Number} [maxTextTranslateY=0] The the description vertically
- * @param {String} [labelColor="#5b91b5"] The label text color
- * @param {String} [labelFontFamily="Montserrat"] The label font family
- * @param {Number} [labelFontSize=16] The label font size
- * @param {Number} [labelFontWeight=600] The label font weight
- * @param {String} [labelFontStyle="normal"] The label font style
- * @param {String} [labelBackground="#ffffffcc"] The label background color
- * @param {String} [detailsColor="#5b91b5"] The details text color
- * @param {String} [detailsFontFamily="Montserrat"] The details family
- * @param {Number} [detailsFontSize=12] The details font size
- * @param {Number} [detailsFontWeight=600] The details font weight
- * @param {String} [detailsFontStyle="normal"] The details font style
- * @param {String} [detailsBackground="#ffffff"] The details text background color
- */
-const ControlConfig = {
-  // large node
-  maxWidth: 400,
-  maxHeight: 190,
-
-
-  // small node
-  minWidth: 150,
-  minHeight: 80,
-
-
-  // icon
-  iconUrl: null,
-  minIconOpacity: 0.5,
-  minIconSize: 64,
-  minIconTranslateX: 0,
-  minIconTranslateY: 0,
-  maxIconOpacity: 0.75,
-  maxIconSize: 180,
-  maxIconTranslateX: -100,
-  maxIconTranslateY: 0,
-
-
-  // node
-  offset: 8,
-  animationSpeed: 300,
-  borderRadius: 5,
-  borderStrokeWidth: 1,
-  borderStrokeColor: "#7daed6",
-  borderStrokeDasharray: "0",
-  backgroundColor: "#ffffff",
-
-
-  // text
-  minTextWidth: 145,
-  minTextHeight: 75,
-  minTextTranslateX: 0,
-  minTextTranslateY: 0,
-  maxTextWidth: 395,
-  maxTextHeight: 185,
-  maxTextTranslateX: 100,
-  maxTextTranslateY: 0,
-  labelColor: "#5b91b5",
-  labelFontFamily: "Montserrat",
-  labelFontSize: 16,
-  labelFontWeight: 600,
-  labelFontStyle: "normal",
-  labelBackground: "#ffffffcc",
-  detailsColor: "#5b91b5",
-  detailsFontFamily: "Montserrat",
-  detailsFontSize: 12,
-  detailsFontWeight: 600,
-  detailsFontStyle: "normal",
-  detailsBackground: "#ffffff",
-}
-
-
-/**
- * Class representing the visualization of controls
- * @param {Data} data the raw node data
- * @param {Canvas} canvas the canvas to render the node on
- * @param {ControlConfig} customControlConfig custom config to override default values
+ * This class is responsible for the visual representation of controls.
+ * @property {Data} data Loaded data from a database.
+ * @property {Canvas} canvas The nested canvas to render the node on.
  *
  */
 class ControlNode extends BaseNode {
-  constructor(data, canvas, customControlConfig) {
+  constructor(data, canvas, layoutConfig = {}) {
     super(data, canvas)
-
-    this.config = { ...ControlConfig, ...customControlConfig }
+    this.config = { ...ControlNodeConfiguration, ...data.config, ...layoutConfig }
   }
 
 
+  /**
+   * Creates the control details description.
+   *
+   * @return {ForeignObject} text A foreign object containing some html and the node's label.
+   */
   createControlDetails() {
     const text = this.canvas.foreignObject(this.config.maxTextWidth / 2, this.config.maxTextHeight)
     const background = document.createElement("div")
@@ -156,13 +55,21 @@ class ControlNode extends BaseNode {
     description.style.fontStyle = this.config.detailsFontStyle
     descriptionBg.appendChild(description)
 
-    // fix overflow text
+    // FIXME: fix overflow text
     clamp(description, { clamp: `${this.config.maxTextHeight - label.clientHeight - this.config.offset * 2.5}px` })
     return text
   }
 
 
-  renderAsMin(X = this.initialX, Y = this.initialY) {
+
+  /**
+  * Renders a control node in minimal representation.
+  * @param  {Number} IX=initialX The initial X render position.
+  * @param  {Number} IY=initialY The initial Y render position.
+  * @param  {Number} FX=finalX The final X render position.
+  * @param  {Number} FY=finalY The final Y render position.
+  */
+  renderAsMin(IX = this.initialX, IY = this.initialY, FX = this.finalX, FY = this.finalY) {
     // create svg elements
     const svg = this.createSVGElement()
     const node = this.createNode()
@@ -174,48 +81,51 @@ class ControlNode extends BaseNode {
     svg.add(text)
 
 
-    // animate new elements into position
-    svg
-      .center(X, Y)
 
+    // animate new elements into position
     node
-      .center(X, Y)
-      .animate({ duration: this.config.animationSpeed })
+      .center(IX, IY)
       .width(this.config.minWidth)
       .height(this.config.minHeight)
       .dmove(-this.config.minWidth / 2, -this.config.minHeight / 2)
+      .animate({ duration: this.config.animationSpeed })
+      .center(FX, FY)
 
     icon
-      .center(X, Y)
-      .attr({ opacity: 0 })
-      .animate({ duration: this.config.animationSpeed })
+      .center(IX, IY)
       .attr({ opacity: this.config.minIconOpacity })
       .size(this.config.minIconSize, this.config.minIconSize)
-      .dx(-this.config.minIconSize / 2 + this.config.minIconTranslateX)
-      .dy(-this.config.minIconSize / 2 + this.config.minIconTranslateY)
+      .dx(-this.config.minIconSize / 2)
+      .dy(-this.config.minIconSize / 2)
+      .animate({ duration: this.config.animationSpeed })
+      .center(FX + this.config.minIconTranslateX, FY + this.config.minIconTranslateY)
 
     text
       .size(this.config.minTextWidth, text.children()[0].node.clientHeight)
-      .center(X, Y)
+      .center(IX, IY)
       .scale(0.001)
-      .attr({ opacity: 0 })
-      .animate({ duration: this.config.animationSpeed })
-      .attr({ opacity: 1 })
       .transform({ scale: 1, translate: [this.config.minTextTranslateX, this.config.minTextTranslateY] })
+      .animate({ duration: this.config.animationSpeed })
+      .center(FX, FY)
 
 
     this.currentWidth = this.config.minWidth
     this.currentHeight = this.config.minHeight
     this.nodeSize = "min"
-    this.currentX = X
-    this.currentY = Y
-    this.opacity = 1
-    this.isHidden = false
+    this.currentX = IX
+    this.currentY = IY
     this.svg = svg
   }
 
 
-  renderAsMax(X = this.initialX, Y = this.initialY) {
+  /**
+  * Renders a control node in detailed representation.
+  * @param  {Number} IX=initialX The initial X render position.
+  * @param  {Number} IY=initialY The initial Y render position.
+  * @param  {Number} FX=finalX The final X render position.
+  * @param  {Number} FY=finalY The final Y render position.
+  */
+  renderAsMax(IX = this.initialX, IY = this.initialY, FX = this.finalX, FY = this.finalY) {
     // create svg elements
     const svg = this.createSVGElement()
     const node = this.createNode()
@@ -228,45 +138,45 @@ class ControlNode extends BaseNode {
 
 
     // animate new elements into position
-    svg
-      .center(X, Y)
-
     node
-      .center(X, Y)
-      .animate({ duration: this.config.animationSpeed })
+      .center(IX, IY)
       .width(this.config.maxWidth)
       .height(this.config.maxHeight)
       .dmove(-this.config.maxWidth / 2, -this.config.maxHeight / 2)
+      .animate({ duration: this.config.animationSpeed })
+      .center(FX, FY)
 
     icon
-      .center(X, Y)
-      .attr({ opacity: 0 })
-      .animate({ duration: this.config.animationSpeed })
+      .center(IX + this.config.maxIconTranslateX, IY + this.config.maxIconTranslateY)
       .attr({ opacity: this.config.maxIconOpacity })
       .size(this.config.maxIconSize, this.config.maxIconSize)
-      .dx(-this.config.maxIconSize / 2 + this.config.maxIconTranslateX)
-      .dy(-this.config.maxIconSize / 2 + this.config.maxIconTranslateY)
+      .dx(-this.config.maxIconSize / 2)
+      .dy(-this.config.maxIconSize / 2)
+      .animate({ duration: this.config.animationSpeed })
+      .center(FX + this.config.maxIconTranslateX, FY + this.config.maxIconTranslateY)
 
     text
-      .center(X, Y)
+      .center(IX, IY)
       .scale(0.001)
-      .attr({ opacity: 0 })
-      .animate({ duration: this.config.animationSpeed })
-      .attr({ opacity: 1 })
       .transform({ scale: 1, translate: [this.config.maxTextTranslateX, this.config.maxTextTranslateY] })
+      .animate({ duration: this.config.animationSpeed })
+      .center(FX, FY)
 
 
     this.currentWidth = this.config.maxWidth
     this.currentHeight = this.config.maxHeight
     this.nodeSize = "max"
-    this.currentX = X
-    this.currentY = Y
-    this.opacity = 1
-    this.isHidden = false
+    this.currentX = IX
+    this.currentY = IY
     this.svg = svg
   }
 
 
+  /**
+  * Transforms a node from minimal version to detailed representation.
+  * @param {Number} X=finalX The final Xrender position.
+  * @param {Number} Y=finalY The final Y render position.
+  */
   transformToMax(X = this.finalX, Y = this.finalY) {
     // update current elements
     this
@@ -277,6 +187,14 @@ class ControlNode extends BaseNode {
       .height(this.config.maxHeight)
       .center(X, Y)
 
+    // old icon position
+    const ix = this.svg.get(1).bbox().cx
+    const iy = this.svg.get(1).bbox().cy
+
+    // old text position
+    const tx = this.svg.get(2).bbox().cx
+    const ty = this.svg.get(2).bbox().cy
+
     this
       .svg
       .get(2)
@@ -298,8 +216,8 @@ class ControlNode extends BaseNode {
 
     // put new elements into position
     icon
-      .center(this.initialX, this.initialY)
       .attr({ opacity: 0 })
+      .center(ix, iy)
       .animate({ duration: this.config.animationSpeed })
       .attr({ opacity: this.config.maxIconOpacity })
       .size(this.config.maxIconSize, this.config.maxIconSize)
@@ -307,9 +225,9 @@ class ControlNode extends BaseNode {
       .cy(Y - this.config.maxIconSize / 2 + this.config.maxIconTranslateY + this.config.maxIconSize / 2)
 
     text
-      .center(this.initialX, this.initialY)
-      .scale(0.001)
       .attr({ opacity: 0 })
+      .center(tx, ty)
+      .scale(0.001)
       .animate({ duration: this.config.animationSpeed })
       .attr({ opacity: 1 })
       .transform({ scale: 1, translate: [this.config.maxTextTranslateX, this.config.maxTextTranslateY] })
@@ -324,6 +242,11 @@ class ControlNode extends BaseNode {
   }
 
 
+  /**
+  * Transforms a node from detailed representation to minimal version.
+  * @param {Number} X=finalX The final Xrender position.
+  * @param {Number} Y=finalY The final Y render position.
+  */
   transformToMin(X = this.finalX, Y = this.finalY) {
     // update current elements
     this
@@ -333,6 +256,14 @@ class ControlNode extends BaseNode {
       .width(this.config.minWidth)
       .height(this.config.minHeight)
       .center(X, Y)
+
+    // old icon position
+    const ix = this.svg.get(1).bbox().cx
+    const iy = this.svg.get(1).bbox().cy
+
+    // old text position
+    const tx = this.svg.get(2).bbox().cx
+    const ty = this.svg.get(2).bbox().cy
 
     this
       .svg
@@ -355,8 +286,9 @@ class ControlNode extends BaseNode {
 
     // put new elements into position
     icon
-      .center(this.initialX, this.initialY)
+      .size(1, 1)
       .attr({ opacity: 0 })
+      .center(ix, iy)
       .animate({ duration: this.config.animationSpeed })
       .attr({ opacity: this.config.minIconOpacity })
       .size(this.config.minIconSize, this.config.minIconSize)
@@ -365,10 +297,10 @@ class ControlNode extends BaseNode {
       .center(X, Y)
 
     text
-      .center(this.initialX, this.initialY)
-      .size(this.config.minTextWidth, text.children()[0].node.clientHeight)
-      .scale(0.001)
       .attr({ opacity: 0 })
+      .center(tx, ty)
+      .scale(0.001)
+      .size(this.config.minTextWidth, text.children()[0].node.clientHeight)
       .animate({ duration: this.config.animationSpeed })
       .attr({ opacity: 1 })
       .transform({ scale: 1, translate: [this.config.minTextTranslateX, this.config.minTextTranslateY] })

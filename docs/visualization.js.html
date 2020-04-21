@@ -1,36 +1,63 @@
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    
     <meta charset="utf-8">
-    <title>visualization.js - Documentation</title>
+    <title>JSDoc: visualization.js</title>
 
-    <script src="scripts/prettify/prettify.js"></script>
-    <script src="scripts/prettify/lang-css.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="./build/entry.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <!--[if lt IE 9]>
       <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
-    <link type="text/css" rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
-    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
-    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+    <link href="https://fonts.googleapis.com/css?family=Muli:100,400,700|Oswald:300|Inconsolata,700" rel="stylesheet">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
+    <link type="text/css" rel="stylesheet" href="https://jmblog.github.io/color-themes-for-google-code-prettify/themes/tomorrow-night.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/app.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/iframe.css">
 </head>
+
 <body>
-
-<input type="checkbox" id="nav-trigger" class="nav-trigger" />
-<label for="nav-trigger" class="navicon-button x">
-  <div class="navicon"></div>
-</label>
-
-<label for="nav-trigger" class="overlay"></label>
-
-<nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="AssetNode.html">AssetNode</a></li><li><a href="BaseEdge.html">BaseEdge</a></li><li><a href="BaseNode.html">BaseNode</a></li><li><a href="ControlNode.html">ControlNode</a></li><li><a href="CustomNode.html">CustomNode</a></li><li><a href="EdgeFactory.html">EdgeFactory</a></li><li><a href="Graph.html">Graph</a><ul class='methods'><li data-type='method'><a href="Graph.html#excludeEdge">excludeEdge</a></li><li data-type='method'><a href="Graph.html#excludeNode">excludeNode</a></li><li data-type='method'><a href="Graph.html#includeEdge">includeEdge</a></li><li data-type='method'><a href="Graph.html#includeNode">includeNode</a></li></ul></li><li><a href="GraphEdge.html">GraphEdge</a></li><li><a href="GraphNode.html">GraphNode</a><ul class='methods'><li data-type='method'><a href="GraphNode.html#addEdge">addEdge</a></li><li data-type='method'><a href="GraphNode.html#addNeighbor">addNeighbor</a></li><li data-type='method'><a href="GraphNode.html#getNeighbors">getNeighbors</a></li><li data-type='method'><a href="GraphNode.html#removeNeighbor">removeNeighbor</a></li></ul></li><li><a href="NodeFactory.html">NodeFactory</a></li><li><a href="RequirementNode.html">RequirementNode</a></li><li><a href="RiskNode.html">RiskNode</a></li><li><a href="Visualization.html">Visualization</a><ul class='methods'><li data-type='method'><a href="Visualization.html#getCanvas">getCanvas</a></li><li data-type='method'><a href="Visualization.html#render">render</a></li><li data-type='method'><a href="Visualization.html#setZoom">setZoom</a></li><li data-type='method'><a href="Visualization.html#transform">transform</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="ContextualLayoutConfiguration.html">ContextualLayoutConfiguration</a></li><li><a href="GridLayoutConfiguration.html">GridLayoutConfiguration</a></li></ul><h3><a href="global.html">Global</a></h3>
-</nav>
-
-<div id="main">
-    
-    <h1 class="page-title">visualization.js</h1>
-    
-    
+    <div id="stickyNavbarOverlay"></div>
+    <div class="top-navbar">
+        <div class="container">
+            <nav class="navbar" role="navigation" aria-label="main navigation">
+                <div class="navbar-brand">
+                    
+                     
+                        <h1 class="navbar-item">Interactive Visualization for Information Security Analysis: JavaScript Documentation</h1>
+                    
+                    <a id="hamburger" role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
+                        <span aria-hidden="true"></span>
+                        <span aria-hidden="true"></span>
+                        <span aria-hidden="true"></span>
+                    </a>
+                </div>
+                
+            </nav>
+        </div>
+    </div>
+    <div class="container">
+        <div class="columns">
+            <div class="column is-3" id="sidebarNav">
+                <div class="sidebar">
+                    <nav>
+                        <h2><a href="index.html">Home</a></h2><div class="category"><h3>Tutorials</h3><ul><li><a href="tutorial-advanced-layouts.html">Advanced Layout Examples</a></li><li><a href="tutorial-contextual-layout.html">Contextual Layout Examples</a></li><li><a href="tutorial-grid-layout.html">Grid Layout Examples</a></li><li><a href="tutorial-radial-layout.html">Radial Layout Examples</a></li><li><a href="tutorial-tree-layout.html">Tree Layout Examples</a></li></ul><h3>Namespaces</h3><ul><li><a href="AssetNodeConfiguration.html">AssetNodeConfiguration</a></li><li><a href="BoldEdgeConfiguration.html">BoldEdgeConfiguration</a></li><li><a href="ContextualLayoutConfiguration.html">ContextualLayoutConfiguration</a></li><li><a href="ControlNodeConfiguration.html">ControlNodeConfiguration</a></li><li><a href="CustomNodeConfiguration.html">CustomNodeConfiguration</a></li><li><a href="GridLayoutConfiguration.html">GridLayoutConfiguration</a></li><li><a href="RadialLayoutConfiguration.html">RadialLayoutConfiguration</a></li><li><a href="RequirementNodeConfiguration.html">RequirementNodeConfiguration</a></li><li><a href="RiskNodeConfiguration.html">RiskNodeConfiguration</a></li><li><a href="ThinEdgeConfiguration.html">ThinEdgeConfiguration</a></li><li><a href="TreeLayoutConfiguration.html">TreeLayoutConfiguration</a></li></ul><h3>Classes</h3><ul><li><a href="AssetNode.html">AssetNode</a></li><li><a href="BaseEdge.html">BaseEdge</a></li><li><a href="BaseLayout.html">BaseLayout</a></li><li><a href="BaseNode.html">BaseNode</a></li><li><a href="BoldEdge.html">BoldEdge</a></li><li><a href="ContextualLayout.html">ContextualLayout</a></li><li><a href="ControlNode.html">ControlNode</a></li><li><a href="CustomNode.html">CustomNode</a></li><li><a href="EdgeFactory.html">EdgeFactory</a></li><li><a href="Graph.html">Graph</a></li><li><a href="GraphEdge.html">GraphEdge</a></li><li><a href="GraphNode.html">GraphNode</a></li><li><a href="GridExpander.html">GridExpander</a></li><li><a href="GridLayout.html">GridLayout</a></li><li><a href="NodeFactory.html">NodeFactory</a></li><li><a href="RadialLayout.html">RadialLayout</a></li><li><a href="RequirementNode.html">RequirementNode</a></li><li><a href="RiskNode.html">RiskNode</a></li><li><a href="ThinEdge.html">ThinEdge</a></li><li><a href="TreeLayout.html">TreeLayout</a></li><li><a href="Visualization.html">Visualization</a></li></ul><h3><a href="global.html">Global</a></h3></div>
+                    </nav>
+                </div>
+            </div>
+            <div class="column is-9-desktop">
+                <div class="content" id="main-content-wrapper">
+                    <header class="page-title">
+                        <p>Source</p>
+                        <h1>visualization.js</h1>
+                    </header>
+                    
+                    
 
 
 
@@ -49,21 +76,33 @@ import ContextualLayout from "./layouts/ContextualLayout"
 import Graph from "./data/Graph"
 
 /**
- * The canvas element where all svgs are held
+ * @description The canvas element where all svgs are held.
  * @typedef {Canvas} Canvas
  *
  * @see https://svgjs.com/docs/3.0/container-elements/#svg-svg
  */
 
+/**
+ * @description A foreign object.
+ * 
+ * @typedef {ForeignObject} ForeignObject
+ * 
+ * @see https://svgjs.com/docs/3.0/shape-elements/#svg-foreignobject
+ */
 
 /**
- * The raw data object to create a node
+ * @description This object contains data that was loaded from the backend.
  * @typedef {Data} Data
  *
- * @property {Number} id the node id
- * @property {String} label the node label
- * @property {String} type the node type (asset, control, risk requirement, custom)
- * @property {String} tooltipText the tooltip text that is shown while hovering a specific node
+ * @property {Number} id The id of the node.
+ * @property {String} label The label of the node. Available: string, null or empty string.
+ * @property {String} description The description of the node. Available: string, null or empty string.
+ * @property {String} type The type of the node. Available asset, control, risk requirement or custom.
+ * @property {Object} attributes An object containing a key-value-pair list.
+ * @property {String} tooltipText Some tooltip text that is shown while hovering a specific node.
+ * @property {Number|Number[]} parent One parent id reference or multiple parent ids references.
+ * @property {Number[]} children An array containing child node id references.
+ * @property {Object} config An object, which is contains key-value entries to override default node representations.
  */
 
 
@@ -105,17 +144,67 @@ class Visualization {
       .size(window.innerWidth - 10, window.innerHeight - 10)
       .viewbox(0, 0, window.innerWidth - 10, window.innerHeight - 10)
       .panZoom({ zoomMin: 0.25, zoomMax: 10, zoomFactor: 0.25 })
+      .zoom(config.zoom.lvl, { x: config.zoom.x, y: config.zoom.y })
+
+
+    // const event = {
+    //   event: "grid.expander",
+    //   mouse: "click",
+    //   modifier: "shiftKey"
+    // }
+
+
+    // const test = this.canvas.rect(100, 100).dmove(200, 300)
+    // const func = () => test.fill("#f75")
+
+    // test.on(event.mouse, (e) => {
+    //   if (event.modifier !== null) {
+    //     if (event.modifier, e[event.modifier]) {
+    //       func()
+    //     }
+    //   }
+    // })
+
+
+
+    // // .on("grid.expander", () => {
+    // //   test.fill("#f75")
+    // // })
+
+
+    // remove text labels when zoomed-in
+    let textState = null
+    this.canvas.on("zoom", (ev) => {
+      const currentLevel = ev.detail.level
+      if (currentLevel &lt;= 0.75 &amp;&amp; textState !== "hidden") {
+        const labels = document.querySelectorAll("#min-label")
+        labels.forEach(doc => {
+          doc.style.opacity = "0"
+        })
+        textState = "hidden"
+      }
+      if (currentLevel > 0.75 &amp;&amp; textState === "hidden") {
+        const labels = document.querySelectorAll("#min-label")
+        labels.forEach(doc => {
+          doc.style.opacity = "1"
+        })
+        textState = null
+      }
+      this.zoomLevel = currentLevel
+    })
 
 
     this.layouts = []
     this.lastLayoutWidth = 0
 
 
+    // TODO: talk about this in the thesis ( its required)
     this.config = {
       ...config,
       nodeEndpoint: "node-data",
       edgeEndpoint: "edge-data",
-      layoutSpacing: 200,
+      contextualRelationshipEndpoint: "contextual-relationships",
+      layoutSpacing: 50,
     }
 
 
@@ -127,6 +216,9 @@ class Visualization {
 
     this.fetchedNodes = []
     this.fetchedEdges = []
+
+    // TODO: further work: implement a store (like in react useState that holds references to all currently knwon nodes in a database
+    //       and to reduce calling a database -> performance improvement)
   }
 
   createInitialGraph(nodeIds = [], edgeIds = []) {
@@ -160,6 +252,7 @@ class Visualization {
       databaseUrl: this.config.databaseUrl,
       nodeEndpoint: this.config.nodeEndpoint,
       edgeEndpoint: this.config.edgeEndpoint,
+      contextualRelationshipEndpoint: this.config.contextualRelationshipEndpoint,
     })
     layout.setNodeData(initialGraphData.getNodes())
     layout.setEdgeData(initialGraphData.getEdges())
@@ -170,55 +263,157 @@ class Visualization {
 
     if (layout instanceof GridLayout) {
       const createdLayout = await layout.loadInitialGridDataAsync()
-      const layouts = this.layouts.slice(0, this.layouts.indexOf(layout))
-      const offset = layouts.map((l) => l.layoutInfo.w).reduce((a, b) => a + b, 0)
+      const index = this.layouts.indexOf(layout)
+      const layouts = this.layouts.slice(0, index)
+      let offset = layouts.map((l) => l.layoutInfo.w).reduce((a, b) => a + b, 0)
       createdLayout.calculateLayout(offset)
       createdLayout.renderLayout()
     }
 
     if (layout instanceof ContextualLayout) {
       const createdLayout = await layout.loadInitialContextualDataAsync()
+      const layouts = this.layouts.slice(0, this.layouts.indexOf(layout))
+      const offset = layouts.map((l) => l.layoutInfo.w).reduce((a, b) => a + b, 0)
+      createdLayout.calculateLayout(offset)
+      createdLayout.renderLayout()
+
     }
+
+    if (layout instanceof RadialLayout) {
+      const createdLayout = await layout.loadInitialRadialDataAsync()
+      const layouts = this.layouts.slice(0, this.layouts.indexOf(layout))
+      const offset = layouts.map((l) => l.layoutInfo.w).reduce((a, b) => a + b, 0)
+      createdLayout.calculateLayout(offset)
+      createdLayout.renderLayout()
+    }
+
+    if (layout instanceof TreeLayout) {
+      const createdLayout = await layout.loadInitialTreeDataAsync()
+      const layouts = this.layouts.slice(0, this.layouts.indexOf(layout))
+      const offset = layouts.map((l) => l.layoutInfo.w).reduce((a, b) => a + b, 0)
+      createdLayout.calculateLayout(offset)
+      createdLayout.renderLayout()
+    }
+
 
 
     return layout
   }
 
   async update(layout, graphOrConfig, config = {}) {
-    if (graphOrConfig instanceof Graph) {
-      await layout.updateGraphStructure(graphOrConfig, config)
-      const updatedLayout = await layout.loadAdditionalGridDataAsync()
-      const prevW = updatedLayout.layoutInfo.w
-      updatedLayout.calculateLayout()
-      const newW = updatedLayout.layoutInfo.w
 
-      // update all layouts right side
-      this.layouts.forEach((llayout, i) => {
-        if (i > this.layouts.indexOf(layout)) {
-          llayout.calculateLayout(newW - prevW)
-          llayout.renderLayout()
-        }
-      })
+    if (layout instanceof RadialLayout) {
+      if (graphOrConfig instanceof Graph) {
+        console.log("update radial graph")
 
-      updatedLayout.renderLayout()
-    } else {
-      const updatedLayout = await layout.updateLayoutConfiguration(graphOrConfig)
-      await updatedLayout.loadAdditionalGridDataAsync()
+        await layout.updateRadialDataWithConfigAsync(graphOrConfig, config)
+      } else {
+        layout.setConfig(graphOrConfig)
+        await layout.removeLayoutAsync()
 
-      const prevW = updatedLayout.layoutInfo.w
-      updatedLayout.calculateLayout()
-      const newW = updatedLayout.layoutInfo.w
+        const layouts = this.layouts.slice(0, this.layouts.indexOf(layout))
+        const offset = layouts.map((l) => l.layoutInfo.w).reduce((a, b) => a + b, 0)
+        const prevW = layout.layoutInfo.w
+        layout.calculateLayout(offset)
 
-      // update all layouts right side
-      this.layouts.forEach((llayout, i) => {
-        if (i > this.layouts.indexOf(layout)) {
-          llayout.calculateLayout(newW - prevW)
-          llayout.renderLayout()
-        }
-      })
+        const newW = layout.layoutInfo.w
 
-      updatedLayout.renderLayout()
+        // update all layouts right side
+        this.layouts.forEach((llayout, i) => {
+          if (i > this.layouts.indexOf(layout)) {
+            llayout.calculateLayout(newW - prevW)
+            llayout.renderLayout()
+          }
+        })
+
+        layout.renderLayout()
+      }
     }
+
+    if (layout instanceof GridLayout) {
+
+      // update the underlying graph structure and configuration
+      if (graphOrConfig instanceof Graph) {
+        await layout.updateGridDataWithConfigAsync(graphOrConfig, config)
+        await layout.loadAdditionalGridDataAsync()
+
+        const prevW = layout.layoutInfo.w
+        layout.calculateLayout()
+        const newW = layout.layoutInfo.w
+
+        // update all layouts right side
+        this.layouts.forEach((llayout, i) => {
+          if (i > this.layouts.indexOf(layout)) {
+            llayout.calculateLayout(newW - prevW)
+            llayout.renderLayout()
+          }
+        })
+
+        layout.renderLayout()
+      } else { // update only configuration
+        layout.setConfig(graphOrConfig)
+        await layout.removeLayoutAsync()
+        await layout.loadAdditionalGridDataAsync()
+
+        const prevW = layout.layoutInfo.w
+        layout.calculateLayout()
+        const newW = layout.layoutInfo.w
+
+        // update all layouts right side
+        this.layouts.forEach((llayout, i) => {
+          if (i > this.layouts.indexOf(layout)) {
+            llayout.calculateLayout(newW - prevW)
+            llayout.renderLayout()
+          }
+        })
+
+        layout.renderLayout()
+      }
+    }
+
+
+
+
+    // if (graphOrConfig instanceof Graph) {
+    //   await layout.updateGraphStructure(graphOrConfig, config)
+    //   const updatedLayout = await layout.loadAdditionalGridDataAsync()
+    //   const prevW = updatedLayout.layoutInfo.w
+    //   updatedLayout.calculateLayout()
+    //   const newW = updatedLayout.layoutInfo.w
+
+    //   // update all layouts right side
+    //   this.layouts.forEach((llayout, i) => {
+    //     if (i > this.layouts.indexOf(layout)) {
+    //       llayout.calculateLayout(newW - prevW)
+    //       llayout.renderLayout()
+    //     }
+    //   })
+
+    //   updatedLayout.renderLayout()
+    // } else {
+
+    //   console.log(layout, graphOrConfig, this)
+    //   const updatedLayout = await layout.updateLayoutConfiguration(graphOrConfig)
+    //   await updatedLayout.loadAdditionalGridDataAsync()
+
+    //   const prevW = updatedLayout.layoutInfo.w
+    //   updatedLayout.calculateLayout()
+    //   const newW = updatedLayout.layoutInfo.w
+
+    //   // update all layouts right side
+    //   this.layouts.forEach((llayout, i) => {
+    //     if (i > this.layouts.indexOf(layout)) {
+    //       llayout.calculateLayout(newW - prevW)
+    //       llayout.renderLayout()
+    //     }
+    //   })
+
+    //   updatedLayout.renderLayout()
+    // }
+  }
+
+  updateMouseEvents(event, func) {
+
   }
 
 
@@ -230,6 +425,7 @@ class Visualization {
   async transform(currentLayout, newLayout) {
     newLayout.setCanvas(this.canvas)
     newLayout.setConfig({ databaseUrl: this.config.databaseUrl })
+
 
     if (newLayout instanceof RadialLayout) {
       newLayout.createRadialDataAsync(currentLayout.getNodeData(), currentLayout.getEdgeData())
@@ -281,15 +477,24 @@ export default Visualization
 
 
 
-</div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<br class="clear">
 
-<footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.3</a> on Thu Apr 02 2020 21:28:39 GMT+0200 (GMT+02:00) using the Toast theme.
+<footer class="footer">
+    <div class="content has-text-centered">
+        <p>Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.3</a> on Fri Apr 17 2020 10:40:10 GMT+0200 (GMT+02:00)</p>
+        <p class="sidebar-created-by">
+            <a href="https://github.com/SoftwareBrothers/better-docs" target="_blank">BetterDocs theme</a> provided with <i class="fas fa-heart"></i> by 
+            <a href="http://softwarebrothers.co" target="_blank">SoftwareBrothers - JavaScript Development Agency</a>
+        </p>
+    </div>
 </footer>
 
-<script>prettyPrint();</script>
-<script src="scripts/linenumber.js"></script>
+
+<script src="scripts/app.min.js"></script>
+<script src="scripts/linenumber.js"> </script>
 </body>
 </html>

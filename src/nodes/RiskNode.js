@@ -1,127 +1,28 @@
 import clamp from "clamp-js"
 import BaseNode from "./BaseNode"
+import RiskNodeConfiguration from "../configuration/RiskNodeConfiguration"
 
 
 /**
- * Default configuration for risk nodes
- * @typedef {RiskConfig} RiskConfig
- *
- * @param {Number} [maxWidth=300] The nodes maximal width
- * @param {Number} [maxHeight=150] The nodes maximal height
- * @param {Number} [minWidth=150] The nodes minimal width
- * @param {Number} [minHeight=50] The nodes minimal height
- *
- * @param {String} [iconUrl=null] The path to the image icon (if this value is null, the default icon is used)
- * @param {Number} [minIconOpacity=0.6] The basic visibility of the icon
- * @param {Number} [minIconSize=35] The width and height for the image icon
- * @param {Number} [minIconTranslateX=-50] Moves the icon horizontally
- * @param {Number} [minIconTranslateY=0] Moves the icon vertically
- * @param {Number} [maxIconOpacity=0.75] The basic visibility of the icon
- * @param {Number} [maxIconSize=30] The width and height for the image icon
- * @param {Number} [maxIconTranslateX=-120] Moves the icon horizontally
- * @param {Number} [maxIconTranslateY=-55] Moves the icon vertically
- *
- * @param {Number} [offset=8] The spacing used by padding and margin
- * @param {Number} [animationSpeed=300] The animation in milliseconds
- * @param {Number} [borderRadius=4] The border radius
- * @param {Number} [borderStrokeWidth=1] The border stroke width
- * @param {String} [borderStrokeColor="#F26A7C"] The border color
- * @param {String} [borderStrokeDasharray="5 10"] Gaps inside border
- * @param {String} [backgroundColor="#ffffff"] The background color for the rendered node
- *
- * @param {Number} [minTextWidth=100] The minimal text width for the label
- * @param {Number} [minTextHeight=45] The minimal text height for the label
- * @param {Number} [minTextTranslateX=22] Moves the label horizontally
- * @param {Number} [minTextTranslateY=0] The the label vertically
- * @param {Number} [maxTextWidth=295] The maximal text width for the description
- * @param {Number} [maxTextHeight=145] The maximal text height for the description
- * @param {Number} [maxTextTranslateX=0] The the description horizontally
- * @param {Number} [maxTextTranslateY=0] The the description vertically
- * @param {String} [labelColor="#ff8e9e"] The label text color
- * @param {String} [labelFontFamily="Montserrat"] The label font family
- * @param {Number} [labelFontSize=14] The label font size
- * @param {Number} [labelFontWeight=600] The label font weight
- * @param {String} [labelFontStyle="normal"] The label font style
- * @param {String} [labelBackground="transparent"] The label background color
- * @param {String} [detailsColor="#ff8e9e"] The details text color
- * @param {String} [detailsFontFamily="Montserrat"] The details family
- * @param {Number} [detailsFontSize=12] The details font size
- * @param {Number} [detailsFontWeight=600] The details font weight
- * @param {String} [detailsFontStyle="normal"] The details font style
- * @param {String} [detailsBackground="transparent"] The details text background color
- */
-const RiskConfig = {
-  // large node
-  maxWidth: 300,
-  maxHeight: 150,
-
-
-  // small node
-  minWidth: 150,
-  minHeight: 50,
-
-
-  // icon
-  iconUrl: null,
-  minIconOpacity: 0.6,
-  minIconSize: 35,
-  minIconTranslateX: -50,
-  minIconTranslateY: 0,
-  maxIconOpacity: 0.75,
-  maxIconSize: 30,
-  maxIconTranslateX: -120,
-  maxIconTranslateY: -55,
-
-
-  // node
-  offset: 8,
-  animationSpeed: 300,
-  borderRadius: 4,
-  borderStrokeWidth: 1,
-  borderStrokeColor: "#F26A7C",
-  borderStrokeDasharray: "5 10",
-  backgroundColor: "#ffffff",
-
-
-  // text
-  minTextWidth: 100,
-  minTextHeight: 45,
-  minTextTranslateX: 22,
-  minTextTranslateY: 0,
-  maxTextWidth: 295,
-  maxTextHeight: 145,
-  maxTextTranslateX: 0,
-  maxTextTranslateY: 0,
-  labelColor: "#ff8e9e",
-  labelFontFamily: "Montserrat",
-  labelFontSize: 14,
-  labelFontWeight: 600,
-  labelFontStyle: "normal",
-  labelBackground: "transparent",
-  detailsColor: "#ff8e9e",
-  detailsFontFamily: "Montserrat",
-  detailsFontSize: 12,
-  detailsFontWeight: 600,
-  detailsFontStyle: "normal",
-  detailsBackground: "transparent",
-}
-
-
-/**
- * Class representing the visualization of risks
- * @param {Data} data the raw node data
- * @param {Canvas} canvas the canvas to render the node on
- * @param {RiskConfig} customRiskConfig custom config to override default values
+ * This class is responsible for the visual representation of risks.
+ * @property {Data} data Loaded data from a database.
+ * @property {Canvas} canvas The nested canvas to render the node on.
+ * @property {Object} layoutConfig An object containing information to change the default visualization.
  *
  */
 class RiskNode extends BaseNode {
-  constructor(data, canvas, customRiskConfig) {
+  constructor(data, canvas, layoutConfig = {}) {
     super(data, canvas)
 
-    this.config = { ...RiskConfig, ...customRiskConfig }
+    this.config = { ...RiskNodeConfiguration, ...data.config, ...layoutConfig }
   }
 
 
+  /**
+   * Creates the risk details description.
+   *
+   * @return {ForeignObject} text A foreign object containing some html and the node's label.
+   */
   createRiskDetails() {
     // create svg obj to store html
     const text = this.canvas.foreignObject(this.config.maxTextWidth, this.config.maxTextHeight)
@@ -160,6 +61,7 @@ class RiskNode extends BaseNode {
     label.style.height = "fit-content"
     label.style.gridRow = "1"
     label.style.gridColumn = "1"
+    clamp(label, { clamp: 1 }) // FIXME: long risk names are incorrect
     background.appendChild(label)
 
     // create status, if any exists
@@ -232,7 +134,14 @@ class RiskNode extends BaseNode {
   }
 
 
-  renderAsMin(X = this.initialX, Y = this.initialY) {
+  /**
+  * Renders a risk node in minimal representation.
+  * @param  {Number} IX=initialX The initial X render position.
+  * @param  {Number} IY=initialY The initial Y render position.
+  * @param  {Number} FX=finalX The final X render position.
+  * @param  {Number} FY=finalY The final Y render position.
+  */
+  renderAsMin(IX = this.initialX, IY = this.initialY, FX = this.finalX, FY = this.finalY) {
     // create svg elements
     const svg = this.createSVGElement()
     const node = this.createNode()
@@ -243,48 +152,51 @@ class RiskNode extends BaseNode {
     svg.add(icon)
     svg.add(text)
 
-    // animate new elements into position
-    svg
-      .center(X, Y)
 
+    // animate new elements into position
     node
-      .center(X, Y)
-      .animate({ duration: this.config.animationSpeed })
+      .center(IX, IY)
       .width(this.config.minWidth)
       .height(this.config.minHeight)
       .dmove(-this.config.minWidth / 2, -this.config.minHeight / 2)
+      .animate({ duration: this.config.animationSpeed })
+      .center(FX, FY)
 
     icon
-      .center(X, Y)
-      .attr({ opacity: 0 })
-      .animate({ duration: this.config.animationSpeed })
+      .center(IX, IY)
       .attr({ opacity: this.config.minIconOpacity })
       .size(this.config.minIconSize, this.config.minIconSize)
-      .dx(-this.config.minIconSize / 2 + this.config.minIconTranslateX)
-      .dy(-this.config.minIconSize / 2 + this.config.minIconTranslateY)
+      .dx(-this.config.minIconSize / 2)
+      .dy(-this.config.minIconSize / 2)
+      .animate({ duration: this.config.animationSpeed })
+      .center(FX + this.config.minIconTranslateX, FY + this.config.minIconTranslateY)
 
     text
       .size(this.config.minTextWidth, text.children()[0].node.clientHeight)
-      .center(X, Y)
+      .center(IX, IY)
       .scale(0.001)
-      .attr({ opacity: 0 })
-      .animate({ duration: this.config.animationSpeed })
-      .attr({ opacity: 1 })
       .transform({ scale: 1, translate: [this.config.minTextTranslateX, this.config.minTextTranslateY] })
+      .animate({ duration: this.config.animationSpeed })
+      .center(FX, FY)
 
 
     this.currentWidth = this.config.minWidth
     this.currentHeight = this.config.minHeight
     this.nodeSize = "min"
-    this.currentX = X
-    this.currentY = Y
-    this.opacity = 1
-    this.isHidden = false
+    this.currentX = IX
+    this.currentY = IY
     this.svg = svg
   }
 
 
-  renderAsMax(X = this.initialX, Y = this.initialY) {
+  /**
+  * Renders a risk node in detailed representation.
+  * @param  {Number} IX=initialX The initial X render position.
+  * @param  {Number} IY=initialY The initial Y render position.
+  * @param  {Number} FX=finalX The final X render position.
+  * @param  {Number} FY=finalY The final Y render position.
+  */
+  renderAsMax(IX = this.initialX, IY = this.initialY, FX = this.finalX, FY = this.finalY) {
     // create svg elements
     const svg = this.createSVGElement()
     const node = this.createNode()
@@ -295,46 +207,47 @@ class RiskNode extends BaseNode {
     svg.add(icon)
     svg.add(text)
 
-    // animate new elements into position
-    svg
-      .center(X, Y)
 
+    // animate new elements into position
     node
-      .center(X, Y)
-      .animate({ duration: this.config.animationSpeed })
+      .center(IX, IY)
       .width(this.config.maxWidth)
       .height(this.config.maxHeight)
       .dmove(-this.config.maxWidth / 2, -this.config.maxHeight / 2)
+      .animate({ duration: this.config.animationSpeed })
+      .center(FX, FY)
 
     icon
-      .center(X, Y)
-      .attr({ opacity: 0 })
-      .animate({ duration: this.config.animationSpeed })
+      .center(IX + this.config.maxIconTranslateX, IY + this.config.maxIconTranslateY)
       .attr({ opacity: this.config.maxIconOpacity })
       .size(this.config.maxIconSize, this.config.maxIconSize)
-      .dx(-this.config.maxIconSize / 2 + this.config.maxIconTranslateX)
-      .dy(-this.config.maxIconSize / 2 + this.config.maxIconTranslateY)
+      .dx(-this.config.maxIconSize / 2)
+      .dy(-this.config.maxIconSize / 2)
+      .animate({ duration: this.config.animationSpeed })
+      .center(FX + this.config.maxIconTranslateX, FY + this.config.maxIconTranslateY)
 
     text
-      .center(X, Y)
+      .center(IX, IY)
       .scale(0.001)
-      .attr({ opacity: 0 })
-      .animate({ duration: this.config.animationSpeed })
-      .attr({ opacity: 1 })
       .transform({ scale: 1, translate: [this.config.maxTextTranslateX, this.config.maxTextTranslateY] })
+      .animate({ duration: this.config.animationSpeed })
+      .center(FX, FY)
 
 
     this.currentWidth = this.config.maxWidth
     this.currentHeight = this.config.maxHeight
     this.nodeSize = "max"
-    this.currentX = X
-    this.currentY = Y
-    this.opacity = 1
-    this.isHidden = false
+    this.currentX = IX
+    this.currentY = IY
     this.svg = svg
   }
 
 
+  /**
+  * Transforms a node from minimal version to detailed representation.
+  * @param {Number} X=finalX The final Xrender position.
+  * @param {Number} Y=finalY The final Y render position.
+  */
   transformToMax(X = this.finalX, Y = this.finalY) {
     // update current elements
     this
@@ -345,6 +258,14 @@ class RiskNode extends BaseNode {
       .height(this.config.maxHeight)
       .center(X, Y)
 
+    // old icon position
+    const ix = this.svg.get(1).bbox().cx
+    const iy = this.svg.get(1).bbox().cy
+
+    // old text position
+    const tx = this.svg.get(2).bbox().cx
+    const ty = this.svg.get(2).bbox().cy
+
     this
       .svg
       .get(2)
@@ -366,8 +287,8 @@ class RiskNode extends BaseNode {
 
     // put new elements into position
     icon
-      .center(this.initialX, this.initialY)
       .attr({ opacity: 0 })
+      .center(ix, iy)
       .animate({ duration: this.config.animationSpeed })
       .attr({ opacity: this.config.maxIconOpacity })
       .size(this.config.maxIconSize, this.config.maxIconSize)
@@ -375,9 +296,9 @@ class RiskNode extends BaseNode {
       .cy(Y - this.config.maxIconSize / 2 + this.config.maxIconTranslateY + this.config.maxIconSize / 2)
 
     text
-      .center(this.initialX, this.initialY)
-      .scale(0.001)
       .attr({ opacity: 0 })
+      .center(tx, ty)
+      .scale(0.001)
       .animate({ duration: this.config.animationSpeed })
       .attr({ opacity: 1 })
       .transform({ scale: 1, translate: [this.config.maxTextTranslateX, this.config.maxTextTranslateY] })
@@ -392,6 +313,11 @@ class RiskNode extends BaseNode {
   }
 
 
+  /**
+  * Transforms a node from detailed representation to minimal version.
+  * @param {Number} X=finalX The final Xrender position.
+  * @param {Number} Y=finalY The final Y render position.
+  */
   transformToMin(X = this.finalX, Y = this.finalY) {
     // update current elements
     this
@@ -401,6 +327,14 @@ class RiskNode extends BaseNode {
       .width(this.config.minWidth)
       .height(this.config.minHeight)
       .center(X, Y)
+
+    // old icon position
+    const ix = this.svg.get(1).bbox().cx
+    const iy = this.svg.get(1).bbox().cy
+
+    // old text position
+    const tx = this.svg.get(2).bbox().cx
+    const ty = this.svg.get(2).bbox().cy
 
     this
       .svg
@@ -423,8 +357,9 @@ class RiskNode extends BaseNode {
 
     // put new elements into position
     icon
-      .center(X, Y)
+      .size(1, 1)
       .attr({ opacity: 0 })
+      .center(ix, iy)
       .animate({ duration: this.config.animationSpeed })
       .attr({ opacity: this.config.minIconOpacity })
       .size(this.config.minIconSize, this.config.minIconSize)
@@ -432,10 +367,10 @@ class RiskNode extends BaseNode {
       .dy(-this.config.minIconSize / 2 + this.config.minIconTranslateY)
 
     text
-      .size(this.config.minTextWidth, text.children()[0].node.clientHeight)
-      .center(X, Y)
-      .scale(0.001)
       .attr({ opacity: 0 })
+      .center(tx, ty)
+      .scale(0.001)
+      .size(this.config.minTextWidth, text.children()[0].node.clientHeight)
       .animate({ duration: this.config.animationSpeed })
       .attr({ opacity: 1 })
       .transform({ scale: 1, translate: [this.config.minTextTranslateX, this.config.minTextTranslateY] })

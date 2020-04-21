@@ -1,7 +1,5 @@
-
 const GridExpanderConfiguration = {
   animationSpeed: 300,
-
   expanderWidth: 105,
   expanderHeight: 40,
   expanderTextColor: "#222",
@@ -13,11 +11,12 @@ const GridExpanderConfiguration = {
   expanderBackground: "#fff",
 }
 
+
 /**
- * Class representing the option to collapse or expand the grid layout
+ * Class representing the option to collapse or expand the grid layout.
  *
- * @param {Canvas} canvas The canvas to render this expander on
- * @private
+ * @param {Canvas} canvas The canvas to render this expander on.
+ * @param {String} type The type the expander is. 
  */
 class GridExpander {
   constructor(canvas, type) {
@@ -30,11 +29,13 @@ class GridExpander {
     this.reRenderFunc = null
   }
 
-  updateConfig(newConfig) {
-    this.config = { ...this.config, ...newConfig }
-  }
 
 
+  /**
+  * Renders the expander.
+  * @param  {Number} IX=finalX The initial X render position.
+  * @param  {Number} IY=finalY The initial Y render position.
+  */
   render(X = this.finalX + this.config.expanderWidth / 2, Y = this.finalY) {
     const svg = this.canvas.group()
     svg.css("cursor", "pointer")
@@ -119,13 +120,20 @@ class GridExpander {
 
     if (this.reRenderFunc) {
       svg.on("click", this.reRenderFunc)
+      // svg.on("click", () => svg.fire('myevent'))
       // svg.on("dblclick", this.reRenderFunc)
     }
+
+
 
     this.isExpanded = false
     this.svg = svg
   }
 
+
+  /**
+   * Changes the expanders label.
+   */
   changeToShowMoreText() {
     this
       .svg
@@ -141,6 +149,10 @@ class GridExpander {
     this.isExpanded = true
   }
 
+
+  /**
+   * Changes the expanders label.
+   */
   changeToHideMoreText() {
     this
       .svg
@@ -157,31 +169,44 @@ class GridExpander {
   }
 
 
+  /**
+   * Transforms the expander from its final position to its initial rendered position.
+   */
   transformToFinalPosition() {
     this
       .svg
-      .attr({ opacity: 1 })
       .animate({ duration: this.config.animationSpeed })
       .transform({ position: [this.finalX + this.config.expanderWidth / 2, this.finalY] })
-      .attr({ opacity: 1 })
   }
 
 
+  /**
+   * Determins where the expander is rendered or not.
+   * @returns True, if the SVG is rendered, else false.
+   */
   isRendered() {
     return this.svg !== null
   }
 
 
-  setReRenderFunc(reRenderFunc) {
-    this.reRenderFunc = reRenderFunc
-  }
 
 
+  /**
+   * Removes the rendered SVG expander from the canvas.
+   */
   removeNode() {
     if (this.svg !== null) {
       this.svg.remove()
       this.svg = null
     }
+  }
+
+  setReRenderFunc(reRenderFunc) {
+    this.reRenderFunc = reRenderFunc
+  }
+
+  updateConfig(newConfig) {
+    this.config = { ...this.config, ...newConfig }
   }
 
   getIsExpanded() {

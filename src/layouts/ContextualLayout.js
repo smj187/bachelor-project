@@ -1,26 +1,18 @@
 import BaseLayout from "./BaseLayout"
 import ContextualContainer from "./helpers/ContextualContainer"
 import GridExpander from "./helpers/GridExpander"
-
-import ContextualLayoutConfiguration from "../configuration/ContextualConfiguration"
-
-
-/* eslint-disable no-bitwise */
-
-const LightenDarkenColor = (col, amt) => {
-  const num = parseInt(col, 16)
-  const r = (num >> 16) + amt
-  const b = ((num >> 8) & 0x00FF) + amt
-  const g = (num & 0x0000FF) + amt
-  const newColor = g | (b << 8) | (r << 16)
-  return newColor.toString(16)
-}
+import ContextualAssigned from "./helpers/ContextualAssigned"
+import ContextualContainerConnection from "./helpers/ContextualContainerConnection"
+import ContextualLayoutConfiguration from "../configuration/ContextualLayoutConfiguration"
+import Colorshift from "../utils/Colorshift"
 
 
+/**
+ * This class calculates and renders the contextual layout.
+ */
 class ContextualLayout extends BaseLayout {
   constructor(customConfig = {}) {
     super()
-
 
     if (customConfig.focus === undefined) {
       throw new Error("No Focus element reference id provided")
@@ -29,6 +21,7 @@ class ContextualLayout extends BaseLayout {
     this.config = { ...ContextualLayoutConfiguration, ...customConfig }
     this.focusId = customConfig.focus
 
+    // layout specific
     this.focus = null
     this.parents = []
     this.children = []
@@ -37,6 +30,7 @@ class ContextualLayout extends BaseLayout {
 
     this.containers = []
     this.expanders = []
+    this.connections = []
   }
 
   calculateLayout(offset = 0) {
@@ -255,7 +249,7 @@ class ContextualLayout extends BaseLayout {
           this.expanders.push(newExpander)
           x0 += this.config.spacing
           y0 -= this.config.spacing * 1.5
-          const expanderTextColor = `#${LightenDarkenColor(this.config.childContainerBorderStrokeColor.substr(1), -50)}`
+          const expanderTextColor = `#${Colorshift(this.config.childContainerBorderStrokeColor.substr(1), -50)}`
           newExpander.updateConfig({ expanderTextColor })
 
           newExpander.setFinalX(x0)
@@ -322,10 +316,10 @@ class ContextualLayout extends BaseLayout {
       parents.forEach((node) => {
         const x = this.config.spacing + X + node.getMinWidth() / 2
         const y = this.focus.getFinalY()
-                - this.focus.getMaxHeight() / 2
-                - this.config.parentFocusDistance
-                - this.config.spacing * 3
-                - node.getMinHeight() / 2
+          - this.focus.getMaxHeight() / 2
+          - this.config.parentFocusDistance
+          - this.config.spacing * 3
+          - node.getMinHeight() / 2
 
         node.setFinalX(x)
         node.setFinalY(y)
@@ -476,7 +470,7 @@ class ContextualLayout extends BaseLayout {
           this.expanders.push(newExpander)
           x3 += this.config.spacing
           y3 += this.config.spacing * 1.5
-          const expanderTextColor = `#${LightenDarkenColor(this.config.parentContainerBorderStrokeColor.substr(1), -50)}`
+          const expanderTextColor = `#${Colorshift(this.config.parentContainerBorderStrokeColor.substr(1), -50)}`
           newExpander.updateConfig({ expanderTextColor })
 
           newExpander.setFinalX(x3)
@@ -697,7 +691,7 @@ class ContextualLayout extends BaseLayout {
           this.expanders.push(newExpander)
           x0 += this.config.spacing
           y0 -= this.config.spacing * 1
-          const expanderTextColor = `#${LightenDarkenColor(this.config.riskContainerBorderStrokeColor.substr(1), -50)}`
+          const expanderTextColor = `#${Colorshift(this.config.riskContainerBorderStrokeColor.substr(1), -50)}`
           newExpander.updateConfig({ expanderTextColor })
 
           newExpander.setFinalX(x0)
@@ -718,12 +712,214 @@ class ContextualLayout extends BaseLayout {
     }
 
 
+    const calculateParentEdges = () => {
+
+      if (this.parents.length > this.config.parentContainerColumns) {
+        this.parentEdges = []
+        const con = this.containers.find(c => c.type === "parent")
+        const tx = con.finalX
+        const ty = con.finalY + con.h / 2 + 4
+        const fx = this.focus.getFinalX()
+        const fy = this.focus.getFinalY() - this.focus.getMaxHeight() / 2 - 4
+
+        const ix = this.focus.getFinalX()
+        const iy = this.focus.getFinalY()
+
+        const color2 = this.parents.map(p => p.config.borderStrokeColor)
+
+        const mostCommon = (array) => {
+          if (array.length == 0)
+            return null;
+          const modeMap = {};
+          let maxEl = array[0], maxCount = 1;
+          for (let i = 0; i < array.length; i++) {
+            const el = array[i];
+            if (modeMap[el] == null)
+              modeMap[el] = 1;
+            else
+              modeMap[el]++;
+            if (modeMap[el] > maxCount) {
+              maxEl = el;
+              maxCount = modeMap[el];
+            }
+          }
+          return maxEl;
+        }
+        const color1 = this.focus.config.borderStrokeColor
+        this.connections.push(new ContextualContainerConnection(this.canvas, ix, iy, fx, fy, tx, ty, color1, mostCommon(color2), 100))
+
+      }
+
+      this.parentEdges.forEach((edge) => {
+        edge.calculateEdge({ isContextualParent: true })
+      })
+    }
+
+    const calculateChildEdges = () => {
+
+      if (this.children.length > this.config.childContainerColumns) {
+        this.childEdges = []
+        const con = this.containers.find(c => c.type === "child")
+        const fx = con.finalX
+        const fy = con.finalY - con.h / 2 - 4
+        const tx = this.focus.getFinalX()
+        const ty = this.focus.getFinalY() + this.focus.getMaxHeight() / 2 + 4
+
+        const ix = this.focus.getFinalX()
+        const iy = this.focus.getFinalY()
+
+
+        const color2 = this.children.map(p => p.config.borderStrokeColor)
+
+        const mostCommon = (array) => {
+          if (array.length == 0)
+            return null;
+          const modeMap = {};
+          let maxEl = array[0], maxCount = 1;
+          for (let i = 0; i < array.length; i++) {
+            const el = array[i];
+            if (modeMap[el] == null)
+              modeMap[el] = 1;
+            else
+              modeMap[el]++;
+            if (modeMap[el] > maxCount) {
+              maxEl = el;
+              maxCount = modeMap[el];
+            }
+          }
+          return maxEl;
+        }
+        const color1 = this.focus.config.borderStrokeColor
+        this.connections.push(new ContextualContainerConnection(this.canvas, ix, iy, fx, fy, tx, ty, color1, mostCommon(color2), -100))
+
+      }
+
+      this.childEdges.forEach((edge) => {
+        edge.calculateEdge({ isContextualChild: true })
+      })
+    }
+
+    const calculateFocusAssginedEdge = () => {
+      if (this.assgined === null) {
+        return
+      }
+
+      const fx = this.focus.getFinalX() + this.focus.getMaxWidth() / 2 + 4
+      const fy = this.focus.getFinalY()
+      const tx = this.assgined.getFinalX() - this.focus.getMinWidth() / 2 - 4
+      const ty = this.assgined.getFinalY()
+
+      const ix = this.focus.getFinalX()
+      const iy = this.focus.getFinalY()
+
+      const dx = this.focus.getFinalX() + this.config.riskFocusDistance
+      const dy = (fy + ty) / 2
+
+
+      const rx = this.focus.getFinalX() + this.config.riskFocusDistance
+      let ry = this.focus.getFinalY() + 50 + this.config.spacing - 4
+
+      if (this.containers.find(c => c.type === "risk") === undefined) {
+        ry += this.config.spacing / 2
+      }
+
+      this.connections.push(new ContextualAssigned(this.canvas, ix, iy, fx, fy, tx, ty, dx, dy, rx, ry))
+    }
+
+    const calculateLayoutInfo = () => {
+
+
+      const nodes = [
+        ...this.parents.slice(0, this.config.parentContainerNodeLimit),
+        ...this.children.slice(0, this.config.childContainerNodeLimit),
+        ...this.risks.slice(0, this.config.riskContainerNodeLimit),
+        this.assgined
+      ]
+
+
+      let x0 = Math.min(...nodes.map(n => {
+        const w = n.getMinWidth()
+        return n.getFinalX() - w / 2 - this.config.spacing * 2
+      }))
+
+      if (this.parents.length === 0 && this.children.length === 0) {
+        x0 = this.focus.getFinalX() - this.focus.getMaxWidth() / 2 - this.config.spacing * 2
+      }
+
+      const y0 = 0
+      // this.canvas.circle(5).fill("#f75").center(x0, y0)
+
+
+
+      // top right
+      let x1 = Math.max(...nodes.map((n) => {
+        const w = n.getMinWidth()
+        return n.getFinalX() + w / 2 + this.config.spacing / 2
+      }))
+
+      if (this.parents.length === 0 && this.children.length === 0) {
+        x1 = this.focus.getFinalX() + this.focus.getMaxWidth() / 2 + this.config.spacing * 2
+      }
+
+      const y1 = y0
+      // this.canvas.circle(5).fill("#75f").center(x1, y1)
+
+
+
+      // bottom right
+      const x2 = x1
+      const y2 = Math.max(...this.nodes.map(n => {
+        const h = n.getMinHeight()
+        return n.getFinalY() + h / 2 + this.config.spacing / 2
+      }))
+
+      if (this.risks.length === 0 && this.children.length === 0) {
+        y2 = this.focus.getFinalY() + this.focus.getMaxHeight() / 2 + this.config.spacing * 2
+      }
+      // this.canvas.circle(5).fill("#f75").center(x2, y2)
+
+
+      // bottom left
+      const x3 = x0
+      const y3 = y2
+      // this.canvas.circle(5).fill("#000").center(x3, y3)
+
+
+      const cx = (x0 + x2) / 2
+      const cy = (y0 + y2) / 2
+      // this.canvas.circle(5).fill("#1f1").center(cx, cy)
+
+      // store layout width and height info
+      const calculateDistance = (sx, sy, tx, ty) => {
+        const dx = tx - sx
+        const dy = ty - sy
+        return Math.sqrt(dx * dx + dy * dy)
+      }
+
+
+      this.layoutInfo = {
+        x: x0,
+        y: y0,
+        cx: (x0 + x2) / 2,
+        cy: (y0 + y2) / 2,
+        w: calculateDistance(x0, y0, x1, y1),
+        h: calculateDistance(x1, y1, x2, y2),
+      }
+    }
+
+
     calculateFocusPosition()
     calculateAssignedPosition()
 
     calculateChildPositions()
     calculateParentPositions()
     calculateRiskPositions()
+
+    calculateParentEdges()
+    calculateChildEdges()
+    calculateFocusAssginedEdge()
+
+    calculateLayoutInfo()
 
 
     return this.layoutInfo
@@ -851,7 +1047,7 @@ class ContextualLayout extends BaseLayout {
               this.config = {
                 ...this.config,
                 cachedRiskContainerNodeLimit: this.config.riskContainerNodeLimit,
-                riskContainerNodeLimit: this.parents.length,
+                riskContainerNodeLimit: this.risks.length,
               }
 
               this.calculateLayout()
@@ -861,6 +1057,7 @@ class ContextualLayout extends BaseLayout {
 
               const notRenderedNodes = this.risks.filter((n) => n.isRendered() === false)
               notRenderedNodes.forEach((child) => {
+                // console.log(child.getFinalX(), child.getFinalY())
                 child.renderAsMin(child.getFinalX(), child.getFinalY())
               })
 
@@ -894,29 +1091,134 @@ class ContextualLayout extends BaseLayout {
       })
     }
 
+    const renderConnections = () => {
+      this.connections.forEach(connection => {
+        if (connection.isRendered() === false) {
+          connection.render()
+        }
+        if (connection.isRendered() === true) {
+          connection.transformToFinalPosition()
+        }
+      })
+    }
+
+    const makeFocus = async (node) => {
+      // remove event
+
+      node.svg.off("click")
+
+      // close expander (if open)
+      if (this.config.cachedChildNodeLimit !== undefined) {
+        this.config = {
+          ...this.config,
+          cachedChildNodeLimit: this.config.childContainerNodeLimit,
+          childContainerNodeLimit: this.config.cachedChildNodeLimit,
+        }
+        delete this.config.cachedChildNodeLimit
+      }
+      if (this.config.cachedParentContainerNodeLimit !== undefined) {
+        this.config = {
+          ...this.config,
+          cachedParentContainerNodeLimit: this.config.parentContainerNodeLimit,
+          parentContainerNodeLimit: this.config.cachedParentContainerNodeLimit,
+        }
+        delete this.config.cachedParentContainerNodeLimit
+      }
+
+      if (this.config.cachedRiskContainerNodeLimit !== undefined) {
+        this.config = {
+          ...this.config,
+          cachedRiskContainerNodeLimit: this.config.riskContainerNodeLimit,
+          riskContainerNodeLimit: this.config.cachedRiskContainerNodeLimit,
+        }
+        delete this.config.cachedRiskContainerNodeLimit
+      }
+
+
+
+      // remove nodes
+      const nodesToRemove = this.nodes.filter((n) => {
+        if (n.id === node.id) {
+          return false
+        }
+        // if (n.id === this.focus.id) {
+        //   return false
+        // }
+        return true
+      })
+
+      nodesToRemove.forEach((nodeToRemove) => {
+        nodeToRemove.removeNode(nodeToRemove.getFinalX(), nodeToRemove.getFinalY() + 100, { opacity: 0 })
+      })
+      this.assgined = null
+      this.risks = []
+      this.parents = []
+      this.children = []
+
+      // remove other stuff
+      this.containers.forEach((container) => {
+        container.removeContainer(container.getFinalX(), container.getFinalY() + 100)
+      })
+      this.containers = []
+
+      this.expanders.forEach((expander) => {
+        expander.removeNode()
+      })
+      this.expanders = []
+
+      this.connections.forEach(connection => {
+        connection.removeConnection()
+      })
+      this.connections = []
+
+      // remove edges
+      this.parentEdges.forEach((edge) => {
+        edge.removeEdge()
+      })
+      this.parentEdges = []
+      this.childEdges.forEach((edge) => {
+        edge.removeEdge()
+      })
+      this.childEdges = []
+
+      // console.log(this.focus)
+      this.nodes = this.nodes.filter((n) => n.id === node.id)
+      this.edges = []
+
+
+      const fx = this.focus.getFinalX()
+      const fy = this.focus.getFinalY()
+      node.transformToMax(fx, fy)
+      node.transformToFinalPosition(fx, fy)
+      this.focus.transformToMin()
+
+      this.focus = node
+      await this.loadAdditionalContextualDataAsync()
+    }
+
 
     const renderNodes = () => {
-      if (this.assgined.isRendered() === false) {
-        this.assgined.renderAsMin(X, Y)
-        this.assgined.transformToFinalPosition()
+      if (this.assgined !== null) {
+        if (this.assgined.isRendered() === false) {
+          this.assgined.renderAsMin(X, Y)
+        } else if (this.assgined.isRendered() === true) {
+          this.assgined.transformToFinalPosition()
+        }
       }
+
 
       if (this.focus.isRendered() === false) {
         this.focus.renderAsMax(X, Y)
+      } else if (this.focus.isRendered() === true) {
         this.focus.transformToFinalPosition()
-
-        console.log(this.focus, this.focus.getFinalY())
       }
-
 
       this.parents.forEach((parent, i) => {
         if (i < this.config.parentContainerNodeLimit) {
           if (parent.isRendered() === false) {
-            parent.addEvent("click", () => this.loadAdditionalContextualDataAsync(parent))
+            parent.addEvent("click", () => makeFocus(parent))
             parent.renderAsMin(X, Y)
-          }
-
-          if (parent.isRendered() === true) {
+          } else if (parent.isRendered() === true) {
             parent.transformToFinalPosition()
           }
         }
@@ -925,10 +1227,9 @@ class ContextualLayout extends BaseLayout {
       this.children.forEach((child, i) => {
         if (i < this.config.childContainerNodeLimit) {
           if (child.isRendered() === false) {
+            child.addEvent("click", () => makeFocus(child))
             child.renderAsMin(X, Y)
-          }
-
-          if (child.isRendered() === true) {
+          } else if (child.isRendered() === true) {
             child.transformToFinalPosition()
           }
         }
@@ -938,11 +1239,27 @@ class ContextualLayout extends BaseLayout {
         if (i < this.config.riskContainerNodeLimit) {
           if (risk.isRendered() === false) {
             risk.renderAsMin(X, Y)
-          }
-
-          if (risk.isRendered() === true) {
+          } else if (risk.isRendered() === true) {
             risk.transformToFinalPosition()
           }
+        }
+      })
+    }
+
+    const renderEdges = () => {
+      this.parentEdges.forEach(edge => {
+        if (edge.isRendered() === false) {
+          edge.render(X, Y)
+        } else if (edge.isRendered() === true) {
+          edge.transformToFinalPosition()
+        }
+      })
+
+      this.childEdges.forEach(edge => {
+        if (edge.isRendered() === false) {
+          edge.render(X, Y)
+        } else if (edge.isRendered() === true) {
+          edge.transformToFinalPosition()
         }
       })
     }
@@ -951,7 +1268,10 @@ class ContextualLayout extends BaseLayout {
     // rendering
     renderContainers()
     renderExpanders()
+    renderConnections()
     renderNodes()
+    renderEdges()
+
 
 
     // // render containers

@@ -70,7 +70,12 @@
             "tooltip": null,
             "parent": null,
             "children": [],
-            "config": null
+            "config": {
+                "minIconSize": 70,
+                "minIconTranslateY": -15,
+                "minTextTranslateY": 30,
+                "labelBackground": "#cccccc33"
+            }
         },
         {
             "id": 6,
@@ -118,7 +123,7 @@
         },
         {
             "id": 10,
-            "label": "Risk 10",
+            "label": "Risk 10 jf oia aiofja oa oiasjf  oa ao",
             "description": "sanctus est Lorem ipsum dolor labore et dolore magna aliquyam ante enim nibh tincidunt taciti justo ad vero eos et accusam et justo duo sit amet voluptate expedita dicta neque harum debitis laudantium molestias velit aut",
             "type": "risk",
             "state": "censorious",
@@ -464,10 +469,10 @@
             "label": "Requirement 34",
             "description": "lorem ipsum",
             "type": "requirement",
-            "state": "FULFILLED",
+            "state": "not-fulfilled",
             "attributes": null,
             "tooltip": null,
-            "parent": 28,
+            "parent": 29,
             "children": [
                 36
             ],
@@ -494,20 +499,18 @@
             "attributes": null,
             "tooltip": null,
             "parent": [
-                34,
                 33,
-                32,
-                31,
-                30,
-                28,
-                26,
-                25
+                34,
+                35
             ],
             "children": [
                 37,
                 38,
                 39,
-                0
+                70,
+                71,
+                72,
+                73
             ],
             "config": null
         },
@@ -942,103 +945,612 @@
             "parent": null,
             "children": [],
             "config": null
+        },
+        {
+            "id": 70,
+            "label": "Requirement 70",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": 37,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 71,
+            "label": "Requirement 71",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": 37,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 72,
+            "label": "Requirement 72",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": 37,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 73,
+            "label": "Requirement 73",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": 37,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 74,
+            "label": "TEST ASSET 1",
+            "description": "Lorem ipsum dolor sit amet consectetur adipisicing elit. Quibusdam maxime cupiditate fugiat deserunt libero, ab temporibus delectus sunt et doloribus. Voluptate expedita dicta neque harum debitis laudantium molestias velit aut, quos impedit consequatur est libero aliquam enim quibusdam optio nisi aspernatur. Voluptates iure reiciendis, eos illo explicabo sequi architecto! Iure numquam officia temporibus et, mollitia, dolore quas eos non quibusdam quia hic dolores impedit debitis eligendi? Sequi a maxime provident tenetur eveniet modi animi consectetur vitae, nostrum amet ad iusto accusamus placeat, beatae saepe voluptatum! Veritatis architecto error cum eaque. Ipsam blanditiis ab, tenetur eveniet modi doloribus aspernatur aliquid dicta.",
+            "type": "asset",
+            "keyValuePairs": [
+                {
+                    "key": "key 1",
+                    "value": "key value pair: value 1"
+                },
+                {
+                    "key": "key 2",
+                    "value": "key value pair: value 2"
+                },
+                {
+                    "key": "key 3",
+                    "value": "key value pair: value 3"
+                },
+                {
+                    "key": "key 4",
+                    "value": "key value pair: value 4"
+                },
+                {
+                    "key": "key 5",
+                    "value": "key value pair: value 5"
+                },
+                {
+                    "key": "key 6",
+                    "value": "key value pair: value 6"
+                }
+            ],
+            "tooltip": "Asset with <br> tooltip",
+            "parent": null,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 75,
+            "label": "TEST ASSET 2",
+            "description": "Lorem ipsum dolor sit amet consectetur adipisicing elit. Quibusdam maxime cupiditate fugiat deserunt libero, ab temporibus delectus sunt et doloribus. Voluptate expedita dicta neque harum debitis laudantium molestias velit aut, quos impedit consequatur est libero aliquam enim quibusdam optio nisi aspernatur. Voluptates iure reiciendis, eos illo explicabo sequi architecto! Iure numquam officia temporibus et, mollitia, dolore quas eos non quibusdam quia hic dolores impedit debitis eligendi? Sequi a maxime provident tenetur eveniet modi animi consectetur vitae, nostrum amet ad iusto accusamus placeat, beatae saepe voluptatum! Veritatis architecto error cum eaque. Ipsam blanditiis ab, tenetur eveniet modi doloribus aspernatur aliquid dicta.",
+            "type": "asset",
+            "keyValuePairs": [
+                {
+                    "key": "key 1",
+                    "value": "key value pair: value 1"
+                }
+            ],
+            "tooltip": "Asset with <br> tooltip",
+            "parent": null,
+            "children": [],
+            "config": {
+                "minWidth": 200,
+                "iconUrl": "./icons/icon2.svg",
+                "minTextTranslateY": 60,
+                "minIconOpacity": 0.85,
+                "labelBackground": "#ccc"
+            }
+        },
+        {
+            "id": 110,
+            "label": "Requirement 110",
+            "description": "adipiscing eros tellus feugiat cursus porttitor dolor faucibus bibendum lobortis amet mi quam habitasse leo per aliquet vestibulum erat vehicula blandit",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": null,
+            "children": [
+                111,
+                112,
+                113
+            ],
+            "config": null
+        },
+        {
+            "id": 111,
+            "label": "Requirement 111",
+            "description": "ligula proin nam eget duis ut imperdiet metus",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": 110,
+            "children": [
+                127,
+                128,
+                129,
+                130
+            ],
+            "config": null
+        },
+        {
+            "id": 112,
+            "label": "Requirement 112",
+            "description": "icitudin consectetur ligula proin nam eget duis ut imperdiet metus",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": 110,
+            "children": [
+                124,
+                125,
+                126
+            ],
+            "config": null
+        },
+        {
+            "id": 113,
+            "label": "Requirement 113",
+            "description": "tellus litora molestie fusce litora auctor cubilia nulla accumsan donec amet aliquam aliquam amet dictum metus hac tempor ultrices maecenas",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": 110,
+            "children": [
+                114,
+                115,
+                116,
+                117,
+                118,
+                119,
+                120,
+                121,
+                122,
+                123
+            ],
+            "config": null
+        },
+        {
+            "id": 114,
+            "label": "Requirement 114",
+            "description": "amet dictum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": 113,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 115,
+            "label": "Requirement 115",
+            "description": "amet dictum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": 113,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 116,
+            "label": "Requirement 116",
+            "description": "amet dictum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": 113,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 117,
+            "label": "Requirement 117",
+            "description": "amet dictum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": 113,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 118,
+            "label": "Requirement 118",
+            "description": "amet dictum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": 113,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 119,
+            "label": "Requirement 119",
+            "description": "amet dictum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": 113,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 120,
+            "label": "Requirement 120",
+            "description": "amet dictum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": 113,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 121,
+            "label": "Requirement 121",
+            "description": "amet dictum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": 113,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 122,
+            "label": "Requirement 122",
+            "description": "amet dictum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": 113,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 123,
+            "label": "Requirement 123",
+            "description": "amet dictum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": 113,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 124,
+            "label": "Requirement 124",
+            "description": "amet dictum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": 112,
+            "children": [
+                132,
+                133
+            ],
+            "config": null
+        },
+        {
+            "id": 125,
+            "label": "Requirement 125",
+            "description": "amet dictum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": 112,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 126,
+            "label": "Requirement 126",
+            "description": "amet dictum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": 112,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 127,
+            "label": "Requirement 127",
+            "description": "amet dictum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": 111,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 128,
+            "label": "Requirement 128",
+            "description": "amet dictum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": 111,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 129,
+            "label": "Requirement 129",
+            "description": "amet dictum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": 111,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 130,
+            "label": "Requirement 130",
+            "description": "amet dictum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": 111,
+            "children": [
+                131
+            ],
+            "config": null
+        },
+        {
+            "id": 131,
+            "label": "Requirement 131",
+            "description": "amet dictum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": 130,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 132,
+            "label": "Requirement 132",
+            "description": "amet dictum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": 124,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 133,
+            "label": "Requirement 133",
+            "description": "amet dictum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltip": null,
+            "parent": 124,
+            "children": [],
+            "config": null
         }
     ],
     "contextual-relationships": [
         {
             "focus": 16,
             "assigned": 40,
-            "risks": []
+            "risks": [
+                65,
+                66,
+                67,
+                68
+            ]
         },
         {
             "focus": 17,
             "assigned": 41,
-            "risks": []
+            "risks": [
+                66,
+                67,
+                68,
+                69
+            ]
         },
         {
             "focus": 17,
             "assigned": 42,
-            "risks": []
+            "risks": [
+                65,
+                67,
+                68,
+                69
+            ]
         },
         {
             "focus": 19,
             "assigned": 43,
-            "risks": []
+            "risks": [
+                65,
+                66,
+                69
+            ]
         },
         {
             "focus": 20,
             "assigned": 44,
-            "risks": []
+            "risks": [
+                65,
+                66,
+                67,
+                68,
+                69
+            ]
         },
         {
             "focus": 21,
             "assigned": 45,
-            "risks": []
+            "risks": [
+                65,
+                66,
+                67,
+                68,
+                69
+            ]
         },
         {
             "focus": 22,
             "assigned": 46,
-            "risks": []
+            "risks": [
+                65,
+                66,
+                67,
+                68,
+                69
+            ]
         },
         {
             "focus": 23,
             "assigned": 47,
-            "risks": []
+            "risks": [
+                67,
+                68
+            ]
         },
         {
             "focus": 24,
             "assigned": 48,
-            "risks": []
+            "risks": [
+                65,
+                66,
+                69
+            ]
         },
         {
             "focus": 25,
             "assigned": 49,
-            "risks": []
+            "risks": [
+                65,
+                66,
+                67,
+                68,
+                69
+            ]
         },
         {
             "focus": 26,
             "assigned": 50,
-            "risks": []
+            "risks": [
+                66,
+                68,
+                69
+            ]
         },
         {
             "focus": 27,
             "assigned": 51,
-            "risks": []
+            "risks": [
+                66,
+                67,
+                68
+            ]
         },
         {
             "focus": 28,
             "assigned": 52,
-            "risks": []
+            "risks": [
+                67,
+                68,
+                69
+            ]
         },
         {
             "focus": 29,
             "assigned": 53,
-            "risks": []
+            "risks": [
+                65,
+                66,
+                69
+            ]
         },
         {
             "focus": 30,
             "assigned": 55,
-            "risks": []
+            "risks": [
+                65,
+                66,
+                67,
+                68,
+                69
+            ]
         },
         {
             "focus": 31,
             "assigned": 55,
-            "risks": []
+            "risks": [
+                65,
+                66,
+                67,
+                68,
+                69
+            ]
         },
         {
             "focus": 32,
             "assigned": 56,
-            "risks": []
+            "risks": [
+                67
+            ]
         },
         {
             "focus": 33,
             "assigned": 57,
-            "risks": []
+            "risks": [
+                66,
+                67,
+                68
+            ]
         },
         {
             "focus": 34,
             "assigned": 58,
-            "risks": []
+            "risks": [
+                65
+            ]
         },
         {
             "focus": 35,
@@ -1086,106 +1598,106 @@
         {
             "id": 0,
             "label": "adding label",
-            "type": "solid",
+            "type": "bold",
             "fromNode": 0,
             "toNode": 2
         },
         {
             "id": 1,
-            "type": "solid",
+            "type": "bold",
             "fromNode": 1,
             "toNode": 0
         },
         {
             "id": 2,
-            "type": "solid",
+            "type": "bold",
             "fromNode": 2,
             "toNode": 0
         },
         {
             "id": 3,
-            "type": "solid",
+            "type": "bold",
             "fromNode": 2,
             "toNode": 1
         },
         {
             "id": 4,
-            "type": "solid",
+            "type": "bold",
             "fromNode": 25,
             "toNode": 12
         },
         {
             "id": 5,
-            "type": "solid",
+            "type": "bold",
             "fromNode": 26,
             "toNode": 12
         },
         {
             "id": 6,
-            "type": "solid",
+            "type": "bold",
             "fromNode": 14,
             "toNode": 13
         },
         {
             "id": 7,
-            "type": "solid",
+            "type": "bold",
             "fromNode": 15,
             "toNode": 13
         },
         {
             "id": 8,
-            "type": "solid",
+            "type": "bold",
             "fromNode": 16,
             "toNode": 13
         },
         {
             "id": 9,
-            "type": "solid",
+            "type": "bold",
             "fromNode": 17,
             "toNode": 13
         },
         {
             "id": 10,
-            "type": "solid",
+            "type": "bold",
             "fromNode": 18,
             "toNode": 13
         },
         {
             "id": 11,
-            "type": "solid",
+            "type": "bold",
             "fromNode": 19,
             "toNode": 13
         },
         {
             "id": 12,
-            "type": "solid",
+            "type": "bold",
             "fromNode": 20,
             "toNode": 13
         },
         {
             "id": 13,
-            "type": "solid",
+            "type": "bold",
             "fromNode": 21,
             "toNode": 13
         },
         {
             "id": 15,
             "label": "label 15",
-            "type": "solid",
+            "type": "bold",
             "fromNode": 15,
             "toNode": 5
         },
         {
             "id": 16,
             "label": "applies",
-            "type": "solid",
+            "type": "bold",
             "fromNode": 36,
             "toNode": 34
         },
         {
             "id": 17,
             "label": "protects",
-            "type": "dashed",
+            "type": "bold",
             "fromNode": 37,
             "toNode": 36
         },
@@ -1195,6 +1707,23 @@
             "type": "bold",
             "fromNode": 39,
             "toNode": 36
+        },
+        {
+            "id": 20,
+            "type": "solid",
+            "fromNode": 111,
+            "toNode": 110
+        },
+        {
+            "id": 21,
+            "type": "solid",
+            "fromNode": 112,
+            "toNode": 110
+        },
+        {
+            "id": 22,
+            "fromNode": 113,
+            "toNode": 110
         }
     ]
 }

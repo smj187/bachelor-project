@@ -1,10 +1,10 @@
 {
   "name": "rollup-starter-app",
   "devDependencies": {
-    "@babel/core": "^7.8.7",
+    "@babel/core": "^7.9.0",
     "@babel/node": "^7.8.7",
     "@babel/plugin-transform-runtime": "^7.8.3",
-    "@babel/preset-env": "^7.8.7",
+    "@babel/preset-env": "^7.9.5",
     "@babel/preset-flow": "^7.8.3",
     "@rollup/plugin-node-resolve": "^7.1.1",
     "axios": "^0.19.2",
@@ -12,11 +12,15 @@
     "body-parser": "^1.19.0",
     "clamp-js": "^0.7.0",
     "cors": "^2.8.5",
+    "cypress": "^4.4.0",
+    "doxdox": "^3.0.0",
     "eslint": "^6.8.0",
     "eslint-config-airbnb-base": "^14.0.0",
     "eslint-plugin-import": "^2.20.1",
     "express": "^4.17.1",
     "jsdoc": "^3.6.3",
+    "jsdoc-template": "^1.2.0",
+    "jsdoc-to-markdown": "^5.0.3",
     "live-server": "^1.2.1",
     "nodemon": "^2.0.2",
     "npm-run-all": "^4.1.5",
@@ -25,8 +29,8 @@
     "rollup-plugin-commonjs": "^10.1.0",
     "rollup-plugin-terser": "^5.0.0",
     "rollup-plugin-url": "^3.0.1",
-    "svg-intersections": "^0.4.0",
-    "toast-jsdoc": "^1.0.2"
+    "start-server-and-test": "^1.11.0",
+    "svg-intersections": "^0.4.0"
   },
   "dependencies": {
     "@svgdotjs/svg.draggable.js": "^3.0.2",
@@ -34,12 +38,17 @@
     "@svgdotjs/svg.js": "^3.0.16"
   },
   "scripts": {
-    "fake-backend": "nodemon ./public/backend/server.js",
+    "rest-server": "node ./public/backend/server.js",
     "build": "rollup -c",
     "watch": "rollup -c -w",
-    "dev": "npm-run-all --parallel live-server watch",
+    "dev": "npm-run-all --parallel live-server watch rest-server",
     "live-server": "npx live-server --port=5500 --open=public/index.html",
     "docs": "jsdoc -c jsdoc.conf.json",
-    "lint": "npx eslint ./src --fix"
+    "lint": "npx eslint ./src --fix",
+    "docss": "doxdox 'lib/**/*.js' --layout markdown --output DOCUMENTATION.md",
+    "test": "./node_modules/.bin/cypress open",
+    "test1": "npm-run-all --parallel test:server test",
+    "test:server": "npx live-server --port=9987 --open=cypress/index.html",
+    "asdf": "start-server-and-test start http://localhost:5500 test"
   }
 }

@@ -94,8 +94,10 @@ class ContextualConainer {
     if (this.svg !== null) {
       this
         .svg
+        .attr({ opacity: 1 })
         .animate({ duration: this.config.animationSpeed })
-        .transform({ scale: 0.001, position: [X, Y] })
+        .transform({ position: [X, Y] })
+        .attr({ opacity: 0 })
         .after(() => {
           this.svg.remove()
           this.svg = null
@@ -105,6 +107,15 @@ class ContextualConainer {
 
   isRendered() {
     return this.svg !== null
+  }
+
+  getFinalX() {
+    return this.finalX
+  }
+
+
+  getFinalY() {
+    return this.finalY
   }
 }
 

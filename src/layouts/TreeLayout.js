@@ -1,50 +1,68 @@
 import BaseLayout from "./BaseLayout"
 import Leaf from "./helpers/LeafExtension"
-
-const TreeConfig = {
-  maxLayoutWidth: 600,
-  minHeight: window.innerHeight - 10,
-
-  // where to translate a given layout
-  translateX: 0,
-  translateY: 0,
-
-  // layout animation speed
-  animationSpeed: 300,
-
-  // how a layout starts
-  layoutState: "expanded", // expanded, collapsed // TODO: ask: even needed?
-
-  // tree orientation
-  orientation: "vertical", // vertical, horizontal
-
-  // hide all other layouts and center selected one
-  hideOtherLayouts: false, // TODO:
-
-  // node spacing
-  vSpacing: 100,
-  hSpacing: 25,
-
-  // how to render all nodes
-  renderingSize: "min", // min, max
-
-  // renders additional edges to indicate loadable nodes
-  showAdditionEdges: true, // true, false
-}
+import TreeLayoutConfiguration from "../configuration/TreeLayoutConfiguration"
 
 
+/**
+ * This class is calculates and renders the tree layout.
+ */
 class TreeLayout extends BaseLayout {
-  constructor(customTreeConfig = {}) {
-    super()
-    this.config = { ...TreeConfig, ...customTreeConfig }
+  constructor(customConfig = {}, events = [], additionalNodeRepresentations) {
+    super(additionalNodeRepresentations)
 
+    if (customConfig.root === undefined) {
+      throw new Error("No Focus element reference id provided")
+    }
+
+    if (customConfig.renderDepth === undefined) {
+      throw new Error("The tree layout requires a defined render depth")
+    }
+
+    this.config = { ...TreeLayoutConfiguration, ...customConfig }
+
+
+    // layout specific
+    this.rootId = customConfig.root
+    this.renderDepth = customConfig.renderDepth
     this.leafs = []
+    this.registerMouseEvents(events)
+
+  }
+
+  registerMouseEvents(events) {
+
+    const loadOrHideData = async (node) => {
+      this.leafs.forEach(leaf => {
+        leaf.removeLeaf()
+      })
+      this.leafs = []
+      await this.updateTreeDataAsync(node)
+    }
+    if (events.length > 0) {
+      this.events = [
+        {
+          name: "nodeEvent",
+          func: loadOrHideData,
+          mouse: events.find(e => e.name === "nodeEvent").mouse || "dblclick",
+          modifier: events.find(e => e.name === "nodeEvent").modifier || "ctrlKey",
+        }
+      ]
+    } else {
+      this.events = [
+        {
+          name: "nodeEvent",
+          func: loadOrHideData,
+          mouse: "dblclick",
+          modifier: "ctrlKey",
+        }
+      ]
+    }
+
   }
 
 
-  calculateLayout() {
+  calculateLayout(offset = 0) {
     const isVertical = this.config.orientation === "vertical"
-
 
     // construct a tree
     const constructTree = (array, parentRef, rootRef) => {
@@ -66,7 +84,7 @@ class TreeLayout extends BaseLayout {
     }
 
 
-    const InitializeNodes = (node, parent, prevSibling, depth) => {
+    const initializeNodes = (node, parent, prevSibling, depth) => {
       node.setDepth(depth)
       node.setParent(parent)
       node.setPrevSibling(prevSibling)
@@ -81,10 +99,18 @@ class TreeLayout extends BaseLayout {
         node.setChildren([])
       }
 
+      // if (node.children.length <= this.config.childLimit) {
       node.children.forEach((child, i) => {
         const prev = i >= 1 ? node.children[i - 1] : null
-        InitializeNodes(child, node, prev, depth + 1)
+        initializeNodes(child, node, prev, depth + 1)
       })
+      // } else {
+      // node.childrenIds = node.children.map(c => c.id)
+      // node.children = []
+      // this.nodes = this.nodes
+      // }
+
+
     }
 
     const finalizeTree = (node) => {
@@ -96,7 +122,7 @@ class TreeLayout extends BaseLayout {
       })
     }
 
-    const CalculateFinalPositions = (node, modifier) => {
+    const calculateFinalPositions = (node, modifier) => {
       if (isVertical) {
         node.setFinalX(node.getFinalX() + modifier)
       } else {
@@ -105,14 +131,14 @@ class TreeLayout extends BaseLayout {
 
 
       node.children.forEach((child) => {
-        CalculateFinalPositions(child, node.modifier + modifier)
+        calculateFinalPositions(child, node.modifier + modifier)
       })
     }
 
 
-    const CalculateInitialX = (node) => {
+    const calculateInitialX = (node) => {
       node.children.forEach((child) => {
-        CalculateInitialX(child)
+        calculateInitialX(child)
       })
 
       let w = this.config.renderingSize === "max" ? node.config.maxWidth : node.config.minWidth
@@ -126,7 +152,7 @@ class TreeLayout extends BaseLayout {
 
         // if node has no children
         if (node.children.length === 0) {
-        // set x to prev siblings x, or 0 for first node in row
+          // set x to prev siblings x, or 0 for first node in row
           if (!node.isLeftMost()) {
             node.setFinalX(node.getPrevSibling().getFinalX() + w)
           } else {
@@ -157,7 +183,7 @@ class TreeLayout extends BaseLayout {
 
         // if node has no children
         if (node.children.length === 0) {
-        // set y to prev siblings y, or 0 for first node in col
+          // set y to prev siblings y, or 0 for first node in col
           if (!node.isLeftMost()) {
             node.setFinalY(node.getPrevSibling().getFinalY() + h)
           } else {
@@ -295,7 +321,7 @@ class TreeLayout extends BaseLayout {
     }
 
     const addLeaf = (node, initialX, initialY) => {
-      if (this.config.showAdditionEdges === false) {
+      if (this.config.showLeafNodes === false) {
         return
       }
 
@@ -306,7 +332,7 @@ class TreeLayout extends BaseLayout {
         leaf.finalY = node.finalY + h + 35
         leaf.initialX = initialX
         leaf.initialY = initialY
-        leaf.addEvent("dblclick", () => { this.manageDataAsync(node) })
+        // leaf.addEvent("dblclick", () => { this.manageDataAsync(node) })
         this.leafs.push(leaf)
       }
 
@@ -315,50 +341,177 @@ class TreeLayout extends BaseLayout {
       })
     }
 
+    const adjustPositions = (tree) => {
+      const toRender = [tree]
+      const rendered = []
+      while (toRender.length) {
+        const current = toRender.shift()
+        const node = this.nodes.find(n => n.id === current.id)
+        rendered.push(node)
 
-    const root = constructTree(this.nodes)[0] // TODO: filter for root
-    InitializeNodes(root, null, null, 0)
-    CalculateInitialX(root)
-    CalculateFinalPositions(root, 0)
+        current.children.forEach(child => {
+          toRender.push(child)
+        })
+      }
+
+
+      const hAdjustment = Math.min(...rendered.map(node => {
+        const w = this.config.renderingSize === "max" ? node.getMaxWidth() : node.getMinWidth()
+        return node.getFinalX() - w
+      }))
+      const vAdjustment = Math.min(...rendered.map(node => {
+        const h = this.config.renderingSize === "max" ? node.getMaxHeight() : node.getMinHeight()
+        return node.getFinalY() - h
+      }))
+
+      rendered.forEach(node => {
+        const x = ((node.getFinalX() - hAdjustment) + offset) + this.config.translateX
+        const y = (node.getFinalY() - vAdjustment) + this.config.translateY
+        node.setFinalX(x)
+        node.setFinalY(y)
+      })
+      this.edges.forEach(edge => {
+        edge.finalToX = (edge.finalToX - hAdjustment) + offset + this.config.translateX
+        edge.finalFromX = (edge.finalFromX - hAdjustment) + offset + this.config.translateX
+        edge.finalToY = edge.finalToY - vAdjustment + this.config.translateY
+        edge.finalFromY = edge.finalFromY - vAdjustment + this.config.translateY
+      })
+
+      const x0 = Math.min(...rendered.map(n => {
+        const w = this.config.renderingSize === "max" ? n.getMaxWidth() : n.getMinWidth()
+        return n.getFinalX() - w
+      }))
+      const y0 = 0
+
+      const x1 = Math.max(...rendered.map(n => {
+        const w = this.config.renderingSize === "max" ? n.getMaxWidth() : n.getMinWidth()
+        return n.getFinalX() + w
+      }))
+      const y1 = 0
+
+      const x2 = x1
+      const y2 = Math.max(...rendered.map((n) => {
+        const h = this.config.renderingSize === "max" ? n.getMaxHeight() : n.getMinHeight()
+        return n.getFinalY() + h
+      }))
+
+      // this.canvas.circle(5).fill("#000").center(x0, y0)
+      // this.canvas.circle(5).fill("#75f").center(x1, y1)
+      // this.canvas.circle(5).fill("#f75").center(x2, y2)
+
+      const calculateDistance = (sx, sy, tx, ty) => {
+        const dx = tx - sx
+        const dy = ty - sy
+        return Math.sqrt(dx * dx + dy * dy)
+      }
+
+
+      this.layoutInfo = {
+        x: x0,
+        y: y0,
+        cx: (x0 + x2) / 2,
+        cy: (y0 + y2) / 2,
+        w: calculateDistance(x0, y0, x1, y1),
+        h: calculateDistance(x1, y1, x2, y2),
+      }
+
+
+    }
+
+    const addEdgeReferences = (node) => {
+      node.children.forEach(child => {
+        const e = this.edges.find(e => e.fromNode.id === child.id && e.toNode.id === node.id)
+        node.addIncomingEdge(e)
+        child.addOutgoingEdge(e)
+
+        addEdgeReferences(child)
+      })
+    }
+
+
+    const root = constructTree(this.nodes)[0] // TODO: re-write
+    initializeNodes(root, null, null, 0)
+    calculateInitialX(root)
+    calculateFinalPositions(root, 0)
     fixOverlappingConflicts(root)
     centerRoot(root)
     finalizeTree(root)
     calcRadialEdges(this.edges)
     addLeaf(root, root.getFinalX(), root.getFinalY())
+    adjustPositions(root)
+    addEdgeReferences(root)
 
     // console.log(root)
   }
 
 
   renderLayout() {
-    this.centerX = this.nodes[0].getFinalX()
-    this.centerY = this.nodes[0].getFinalY()
+    const X = this.nodes.find(n => n.id === this.rootId).getFinalX()
+    const Y = this.nodes.find(n => n.id === this.rootId).getFinalY()
+
+    const findChildren = (root) => {
+      const nodes = []
+      const queue = [root]
+      while (queue.length) {
+        const cur = queue.shift()
+        nodes.push(cur)
+        cur.children.forEach(child => queue.push(child))
+      }
+      return nodes
+    }
+
+    const renderNodes = () => {
+      this.nodes.forEach((node) => {
+        if (node.isRendered() === false) {
+          if (this.config.renderingSize === "max") node.renderAsMax(X, Y)
+          if (this.config.renderingSize === "min") node.renderAsMin(X, Y)
+
+          if (node.children.length > this.config.childLimit) {
+            // this.events[0].func(node)
 
 
-    this.nodes.forEach((node) => {
-      if (this.config.renderingSize === "max") {
-        if (node.svg === null) node.renderAsMax(this.centerX, this.centerY)
-      } else if (this.config.renderingSize === "min") {
-        if (node.svg === null) {
-          node.renderAsMin(this.centerX, this.centerY)
+            // console.log(node.children)
+          }
+
+
+          node.svg.on(this.events[0].mouse, (e) => {
+            if (this.events[0].modifier !== null) {
+              if (this.events[0].modifier, e[this.events[0].modifier]) {
+                this.events[0].func(node)
+              }
+            }
+          })
+          node.outgoingEdges.forEach(edge => {
+            if (edge.isRendered() === false) {
+              edge.render(X, Y)
+            }
+          })
+
+        } else if (node.isRendered() === true) {
+          node.transformToFinalPosition()
         }
-      }
-      node.transformToFinalPosition()
-    })
+      })
 
 
-    this.leafs.forEach((leaf) => {
-      leaf.render()
-      leaf.transformToFinalPosition()
-    })
+      this.leafs.forEach((leaf) => {
+        leaf.render()
+        leaf.transformToFinalPosition()
+      })
 
 
-    this.edges.forEach((edge) => {
-      if (edge.svg === null) {
-        edge.render(this.centerX, this.centerY)
-      }
-      edge.transformToFinalPosition()
-    })
+      this.edges.forEach((edge) => {
+        if (edge.isRendered() === false) {
+          edge.render(X, Y)
+        } else if (edge.isRendered() === true) {
+
+          edge.transformToFinalPosition()
+        }
+      })
+    }
+
+    renderNodes()
+
+
   }
 }
 

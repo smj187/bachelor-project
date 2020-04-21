@@ -1,36 +1,63 @@
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    
     <meta charset="utf-8">
-    <title>nodes/RequirementNode.js - Documentation</title>
+    <title>JSDoc: nodes/RequirementNode.js</title>
 
-    <script src="scripts/prettify/prettify.js"></script>
-    <script src="scripts/prettify/lang-css.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="./build/entry.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <!--[if lt IE 9]>
       <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
-    <link type="text/css" rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
-    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
-    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+    <link href="https://fonts.googleapis.com/css?family=Muli:100,400,700|Oswald:300|Inconsolata,700" rel="stylesheet">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
+    <link type="text/css" rel="stylesheet" href="https://jmblog.github.io/color-themes-for-google-code-prettify/themes/tomorrow-night.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/app.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/iframe.css">
 </head>
+
 <body>
-
-<input type="checkbox" id="nav-trigger" class="nav-trigger" />
-<label for="nav-trigger" class="navicon-button x">
-  <div class="navicon"></div>
-</label>
-
-<label for="nav-trigger" class="overlay"></label>
-
-<nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="AssetNode.html">AssetNode</a></li><li><a href="BaseEdge.html">BaseEdge</a></li><li><a href="BaseNode.html">BaseNode</a></li><li><a href="ControlNode.html">ControlNode</a></li><li><a href="CustomNode.html">CustomNode</a></li><li><a href="EdgeFactory.html">EdgeFactory</a></li><li><a href="Graph.html">Graph</a><ul class='methods'><li data-type='method'><a href="Graph.html#excludeEdge">excludeEdge</a></li><li data-type='method'><a href="Graph.html#excludeNode">excludeNode</a></li><li data-type='method'><a href="Graph.html#includeEdge">includeEdge</a></li><li data-type='method'><a href="Graph.html#includeNode">includeNode</a></li></ul></li><li><a href="GraphEdge.html">GraphEdge</a></li><li><a href="GraphNode.html">GraphNode</a><ul class='methods'><li data-type='method'><a href="GraphNode.html#addEdge">addEdge</a></li><li data-type='method'><a href="GraphNode.html#addNeighbor">addNeighbor</a></li><li data-type='method'><a href="GraphNode.html#getNeighbors">getNeighbors</a></li><li data-type='method'><a href="GraphNode.html#removeNeighbor">removeNeighbor</a></li></ul></li><li><a href="NodeFactory.html">NodeFactory</a></li><li><a href="RequirementNode.html">RequirementNode</a></li><li><a href="RiskNode.html">RiskNode</a></li><li><a href="Visualization.html">Visualization</a><ul class='methods'><li data-type='method'><a href="Visualization.html#getCanvas">getCanvas</a></li><li data-type='method'><a href="Visualization.html#render">render</a></li><li data-type='method'><a href="Visualization.html#setZoom">setZoom</a></li><li data-type='method'><a href="Visualization.html#transform">transform</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="ContextualLayoutConfiguration.html">ContextualLayoutConfiguration</a></li><li><a href="GridLayoutConfiguration.html">GridLayoutConfiguration</a></li></ul><h3><a href="global.html">Global</a></h3>
-</nav>
-
-<div id="main">
-    
-    <h1 class="page-title">nodes/RequirementNode.js</h1>
-    
-    
+    <div id="stickyNavbarOverlay"></div>
+    <div class="top-navbar">
+        <div class="container">
+            <nav class="navbar" role="navigation" aria-label="main navigation">
+                <div class="navbar-brand">
+                    
+                     
+                        <h1 class="navbar-item">Interactive Visualization for Information Security Analysis: JavaScript Documentation</h1>
+                    
+                    <a id="hamburger" role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
+                        <span aria-hidden="true"></span>
+                        <span aria-hidden="true"></span>
+                        <span aria-hidden="true"></span>
+                    </a>
+                </div>
+                
+            </nav>
+        </div>
+    </div>
+    <div class="container">
+        <div class="columns">
+            <div class="column is-3" id="sidebarNav">
+                <div class="sidebar">
+                    <nav>
+                        <h2><a href="index.html">Home</a></h2><div class="category"><h3>Tutorials</h3><ul><li><a href="tutorial-advanced-layouts.html">Advanced Layout Examples</a></li><li><a href="tutorial-contextual-layout.html">Contextual Layout Examples</a></li><li><a href="tutorial-grid-layout.html">Grid Layout Examples</a></li><li><a href="tutorial-radial-layout.html">Radial Layout Examples</a></li><li><a href="tutorial-tree-layout.html">Tree Layout Examples</a></li></ul><h3>Namespaces</h3><ul><li><a href="AssetNodeConfiguration.html">AssetNodeConfiguration</a></li><li><a href="BoldEdgeConfiguration.html">BoldEdgeConfiguration</a></li><li><a href="ContextualLayoutConfiguration.html">ContextualLayoutConfiguration</a></li><li><a href="ControlNodeConfiguration.html">ControlNodeConfiguration</a></li><li><a href="CustomNodeConfiguration.html">CustomNodeConfiguration</a></li><li><a href="GridLayoutConfiguration.html">GridLayoutConfiguration</a></li><li><a href="RadialLayoutConfiguration.html">RadialLayoutConfiguration</a></li><li><a href="RequirementNodeConfiguration.html">RequirementNodeConfiguration</a></li><li><a href="RiskNodeConfiguration.html">RiskNodeConfiguration</a></li><li><a href="ThinEdgeConfiguration.html">ThinEdgeConfiguration</a></li><li><a href="TreeLayoutConfiguration.html">TreeLayoutConfiguration</a></li></ul><h3>Classes</h3><ul><li><a href="AssetNode.html">AssetNode</a></li><li><a href="BaseEdge.html">BaseEdge</a></li><li><a href="BaseLayout.html">BaseLayout</a></li><li><a href="BaseNode.html">BaseNode</a></li><li><a href="BoldEdge.html">BoldEdge</a></li><li><a href="ContextualLayout.html">ContextualLayout</a></li><li><a href="ControlNode.html">ControlNode</a></li><li><a href="CustomNode.html">CustomNode</a></li><li><a href="EdgeFactory.html">EdgeFactory</a></li><li><a href="Graph.html">Graph</a></li><li><a href="GraphEdge.html">GraphEdge</a></li><li><a href="GraphNode.html">GraphNode</a></li><li><a href="GridExpander.html">GridExpander</a></li><li><a href="GridLayout.html">GridLayout</a></li><li><a href="NodeFactory.html">NodeFactory</a></li><li><a href="RadialLayout.html">RadialLayout</a></li><li><a href="RequirementNode.html">RequirementNode</a></li><li><a href="RiskNode.html">RiskNode</a></li><li><a href="ThinEdge.html">ThinEdge</a></li><li><a href="TreeLayout.html">TreeLayout</a></li><li><a href="Visualization.html">Visualization</a></li></ul><h3><a href="global.html">Global</a></h3></div>
+                    </nav>
+                </div>
+            </div>
+            <div class="column is-9-desktop">
+                <div class="content" id="main-content-wrapper">
+                    <header class="page-title">
+                        <p>Source</p>
+                        <h1>nodes/RequirementNode.js</h1>
+                    </header>
+                    
+                    
 
 
 
@@ -39,128 +66,25 @@
         <article>
             <pre class="prettyprint source linenums"><code>import clamp from "clamp-js"
 import BaseNode from "./BaseNode"
-
-/**
- * @typedef
- */
+import RequirementNodeConfiguration from "../configuration/RequirementNodeConfiguration"
 
 
 /**
- * Default configuration for requirement nodes
- * @typedef {RequirementConfig} RequirementConfig
- *
- * @param {Number} [maxWidth=370] The nodes maximal width
- * @param {Number} [maxHeight=200] The nodes maximal height
- * @param {Number} [minWidth=155] The nodes minimal width
- * @param {Number} [minHeight=50] The nodes minimal height
- *
- * @param {Object} state // TODO: create a proper type
- * @param {String} state.state A specific requirement state
- * @param {String} state.name The display name of a specific requirement state
- * @param {String} state.color The color attached to a specifc state
- * @param {Array} [states=Array[state]] An array of aviable requirement states
- *
- * @param {Number} [offset=8] The spacing used by padding and margin
- * @param {Number} [animationSpeed=300] The animation in milliseconds
- * @param {Number} [borderRadius=8] The border radius
- * @param {Number} [borderStrokeWidth=1] The border stroke width
- * @param {String} [borderStrokeColor="#666666"] The border color
- * @param {String} [borderStrokeDasharray="0"] Gaps inside border
- * @param {String} [backgroundColor="#ffffff"] The background color for the rendered node
- *
- * @param {Number} [minTextWidth=150] The minimal text width for the label
- * @param {Number} [minTextHeight=45] The minimal text height for the label
- * @param {Number} [minTextTranslateX=0] Moves the label horizontally
- * @param {Number} [minTextTranslateY=0] The the label vertically
- * @param {Number} [maxTextWidth=365] The maximal text width for the description
- * @param {Number} [maxTextHeight=195] The maximal text height for the description
- * @param {Number} [maxTextTranslateX=0] The the description horizontally
- * @param {Number} [maxTextTranslateY=0] The the description vertically
- * @param {String} [labelColor="#222222"] The label text color for details
- * @param {String} [labelColor="#ffffff"] The label text color for minimal nodes
- * @param {String} [labelFontFamily="Montserrat"] The label font family
- * @param {Number} [labelFontSize=14] The label font size
- * @param {Number} [labelFontWeight=600] The label font weight
- * @param {String} [labelFontStyle="normal"] The label font style
- * @param {String} [labelBackground="none"] The label background color
- * @param {String} [detailsColor="#222222"] The details text color
- * @param {String} [detailsFontFamily="Montserrat"] The details family
- * @param {Number} [detailsFontSize=12] The details font size
- * @param {Number} [detailsFontWeight=600] The details font weight
- * @param {String} [detailsFontStyle="normal"] The details font style
- * @param {String} [detailsBackground="none"] The details text background color
- */
-const RequirementConfig = {
-  // large node
-  maxWidth: 370,
-  maxHeight: 200,
-
-
-  // small node
-  minWidth: 155,
-  minHeight: 50,
-
-
-  // available node states
-  states: [
-    { state: "fulfilled", name: "Fulfilled", color: "#7ed167" },
-    { state: "partially-fulfilled", name: "Partially Fulfilled", color: "#ffc453" },
-    { state: "not-fulfilled", name: "Not Fulfilled", color: "#ff6655" },
-    { state: "Unknown State", name: "Unknown State", color: "#84a8f2" },
-  ],
-
-
-  // node
-  offset: 8,
-  animationSpeed: 300,
-  borderRadius: 8,
-  borderStrokeWidth: 1,
-  borderStrokeColor: "#666666",
-  borderStrokeDasharray: "0",
-  backgroundColor: "#ffffff",
-
-
-  // text
-  minTextWidth: 150,
-  minTextHeight: 45,
-  minTextTranslateX: 0,
-  minTextTranslateY: 0,
-  maxTextWidth: 365,
-  maxTextHeight: 195,
-  maxTextTranslateX: 0,
-  maxTextTranslateY: 0,
-  maxLabelColor: "#222222",
-  labelColor: "#ffffff",
-  labelFontFamily: "Montserrat",
-  labelFontSize: 14,
-  labelFontWeight: 600,
-  labelFontStyle: "normal",
-  labelBackground: "none",
-  detailsColor: "#222222",
-  detailsFontFamily: "Montserrat",
-  detailsFontSize: 12,
-  detailsFontWeight: 600,
-  detailsFontStyle: "normal",
-  detailsBackground: "none",
-}
-
-
-/**
- * Class representing the visualization of requirements
- * @param {Data} data the raw node data
- * @param {Canvas} canvas the canvas to render the node on
- * @param {RequirementConfig} customRequirementConfig custom config to override the default values
+ * This class is responsible for the visual representation of requirements.
+ * @property {Data} data Loaded data from a database.
+ * @property {Canvas} canvas The nested canvas to render the node on.
  *
  */
 class RequirementNode extends BaseNode {
-  constructor(data, canvas, customRequirementConfig) {
+  constructor(data, canvas, layoutConfig = {}) {
     super(data, canvas)
 
-    this.config = { ...RequirementConfig, ...customRequirementConfig }
+    this.config = { ...RequirementNodeConfiguration, ...data.config, ...layoutConfig }
+
 
     // map color to respected state
     if (data.state !== null || data.state !== undefined) {
-      const state = this.config.states.find((s) => s.state === data.state) || { color: "#84a8f2" }
+      const state = this.config.states.find((s) => s.state === data.state.toLowerCase()) || { state: data.state, name: data.state, color: "#84a8f2" }
       this.config = {
         ...this.config,
         borderStrokeColor: state.color,
@@ -170,6 +94,11 @@ class RequirementNode extends BaseNode {
   }
 
 
+  /**
+   * Creates the requirements details description.
+   *
+   * @return {ForeignObject} text A foreign object containing some html and the node's label.
+   */
   createRequirementDetails() {
     const text = this.canvas.foreignObject(this.config.maxTextWidth, this.config.maxTextHeight)
 
@@ -195,18 +124,21 @@ class RequirementNode extends BaseNode {
     // create status, if any exists
     const status = document.createElement("p")
     if (this.state !== null) {
-      status.innerHTML = this.config.states.find((s) => s.state.toLowerCase() === this.state.toLowerCase()).name
-      status.style.background = "#222"
-      status.style.color = "#fff"
-      status.style.fontSize = `${this.config.labelFontSize + 2}px`
-      status.style.fontFamily = this.config.labelFontFamily
-      status.style.fontWeight = "normal"
-      status.style.textAlign = "center"
-      status.style.width = "fit-content"
-      status.style.padding = `${this.config.offset / 2}px ${this.config.offset / 1.5}px`
-      status.style.borderRadius = `${this.config.borderRadius / 2}px`
-      status.style.margin = `${this.config.offset}px ${this.config.offset}px`
-      background.appendChild(status)
+      const res = this.config.states.find((s) => s.state.toLowerCase() === this.state.toLowerCase())
+      if (res !== undefined) {
+        status.innerHTML = res.name
+        status.style.background = "#222"
+        status.style.color = "#fff"
+        status.style.fontSize = `${this.config.labelFontSize + 2}px`
+        status.style.fontFamily = this.config.labelFontFamily
+        status.style.fontWeight = "normal"
+        status.style.textAlign = "center"
+        status.style.width = "fit-content"
+        status.style.padding = `${this.config.offset / 2}px ${this.config.offset / 1.5}px`
+        status.style.borderRadius = `${this.config.borderRadius / 2}px`
+        status.style.margin = `${this.config.offset}px ${this.config.offset}px`
+        background.appendChild(status)
+      }
     }
 
     // create description
@@ -234,7 +166,14 @@ class RequirementNode extends BaseNode {
   }
 
 
-  renderAsMin(X = this.initialX, Y = this.initialY) {
+  /**
+  * Renders a requirement node in minimal representation.
+  * @param  {Number} IX=initialX The initial X render position.
+  * @param  {Number} IY=initialY The initial Y render position.
+  * @param  {Number} FX=finalX The final X render position.
+  * @param  {Number} FY=finalY The final Y render position.
+  */
+  renderAsMin(IX = this.initialX, IY = this.initialY, FX = this.finalX, FY = this.finalY) {
     // create svg elements
     const svg = this.createSVGElement()
     const node = this.createNode()
@@ -245,38 +184,40 @@ class RequirementNode extends BaseNode {
 
 
     // animate new elements into position
-    svg
-      .center(X, Y)
-
     node
-      .center(X, Y)
-      .animate({ duration: this.config.animationSpeed })
+      .center(IX, IY)
       .width(this.config.minWidth)
       .height(this.config.minHeight)
       .dmove(-this.config.minWidth / 2, -this.config.minHeight / 2)
+      .animate({ duration: this.config.animationSpeed })
+      .center(FX, FY)
 
     text
       .size(this.config.minTextWidth, text.children()[0].node.clientHeight)
-      .center(X, Y)
+      .center(IX, IY)
       .scale(0.001)
-      .attr({ opacity: 0 })
-      .animate({ duration: this.config.animationSpeed })
-      .attr({ opacity: 1 })
       .transform({ scale: 1, translate: [this.config.minTextTranslateX, this.config.minTextTranslateY] })
+      .animate({ duration: this.config.animationSpeed })
+      .center(FX, FY)
 
 
     this.currentWidth = this.config.minWidth
     this.currentHeight = this.config.minHeight
     this.nodeSize = "min"
-    this.currentX = X
-    this.currentY = Y
-    this.opacity = 1
-    this.isHidden = false
+    this.currentX = IX
+    this.currentY = IY
     this.svg = svg
   }
 
 
-  renderAsMax(X = this.initialX, Y = this.initialY) {
+  /**
+  * Renders a requirement node in detailed representation.
+  * @param  {Number} IX=initialX The initial X render position.
+  * @param  {Number} IY=initialY The initial Y render position.
+  * @param  {Number} FX=finalX The final X render position.
+  * @param  {Number} FY=finalY The final Y render position.
+  */
+  renderAsMax(IX = this.initialX, IY = this.initialY, FX = this.finalX, FY = this.finalY) {
     // create svg elements
     const svg = this.createSVGElement()
     const node = this.createNode()
@@ -287,36 +228,36 @@ class RequirementNode extends BaseNode {
 
 
     // animate new elements into position
-    svg
-      .center(X, Y)
-
     node
-      .center(X, Y)
-      .animate({ duration: this.config.animationSpeed })
+      .center(IX, IY)
       .width(this.config.maxWidth)
       .height(this.config.maxHeight)
       .dmove(-this.config.maxWidth / 2, -this.config.maxHeight / 2)
+      .animate({ duration: this.config.animationSpeed })
+      .center(FX, FY)
 
     text
-      .center(X, Y)
+      .center(IX, IY)
       .scale(0.001)
-      .attr({ opacity: 0 })
-      .animate({ duration: this.config.animationSpeed })
-      .attr({ opacity: 1 })
       .transform({ scale: 1, translate: [this.config.maxTextTranslateX, this.config.maxTextTranslateY] })
+      .animate({ duration: this.config.animationSpeed })
+      .center(FX, FY)
 
 
     this.currentWidth = this.config.maxWidth
     this.currentHeight = this.config.maxHeight
     this.nodeSize = "max"
-    this.currentX = X
-    this.currentY = Y
-    this.opacity = 1
-    this.isHidden = false
+    this.currentX = IX
+    this.currentY = IY
     this.svg = svg
   }
 
 
+  /**
+  * Transforms a node from minimal version to detailed representation.
+  * @param {Number} X=finalX The final Xrender position.
+  * @param {Number} Y=finalY The final Y render position.
+  */
   transformToMax(X = this.finalX, Y = this.finalY) {
     // update current elements
     this
@@ -349,14 +290,19 @@ class RequirementNode extends BaseNode {
       .transform({ scale: 1, translate: [this.config.maxTextTranslateX, this.config.maxTextTranslateY] })
 
 
-    this.currentWidth = this.config.minWidth
-    this.currentHeight = this.config.minHeight
+    this.currentWidth = this.config.maxWidth
+    this.currentHeight = this.config.maxHeight
     this.nodeSize = "max"
     this.currentX = X
     this.currentY = Y
   }
 
 
+  /**
+  * Transforms a node from detailed representation to minimal version.
+  * @param {Number} X=finalX The final Xrender position.
+  * @param {Number} Y=finalY The final Y render position.
+  */
   transformToMin(X = this.finalX, Y = this.finalY) {
     // update current elements
     this
@@ -407,15 +353,24 @@ export default RequirementNode
 
 
 
-</div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<br class="clear">
 
-<footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.3</a> on Thu Apr 02 2020 21:28:39 GMT+0200 (GMT+02:00) using the Toast theme.
+<footer class="footer">
+    <div class="content has-text-centered">
+        <p>Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.3</a> on Fri Apr 17 2020 10:40:10 GMT+0200 (GMT+02:00)</p>
+        <p class="sidebar-created-by">
+            <a href="https://github.com/SoftwareBrothers/better-docs" target="_blank">BetterDocs theme</a> provided with <i class="fas fa-heart"></i> by 
+            <a href="http://softwarebrothers.co" target="_blank">SoftwareBrothers - JavaScript Development Agency</a>
+        </p>
+    </div>
 </footer>
 
-<script>prettyPrint();</script>
-<script src="scripts/linenumber.js"></script>
+
+<script src="scripts/app.min.js"></script>
+<script src="scripts/linenumber.js"> </script>
 </body>
 </html>

@@ -3,10 +3,12 @@ import clamp from "clamp-js"
 
 
 /**
- * Base class for all edge representations
- * @param {Canvas} canvas the svg canvas element to render the node on
- * @param {BaseNode} fromNode The from node
- * @param {BaseNode} toNode The to node
+ * This is the base class for edges.
+ * 
+ * @property {Data} data The loaded data element from a database.
+ * @property {Canvas} canvas The nested canvas to render the edge on.
+ * @property {BaseNode} fromNode The starting node reference.
+ * @property {BaseNode} toNode The ending node reference.
  */
 class BaseEdge {
   constructor(data, canvas, fromNode, toNode) {
@@ -16,6 +18,7 @@ class BaseEdge {
     this.fromNode = fromNode
     this.toNode = toNode
     this.label = null
+    this.config = { ...data.config }
 
 
     // node position
@@ -34,15 +37,26 @@ class BaseEdge {
   }
 
 
-  calculateEdge() {
-    const fx = this.fromNode.getFinalX()
-    const fy = this.fromNode.getFinalY()
 
-    const tx = this.toNode.getFinalX()
-    const ty = this.toNode.getFinalY()
+  /**
+   * Calculates the two points indicating the starting and end point for edges.
+   * @param {Object} opts Additional configuration required for calculating certain edges.
+   */
+  calculateEdge(opts = { isContextualParent: false, isContextualChild: false }) {
+    let fx = this.fromNode.getFinalX()
+    let fy = this.fromNode.getFinalY()
 
-    // this.canvas.circle(5).fill("#75f").center(fx, fy)
-    // this.canvas.circle(5).fill("#000").center(tx, ty)
+    let tx = this.toNode.getFinalX()
+    let ty = this.toNode.getFinalY()
+
+    if (opts.isContextualParent) {
+      fx = tx
+    }
+
+    if (opts.isContextualChild) {
+      tx = fx
+    }
+
 
     const line = shape("line", {
       x1: fx,
@@ -88,9 +102,13 @@ class BaseEdge {
 
 
     // this.canvas.circle(5).fill("#75f").center(this.finalFromX, this.finalFromY)
-    // this.canvas.circle(5).fill("#000").center(this.finalToX, this.finalToY)
+    // this.canvas.circle(5).fill("#0f0").center(this.finalToX, this.finalToY)
   }
 
+
+  /**
+   * Updates the two points indicating an edge.
+   */
   updateEdgePosition() {
     const fx = this.fromNode.getFinalX()
     const fy = this.fromNode.getFinalY()
@@ -149,23 +167,41 @@ class BaseEdge {
   }
 
 
-  removeEdge(X, Y) {
-    this
-      .svg
-      .attr({ opacity: 1 })
-      .animate({ duration: this.config.animationSpeed })
-      .transform({ scale: 0.001, position: [X, Y] })
-      .attr({ opacity: 0 })
-      .after(() => {
-        this.svg.remove()
-        this.svg = null
-      })
+  /**
+   * Removes the rendered SVG edge from the canvas.
+   * @param {Number} X The X position to move the elements before removing them.
+   * @param {Number} Y The Y position to move the elements before removing them.
+   */
+  removeEdge(X = 0, Y = 0) {
+    if (this.svg !== null) {
+      this
+        .svg
+        .attr({ opacity: 1 })
+        .animate({ duration: this.config.animationSpeed })
+        .transform({ scale: 0.001, position: [X, Y] })
+        .attr({ opacity: 0 })
+        .after(() => {
+          if (this.svg !== null) {
+            this.svg.remove()
+            this.svg = null
+
+          }
+        })
+    }
   }
 
 
   /**
-   * Creates the edge label
-   * @private
+   * Determins where the edge is rendered or not.
+   * @returns True, if the SVG is rendered, else false.
+   */
+  isRendered() {
+    return this.svg !== null
+  }
+
+
+  /**
+   * Creates a label responsible for holding the edge description.
    */
   createLabel() {
     const fobj = this.canvas.foreignObject(0, 0)
@@ -197,6 +233,10 @@ class BaseEdge {
   }
 
 
+  /**
+   * Updates the new label.
+   * @param {String} label The new label.
+   */
   setLabel(label) {
     this.label = label || null
   }

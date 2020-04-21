@@ -16,3 +16,8 @@ export { default as GridLayout } from "./layouts/GridLayout"
 export { default as RadialLayout } from "./layouts/RadialLayout"
 export { default as TreeLayout } from "./layouts/TreeLayout"
 export { default as ContextualLayout } from "./layouts/ContextualLayout"
+
+
+// testing
+export { default as Canvas } from "./utils/Canvas"
+export { default as Asset } from "./nodes/AssetNode"
