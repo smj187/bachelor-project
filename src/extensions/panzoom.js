@@ -87,16 +87,16 @@ extend(Svg, {
     // when called with false, disable panZoom
     if (options === false) return this
 
-    options = options ?? {}
-    const zoomFactor = options.zoomFactor ?? 2
-    const zoomMin = options.zoomMin ?? Number.MIN_VALUE
-    const zoomMax = options.zoomMax ?? Number.MAX_VALUE
-    const doWheelZoom = options.wheelZoom ?? true
-    const doPinchZoom = options.pinchZoom ?? true
-    const doPanning = options.panning ?? true
-    const panButton = options.panButton ?? 0
-    const oneFingerPan = options.oneFingerPan ?? false
-    const margins = options.margins ?? false
+    options = (options === null || options === undefined) ? {} : options
+    const zoomFactor = options.zoomFactor || 2
+    const zoomMin = options.zoomMin || Number.MIN_VALUE
+    const zoomMax = options.zoomMax || Number.MAX_VALUE
+    const doWheelZoom = options.wheelZoom || true
+    const doPinchZoom = options.pinchZoom || true
+    const doPanning = options.panning || true
+    const panButton = options.panButton || 0
+    const oneFingerPan = options.oneFingerPan || false
+    const margins = options.margins || false
 
     let lastP
     let lastTouches

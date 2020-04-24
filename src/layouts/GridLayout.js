@@ -86,6 +86,9 @@ class GridLayout extends BaseLayout {
    * @param {Number} offset=0 The width from other layouts.
    */
   calculateLayout(offset = 0) {
+
+
+
     // add additional translation towards X
     this.config = { ...this.config, translateX: this.config.translateX + offset }
 
@@ -259,7 +262,8 @@ class GridLayout extends BaseLayout {
     calculateExpander()
     calculateLayoutInfo()
 
-    console.log("Grid", this.layoutInfo)
+    // console.log("Grid", this.layoutInfo)
+
     return this.layoutInfo
   }
 
@@ -269,6 +273,9 @@ class GridLayout extends BaseLayout {
    * all required nodes and transforms them into position.
    */
   renderLayout() {
+
+    var start = window.performance.now();
+
     const limit = this.config.limitNodes ? this.config.limitNodes : this.nodes.length
     const X = this.layoutInfo.cx
     const Y = this.layoutInfo.cy
@@ -334,6 +341,11 @@ class GridLayout extends BaseLayout {
     renderExpander()
     renderNodes()
 
+
+
+    var end = window.performance.now();
+    var time = end - start;
+    console.log(`${time}+`)
 
   }
 }

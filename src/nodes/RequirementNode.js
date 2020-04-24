@@ -138,8 +138,13 @@ class RequirementNode extends BaseNode {
     this.currentWidth = this.config.minWidth
     this.currentHeight = this.config.minHeight
     this.nodeSize = "min"
+
+
     this.currentX = IX
     this.currentY = IY
+    this.coords.push([this.finalX, this.finalY])
+
+
     this.svg = svg
   }
 
@@ -171,7 +176,7 @@ class RequirementNode extends BaseNode {
       .center(FX, FY)
 
     text
-      .center(IX + this.config.maxIconTranslateX, IY + this.config.maxIconTranslateY)
+      .center(IX, IY)
       .scale(0.001)
       .transform({ scale: 1, translate: [this.config.maxTextTranslateX, this.config.maxTextTranslateY] })
       .animate({ duration: this.config.animationSpeed })
@@ -181,8 +186,12 @@ class RequirementNode extends BaseNode {
     this.currentWidth = this.config.maxWidth
     this.currentHeight = this.config.maxHeight
     this.nodeSize = "max"
+
     this.currentX = IX
     this.currentY = IY
+    this.coords.push([this.finalX, this.finalY])
+
+
     this.svg = svg
   }
 

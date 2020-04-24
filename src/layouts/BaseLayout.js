@@ -66,7 +66,7 @@ class BaseLayout {
 
     if (difference.length) {
       const response = await Request(`${this.config.databaseUrl}/${this.config.nodeEndpoint}`, difference)
-      this.createRepresentations(response.data)
+      this.createRepresentations(response)
     }
 
     return this
@@ -77,7 +77,7 @@ class BaseLayout {
     if (ids.length) {
 
       const response = await Request(`${this.config.databaseUrl}/${this.config.nodeEndpoint}`, ids)
-      this.createRepresentations(response.data)
+      this.createRepresentations(response)
     }
 
     return this
@@ -123,7 +123,6 @@ class BaseLayout {
       const response = await RequestMultiple(request)
       const children = response[0].data
       childNodeIds = children.map(c => c.children).flat()
-
       nodes.push(children.flat())
     }
 
@@ -165,7 +164,25 @@ class BaseLayout {
       searchForRoot(tree)
     })
 
-    // // console.log(tree)
+    const checkVisible = (node) => {
+      if (isNaN(node)) {
+        node.visible = true
+        if (node.children.length < this.config.visibleNodeLimit) {
+          node.children.forEach(child => {
+            checkVisible(child)
+          })
+        } else {
+          const ids = node.children.map(n => isNaN(n) ? n.id : n)
+          nodes = nodes.filter(n => !ids.includes(n.id))
+          node.invisibleChildren = ids
+          node.children = []
+        }
+      }
+    }
+
+    checkVisible(tree)
+
+    // console.log(tree)
     // let hiddenNodes = []
     // const checkChildLimitations = (root) => {
     //   if (root.children !== undefined) {
@@ -235,6 +252,8 @@ class BaseLayout {
     })
 
 
+    // console.log(tree)
+
     return this
   }
 
@@ -258,13 +277,12 @@ class BaseLayout {
         })
       }
 
+      const coords = clickedNode.coords[clickedNode.coords.length - 2] || clickedNode.coords[0]
 
-      const X = clickedNode.getFinalX()
-      const Y = clickedNode.getFinalY()
 
       const removedNodes = []
       nodesToRemove.forEach((child) => {
-        child.removeNode(X, Y)
+        child.removeNode(coords[0], coords[1])
         removedNodes.push(child.id)
       })
       clickedNode.setChildren([])
@@ -282,18 +300,18 @@ class BaseLayout {
 
       // remove edges
       edgesToRemove.forEach((edge) => {
-        edge.removeEdge(clickedNode.getFinalX(), clickedNode.getFinalY())
+        edge.removeEdge(coords[0], coords[1])
       })
       this.edges = []
       this.edges = [...edgesToBeUpdated]
 
 
 
-      // remove leafs (tree specific)
-      this.leafs.forEach((leafe) => {
-        leafe.removeLeaf(clickedNode.getFinalX(), clickedNode.getFinalY())
-      })
-      this.leafs = []
+      // // remove leafs (tree specific)
+      // this.leafs.forEach((leafe) => {
+      //   leafe.removeLeaf(clickedNode.getFinalX(), clickedNode.getFinalY())
+      // })
+      // this.leafs = []
 
 
 
@@ -303,7 +321,7 @@ class BaseLayout {
       if (clickedNode.childrenIds.length === 0) {
         return
       }
-
+      // console.log(clickedNode)
       const requestedNodes = clickedNode.childrenIds.map(n => isNaN(n) ? n.id : n)
       const request1 = [
         {
@@ -361,7 +379,7 @@ class BaseLayout {
     let offset = layouts.map((l) => l.layoutInfo.w).reduce((a, b) => a + b, 0)
 
     const prevW = this.layoutInfo.w
-    this.calculateLayout(offset)
+    this.calculateLayout(offset, { x: clickedNode.getFinalX(), y: clickedNode.getFinalY(), isReRender: true })
 
     const newW = this.layoutInfo.w
 
@@ -373,7 +391,11 @@ class BaseLayout {
       }
     })
 
-    this.renderLayout()
+    // const xx = clickedNode.coords[clickedNode.coords.length - 1] || 0
+    // console.log(clickedNode.currentX, clickedNode.currentY)
+    const coords = clickedNode.coords[clickedNode.coords.length - 1]
+    // this.canvas.rect(10, 10).center(coords[0], coords[1])
+    this.renderLayout({ isReRender: true, x: coords[0], y: coords[1] })
   }
 
 
@@ -1433,11 +1455,11 @@ class BaseLayout {
         }
       })
 
-      // remove leafs (tree specific)
-      this.leafs.forEach((leafe) => {
-        leafe.removeLeaf(clickedNode.getFinalX(), clickedNode.getFinalY())
-      })
-      this.leafs = []
+      // // remove leafs (tree specific)
+      // this.leafs.forEach((leafe) => {
+      //   leafe.removeLeaf(clickedNode.getFinalX(), clickedNode.getFinalY())
+      // })
+      // this.leafs = []
 
 
       // fetch children based on given ids
@@ -1538,11 +1560,11 @@ class BaseLayout {
       this.edges = [...edgesToBeUpdated]
 
 
-      // remove leafs (tree specific)
-      this.leafs.forEach((leafe) => {
-        leafe.removeLeaf(clickedNode.getFinalX(), clickedNode.getFinalY())
-      })
-      this.leafs = []
+      // // remove leafs (tree specific)
+      // this.leafs.forEach((leafe) => {
+      //   leafe.removeLeaf(clickedNode.getFinalX(), clickedNode.getFinalY())
+      // })
+      // this.leafs = []
 
       // re-calculate and re-render layout
       this.calculateLayout()

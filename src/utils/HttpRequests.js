@@ -1,12 +1,14 @@
 import axios from "axios"
 
 
-const Request = (url, body) => {
-  axios.defaults.headers.post["Content-Type"] = "application/json;charset=utf-8"
-  return axios
-    .post(url, JSON.stringify(body))
-    .then((response) => Promise.resolve(response))
-    .catch((error) => Promise.reject(error))
+const Request = async (url, body) => {
+  return await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json;charset=utf-8" },
+    body: JSON.stringify(body)
+  })
+    .then(response => Promise.resolve(response.json()))
+    .catch(error => Promise.reject(error))
 }
 
 

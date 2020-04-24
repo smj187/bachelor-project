@@ -43,8 +43,11 @@ class BaseEdge {
    * @param {Object} opts Additional configuration required for calculating certain edges.
    */
   calculateEdge(opts = { isContextualParent: false, isContextualChild: false }) {
+
+
     let fx = this.fromNode.getFinalX()
     let fy = this.fromNode.getFinalY()
+
 
     let tx = this.toNode.getFinalX()
     let ty = this.toNode.getFinalY()
@@ -56,6 +59,9 @@ class BaseEdge {
     if (opts.isContextualChild) {
       tx = fx
     }
+
+
+
 
 
     const line = shape("line", {

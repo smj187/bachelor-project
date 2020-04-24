@@ -1,5 +1,5 @@
 import BaseLayout from "./BaseLayout"
-import Leaf from "./helpers/LeafExtension"
+import Leaf from "./helpers/TreeLeaf"
 import TreeLayoutConfiguration from "../configuration/TreeLayoutConfiguration"
 
 
@@ -7,8 +7,8 @@ import TreeLayoutConfiguration from "../configuration/TreeLayoutConfiguration"
  * This class is calculates and renders the tree layout.
  */
 class TreeLayout extends BaseLayout {
-  constructor(customConfig = {}, events = [], additionalNodeRepresentations) {
-    super(additionalNodeRepresentations)
+  constructor(customConfig = {}, customEvent = {}, customNodes = {}) {
+    super(customNodes)
 
     if (customConfig.root === undefined) {
       throw new Error("No Focus element reference id provided")
@@ -25,44 +25,37 @@ class TreeLayout extends BaseLayout {
     this.rootId = customConfig.root
     this.renderDepth = customConfig.renderDepth
     this.leafs = []
-    this.registerMouseEvents(events)
+    this.registerMouseEvents(customEvent)
 
   }
 
-  registerMouseEvents(events) {
+  registerMouseEvents(changeEvent) {
 
+    // load more data or hide loaded data method
     const loadOrHideData = async (node) => {
-      this.leafs.forEach(leaf => {
+
+      // remove clicked leaf indication
+      const leaf = this.leafs.find(l => l.id === node.id)
+      if (leaf !== undefined) {
         leaf.removeLeaf()
-      })
-      this.leafs = []
+        this.leafs = this.leafs.filter(l => l.id !== node.id)
+      }
+
       await this.updateTreeDataAsync(node)
     }
-    if (events.length > 0) {
-      this.events = [
-        {
-          name: "nodeEvent",
-          func: loadOrHideData,
-          mouse: events.find(e => e.name === "nodeEvent").mouse || "dblclick",
-          modifier: events.find(e => e.name === "nodeEvent").modifier || "ctrlKey",
-        }
-      ]
-    } else {
-      this.events = [
-        {
-          name: "nodeEvent",
-          func: loadOrHideData,
-          mouse: "dblclick",
-          modifier: "ctrlKey",
-        }
-      ]
-    }
 
+    this.event = {
+      eventlistener: "expandCollapseEvent",
+      func: loadOrHideData,
+      mouse: changeEvent.mouse || "click",
+      modifier: changeEvent.modifier || undefined,
+    }
   }
 
 
-  calculateLayout(offset = 0) {
+  calculateLayout(offset = 0, opts = {}) {
     const isVertical = this.config.orientation === "vertical"
+
 
     // construct a tree
     const constructTree = (array, parentRef, rootRef) => {
@@ -83,7 +76,6 @@ class TreeLayout extends BaseLayout {
       return root
     }
 
-
     const initializeNodes = (node, parent, prevSibling, depth) => {
       node.setDepth(depth)
       node.setParent(parent)
@@ -99,16 +91,11 @@ class TreeLayout extends BaseLayout {
         node.setChildren([])
       }
 
-      // if (node.children.length <= this.config.childLimit) {
+
       node.children.forEach((child, i) => {
         const prev = i >= 1 ? node.children[i - 1] : null
         initializeNodes(child, node, prev, depth + 1)
       })
-      // } else {
-      // node.childrenIds = node.children.map(c => c.id)
-      // node.children = []
-      // this.nodes = this.nodes
-      // }
 
 
     }
@@ -134,7 +121,6 @@ class TreeLayout extends BaseLayout {
         calculateFinalPositions(child, node.modifier + modifier)
       })
     }
-
 
     const calculateInitialX = (node) => {
       node.children.forEach((child) => {
@@ -210,7 +196,6 @@ class TreeLayout extends BaseLayout {
         }
       }
     }
-
 
     const fixOverlappingConflicts = (node) => {
       node.children.forEach((child) => {
@@ -314,31 +299,74 @@ class TreeLayout extends BaseLayout {
       }
     }
 
-    const calcRadialEdges = (edges) => {
+    const calculateEdgePositions = (edges) => {
       edges.forEach((edge) => {
         edge.calculateEdge()
       })
     }
 
-    const addLeaf = (node, initialX, initialY) => {
-      if (this.config.showLeafNodes === false) {
+    const manageLeafs = (node, root) => {
+      if (this.config.showLeafIndications === false) {
         return
       }
 
-      if (node.children.length === 0 && node.childrenIds.length > 0) {
-        const leaf = new Leaf(this.canvas, node)
-        leaf.finalX = node.finalX
-        const h = this.config.renderingSize === "max" ? node.config.maxHeight : node.config.minHeight
-        leaf.finalY = node.finalY + h + 35
-        leaf.initialX = initialX
-        leaf.initialY = initialY
-        // leaf.addEvent("dblclick", () => { this.manageDataAsync(node) })
-        this.leafs.push(leaf)
+      const config = {
+        animationSpeed: this.config.animationSpeed,
+        strokeWidth: this.config.leafStrokeWidth,
+        strokeColor: this.config.leafStrokeColor,
+        marker: this.config.leafMarker,
       }
 
-      node.children.forEach((child) => {
-        addLeaf(child, initialX, initialY)
-      })
+
+
+      const addLeaf = (node) => {
+        if (node.children.length === 0 && (node.childrenIds.length > 0 || node.invisibleChildren.length >= this.config.visibleNodeLimit)) {
+          if (node.invisibleChildren.length > 0) {
+            node.childrenIds = node.invisibleChildren
+          }
+          const existing = this.leafs.find(l => l.id === node.id)
+
+          if (existing === undefined) {
+            const isHorizontal = this.config.orientation === "horizontal"
+            const leaf = new Leaf(this.canvas, node, this.config.leafIndicationLimit, config, isHorizontal)
+            const x = opts.x ? opts.x : node.finalX
+            const y = opts.y ? opts.y : node.finalY
+            leaf.finalX = x
+            leaf.finalY = y
+            leaf.initialX = root.getFinalX()
+            leaf.initialY = root.getFinalY()
+            leaf.isReRender = opts.isReRender || false
+            this.leafs.push(leaf)
+
+          }
+
+        }
+        node.children.forEach((child) => {
+          addLeaf(child, root)
+        })
+      }
+
+      addLeaf(node)
+
+      const removeLeaf = () => {
+        const toRemove = []
+        const existingNodeIds = this.nodes.map(n => n.id)
+        this.leafs.forEach(leaf => {
+          if (!existingNodeIds.includes(leaf.id)) {
+            toRemove.push(leaf)
+          }
+        })
+
+        toRemove.forEach(leaf => {
+          leaf.removeLeaf()
+        })
+        this.leafs = this.leafs.filter(l => !toRemove.map(l => l.id).includes(l.id))
+      }
+
+
+      removeLeaf(node)
+
+
     }
 
     const adjustPositions = (tree) => {
@@ -429,6 +457,7 @@ class TreeLayout extends BaseLayout {
     }
 
 
+
     const root = constructTree(this.nodes)[0] // TODO: re-write
     initializeNodes(root, null, null, 0)
     calculateInitialX(root)
@@ -436,54 +465,58 @@ class TreeLayout extends BaseLayout {
     fixOverlappingConflicts(root)
     centerRoot(root)
     finalizeTree(root)
-    calcRadialEdges(this.edges)
-    addLeaf(root, root.getFinalX(), root.getFinalY())
+    calculateEdgePositions(this.edges)
+    manageLeafs(root, root)
     adjustPositions(root)
     addEdgeReferences(root)
+
 
     // console.log(root)
   }
 
 
-  renderLayout() {
+  renderLayout(opts = { isReRender: false }) {
     const X = this.nodes.find(n => n.id === this.rootId).getFinalX()
     const Y = this.nodes.find(n => n.id === this.rootId).getFinalY()
 
-    const findChildren = (root) => {
-      const nodes = []
-      const queue = [root]
-      while (queue.length) {
-        const cur = queue.shift()
-        nodes.push(cur)
-        cur.children.forEach(child => queue.push(child))
-      }
-      return nodes
-    }
-
-    const renderNodes = () => {
+    const renderNodes = (opts) => {
       this.nodes.forEach((node) => {
+
         if (node.isRendered() === false) {
-          if (this.config.renderingSize === "max") node.renderAsMax(X, Y)
-          if (this.config.renderingSize === "min") node.renderAsMin(X, Y)
+          if (this.config.renderingSize === "max") {
+            if (opts.isReRender === true) {
+              node.renderAsMax(opts.x, opts.y)
+            } else {
+              node.renderAsMax(X, Y)
+            }
+          }
+          if (this.config.renderingSize === "min") {
+            if (opts.isReRender === true) {
+              node.renderAsMin(opts.x, opts.y)
+            } else {
+              node.renderAsMin(X, Y)
+            }
 
-          if (node.children.length > this.config.childLimit) {
-            // this.events[0].func(node)
-
-
-            // console.log(node.children)
           }
 
-
-          node.svg.on(this.events[0].mouse, (e) => {
-            if (this.events[0].modifier !== null) {
-              if (this.events[0].modifier, e[this.events[0].modifier]) {
-                this.events[0].func(node)
+          // add mouse event to each node
+          node.svg.on(this.event.mouse, (e) => {
+            if (this.event.modifier !== undefined) {
+              if (this.event.modifier, e[this.event.modifier]) {
+                this.event.func(node)
               }
+            }
+            if (this.event.modifier === undefined) {
+              this.event.func(node)
             }
           })
           node.outgoingEdges.forEach(edge => {
             if (edge.isRendered() === false) {
-              edge.render(X, Y)
+              if (opts.isReRender === true) {
+                edge.render(opts.x, opts.y)
+              } else {
+                edge.render(X, Y)
+              }
             }
           })
 
@@ -494,8 +527,11 @@ class TreeLayout extends BaseLayout {
 
 
       this.leafs.forEach((leaf) => {
-        leaf.render()
-        leaf.transformToFinalPosition()
+        if (leaf.isRendered() === false) {
+          leaf.render(opts.isReRender === true ? true : false)
+        } else if (leaf.isRendered() === true) {
+          leaf.transformToFinalPosition()
+        }
       })
 
 
@@ -503,13 +539,12 @@ class TreeLayout extends BaseLayout {
         if (edge.isRendered() === false) {
           edge.render(X, Y)
         } else if (edge.isRendered() === true) {
-
-          edge.transformToFinalPosition()
+          edge.transformToFinalPosition({ isReRender: opts.isReRender || false })
         }
       })
     }
 
-    renderNodes()
+    renderNodes(opts)
 
 
   }

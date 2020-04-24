@@ -112,8 +112,12 @@ class ControlNode extends BaseNode {
     this.currentWidth = this.config.minWidth
     this.currentHeight = this.config.minHeight
     this.nodeSize = "min"
+
     this.currentX = IX
     this.currentY = IY
+    this.coords.push([this.finalX, this.finalY])
+
+
     this.svg = svg
   }
 
@@ -166,8 +170,12 @@ class ControlNode extends BaseNode {
     this.currentWidth = this.config.maxWidth
     this.currentHeight = this.config.maxHeight
     this.nodeSize = "max"
+
     this.currentX = IX
     this.currentY = IY
+    this.coords.push([this.finalX, this.finalY])
+
+
     this.svg = svg
   }
 

@@ -223,7 +223,7 @@ class AssetNode extends BaseNode {
 
   /**
   * Transforms a node from minimal version to detailed representation.
-  * @param {Number} X=finalX The final Xrender position.
+  * @param {Number} X=finalX The final X render position.
   * @param {Number} Y=finalY The final Y render position.
   */
   transformToMax(X = this.finalX, Y = this.finalY) {

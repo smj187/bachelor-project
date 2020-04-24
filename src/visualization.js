@@ -73,14 +73,15 @@ class Visualization {
 
     // canvas set up
     this.zoomLevel = 1
-    const w = window.innerWidth - 10
-    const h = window.innerHeight - 10
+    const w = config.width || window.innerWidth - 10
+    const h = config.height || window.innerHeight - 10
+    const zoom = config.zoom || { lvl: 0.75, x: 100, y: 100 }
     this.canvas = SVG()
       .addTo(element)
       .size(w, h)
       .viewbox(0, 0, w, h)
       .panZoom({ zoomMin: 0.25, zoomMax: 10, zoomFactor: 0.25 })
-      .zoom(config.zoom.lvl, { x: config.zoom.x, y: config.zoom.y })
+      .zoom(zoom.lvl, { x: zoom.x, y: zoom.y })
 
 
     // const event = {

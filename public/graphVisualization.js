@@ -13288,31 +13288,21 @@ var normalizeEvent = function normalizeEvent(ev) {
 
 extend(Svg, {
   panZoom: function panZoom(options) {
-    var _options,
-        _options$zoomFactor,
-        _options$zoomMin,
-        _options$zoomMax,
-        _options$wheelZoom,
-        _options$pinchZoom,
-        _options$panning,
-        _options$panButton,
-        _options$oneFingerPan,
-        _options$margins,
-        _this = this;
+    var _this = this;
 
     this.off('.panZoom'); // when called with false, disable panZoom
 
     if (options === false) return this;
-    options = (_options = options) !== null && _options !== void 0 ? _options : {};
-    var zoomFactor = (_options$zoomFactor = options.zoomFactor) !== null && _options$zoomFactor !== void 0 ? _options$zoomFactor : 2;
-    var zoomMin = (_options$zoomMin = options.zoomMin) !== null && _options$zoomMin !== void 0 ? _options$zoomMin : Number.MIN_VALUE;
-    var zoomMax = (_options$zoomMax = options.zoomMax) !== null && _options$zoomMax !== void 0 ? _options$zoomMax : Number.MAX_VALUE;
-    var doWheelZoom = (_options$wheelZoom = options.wheelZoom) !== null && _options$wheelZoom !== void 0 ? _options$wheelZoom : true;
-    var doPinchZoom = (_options$pinchZoom = options.pinchZoom) !== null && _options$pinchZoom !== void 0 ? _options$pinchZoom : true;
-    var doPanning = (_options$panning = options.panning) !== null && _options$panning !== void 0 ? _options$panning : true;
-    var panButton = (_options$panButton = options.panButton) !== null && _options$panButton !== void 0 ? _options$panButton : 0;
-    var oneFingerPan = (_options$oneFingerPan = options.oneFingerPan) !== null && _options$oneFingerPan !== void 0 ? _options$oneFingerPan : false;
-    var margins = (_options$margins = options.margins) !== null && _options$margins !== void 0 ? _options$margins : false;
+    options = options === null || options === undefined ? {} : options;
+    var zoomFactor = options.zoomFactor || 2;
+    var zoomMin = options.zoomMin || Number.MIN_VALUE;
+    var zoomMax = options.zoomMax || Number.MAX_VALUE;
+    var doWheelZoom = options.wheelZoom || true;
+    var doPinchZoom = options.pinchZoom || true;
+    var doPanning = options.panning || true;
+    var panButton = options.panButton || 0;
+    var oneFingerPan = options.oneFingerPan || false;
+    var margins = options.margins || false;
     var lastP;
     var lastTouches;
     var zoomInProgress = false;
@@ -16385,6 +16375,7 @@ var BaseNode = /*#__PURE__*/function () {
     this.parentId = data.parent || null;
     this.children = [];
     this.childrenIds = data.children || [];
+    this.invisibleChildren = data.invisibleChildren || [];
     this.prevSibling = null;
     this.modifier = 0;
     this.mod = 0; // node position
@@ -16402,7 +16393,8 @@ var BaseNode = /*#__PURE__*/function () {
     this.opacity = 1;
     this.isHidden = false;
     this.currentWidth = 0;
-    this.currentHeight = 0; // events
+    this.currentHeight = 0;
+    this.coords = []; // events
 
     this.events = [];
     this.outgoingEdges = [];
@@ -16427,6 +16419,7 @@ var BaseNode = /*#__PURE__*/function () {
 
       this.currentX = X;
       this.currentY = Y;
+      this.coords.push([this.currentX, this.currentY]);
       this.svg.animate({
         duration: this.config.animationSpeed
       }).transform({
@@ -16446,6 +16439,7 @@ var BaseNode = /*#__PURE__*/function () {
       var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.initialY;
       this.currentX = X;
       this.currentY = Y;
+      this.coords.push([this.currentX, this.currentY]);
       this.svg.back();
       this.svg.attr({
         opacity: 1
@@ -17301,6 +17295,7 @@ var RiskNode = /*#__PURE__*/function (_BaseNode) {
       this.nodeSize = "min";
       this.currentX = IX;
       this.currentY = IY;
+      this.coords.push([this.finalX, this.finalY]);
       this.svg = svg;
     }
     /**
@@ -17346,6 +17341,7 @@ var RiskNode = /*#__PURE__*/function (_BaseNode) {
       this.nodeSize = "max";
       this.currentX = IX;
       this.currentY = IY;
+      this.coords.push([this.finalX, this.finalY]);
       this.svg = svg;
     }
     /**
@@ -17760,7 +17756,7 @@ var AssetNode = /*#__PURE__*/function (_BaseNode) {
     }
     /**
     * Transforms a node from minimal version to detailed representation.
-    * @param {Number} X=finalX The final Xrender position.
+    * @param {Number} X=finalX The final X render position.
     * @param {Number} Y=finalY The final Y render position.
     */
 
@@ -18127,6 +18123,7 @@ var RequirementNode = /*#__PURE__*/function (_BaseNode) {
       this.nodeSize = "min";
       this.currentX = IX;
       this.currentY = IY;
+      this.coords.push([this.finalX, this.finalY]);
       this.svg = svg;
     }
     /**
@@ -18154,7 +18151,7 @@ var RequirementNode = /*#__PURE__*/function (_BaseNode) {
       node.center(IX, IY).width(this.config.maxWidth).height(this.config.maxHeight).dmove(-this.config.maxWidth / 2, -this.config.maxHeight / 2).animate({
         duration: this.config.animationSpeed
       }).center(FX, FY);
-      text.center(IX + this.config.maxIconTranslateX, IY + this.config.maxIconTranslateY).scale(0.001).transform({
+      text.center(IX, IY).scale(0.001).transform({
         scale: 1,
         translate: [this.config.maxTextTranslateX, this.config.maxTextTranslateY]
       }).animate({
@@ -18165,6 +18162,7 @@ var RequirementNode = /*#__PURE__*/function (_BaseNode) {
       this.nodeSize = "max";
       this.currentX = IX;
       this.currentY = IY;
+      this.coords.push([this.finalX, this.finalY]);
       this.svg = svg;
     }
     /**
@@ -18482,6 +18480,7 @@ var CustomNode = /*#__PURE__*/function (_BaseNode) {
       this.nodeSize = "min";
       this.currentX = IX;
       this.currentY = IY;
+      this.coords.push([this.finalX, this.finalY]);
       this.svg = svg;
     }
     /**
@@ -18535,6 +18534,7 @@ var CustomNode = /*#__PURE__*/function (_BaseNode) {
       this.nodeSize = "max";
       this.currentX = IX;
       this.currentY = IY;
+      this.coords.push([this.finalX, this.finalY]);
       this.svg = svg;
     }
     /**
@@ -18853,6 +18853,7 @@ var ControlNode = /*#__PURE__*/function (_BaseNode) {
       this.nodeSize = "min";
       this.currentX = IX;
       this.currentY = IY;
+      this.coords.push([this.finalX, this.finalY]);
       this.svg = svg;
     }
     /**
@@ -18898,6 +18899,7 @@ var ControlNode = /*#__PURE__*/function (_BaseNode) {
       this.nodeSize = "max";
       this.currentX = IX;
       this.currentY = IY;
+      this.coords.push([this.finalX, this.finalY]);
       this.svg = svg;
     }
     /**
@@ -23739,30 +23741,55 @@ var ThinEdge = /*#__PURE__*/function (_BaseEdge) {
   }, {
     key: "transformToFinalPosition",
     value: function transformToFinalPosition() {
-      this.svg.back();
-      this.svg.scale(0.001).attr({
-        opacity: 1
-      }).animate({
-        duration: this.config.animationSpeed
-      }).transform({
-        scale: 1
-      });
-      this.svg.get(0).attr({
-        opacity: 0
-      }).animate({
-        duration: this.config.animationSpeed
-      }).plot("M".concat(this.finalFromX, ",").concat(this.finalFromY, " L").concat(this.finalToX, ",").concat(this.finalToY)).attr({
-        opacity: 1
-      });
+      var opts = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {
+        isReRender: false
+      };
 
-      if (this.label) {
-        this.svg.get(1).attr({
+      if (opts.isReRender === true) {
+        this.svg.back(); // console.log("opts", opts)
+
+        this.svg // .scale(0.001)
+        .attr({
+          opacity: 1
+        }); // .animate({ duration: this.config.animationSpeed })
+        // .transform({ scale: 1 })
+
+        this.svg.get(0) // .attr({ opacity: 0 })
+        .animate({
+          duration: this.config.animationSpeed
+        }).plot("M".concat(this.finalFromX, ",").concat(this.finalFromY, " L").concat(this.finalToX, ",").concat(this.finalToY)); // .attr({ opacity: 1 })
+
+        if (this.label) {
+          this.svg.get(1) // .attr({ opacity: 0 })
+          // .animate({ duration: this.config.animationSpeed })
+          .center((this.finalFromX + this.finalToX) / 2, (this.finalFromY + this.finalToY) / 2); // .attr({ opacity: 1 })
+        }
+      } else {
+        this.svg.back();
+        this.svg.scale(0.001).attr({
+          opacity: 1
+        }).animate({
+          duration: this.config.animationSpeed
+        }).transform({
+          scale: 1
+        });
+        this.svg.get(0).attr({
           opacity: 0
         }).animate({
           duration: this.config.animationSpeed
-        }).center((this.finalFromX + this.finalToX) / 2, (this.finalFromY + this.finalToY) / 2).attr({
+        }).plot("M".concat(this.finalFromX, ",").concat(this.finalFromY, " L").concat(this.finalToX, ",").concat(this.finalToY)).attr({
           opacity: 1
         });
+
+        if (this.label) {
+          this.svg.get(1).attr({
+            opacity: 0
+          }).animate({
+            duration: this.config.animationSpeed
+          }).center((this.finalFromX + this.finalToX) / 2, (this.finalFromY + this.finalToY) / 2).attr({
+            opacity: 1
+          });
+        }
       }
     }
     /**
@@ -25493,14 +25520,40 @@ axios_1.default = default_1;
 
 var axios$1 = axios_1;
 
-var Request = function Request(url, body) {
-  axios$1.defaults.headers.post["Content-Type"] = "application/json;charset=utf-8";
-  return axios$1.post(url, JSON.stringify(body)).then(function (response) {
-    return Promise.resolve(response);
-  }).catch(function (error) {
-    return Promise.reject(error);
-  });
-};
+var Request = /*#__PURE__*/function () {
+  var _ref = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee(url, body) {
+    return regeneratorRuntime.wrap(function _callee$(_context) {
+      while (1) {
+        switch (_context.prev = _context.next) {
+          case 0:
+            _context.next = 2;
+            return fetch(url, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json;charset=utf-8"
+              },
+              body: JSON.stringify(body)
+            }).then(function (response) {
+              return Promise.resolve(response.json());
+            }).catch(function (error) {
+              return Promise.reject(error);
+            });
+
+          case 2:
+            return _context.abrupt("return", _context.sent);
+
+          case 3:
+          case "end":
+            return _context.stop();
+        }
+      }
+    }, _callee);
+  }));
+
+  return function Request(_x, _x2) {
+    return _ref.apply(this, arguments);
+  };
+}();
 
 var RequestMultiple = function RequestMultiple(requests) {
   axios$1.defaults.headers.post["Content-Type"] = "application/json;charset=utf-8";
@@ -25658,7 +25711,7 @@ var BaseLayout = /*#__PURE__*/function () {
 
               case 6:
                 response = _context.sent;
-                this.createRepresentations(response.data);
+                this.createRepresentations(response);
 
               case 8:
                 return _context.abrupt("return", this);
@@ -25701,7 +25754,7 @@ var BaseLayout = /*#__PURE__*/function () {
 
               case 5:
                 response = _context2.sent;
-                this.createRepresentations(response.data);
+                this.createRepresentations(response);
 
               case 7:
                 return _context2.abrupt("return", this);
@@ -25769,7 +25822,7 @@ var BaseLayout = /*#__PURE__*/function () {
       var _loadInitialTreeDataAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee4() {
         var _this = this;
 
-        var request1, response1, root, nodes, childNodeIds, i, request, response, children, constructTree, trees, tree, searchForRoot, createEdgeConnections, requiredEdges, request2, response2, edges;
+        var request1, response1, root, nodes, childNodeIds, i, request, response, children, constructTree, trees, tree, searchForRoot, checkVisible, createEdgeConnections, requiredEdges, request2, response2, edges;
         return regeneratorRuntime.wrap(function _callee4$(_context4) {
           while (1) {
             switch (_context4.prev = _context4.next) {
@@ -25857,7 +25910,30 @@ var BaseLayout = /*#__PURE__*/function () {
 
                 trees.forEach(function (tree) {
                   searchForRoot(tree);
-                }); // // console.log(tree)
+                });
+
+                checkVisible = function checkVisible(node) {
+                  if (isNaN(node)) {
+                    node.visible = true;
+
+                    if (node.children.length < _this.config.visibleNodeLimit) {
+                      node.children.forEach(function (child) {
+                        checkVisible(child);
+                      });
+                    } else {
+                      var ids = node.children.map(function (n) {
+                        return isNaN(n) ? n.id : n;
+                      });
+                      nodes = nodes.filter(function (n) {
+                        return !ids.includes(n.id);
+                      });
+                      node.invisibleChildren = ids;
+                      node.children = [];
+                    }
+                  }
+                };
+
+                checkVisible(tree); // console.log(tree)
                 // let hiddenNodes = []
                 // const checkChildLimitations = (root) => {
                 //   if (root.children !== undefined) {
@@ -25900,10 +25976,10 @@ var BaseLayout = /*#__PURE__*/function () {
                   url: "".concat(this.config.databaseUrl, "/").concat(this.config.edgeEndpoint),
                   body: requiredEdges
                 }];
-                _context4.next = 29;
+                _context4.next = 31;
                 return RequestMultiple(request2);
 
-              case 29:
+              case 31:
                 response2 = _context4.sent;
                 edges = response2[0].data;
                 this.createRepresentations(nodes, edges); // create not existing child and parent edges manually
@@ -25934,10 +26010,11 @@ var BaseLayout = /*#__PURE__*/function () {
                       _this.edges.push(edge);
                     }
                   }
-                });
+                }); // console.log(tree)
+
                 return _context4.abrupt("return", this);
 
-              case 34:
+              case 36:
               case "end":
                 return _context4.stop();
             }
@@ -25957,7 +26034,8 @@ var BaseLayout = /*#__PURE__*/function () {
       var _updateTreeDataAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee5(clickedNode) {
         var _this2 = this;
 
-        var isAddOperation, requestedNodes, request1, response1, nodes, requiredEdges, request2, response2, edges, index, layouts, offset, prevW, newW;
+        var isAddOperation, requestedNodes, request1, response1, _nodes, requiredEdges, request2, response2, edges, index, layouts, offset, prevW, newW, coords;
+
         return regeneratorRuntime.wrap(function _callee5$(_context5) {
           while (1) {
             switch (_context5.prev = _context5.next) {
@@ -25988,11 +26066,10 @@ var BaseLayout = /*#__PURE__*/function () {
                     });
                   }
 
-                  var X = clickedNode.getFinalX();
-                  var Y = clickedNode.getFinalY();
+                  var coords = clickedNode.coords[clickedNode.coords.length - 2] || clickedNode.coords[0];
                   var removedNodes = [];
                   nodesToRemove.forEach(function (child) {
-                    child.removeNode(X, Y);
+                    child.removeNode(coords[0], coords[1]);
                     removedNodes.push(child.id);
                   });
                   clickedNode.setChildren([]);
@@ -26014,16 +26091,14 @@ var BaseLayout = /*#__PURE__*/function () {
 
 
                   edgesToRemove.forEach(function (edge) {
-                    edge.removeEdge(clickedNode.getFinalX(), clickedNode.getFinalY());
+                    edge.removeEdge(coords[0], coords[1]);
                   });
                   _this2.edges = [];
-                  _this2.edges = [].concat(edgesToBeUpdated); // remove leafs (tree specific)
-
-                  _this2.leafs.forEach(function (leafe) {
-                    leafe.removeLeaf(clickedNode.getFinalX(), clickedNode.getFinalY());
-                  });
-
-                  _this2.leafs = [];
+                  _this2.edges = [].concat(edgesToBeUpdated); // // remove leafs (tree specific)
+                  // this.leafs.forEach((leafe) => {
+                  //   leafe.removeLeaf(clickedNode.getFinalX(), clickedNode.getFinalY())
+                  // })
+                  // this.leafs = []
                 })();
 
                 _context5.next = 22;
@@ -26038,6 +26113,7 @@ var BaseLayout = /*#__PURE__*/function () {
                 return _context5.abrupt("return");
 
               case 7:
+                // console.log(clickedNode)
                 requestedNodes = clickedNode.childrenIds.map(function (n) {
                   return isNaN(n) ? n.id : n;
                 });
@@ -26050,15 +26126,17 @@ var BaseLayout = /*#__PURE__*/function () {
 
               case 11:
                 response1 = _context5.sent;
-                nodes = response1[0].data; // find edges between new children and clicked node
+                _nodes = response1[0].data; // find edges between new children and clicked node
 
                 requiredEdges = [];
-                nodes.forEach(function (node) {
+
+                _nodes.forEach(function (node) {
                   requiredEdges.push({
                     startNodeId: node.id,
                     endNodeId: clickedNode.id
                   });
                 });
+
                 request2 = [{
                   url: "".concat(this.config.databaseUrl, "/").concat(this.config.edgeEndpoint),
                   body: requiredEdges
@@ -26069,7 +26147,7 @@ var BaseLayout = /*#__PURE__*/function () {
               case 18:
                 response2 = _context5.sent;
                 edges = response2[0].data;
-                this.createRepresentations(nodes, edges);
+                this.createRepresentations(_nodes, edges);
                 requiredEdges.forEach(function (e) {
                   var existingEdge = edges.find(function (x) {
                     return x.fromNode === e.fromNode && x.toNode === e.toNode;
@@ -26107,7 +26185,11 @@ var BaseLayout = /*#__PURE__*/function () {
                   return a + b;
                 }, 0);
                 prevW = this.layoutInfo.w;
-                this.calculateLayout(offset);
+                this.calculateLayout(offset, {
+                  x: clickedNode.getFinalX(),
+                  y: clickedNode.getFinalY(),
+                  isReRender: true
+                });
                 newW = this.layoutInfo.w; // update all layouts right side
 
                 this.layoutReferences.forEach(function (llayout, i) {
@@ -26115,10 +26197,18 @@ var BaseLayout = /*#__PURE__*/function () {
                     llayout.calculateLayout(newW - prevW);
                     llayout.renderLayout();
                   }
-                });
-                this.renderLayout();
+                }); // const xx = clickedNode.coords[clickedNode.coords.length - 1] || 0
+                // console.log(clickedNode.currentX, clickedNode.currentY)
 
-              case 30:
+                coords = clickedNode.coords[clickedNode.coords.length - 1]; // this.canvas.rect(10, 10).center(coords[0], coords[1])
+
+                this.renderLayout({
+                  isReRender: true,
+                  x: coords[0],
+                  y: coords[1]
+                });
+
+              case 31:
               case "end":
                 return _context5.stop();
             }
@@ -26308,7 +26398,8 @@ var BaseLayout = /*#__PURE__*/function () {
       var _updateRadialDataAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee7(clickedNode) {
         var _this4 = this;
 
-        var isAddOperation, requestedNodes, request1, response1, nodes, requiredEdges, request2, response2, edges, index, layouts, offset, prevW, newW;
+        var isAddOperation, requestedNodes, request1, response1, _nodes2, requiredEdges, request2, response2, edges, index, layouts, offset, prevW, newW;
+
         return regeneratorRuntime.wrap(function _callee7$(_context7) {
           while (1) {
             switch (_context7.prev = _context7.next) {
@@ -26395,15 +26486,17 @@ var BaseLayout = /*#__PURE__*/function () {
 
               case 11:
                 response1 = _context7.sent;
-                nodes = response1[0].data; // find edges between new children and clicked node
+                _nodes2 = response1[0].data; // find edges between new children and clicked node
 
                 requiredEdges = [];
-                nodes.forEach(function (node) {
+
+                _nodes2.forEach(function (node) {
                   requiredEdges.push({
                     startNodeId: node.id,
                     endNodeId: clickedNode.id
                   });
                 });
+
                 request2 = [{
                   url: "".concat(this.config.databaseUrl, "/").concat(this.config.edgeEndpoint),
                   body: requiredEdges
@@ -26414,7 +26507,7 @@ var BaseLayout = /*#__PURE__*/function () {
               case 18:
                 response2 = _context7.sent;
                 edges = response2[0].data;
-                this.createRepresentations(nodes, edges);
+                this.createRepresentations(_nodes2, edges);
                 requiredEdges.forEach(function (e) {
                   var existingEdge = edges.find(function (x) {
                     return x.fromNode === e.fromNode && x.toNode === e.toNode;
@@ -27671,7 +27764,7 @@ var BaseLayout = /*#__PURE__*/function () {
                 }).length === 0; // add new data
 
                 if (!isAddOperation) {
-                  _context18.next = 28;
+                  _context18.next = 26;
                   break;
                 }
 
@@ -27684,12 +27777,12 @@ var BaseLayout = /*#__PURE__*/function () {
                   if (!existingNodes.includes(id)) {
                     requestedNodes.push(id);
                   }
-                }); // remove leafs (tree specific)
-
-                this.leafs.forEach(function (leafe) {
-                  leafe.removeLeaf(clickedNode.getFinalX(), clickedNode.getFinalY());
-                });
-                this.leafs = []; // fetch children based on given ids
+                }); // // remove leafs (tree specific)
+                // this.leafs.forEach((leafe) => {
+                //   leafe.removeLeaf(clickedNode.getFinalX(), clickedNode.getFinalY())
+                // })
+                // this.leafs = []
+                // fetch children based on given ids
 
                 mapNodeIdsToUrl = function mapNodeIdsToUrl(id) {
                   return "id=".concat(id, "&");
@@ -27697,12 +27790,12 @@ var BaseLayout = /*#__PURE__*/function () {
 
                 nodeIdsToFetch = requestedNodes.map(mapNodeIdsToUrl).join("").slice(0, -1);
                 nodeFetchUrl = "".concat(this.config.databaseUrl, "/nodes?").concat(nodeIdsToFetch);
-                _context18.next = 15;
+                _context18.next = 13;
                 return fetch(nodeFetchUrl).then(function (data) {
                   return data.json();
                 });
 
-              case 15:
+              case 13:
                 fetchedNodes = _context18.sent;
                 // create new children nodes
                 fetchedNodes.forEach(function (rawNode) {
@@ -27735,12 +27828,12 @@ var BaseLayout = /*#__PURE__*/function () {
 
                 edgeIdsToFetch = requiredEdges.map(mapEdgeIdsToUrl).join("").slice(0, -1);
                 edgeFetchUrl = "".concat(this.config.databaseUrl, "/edges?").concat(edgeIdsToFetch);
-                _context18.next = 24;
+                _context18.next = 22;
                 return fetch(edgeFetchUrl).then(function (data) {
                   return data.json();
                 });
 
-              case 24:
+              case 22:
                 fetchedEdges = _context18.sent;
                 // create new edges
                 fetchedEdges.forEach(function (rawEdge) {
@@ -27772,7 +27865,7 @@ var BaseLayout = /*#__PURE__*/function () {
                 this.calculateLayout();
                 this.renderLayout();
 
-              case 28:
+              case 26:
                 // remove existing data
                 if (isAddOperation === false) {
                   // find children ids that we need to remove
@@ -27804,12 +27897,12 @@ var BaseLayout = /*#__PURE__*/function () {
                     edge.removeEdge(clickedNode.getFinalX(), clickedNode.getFinalY());
                   });
                   this.edges = [];
-                  this.edges = [].concat(edgesToBeUpdated); // remove leafs (tree specific)
-
-                  this.leafs.forEach(function (leafe) {
-                    leafe.removeLeaf(clickedNode.getFinalX(), clickedNode.getFinalY());
-                  });
-                  this.leafs = []; // re-calculate and re-render layout
+                  this.edges = [].concat(edgesToBeUpdated); // // remove leafs (tree specific)
+                  // this.leafs.forEach((leafe) => {
+                  //   leafe.removeLeaf(clickedNode.getFinalX(), clickedNode.getFinalY())
+                  // })
+                  // this.leafs = []
+                  // re-calculate and re-render layout
 
                   this.calculateLayout();
                   this.renderLayout(); // update existing edges
@@ -27819,7 +27912,7 @@ var BaseLayout = /*#__PURE__*/function () {
                   });
                 }
 
-              case 29:
+              case 27:
               case "end":
                 return _context18.stop();
             }
@@ -28472,8 +28565,8 @@ var GridLayout = /*#__PURE__*/function (_BaseLayout) {
 
       calculateFinalPosition();
       calculateExpander();
-      calculateLayoutInfo();
-      console.log("Grid", this.layoutInfo);
+      calculateLayoutInfo(); // console.log("Grid", this.layoutInfo)
+
       return this.layoutInfo;
     }
     /**
@@ -28486,6 +28579,7 @@ var GridLayout = /*#__PURE__*/function (_BaseLayout) {
     value: function renderLayout() {
       var _this4 = this;
 
+      var start = window.performance.now();
       var limit = this.config.limitNodes ? this.config.limitNodes : this.nodes.length;
       var X = this.layoutInfo.cx;
       var Y = this.layoutInfo.cy; // renders the grid expander
@@ -28553,6 +28647,9 @@ var GridLayout = /*#__PURE__*/function (_BaseLayout) {
 
       renderExpander();
       renderNodes();
+      var end = window.performance.now();
+      var time = end - start;
+      console.log("".concat(time, "+"));
     }
   }]);
 
@@ -28939,143 +29036,118 @@ var RadialLayout = /*#__PURE__*/function (_BaseLayout) {
   return RadialLayout;
 }(BaseLayout);
 
-var LeafConfig = {
-  // large representation
-  maxWidth: 370,
-  maxHeight: 200,
-  // small representation
-  minWidth: 150,
-  minHeight: 40,
-  // icon
-  iconUrl: null,
-  minIconOpacity: 1,
-  minIconSize: 32,
-  minIconTranslateX: -45,
-  minIconTranslateY: 0,
-  // node
-  offset: 8,
-  animationSpeed: 300,
-  borderRadius: 5,
-  borderStrokeWidth: 0,
-  borderStrokeColor: "#aaa",
-  borderStrokeDasharray: "0",
-  backgroundColor: "#ffffff",
-  // text
-  minTextWidth: 87,
-  minTextHeight: 24,
-  minTextTranslateX: 15,
-  minTextTranslateY: 0,
-  labelColor: "#84a8f2",
-  labelFontFamily: "Montserrat",
-  labelFontSize: 12,
-  labelFontWeight: 600,
-  labelFontStyle: "normal",
-  labelBackground: "#fff",
-  // arrow
-  strokeWidth: 2,
-  strokeColor: "#aaa",
-  strokeDasharray: "7 5",
-  marker: "M 0 0 L 6 3 L 0 6 z",
-  color1: "#aaa",
-  color2: "#222"
-};
+/**
+ * @typedef {Object} TreeLeafConfiguration
+ * @property {Number} animationSpeed The animationSpeed inherited from the tree layout configuration.
+ * @property {String} strokeWidth The edge stroke width inherited from the tree layout configuration.
+ * @property {String} strokeColor The edge color inherited from the tree layout configuration.
+ * @property {String} marker The edge arrow head inherited from the tree layout configuration.
+ */
 
-var LeafExtenstion = /*#__PURE__*/function () {
-  function LeafExtenstion(canvas, node) {
-    _classCallCheck(this, LeafExtenstion);
+/**
+ * This class calculates and renders an indication if more child nodes may be available.
+ * @property {Canvas} canvas The current canvas to render the element on.
+ * @property {BaseNode} node The currently active and real leaf node representaion. 
+ * @property {Number} renderLimit Limits how many edges are visible.
+ * @property {TreeLeafConfiguration} config An object containing visual restrictions.
+ * @property {Boolean} [isHorizontal=false] Determins if the current tree is vertical or horizontal.
+ */
+
+var TreeLeaf = /*#__PURE__*/function () {
+  function TreeLeaf(canvas, node, renderLimit, config) {
+    var isHorizontal = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : false;
+
+    _classCallCheck(this, TreeLeaf);
 
     this.svg = null;
-    this.canvas = canvas;
+    this.canvas = canvas; // node
+
+    this.id = node.id;
     this.node = node;
     this.nodeSize = node.childrenIds.length;
-    this.config = _objectSpread2({}, LeafConfig); // position
+    this.leafIndicationLimit = renderLimit;
+    this.config = config; // position
 
     this.initialX = 0;
     this.initialY = 0;
     this.finalX = 0;
     this.finalY = 0;
     this.currentX = 0;
-    this.currentY = 0;
-    this.events = [];
-  }
+    this.currentY = 0; // determins the space between the node and the edge position
 
-  _createClass(LeafExtenstion, [{
-    key: "addEvent",
-    value: function addEvent(event, func) {
-      // this.svg.on(event, func)
-      // console.log(this.svg)
-      this.events = [].concat(_toConsumableArray(this.events), [{
-        event: event,
-        func: func
-      }]); // console.log(this.getNodeSize())
-    }
-  }, {
+    var w = this.node.nodeSize === "min" ? this.node.config.minWidth : this.node.config.maxWidth;
+    var h = this.node.nodeSize === "min" ? this.node.config.minHeight : this.node.config.maxHeight;
+    this.translateX = this.node.nodeSize === "min" ? w / 4 : w / 4;
+    this.translateY = this.node.nodeSize === "min" ? h / 4 : h / 4;
+    this.isHorizontal = isHorizontal;
+    this.isReRender = false;
+  }
+  /**
+   * Calculates and renders the leaf representation.
+   */
+
+
+  _createClass(TreeLeaf, [{
     key: "render",
     value: function render() {
       var _this = this;
 
-      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.node.finalX;
-      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.node.finalY;
-      var svg = this.canvas.group().draggable(); // svg.css("cursor", "pointer")
-
-      svg.id("leafExtenstion");
-      var w = this.node.nodeSize === "min" ? this.config.minWidth : this.config.maxWidth;
-      var h = this.node.nodeSize === "min" ? this.config.minHeight + 10 : this.config.maxHeight; // const text = this.canvas.foreignObject(w, h)
-      // const background = document.createElement("div")
-      // const label = document.createElement("p")
-      // label.innerText = `Show ${this.nodeSize} more children`
-      // label.style.color = this.config.labelColor
-      // label.style.textAlign = "center"
-      // label.style.padding = `${this.config.offset / 2}px`
-      // label.style.background = this.config.labelBackground
-      // label.style.fontSize = `${this.config.labelFontSize}px`
-      // label.style.fontFamily = this.config.labelFontFamily
-      // label.style.fontWeight = this.config.labelFontWeight
-      // label.style.fontStyle = this.config.labelFontStyle
-      // background.appendChild(label)
-      // text.add(background)
-      // text.height(background.clientHeight)
-      // svg.add(text)
-
-      var translateY = this.node.nodeSize === "min" ? 75 : 195;
-      svg.center(X, Y + translateY);
+      var svg = this.canvas.group().draggable();
+      var nodeSize = this.nodeSize < this.leafIndicationLimit ? this.nodeSize : this.leafIndicationLimit;
+      var w = this.node.nodeSize === "min" ? this.node.config.minWidth : this.node.config.maxWidth;
+      var h = this.node.nodeSize === "min" ? this.node.config.minHeight : this.node.config.maxHeight;
+      var spacing = this.node.config.offset;
       var tx = this.node.getFinalX();
-      var ty = this.node.getFinalY();
-      var edgesStartingLine = this.canvas.path("M 0 0 h".concat(this.node.currentWidth * 1.35)).stroke({
-        width: 0,
-        color: "red"
-      }).center(tx, ty + h / 2 + this.config.offset + translateY / 3);
-      var interval = edgesStartingLine.length() / this.nodeSize;
+      var ty = this.node.getFinalY(); // this.canvas.circle(5).fill("#75f").center(tx, ty)
+      // create helper line, indicating possible children
+
+      var edgesStartingLine;
+
+      if (this.isHorizontal === true) {
+        var x0 = tx + w / 2 + this.translateX + spacing;
+        var y0 = ty + this.node.currentHeight * 0.6;
+        edgesStartingLine = this.canvas.path("M ".concat(x0, " ").concat(y0, " v").concat(this.node.currentHeight * 1.15)).stroke({
+          width: 0,
+          color: "blue"
+        }).center(tx + w / 2 + this.translateX + spacing, ty);
+      } else {
+        edgesStartingLine = this.canvas.path("M 0 0 h".concat(this.node.currentWidth * 1.35)).stroke({
+          width: 0,
+          color: "red"
+        }).center(tx, ty + h / 2 + spacing + this.translateY);
+      } // calculates unique positions across the helper line
+
+
+      var interval = edgesStartingLine.length() / nodeSize;
       var intervalSpaceUsed = 0;
 
-      for (var i = 0; i < this.nodeSize; i += 1) {
+      for (var i = 0; i < nodeSize; i += 1) {
         var p = edgesStartingLine.pointAt(intervalSpaceUsed);
-        intervalSpaceUsed += interval;
-        var fx = p.x + interval / 2;
-        var fy = p.y; // this.canvas.circle(5).fill("#75f").center(fx, fy)
-        // this.canvas.circle(5).fill("#000").center(tx, ty)
+        intervalSpaceUsed += interval; // either horizontal or vertical offset
+
+        var fx = this.isHorizontal ? p.x : p.x + interval / 2;
+        var fy = this.isHorizontal ? p.y + interval / 2 : p.y;
 
         var _intersect = intersect$1(shape("rect", {
-          x: tx - w / 2 - this.node.config.borderStrokeWidth / 2 - this.config.offset / 2,
-          y: ty - h / 2 - this.node.config.borderStrokeWidth / 2 - this.config.offset / 2,
-          width: w + this.node.config.borderStrokeWidth + this.config.offset,
-          height: h + this.node.config.borderStrokeWidth + this.config.offset,
-          rx: this.node.config.borderRadius,
-          ry: this.node.config.borderRadius
+          x: tx - w / 2 - spacing / 2,
+          y: ty - h / 2 - spacing / 2,
+          width: w + spacing,
+          height: h + spacing,
+          rx: 0,
+          ry: 0
         }), shape("line", {
           x1: fx,
           y1: fy,
           x2: tx,
           y2: ty
         })),
-            points = _intersect.points; // this.canvas.circle(5).fill("#000").center(points[0].x, points[0].y)
+            points = _intersect.points; // create simple SVG representation
 
 
-        var path = this.canvas.path("M".concat(fx, ",").concat(fy, " L").concat(points[0].x, ",").concat(points[0].y)).stroke({
+        var simplePath = this.canvas.path("M".concat(fx, ",").concat(fy, " L").concat(points[0].x, ",").concat(points[0].y)).stroke({
           width: this.config.strokeWidth,
           color: this.config.strokeColor
-        });
-        path.id("leaf#"); // create a re-useable marker
+        }); // create a re-useable marker
 
         var index = _toConsumableArray(this.canvas.defs().node.childNodes).findIndex(function (d) {
           return d.id === "defaultThinMarker";
@@ -29087,49 +29159,83 @@ var LeafExtenstion = /*#__PURE__*/function () {
           });
           marker.id("defaultThinMarker");
           this.canvas.defs().add(marker);
-          path.marker("end", marker);
+          simplePath.marker("end", marker);
         } else {
           var _marker = this.canvas.defs().get(index);
 
-          path.marker("end", _marker);
-        }
+          simplePath.marker("end", _marker);
+        } // add simple path to the leaf's SVG object
 
-        svg.add(path);
+
+        svg.add(simplePath);
       }
 
-      svg.transform({
-        position: [this.initialX, this.initialY]
+      svg.back(); // put it into position
+
+      var x = this.isHorizontal ? this.node.getFinalX() + w / 2 + this.translateX / 2 + spacing : this.node.getFinalX();
+      var y = this.isHorizontal ? this.node.getFinalY() : this.node.getFinalY() + h / 2 + this.translateY / 2 + spacing;
+      var coords = this.node.coords[this.node.coords.length - 2] || this.node.coords[0];
+      var cx = this.isReRender ? coords[0] : this.node.currentX;
+      var cy = this.isReRender ? coords[1] : this.node.currentY;
+      svg.attr({
+        opacity: 0
+      }).center(cx, cy).animate({
+        duration: this.config.animationSpeed
+      }).transform({
+        position: [x, y]
+      }).attr({
+        opacity: 1
       });
       this.finalX = svg.cx();
-      this.finalY = svg.cy(); // this.events.forEach(({ event, func }) => {
-      //   svg.on(event, func)
-      // })
+      this.finalY = svg.cy(); // remove helper line
 
       edgesStartingLine.remove();
       this.svg = svg;
     }
+    /**
+     * Transforms the leaf into the final position.
+     * @param {Number} [X=this.node.finalX] The parent's final X render position.
+     * @param {Number} [Y=this.node.finalY] The parent's final Y render position.
+     */
+
   }, {
     key: "transformToFinalPosition",
     value: function transformToFinalPosition() {
-      this.svg.attr({
-        opacity: 1
-      }).animate({
+      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.node.finalX;
+      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.node.finalY;
+      var w = this.node.nodeSize === "min" ? this.node.config.minWidth : this.node.config.maxWidth;
+      var h = this.node.nodeSize === "min" ? this.node.config.minHeight : this.node.config.maxHeight;
+      var x = this.isHorizontal ? X + w / 2 + this.translateX / 2 + this.node.config.offset : X;
+      var y = this.isHorizontal ? Y : Y + this.translateY / 2 + this.node.config.offset + h / 2;
+      this.svg.animate({
         duration: this.config.animationSpeed
       }).transform({
-        position: [this.finalX, this.finalY]
-      }).attr({
-        opacity: 1
+        position: [x, y]
       });
     }
+    /**
+     * Removes the leaf node from the canvas and resets clears its SVG representation.
+     */
+
   }, {
     key: "removeLeaf",
     value: function removeLeaf() {
       this.svg.remove();
       this.svg = null;
     }
+    /**
+     * Determins where the leaf is rendered or not.
+     * @returns True, if the SVG is rendered, else false.
+     */
+
+  }, {
+    key: "isRendered",
+    value: function isRendered() {
+      return this.svg !== null;
+    }
   }]);
 
-  return LeafExtenstion;
+  return TreeLeaf;
 }();
 
 /**
@@ -29148,15 +29254,19 @@ var LeafExtenstion = /*#__PURE__*/function () {
 var TreeLayoutConfiguration = {
   translateX: 0,
   translateY: 0,
-  animationSpeed: 300,
+  animationSpeed: 400,
   orientation: "vertical",
   vSpacing: 100,
   hSpacing: 25,
   renderingSize: "min",
   // min, max
-  // renders additional edges to indicate loadable nodes
-  showLeafNodes: true,
-  childLimit: 5
+  // renders additional edges to indicate possible nodes
+  showLeafIndications: true,
+  visibleNodeLimit: 4,
+  leafIndicationLimit: 5,
+  leafStrokeWidth: 2,
+  leafStrokeColor: "#aaa",
+  leafMarker: "M 0 0 L 6 3 L 0 6 z"
 };
 
 /**
@@ -29172,12 +29282,12 @@ var TreeLayout = /*#__PURE__*/function (_BaseLayout) {
     var _this;
 
     var customConfig = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-    var events = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
-    var additionalNodeRepresentations = arguments.length > 2 ? arguments[2] : undefined;
+    var customEvent = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+    var customNodes = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
 
     _classCallCheck(this, TreeLayout);
 
-    _this = _super.call(this, additionalNodeRepresentations);
+    _this = _super.call(this, customNodes);
 
     if (customConfig.root === undefined) {
       throw new Error("No Focus element reference id provided");
@@ -29193,27 +29303,36 @@ var TreeLayout = /*#__PURE__*/function (_BaseLayout) {
     _this.renderDepth = customConfig.renderDepth;
     _this.leafs = [];
 
-    _this.registerMouseEvents(events);
+    _this.registerMouseEvents(customEvent);
 
     return _this;
   }
 
   _createClass(TreeLayout, [{
     key: "registerMouseEvents",
-    value: function registerMouseEvents(events) {
+    value: function registerMouseEvents(changeEvent) {
       var _this2 = this;
 
+      // load more data or hide loaded data method
       var loadOrHideData = /*#__PURE__*/function () {
         var _ref = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee(node) {
+          var leaf;
           return regeneratorRuntime.wrap(function _callee$(_context) {
             while (1) {
               switch (_context.prev = _context.next) {
                 case 0:
-                  _this2.leafs.forEach(function (leaf) {
-                    leaf.removeLeaf();
+                  // remove clicked leaf indication
+                  leaf = _this2.leafs.find(function (l) {
+                    return l.id === node.id;
                   });
 
-                  _this2.leafs = [];
+                  if (leaf !== undefined) {
+                    leaf.removeLeaf();
+                    _this2.leafs = _this2.leafs.filter(function (l) {
+                      return l.id !== node.id;
+                    });
+                  }
+
                   _context.next = 4;
                   return _this2.updateTreeDataAsync(node);
 
@@ -29230,25 +29349,12 @@ var TreeLayout = /*#__PURE__*/function (_BaseLayout) {
         };
       }();
 
-      if (events.length > 0) {
-        this.events = [{
-          name: "nodeEvent",
-          func: loadOrHideData,
-          mouse: events.find(function (e) {
-            return e.name === "nodeEvent";
-          }).mouse || "dblclick",
-          modifier: events.find(function (e) {
-            return e.name === "nodeEvent";
-          }).modifier || "ctrlKey"
-        }];
-      } else {
-        this.events = [{
-          name: "nodeEvent",
-          func: loadOrHideData,
-          mouse: "dblclick",
-          modifier: "ctrlKey"
-        }];
-      }
+      this.event = {
+        eventlistener: "expandCollapseEvent",
+        func: loadOrHideData,
+        mouse: changeEvent.mouse || "click",
+        modifier: changeEvent.modifier || undefined
+      };
     }
   }, {
     key: "calculateLayout",
@@ -29256,6 +29362,7 @@ var TreeLayout = /*#__PURE__*/function (_BaseLayout) {
       var _this3 = this;
 
       var offset = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
+      var opts = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
       var isVertical = this.config.orientation === "vertical"; // construct a tree
 
       var constructTree = function constructTree(array, parentRef, rootRef) {
@@ -29295,17 +29402,12 @@ var TreeLayout = /*#__PURE__*/function (_BaseLayout) {
 
         if (node.getChildren() === undefined) {
           node.setChildren([]);
-        } // if (node.children.length <= this.config.childLimit) {
-
+        }
 
         node.children.forEach(function (child, i) {
           var prev = i >= 1 ? node.children[i - 1] : null;
           initializeNodes(child, node, prev, depth + 1);
-        }); // } else {
-        // node.childrenIds = node.children.map(c => c.id)
-        // node.children = []
-        // this.nodes = this.nodes
-        // }
+        });
       };
 
       var finalizeTree = function finalizeTree(node) {
@@ -29477,6 +29579,7 @@ var TreeLayout = /*#__PURE__*/function (_BaseLayout) {
         for (var i = 0; i < node.children.length - 1; i += 1) {
           var c1 = getLeftContour(node.children[i]);
           var c2 = getRightContour(node.children[i + 1]);
+          console.log("fix", node.id);
 
           if (c1 >= c2) {
             shift(node.children[i + 1], c1 - c2 + distance);
@@ -29522,31 +29625,80 @@ var TreeLayout = /*#__PURE__*/function (_BaseLayout) {
         }
       };
 
-      var calcRadialEdges = function calcRadialEdges(edges) {
+      var calculateEdgePositions = function calculateEdgePositions(edges) {
         edges.forEach(function (edge) {
           edge.calculateEdge();
         });
       };
 
-      var addLeaf = function addLeaf(node, initialX, initialY) {
-        if (_this3.config.showLeafNodes === false) {
+      var manageLeafs = function manageLeafs(node, root) {
+        if (_this3.config.showLeafIndications === false) {
           return;
         }
 
-        if (node.children.length === 0 && node.childrenIds.length > 0) {
-          var leaf = new LeafExtenstion(_this3.canvas, node);
-          leaf.finalX = node.finalX;
-          var h = _this3.config.renderingSize === "max" ? node.config.maxHeight : node.config.minHeight;
-          leaf.finalY = node.finalY + h + 35;
-          leaf.initialX = initialX;
-          leaf.initialY = initialY; // leaf.addEvent("dblclick", () => { this.manageDataAsync(node) })
+        var config = {
+          animationSpeed: _this3.config.animationSpeed,
+          strokeWidth: _this3.config.leafStrokeWidth,
+          strokeColor: _this3.config.leafStrokeColor,
+          marker: _this3.config.leafMarker
+        };
 
-          _this3.leafs.push(leaf);
-        }
+        var addLeaf = function addLeaf(node) {
+          if (node.children.length === 0 && (node.childrenIds.length > 0 || node.invisibleChildren.length >= _this3.config.visibleNodeLimit)) {
+            if (node.invisibleChildren.length > 0) {
+              node.childrenIds = node.invisibleChildren;
+            }
 
-        node.children.forEach(function (child) {
-          addLeaf(child, initialX, initialY);
-        });
+            var existing = _this3.leafs.find(function (l) {
+              return l.id === node.id;
+            });
+
+            if (existing === undefined) {
+              var isHorizontal = _this3.config.orientation === "horizontal";
+              var leaf = new TreeLeaf(_this3.canvas, node, _this3.config.leafIndicationLimit, config, isHorizontal);
+              var x = opts.x ? opts.x : node.finalX;
+              var y = opts.y ? opts.y : node.finalY;
+              leaf.finalX = x;
+              leaf.finalY = y;
+              leaf.initialX = root.getFinalX();
+              leaf.initialY = root.getFinalY();
+              leaf.isReRender = opts.isReRender || false;
+
+              _this3.leafs.push(leaf);
+            }
+          }
+
+          node.children.forEach(function (child) {
+            addLeaf(child);
+          });
+        };
+
+        addLeaf(node);
+
+        var removeLeaf = function removeLeaf() {
+          var toRemove = [];
+
+          var existingNodeIds = _this3.nodes.map(function (n) {
+            return n.id;
+          });
+
+          _this3.leafs.forEach(function (leaf) {
+            if (!existingNodeIds.includes(leaf.id)) {
+              toRemove.push(leaf);
+            }
+          });
+
+          toRemove.forEach(function (leaf) {
+            leaf.removeLeaf();
+          });
+          _this3.leafs = _this3.leafs.filter(function (l) {
+            return !toRemove.map(function (l) {
+              return l.id;
+            }).includes(l.id);
+          });
+        };
+
+        removeLeaf();
       };
 
       var adjustPositions = function adjustPositions(tree) {
@@ -29648,8 +29800,8 @@ var TreeLayout = /*#__PURE__*/function (_BaseLayout) {
       fixOverlappingConflicts(root);
       centerRoot(root);
       finalizeTree(root);
-      calcRadialEdges(this.edges);
-      addLeaf(root, root.getFinalX(), root.getFinalY());
+      calculateEdgePositions(this.edges);
+      manageLeafs(root, root);
       adjustPositions(root);
       addEdgeReferences(root); // console.log(root)
     }
@@ -29658,6 +29810,9 @@ var TreeLayout = /*#__PURE__*/function (_BaseLayout) {
     value: function renderLayout() {
       var _this4 = this;
 
+      var opts = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {
+        isReRender: false
+      };
       var X = this.nodes.find(function (n) {
         return n.id === _this4.rootId;
       }).getFinalX();
@@ -29665,24 +29820,44 @@ var TreeLayout = /*#__PURE__*/function (_BaseLayout) {
         return n.id === _this4.rootId;
       }).getFinalY();
 
-      var renderNodes = function renderNodes() {
+      var renderNodes = function renderNodes(opts) {
         _this4.nodes.forEach(function (node) {
           if (node.isRendered() === false) {
-            if (_this4.config.renderingSize === "max") node.renderAsMax(X, Y);
-            if (_this4.config.renderingSize === "min") node.renderAsMin(X, Y);
+            if (_this4.config.renderingSize === "max") {
+              if (opts.isReRender === true) {
+                node.renderAsMax(opts.x, opts.y);
+              } else {
+                node.renderAsMax(X, Y);
+              }
+            }
 
-            if (node.children.length > _this4.config.childLimit) ;
+            if (_this4.config.renderingSize === "min") {
+              if (opts.isReRender === true) {
+                node.renderAsMin(opts.x, opts.y);
+              } else {
+                node.renderAsMin(X, Y);
+              }
+            } // add mouse event to each node
 
-            node.svg.on(_this4.events[0].mouse, function (e) {
-              if (_this4.events[0].modifier !== null) {
-                if (_this4.events[0].modifier, e[_this4.events[0].modifier]) {
-                  _this4.events[0].func(node);
+
+            node.svg.on(_this4.event.mouse, function (e) {
+              if (_this4.event.modifier !== undefined) {
+                if (_this4.event.modifier, e[_this4.event.modifier]) {
+                  _this4.event.func(node);
                 }
+              }
+
+              if (_this4.event.modifier === undefined) {
+                _this4.event.func(node);
               }
             });
             node.outgoingEdges.forEach(function (edge) {
               if (edge.isRendered() === false) {
-                edge.render(X, Y);
+                if (opts.isReRender === true) {
+                  edge.render(opts.x, opts.y);
+                } else {
+                  edge.render(X, Y);
+                }
               }
             });
           } else if (node.isRendered() === true) {
@@ -29691,20 +29866,25 @@ var TreeLayout = /*#__PURE__*/function (_BaseLayout) {
         });
 
         _this4.leafs.forEach(function (leaf) {
-          leaf.render();
-          leaf.transformToFinalPosition();
+          if (leaf.isRendered() === false) {
+            leaf.render(opts.isReRender === true ? true : false);
+          } else if (leaf.isRendered() === true) {
+            leaf.transformToFinalPosition();
+          }
         });
 
         _this4.edges.forEach(function (edge) {
           if (edge.isRendered() === false) {
             edge.render(X, Y);
           } else if (edge.isRendered() === true) {
-            edge.transformToFinalPosition();
+            edge.transformToFinalPosition({
+              isReRender: opts.isReRender || false
+            });
           }
         });
       };
 
-      renderNodes();
+      renderNodes(opts);
     }
   }]);
 
@@ -31812,15 +31992,20 @@ var Visualization = /*#__PURE__*/function () {
     element.appendChild(tooltip); // canvas set up
 
     this.zoomLevel = 1;
-    var w = window.innerWidth - 10;
-    var h = window.innerHeight - 10;
+    var w = config.width || window.innerWidth - 10;
+    var h = config.height || window.innerHeight - 10;
+    var zoom = config.zoom || {
+      lvl: 0.75,
+      x: 100,
+      y: 100
+    };
     this.canvas = SVG().addTo(element).size(w, h).viewbox(0, 0, w, h).panZoom({
       zoomMin: 0.25,
       zoomMax: 10,
       zoomFactor: 0.25
-    }).zoom(config.zoom.lvl, {
-      x: config.zoom.x,
-      y: config.zoom.y
+    }).zoom(zoom.lvl, {
+      x: zoom.x,
+      y: zoom.y
     }); // const event = {
     //   event: "grid.expander",
     //   mouse: "click",

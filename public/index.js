@@ -3,15 +3,17 @@
 // /* eslint-disable import/extensions */
 // /* eslint-disable max-classes-per-file */
 
+
+
 import { Visualization, TreeLayout, ContextualLayout, GridLayout, RadialLayout, Asset } from "./graphVisualization.js"
 
 
-// const visualization = new Visualization({
-//   databaseUrl: "http://localhost:3001",
-//   nodeEndpoint: "node-data",
-//   edgeEndpoint: "edge-data",
-//   zoom: { lvl: 1, x: 100, y: 100 }
-// })
+
+const visualization = new Visualization({
+  databaseUrl: "http://localhost:3001",
+  nodeEndpoint: "node-data",
+  edgeEndpoint: "edge-data"
+})
 
 // const data = { "id": 74, "label": "TEST ASSET 1", "description": "Lorem ipsum dolor sit amet consectetur adipisicing elit. Quibusdam maxime cupiditate fugiat deserunt libero, ab temporibus delectus sunt et doloribus. Voluptate expedita dicta neque harum debitis laudantium molestias velit aut, quos impedit consequatur est libero aliquam enim quibusdam optio nisi aspernatur. Voluptates iure reiciendis, eos illo explicabo sequi architecto! Iure numquam officia temporibus et, mollitia, dolore quas eos non quibusdam quia hic dolores impedit debitis eligendi? Sequi a maxime provident tenetur eveniet modi animi consectetur vitae, nostrum amet ad iusto accusamus placeat, beatae saepe voluptatum! Veritatis architecto error cum eaque. Ipsam blanditiis ab, tenetur eveniet modi doloribus aspernatur aliquid dicta.", "type": "asset", "keyValuePairs": [{ "key": "key 1", "value": "key value pair: value 1" }, { "key": "key 2", "value": "key value pair: value 2" }, { "key": "key 3", "value": "key value pair: value 3" }, { "key": "key 4", "value": "key value pair: value 4" }, { "key": "key 5", "value": "key value pair: value 5" }, { "key": "key 6", "value": "key value pair: value 6" }], "tooltip": "Asset with <br> tooltip", "parent": null, "children": [], "config": null }
 // const asset = new Asset(data, visualization.canvas)
@@ -37,6 +39,7 @@ const basicGridLayout = () => {
   // for (let i = 0; i < 30; i += 1) {
   // }
 
+  graph.includeNode(75)
   graph.includeNode(74)
   // remove nodes
   // graph.excludeNode(4)
@@ -48,6 +51,7 @@ const basicGridLayout = () => {
   // render the layout 
   visualization.render(graph, grid)
 }
+
 
 const updateGridLayout = () => {
   const graph = visualization.createInitialGraph()
@@ -109,54 +113,45 @@ const changeGridMouseEvent = () => {
   // render the layout 
   visualization.render(graph, grid)
 }
-const manyElementsRendered = () => {
+const evaltest = async () => {
+
+  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 
-  // or by manually adding them
-  const graph1 = visualization.createInitialGraph()
-  for (let i = 0; i < 75; i += 1) {
-    graph1.includeNode(i)
+
+  for (let i = 0; i < 100; i += 1) {
+
+
+    const visualization = new Visualization({
+      databaseUrl: "http://localhost:3001",
+      nodeEndpoint: "node-data",
+      edgeEndpoint: "edge-data"
+    })
+    const graph1 = visualization.createInitialGraph()
+
+    for (let i = 0; i < 75; i += 1) { graph1.includeNode(i) }
+    for (let i = 142; i <= 160; i += 1) { graph1.includeNode(i) }
+    for (let i = 6; i <= 11; i += 1) { graph1.includeNode(i) }
+
+
+
+
+    const grid1 = new GridLayout({ limitNodes: null, animationSpeed: 300, limitColumns: 20 })
+    visualization.render(graph1, grid1)
+
+    await sleep(400);
+    const elem = document.getElementById("canvas")
+    elem.remove()
+    // await sleep(100);
   }
-  for (let i = 0; i < 25; i += 1) {
-    graph1.includeNode(i)
-  }
 
-  for (let i = 0; i < 75; i += 1) {
-    graph1.includeNode(i)
-  }
-  for (let i = 0; i < 25; i += 1) {
-    graph1.includeNode(i)
-  }
-
-
-  for (let i = 0; i < 75; i += 1) {
-    graph1.includeNode(i)
-  }
-  for (let i = 0; i < 25; i += 1) {
-    graph1.includeNode(i)
-  }
-
-  // for (let i = 0; i < 75; i += 1) {
-  //   graph1.includeNode(i)
-  // }
-  // for (let i = 0; i < 25; i += 1) {
-  //   graph1.includeNode(i)
-  // }
-
-
-  // for (let i = 0; i < 75; i += 1) {
-  //   graph1.includeNode(i)
-  // }
-  // for (let i = 0; i < 25; i += 1) {
-  //   graph1.includeNode(i)
-  // }
+  console.log("done")
 
 
 
-  /** Grid 1 */
-  const grid1 = new GridLayout({ limitNodes: null, animationSpeed: 300, limitColumns: 20 })
-  visualization.render(graph1, grid1)
 }
+
+// evaltest()
 
 const multipleLayoutsSideBySide = () => {
   const graph2 = visualization.createInitialGraph([0, 1, 2, 3])
@@ -248,7 +243,7 @@ const treeLayout = () => {
   const graph = visualization.createInitialGraph()
 
   // add nodes
-  for (let i = 110; i <= 149; i += 1) {
+  for (let i = 0; i <= 160; i += 1) {
     graph.includeNode(i)
   }
 
@@ -258,11 +253,24 @@ const treeLayout = () => {
   graph.includeEdge(113, 110)
 
   // create a radial layout with a root and a rendering depth
-  const events = [{ name: "nodeEvent", mouse: "click", modifier: "ctrlKey" }]
-  const tree = new TreeLayout({ root: 110, renderDepth: 1 }, events)
+  // const event = { eventlistener: "expandCollapseEvent", mouse: "dblclick", modifier: "shiftKey" }
+  const tree = new TreeLayout({ root: 110, renderDepth: 2 })
   visualization.render(graph, tree)
+
+  const tree2 = new TreeLayout({ root: 153, renderDepth: 1 })
+  // visualization.render(graph, tree2)
+
+  const tree3 = new TreeLayout({ root: 137, renderDepth: 0 })
+  // visualization.render(graph, tree3)
+
+  const tree4 = new TreeLayout({ root: 16, renderDepth: 0 })
+  // visualization.render(graph, tree4)
+  const tree5 = new TreeLayout({ root: 161, renderDepth: 1 })
+  // visualization.render(graph, tree5)
 }
 
+
+treeLayout()
 
 
 // basicGridLayout()

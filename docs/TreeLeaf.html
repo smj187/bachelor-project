@@ -3,7 +3,7 @@
 <head>
     
     <meta charset="utf-8">
-    <title>JSDoc: Graph</title>
+    <title>JSDoc: TreeLeaf</title>
 
     <script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -52,7 +52,7 @@
                 <div class="content" id="main-content-wrapper">
                     <header class="page-title">
                         <p>Class</p>
-                        <h1>Graph</h1>
+                        <h1>TreeLeaf</h1>
                     </header>
                     
                     
@@ -64,9 +64,9 @@
 
 <header>
     
-        <h2><span class="attribs"><span class="type-signature"></span></span>Graph<span class="signature">()</span><span class="type-signature"></span></h2>
+        <h2><span class="attribs"><span class="type-signature"></span></span>TreeLeaf<span class="signature">()</span><span class="type-signature"></span></h2>
         
-            <div class="class-description"><p>This class provides basic functionality for managing data.</p></div>
+            <div class="class-description"><p>This class calculates and renders an indication if more child nodes may be available.</p></div>
         
     
 </header>
@@ -82,12 +82,12 @@
 
 
     
-    <h4 class="name" id="Graph">
-        <a class="href-link" href="#Graph">#</a>
+    <h4 class="name" id="TreeLeaf">
+        <a class="href-link" href="#TreeLeaf">#</a>
         
         <span class="code-name">
             
-                new Graph<span class="signature">()</span><span class="type-signature"></span>
+                new TreeLeaf<span class="signature">()</span><span class="type-signature"></span>
             
         </span>
     </h4>
@@ -104,6 +104,208 @@
 
 
 
+
+
+
+
+    <h5 class="subsection-title">Properties:</h5>
+
+    
+
+<table class="props">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+        
+<tr class="deep-level-0">
+    
+        <td class="name"><code>canvas</code></td>
+    
+
+    <td class="type">
+    
+        
+<span class="param-type"><a href="global.html#Canvas">Canvas</a></span>
+
+
+    
+    </td>
+
+    
+        <td class="attributes">
+        
+
+        
+        </td>
+    
+
+    
+        <td class="default">
+        
+        </td>
+    
+
+    <td class="description last"><p>The current canvas to render the element on.</p></td>
+</tr>
+
+    
+        
+<tr class="deep-level-0">
+    
+        <td class="name"><code>node</code></td>
+    
+
+    <td class="type">
+    
+        
+<span class="param-type"><a href="BaseNode.html">BaseNode</a></span>
+
+
+    
+    </td>
+
+    
+        <td class="attributes">
+        
+
+        
+        </td>
+    
+
+    
+        <td class="default">
+        
+        </td>
+    
+
+    <td class="description last"><p>The currently active and real leaf node representaion.</p></td>
+</tr>
+
+    
+        
+<tr class="deep-level-0">
+    
+        <td class="name"><code>renderLimit</code></td>
+    
+
+    <td class="type">
+    
+        
+<span class="param-type">Number</span>
+
+
+    
+    </td>
+
+    
+        <td class="attributes">
+        
+
+        
+        </td>
+    
+
+    
+        <td class="default">
+        
+        </td>
+    
+
+    <td class="description last"><p>Limits how many edges are visible.</p></td>
+</tr>
+
+    
+        
+<tr class="deep-level-0">
+    
+        <td class="name"><code>config</code></td>
+    
+
+    <td class="type">
+    
+        
+<span class="param-type"><a href="global.html#TreeLeafConfiguration">TreeLeafConfiguration</a></span>
+
+
+    
+    </td>
+
+    
+        <td class="attributes">
+        
+
+        
+        </td>
+    
+
+    
+        <td class="default">
+        
+        </td>
+    
+
+    <td class="description last"><p>An object containing visual restrictions.</p></td>
+</tr>
+
+    
+        
+<tr class="deep-level-0">
+    
+        <td class="name"><code>isHorizontal</code></td>
+    
+
+    <td class="type">
+    
+        
+<span class="param-type">Boolean</span>
+
+
+    
+    </td>
+
+    
+        <td class="attributes">
+        
+            &lt;optional><br>
+        
+
+        
+        </td>
+    
+
+    
+        <td class="default">
+        
+            false
+        
+        </td>
+    
+
+    <td class="description last"><p>Determins if the current tree is vertical or horizontal.</p></td>
+</tr>
+
+    
+    </tbody>
+</table>
 
 
 
@@ -141,9 +343,9 @@
 
     
         <p class="tag-source">
-            <a href="data_Graph.js.html" class="button">View Source</a>
+            <a href="layouts_helpers_TreeLeaf.js.html" class="button">View Source</a>
             <span>
-                <a href="data_Graph.js.html">data/Graph.js</a>, <a href="data_Graph.js.html#line9">line 9</a>
+                <a href="layouts_helpers_TreeLeaf.js.html">layouts/helpers/TreeLeaf.js</a>, <a href="layouts_helpers_TreeLeaf.js.html#line21">line 21</a>
             </span>
         </p>
     
@@ -199,23 +401,23 @@
 
 
     
-    <h4 class="name" id="excludeEdge">
-        <a class="href-link" href="#excludeEdge">#</a>
+    <h4 class="name" id="isRendered">
+        <a class="href-link" href="#isRendered">#</a>
         
         <span class="code-name">
             
-                excludeEdge<span class="signature">(startNode, endNode)</span><span class="type-signature"></span>
+                isRendered<span class="signature">()</span><span class="type-signature"></span>
             
         </span>
     </h4>
     
 
     
-    <p class="summary">Removes an edge and all its occurrences within the current graph.</p>
+    <p class="summary">Determins where the leaf is rendered or not.</p>
     
     
     <div class="description">
-        <p>Removes an edge and all its occurrences within the current graph.</p>
+        <p>Determins where the leaf is rendered or not.</p>
     </div>
     
 
@@ -226,81 +428,6 @@
 
 
 
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        
-<tr class="deep-level-0">
-  
-      <td class="name"><code>startNode</code></td>
-  
-
-  <td class="type">
-  
-      
-<span class="param-type">Number</span>
-
-
-  
-  </td>
-
-  
-
-  
-
-  <td class="description last"><p>The start node id.</p></td>
-</tr>
-
-
-    
-
-        
-<tr class="deep-level-0">
-  
-      <td class="name"><code>endNode</code></td>
-  
-
-  <td class="type">
-  
-      
-<span class="param-type">Number</span>
-
-
-  
-  </td>
-
-  
-
-  
-
-  <td class="description last"><p>The end node id.</p></td>
-</tr>
-
-
-    
-    </tbody>
-</table>
 
 
 
@@ -339,9 +466,125 @@
 
     
         <p class="tag-source">
-            <a href="data_Graph.js.html" class="button">View Source</a>
+            <a href="layouts_helpers_TreeLeaf.js.html" class="button">View Source</a>
             <span>
-                <a href="data_Graph.js.html">data/Graph.js</a>, <a href="data_Graph.js.html#line100">line 100</a>
+                <a href="layouts_helpers_TreeLeaf.js.html">layouts/helpers/TreeLeaf.js</a>, <a href="layouts_helpers_TreeLeaf.js.html#line189">line 189</a>
+            </span>
+        </p>
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div class='columns method-parameter'>
+        <div class="column is-2"><label>Returns:</label></div>
+        <div class="column is-10">
+            
+                    
+
+<div class="columns">
+    
+    <div class='param-desc column is-7'><p>True, if the SVG is rendered, else false.</p></div>
+    
+    
+</div>
+
+                
+        </div>
+    </div>
+
+
+
+
+</div>
+            
+                <div class="member">
+
+
+    
+    <h4 class="name" id="removeLeaf">
+        <a class="href-link" href="#removeLeaf">#</a>
+        
+        <span class="code-name">
+            
+                removeLeaf<span class="signature">()</span><span class="type-signature"></span>
+            
+        </span>
+    </h4>
+    
+
+    
+    <p class="summary">Removes the leaf node from the canvas and resets clears its SVG representation.</p>
+    
+    
+    <div class="description">
+        <p>Removes the leaf node from the canvas and resets clears its SVG representation.</p>
+    </div>
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    
+
+    
+
+    
+
+    
+        <p class="tag-source">
+            <a href="layouts_helpers_TreeLeaf.js.html" class="button">View Source</a>
+            <span>
+                <a href="layouts_helpers_TreeLeaf.js.html">layouts/helpers/TreeLeaf.js</a>, <a href="layouts_helpers_TreeLeaf.js.html#line179">line 179</a>
             </span>
         </p>
     
@@ -373,23 +616,23 @@
 
 
     
-    <h4 class="name" id="excludeNode">
-        <a class="href-link" href="#excludeNode">#</a>
+    <h4 class="name" id="render">
+        <a class="href-link" href="#render">#</a>
         
         <span class="code-name">
             
-                excludeNode<span class="signature">(id)</span><span class="type-signature"></span>
+                render<span class="signature">(X<span class="signature-attributes">opt</span>, Y<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span>
             
         </span>
     </h4>
     
 
     
-    <p class="summary">Removes a node and all its occurrences within the current graph.</p>
+    <p class="summary">Calculates and renders the leaf representation.</p>
     
     
     <div class="description">
-        <p>Removes a node and all its occurrences within the current graph.</p>
+        <p>Calculates and renders the leaf representation.</p>
     </div>
     
 
@@ -414,7 +657,11 @@
         <th>Type</th>
 
         
+        <th>Attributes</th>
+        
 
+        
+        <th>Default</th>
         
 
         <th class="last">Description</th>
@@ -427,7 +674,7 @@
         
 <tr class="deep-level-0">
   
-      <td class="name"><code>id</code></td>
+      <td class="name"><code>X</code></td>
   
 
   <td class="type">
@@ -440,10 +687,67 @@
   </td>
 
   
+      <td class="attributes">
+      
+          &lt;optional><br>
+      
 
+      
+
+      
+      </td>
   
 
-  <td class="description last"><p>The node id to exclude from the current graph.</p></td>
+  
+      <td class="default">
+      
+          this.node.finalX
+      
+      </td>
+  
+
+  <td class="description last"><p>The parent's final X render position.</p></td>
+</tr>
+
+
+    
+
+        
+<tr class="deep-level-0">
+  
+      <td class="name"><code>Y</code></td>
+  
+
+  <td class="type">
+  
+      
+<span class="param-type">Number</span>
+
+
+  
+  </td>
+
+  
+      <td class="attributes">
+      
+          &lt;optional><br>
+      
+
+      
+
+      
+      </td>
+  
+
+  
+      <td class="default">
+      
+          this.node.finalY
+      
+      </td>
+  
+
+  <td class="description last"><p>The parent's final Y render position.</p></td>
 </tr>
 
 
@@ -488,9 +792,9 @@
 
     
         <p class="tag-source">
-            <a href="data_Graph.js.html" class="button">View Source</a>
+            <a href="layouts_helpers_TreeLeaf.js.html" class="button">View Source</a>
             <span>
-                <a href="data_Graph.js.html">data/Graph.js</a>, <a href="data_Graph.js.html#line28">line 28</a>
+                <a href="layouts_helpers_TreeLeaf.js.html">layouts/helpers/TreeLeaf.js</a>, <a href="layouts_helpers_TreeLeaf.js.html#line54">line 54</a>
             </span>
         </p>
     
@@ -522,23 +826,23 @@
 
 
     
-    <h4 class="name" id="includeEdge">
-        <a class="href-link" href="#includeEdge">#</a>
+    <h4 class="name" id="transformToFinalPosition">
+        <a class="href-link" href="#transformToFinalPosition">#</a>
         
         <span class="code-name">
             
-                includeEdge<span class="signature">(startNode, endNode)</span><span class="type-signature"></span>
+                transformToFinalPosition<span class="signature">(X<span class="signature-attributes">opt</span>, Y<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span>
             
         </span>
     </h4>
     
 
     
-    <p class="summary">Creates a new edge and update the current graph.</p>
+    <p class="summary">Transforms the leaf into the final position.</p>
     
     
     <div class="description">
-        <p>Creates a new edge and update the current graph.</p>
+        <p>Transforms the leaf into the final position.</p>
     </div>
     
 
@@ -563,7 +867,11 @@
         <th>Type</th>
 
         
+        <th>Attributes</th>
+        
 
+        
+        <th>Default</th>
         
 
         <th class="last">Description</th>
@@ -576,7 +884,7 @@
         
 <tr class="deep-level-0">
   
-      <td class="name"><code>startNode</code></td>
+      <td class="name"><code>X</code></td>
   
 
   <td class="type">
@@ -589,10 +897,26 @@
   </td>
 
   
+      <td class="attributes">
+      
+          &lt;optional><br>
+      
 
+      
+
+      
+      </td>
   
 
-  <td class="description last"><p>The start node id.</p></td>
+  
+      <td class="default">
+      
+          this.node.finalX
+      
+      </td>
+  
+
+  <td class="description last"><p>The parent's final X render position.</p></td>
 </tr>
 
 
@@ -601,7 +925,7 @@
         
 <tr class="deep-level-0">
   
-      <td class="name"><code>endNode</code></td>
+      <td class="name"><code>Y</code></td>
   
 
   <td class="type">
@@ -614,10 +938,26 @@
   </td>
 
   
+      <td class="attributes">
+      
+          &lt;optional><br>
+      
 
+      
+
+      
+      </td>
   
 
-  <td class="description last"><p>The end node id.</p></td>
+  
+      <td class="default">
+      
+          this.node.finalY
+      
+      </td>
+  
+
+  <td class="description last"><p>The parent's final Y render position.</p></td>
 </tr>
 
 
@@ -662,158 +1002,9 @@
 
     
         <p class="tag-source">
-            <a href="data_Graph.js.html" class="button">View Source</a>
+            <a href="layouts_helpers_TreeLeaf.js.html" class="button">View Source</a>
             <span>
-                <a href="data_Graph.js.html">data/Graph.js</a>, <a href="data_Graph.js.html#line70">line 70</a>
-            </span>
-        </p>
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-</div>
-            
-                <div class="member">
-
-
-    
-    <h4 class="name" id="includeNode">
-        <a class="href-link" href="#includeNode">#</a>
-        
-        <span class="code-name">
-            
-                includeNode<span class="signature">(id)</span><span class="type-signature"></span>
-            
-        </span>
-    </h4>
-    
-
-    
-    <p class="summary">Creates and adds a new node to the current graph.</p>
-    
-    
-    <div class="description">
-        <p>Creates and adds a new node to the current graph.</p>
-    </div>
-    
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        
-<tr class="deep-level-0">
-  
-      <td class="name"><code>id</code></td>
-  
-
-  <td class="type">
-  
-      
-<span class="param-type">Number</span>
-
-
-  
-  </td>
-
-  
-
-  
-
-  <td class="description last"><p>The node id to include in the current graph.</p></td>
-</tr>
-
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    
-
-    
-
-    
-
-    
-        <p class="tag-source">
-            <a href="data_Graph.js.html" class="button">View Source</a>
-            <span>
-                <a href="data_Graph.js.html">data/Graph.js</a>, <a href="data_Graph.js.html#line19">line 19</a>
+                <a href="layouts_helpers_TreeLeaf.js.html">layouts/helpers/TreeLeaf.js</a>, <a href="layouts_helpers_TreeLeaf.js.html#line163">line 163</a>
             </span>
         </p>
     

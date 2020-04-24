@@ -39,6 +39,7 @@ class BaseNode {
 
     this.children = []
     this.childrenIds = data.children || []
+    this.invisibleChildren = data.invisibleChildren || []
     this.prevSibling = null
     this.modifier = 0
     this.mod = 0
@@ -61,6 +62,7 @@ class BaseNode {
     this.isHidden = false
     this.currentWidth = 0
     this.currentHeight = 0
+    this.coords = []
 
 
     // events
@@ -84,8 +86,12 @@ class BaseNode {
       return
     }
 
+
+
     this.currentX = X
     this.currentY = Y
+    this.coords.push([this.currentX, this.currentY])
+
 
     this
       .svg
@@ -100,8 +106,12 @@ class BaseNode {
    * @param {Number} Y=initialY The initial Y position.
    */
   transformToInitialPosition(X = this.initialX, Y = this.initialY) {
+
+
     this.currentX = X
     this.currentY = Y
+
+    this.coords.push([this.currentX, this.currentY])
 
     this.svg.back()
     this
