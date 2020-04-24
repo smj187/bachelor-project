@@ -353,9 +353,20 @@ class Visualization {
     // }
   }
 
-  updateMouseEvents(event, func) {
 
+  /**
+   * Adds an event listener to a given layout.
+   * @param {BaseLayout} layout The layout where to add the event listener.
+   * @param {String} event The event name. 
+   * @param {String} modifier The modifier name. Available: "shiftKey", "altKey", "ctrlKey" or undefined.
+   * @param {String} func The method name.
+   * 
+   * @see Supported events: {@link https://svgjs.com/docs/3.0/events/#element-click}
+   */
+  addEventListener(layout, event, modifier, func) {
+    layout.registerEventListener(event, modifier, func)
   }
+
 
 
   /**

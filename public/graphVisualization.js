@@ -29036,6 +29036,394 @@ var RadialLayout = /*#__PURE__*/function (_BaseLayout) {
   return RadialLayout;
 }(BaseLayout);
 
+// babel-minify transpiles RegExp('a', 'y') -> /a/y and it causes SyntaxError,
+// so we use an intermediate function.
+function RE(s, f) {
+  return RegExp(s, f);
+}
+
+var UNSUPPORTED_Y = fails(function () {
+  // babel-minify transpiles RegExp('a', 'y') -> /a/y and it causes SyntaxError
+  var re = RE('a', 'y');
+  re.lastIndex = 2;
+  return re.exec('abcd') != null;
+});
+
+var BROKEN_CARET = fails(function () {
+  // https://bugzilla.mozilla.org/show_bug.cgi?id=773687
+  var re = RE('^r', 'gy');
+  re.lastIndex = 2;
+  return re.exec('str') != null;
+});
+
+var regexpStickyHelpers = {
+	UNSUPPORTED_Y: UNSUPPORTED_Y,
+	BROKEN_CARET: BROKEN_CARET
+};
+
+var nativeExec$1 = RegExp.prototype.exec;
+// This always refers to the native implementation, because the
+// String#replace polyfill uses ./fix-regexp-well-known-symbol-logic.js,
+// which loads this file before patching the method.
+var nativeReplace$1 = String.prototype.replace;
+
+var patchedExec$1 = nativeExec$1;
+
+var UPDATES_LAST_INDEX_WRONG$1 = (function () {
+  var re1 = /a/;
+  var re2 = /b*/g;
+  nativeExec$1.call(re1, 'a');
+  nativeExec$1.call(re2, 'a');
+  return re1.lastIndex !== 0 || re2.lastIndex !== 0;
+})();
+
+var UNSUPPORTED_Y$1 = regexpStickyHelpers.UNSUPPORTED_Y || regexpStickyHelpers.BROKEN_CARET;
+
+// nonparticipating capturing group, copied from es5-shim's String#split patch.
+var NPCG_INCLUDED$1 = /()??/.exec('')[1] !== undefined;
+
+var PATCH$1 = UPDATES_LAST_INDEX_WRONG$1 || NPCG_INCLUDED$1 || UNSUPPORTED_Y$1;
+
+if (PATCH$1) {
+  patchedExec$1 = function exec(str) {
+    var re = this;
+    var lastIndex, reCopy, match, i;
+    var sticky = UNSUPPORTED_Y$1 && re.sticky;
+    var flags = regexpFlags$1.call(re);
+    var source = re.source;
+    var charsAdded = 0;
+    var strCopy = str;
+
+    if (sticky) {
+      flags = flags.replace('y', '');
+      if (flags.indexOf('g') === -1) {
+        flags += 'g';
+      }
+
+      strCopy = String(str).slice(re.lastIndex);
+      // Support anchored sticky behavior.
+      if (re.lastIndex > 0 && (!re.multiline || re.multiline && str[re.lastIndex - 1] !== '\n')) {
+        source = '(?: ' + source + ')';
+        strCopy = ' ' + strCopy;
+        charsAdded++;
+      }
+      // ^(? + rx + ) is needed, in combination with some str slicing, to
+      // simulate the 'y' flag.
+      reCopy = new RegExp('^(?:' + source + ')', flags);
+    }
+
+    if (NPCG_INCLUDED$1) {
+      reCopy = new RegExp('^' + source + '$(?!\\s)', flags);
+    }
+    if (UPDATES_LAST_INDEX_WRONG$1) lastIndex = re.lastIndex;
+
+    match = nativeExec$1.call(sticky ? reCopy : re, strCopy);
+
+    if (sticky) {
+      if (match) {
+        match.input = match.input.slice(charsAdded);
+        match[0] = match[0].slice(charsAdded);
+        match.index = re.lastIndex;
+        re.lastIndex += match[0].length;
+      } else re.lastIndex = 0;
+    } else if (UPDATES_LAST_INDEX_WRONG$1 && match) {
+      re.lastIndex = re.global ? match.index + match[0].length : lastIndex;
+    }
+    if (NPCG_INCLUDED$1 && match && match.length > 1) {
+      // Fix browsers whose `exec` methods don't consistently return `undefined`
+      // for NPCG, like IE8. NOTE: This doesn' work for /(.?)?/
+      nativeReplace$1.call(match[0], reCopy, function () {
+        for (i = 1; i < arguments.length - 2; i++) {
+          if (arguments[i] === undefined) match[i] = undefined;
+        }
+      });
+    }
+
+    return match;
+  };
+}
+
+var regexpExec$1 = patchedExec$1;
+
+_export({ target: 'RegExp', proto: true, forced: /./.exec !== regexpExec$1 }, {
+  exec: regexpExec$1
+});
+
+// TODO: Remove from `core-js@4` since it's moved to entry points
+
+
+
+
+
+
+
+var SPECIES$9 = wellKnownSymbol('species');
+
+var REPLACE_SUPPORTS_NAMED_GROUPS$1 = !fails(function () {
+  // #replace needs built-in support for named groups.
+  // #match works fine because it just return the exec results, even if it has
+  // a "grops" property.
+  var re = /./;
+  re.exec = function () {
+    var result = [];
+    result.groups = { a: '7' };
+    return result;
+  };
+  return ''.replace(re, '$<a>') !== '7';
+});
+
+// IE <= 11 replaces $0 with the whole match, as if it was $&
+// https://stackoverflow.com/questions/6024666/getting-ie-to-replace-a-regex-with-the-literal-string-0
+var REPLACE_KEEPS_$0 = (function () {
+  return 'a'.replace(/./, '$0') === '$0';
+})();
+
+var REPLACE = wellKnownSymbol('replace');
+// Safari <= 13.0.3(?) substitutes nth capture where n>m with an empty string
+var REGEXP_REPLACE_SUBSTITUTES_UNDEFINED_CAPTURE = (function () {
+  if (/./[REPLACE]) {
+    return /./[REPLACE]('a', '$0') === '';
+  }
+  return false;
+})();
+
+// Chrome 51 has a buggy "split" implementation when RegExp#exec !== nativeExec
+// Weex JS has frozen built-in prototypes, so use try / catch wrapper
+var SPLIT_WORKS_WITH_OVERWRITTEN_EXEC$1 = !fails(function () {
+  var re = /(?:)/;
+  var originalExec = re.exec;
+  re.exec = function () { return originalExec.apply(this, arguments); };
+  var result = 'ab'.split(re);
+  return result.length !== 2 || result[0] !== 'a' || result[1] !== 'b';
+});
+
+var fixRegexpWellKnownSymbolLogic$1 = function (KEY, length, exec, sham) {
+  var SYMBOL = wellKnownSymbol(KEY);
+
+  var DELEGATES_TO_SYMBOL = !fails(function () {
+    // String methods call symbol-named RegEp methods
+    var O = {};
+    O[SYMBOL] = function () { return 7; };
+    return ''[KEY](O) != 7;
+  });
+
+  var DELEGATES_TO_EXEC = DELEGATES_TO_SYMBOL && !fails(function () {
+    // Symbol-named RegExp methods call .exec
+    var execCalled = false;
+    var re = /a/;
+
+    if (KEY === 'split') {
+      // We can't use real regex here since it causes deoptimization
+      // and serious performance degradation in V8
+      // https://github.com/zloirock/core-js/issues/306
+      re = {};
+      // RegExp[@@split] doesn't call the regex's exec method, but first creates
+      // a new one. We need to return the patched regex when creating the new one.
+      re.constructor = {};
+      re.constructor[SPECIES$9] = function () { return re; };
+      re.flags = '';
+      re[SYMBOL] = /./[SYMBOL];
+    }
+
+    re.exec = function () { execCalled = true; return null; };
+
+    re[SYMBOL]('');
+    return !execCalled;
+  });
+
+  if (
+    !DELEGATES_TO_SYMBOL ||
+    !DELEGATES_TO_EXEC ||
+    (KEY === 'replace' && !(
+      REPLACE_SUPPORTS_NAMED_GROUPS$1 &&
+      REPLACE_KEEPS_$0 &&
+      !REGEXP_REPLACE_SUBSTITUTES_UNDEFINED_CAPTURE
+    )) ||
+    (KEY === 'split' && !SPLIT_WORKS_WITH_OVERWRITTEN_EXEC$1)
+  ) {
+    var nativeRegExpMethod = /./[SYMBOL];
+    var methods = exec(SYMBOL, ''[KEY], function (nativeMethod, regexp, str, arg2, forceStringMethod) {
+      if (regexp.exec === regexpExec$1) {
+        if (DELEGATES_TO_SYMBOL && !forceStringMethod) {
+          // The native String method already delegates to @@method (this
+          // polyfilled function), leasing to infinite recursion.
+          // We avoid it by directly calling the native @@method method.
+          return { done: true, value: nativeRegExpMethod.call(regexp, str, arg2) };
+        }
+        return { done: true, value: nativeMethod.call(str, regexp, arg2) };
+      }
+      return { done: false };
+    }, {
+      REPLACE_KEEPS_$0: REPLACE_KEEPS_$0,
+      REGEXP_REPLACE_SUBSTITUTES_UNDEFINED_CAPTURE: REGEXP_REPLACE_SUBSTITUTES_UNDEFINED_CAPTURE
+    });
+    var stringMethod = methods[0];
+    var regexMethod = methods[1];
+
+    redefine(String.prototype, KEY, stringMethod);
+    redefine(RegExp.prototype, SYMBOL, length == 2
+      // 21.2.5.8 RegExp.prototype[@@replace](string, replaceValue)
+      // 21.2.5.11 RegExp.prototype[@@split](string, limit)
+      ? function (string, arg) { return regexMethod.call(string, this, arg); }
+      // 21.2.5.6 RegExp.prototype[@@match](string)
+      // 21.2.5.9 RegExp.prototype[@@search](string)
+      : function (string) { return regexMethod.call(string, this); }
+    );
+  }
+
+  if (sham) createNonEnumerableProperty(RegExp.prototype[SYMBOL], 'sham', true);
+};
+
+var charAt$3 = stringMultibyte$1.charAt;
+
+// `AdvanceStringIndex` abstract operation
+// https://tc39.github.io/ecma262/#sec-advancestringindex
+var advanceStringIndex$1 = function (S, index, unicode) {
+  return index + (unicode ? charAt$3(S, index).length : 1);
+};
+
+// `RegExpExec` abstract operation
+// https://tc39.github.io/ecma262/#sec-regexpexec
+var regexpExecAbstract$1 = function (R, S) {
+  var exec = R.exec;
+  if (typeof exec === 'function') {
+    var result = exec.call(R, S);
+    if (typeof result !== 'object') {
+      throw TypeError('RegExp exec method returned something other than an Object or null');
+    }
+    return result;
+  }
+
+  if (classofRaw(R) !== 'RegExp') {
+    throw TypeError('RegExp#exec called on incompatible receiver');
+  }
+
+  return regexpExec$1.call(R, S);
+};
+
+var arrayPush$1 = [].push;
+var min$5 = Math.min;
+var MAX_UINT32$1 = 0xFFFFFFFF;
+
+// babel-minify transpiles RegExp('x', 'y') -> /x/y and it causes SyntaxError
+var SUPPORTS_Y$1 = !fails(function () { return !RegExp(MAX_UINT32$1, 'y'); });
+
+// @@split logic
+fixRegexpWellKnownSymbolLogic$1('split', 2, function (SPLIT, nativeSplit, maybeCallNative) {
+  var internalSplit;
+  if (
+    'abbc'.split(/(b)*/)[1] == 'c' ||
+    'test'.split(/(?:)/, -1).length != 4 ||
+    'ab'.split(/(?:ab)*/).length != 2 ||
+    '.'.split(/(.?)(.?)/).length != 4 ||
+    '.'.split(/()()/).length > 1 ||
+    ''.split(/.?/).length
+  ) {
+    // based on es5-shim implementation, need to rework it
+    internalSplit = function (separator, limit) {
+      var string = String(requireObjectCoercible(this));
+      var lim = limit === undefined ? MAX_UINT32$1 : limit >>> 0;
+      if (lim === 0) return [];
+      if (separator === undefined) return [string];
+      // If `separator` is not a regex, use native split
+      if (!isRegexp$1(separator)) {
+        return nativeSplit.call(string, separator, lim);
+      }
+      var output = [];
+      var flags = (separator.ignoreCase ? 'i' : '') +
+                  (separator.multiline ? 'm' : '') +
+                  (separator.unicode ? 'u' : '') +
+                  (separator.sticky ? 'y' : '');
+      var lastLastIndex = 0;
+      // Make `global` and avoid `lastIndex` issues by working with a copy
+      var separatorCopy = new RegExp(separator.source, flags + 'g');
+      var match, lastIndex, lastLength;
+      while (match = regexpExec$1.call(separatorCopy, string)) {
+        lastIndex = separatorCopy.lastIndex;
+        if (lastIndex > lastLastIndex) {
+          output.push(string.slice(lastLastIndex, match.index));
+          if (match.length > 1 && match.index < string.length) arrayPush$1.apply(output, match.slice(1));
+          lastLength = match[0].length;
+          lastLastIndex = lastIndex;
+          if (output.length >= lim) break;
+        }
+        if (separatorCopy.lastIndex === match.index) separatorCopy.lastIndex++; // Avoid an infinite loop
+      }
+      if (lastLastIndex === string.length) {
+        if (lastLength || !separatorCopy.test('')) output.push('');
+      } else output.push(string.slice(lastLastIndex));
+      return output.length > lim ? output.slice(0, lim) : output;
+    };
+  // Chakra, V8
+  } else if ('0'.split(undefined, 0).length) {
+    internalSplit = function (separator, limit) {
+      return separator === undefined && limit === 0 ? [] : nativeSplit.call(this, separator, limit);
+    };
+  } else internalSplit = nativeSplit;
+
+  return [
+    // `String.prototype.split` method
+    // https://tc39.github.io/ecma262/#sec-string.prototype.split
+    function split(separator, limit) {
+      var O = requireObjectCoercible(this);
+      var splitter = separator == undefined ? undefined : separator[SPLIT];
+      return splitter !== undefined
+        ? splitter.call(separator, O, limit)
+        : internalSplit.call(String(O), separator, limit);
+    },
+    // `RegExp.prototype[@@split]` method
+    // https://tc39.github.io/ecma262/#sec-regexp.prototype-@@split
+    //
+    // NOTE: This cannot be properly polyfilled in engines that don't support
+    // the 'y' flag.
+    function (regexp, limit) {
+      var res = maybeCallNative(internalSplit, regexp, this, limit, internalSplit !== nativeSplit);
+      if (res.done) return res.value;
+
+      var rx = anObject(regexp);
+      var S = String(this);
+      var C = speciesConstructor$1(rx, RegExp);
+
+      var unicodeMatching = rx.unicode;
+      var flags = (rx.ignoreCase ? 'i' : '') +
+                  (rx.multiline ? 'm' : '') +
+                  (rx.unicode ? 'u' : '') +
+                  (SUPPORTS_Y$1 ? 'y' : 'g');
+
+      // ^(? + rx + ) is needed, in combination with some S slicing, to
+      // simulate the 'y' flag.
+      var splitter = new C(SUPPORTS_Y$1 ? rx : '^(?:' + rx.source + ')', flags);
+      var lim = limit === undefined ? MAX_UINT32$1 : limit >>> 0;
+      if (lim === 0) return [];
+      if (S.length === 0) return regexpExecAbstract$1(splitter, S) === null ? [S] : [];
+      var p = 0;
+      var q = 0;
+      var A = [];
+      while (q < S.length) {
+        splitter.lastIndex = SUPPORTS_Y$1 ? q : 0;
+        var z = regexpExecAbstract$1(splitter, SUPPORTS_Y$1 ? S : S.slice(q));
+        var e;
+        if (
+          z === null ||
+          (e = min$5(toLength(splitter.lastIndex + (SUPPORTS_Y$1 ? 0 : q)), S.length)) === p
+        ) {
+          q = advanceStringIndex$1(S, q, unicodeMatching);
+        } else {
+          A.push(S.slice(p, q));
+          if (A.length === lim) return A;
+          for (var i = 1; i <= z.length - 1; i++) {
+            A.push(z[i]);
+            if (A.length === lim) return A;
+          }
+          q = p = e;
+        }
+      }
+      A.push(S.slice(p));
+      return A;
+    }
+  ];
+}, !SUPPORTS_Y$1);
+
 /**
  * @typedef {Object} TreeLeafConfiguration
  * @property {Number} animationSpeed The animationSpeed inherited from the tree layout configuration.
@@ -29270,7 +29658,12 @@ var TreeLayoutConfiguration = {
 };
 
 /**
- * This class is calculates and renders the tree layout.
+ * This class depicts given data within a tree layout. 
+ * 
+ * @param {Object} [customConfig={ }] Overrides default layout configuration properties. Available options: {@link TreeLayoutConfiguration}
+ * @param {Object} [customEvents={ }] Overrides event listener configuration properties.
+ * @param {Object} [customNodes={ }] Overrides default node representation properties.
+ * 
  */
 
 var TreeLayout = /*#__PURE__*/function (_BaseLayout) {
@@ -29282,7 +29675,7 @@ var TreeLayout = /*#__PURE__*/function (_BaseLayout) {
     var _this;
 
     var customConfig = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-    var customEvent = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+    var customEventlisteners = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
     var customNodes = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
 
     _classCallCheck(this, TreeLayout);
@@ -29301,71 +29694,109 @@ var TreeLayout = /*#__PURE__*/function (_BaseLayout) {
 
     _this.rootId = customConfig.root;
     _this.renderDepth = customConfig.renderDepth;
-    _this.leafs = [];
+    _this.leafs = []; // events
 
-    _this.registerMouseEvents(customEvent);
-
+    _this.events = [{
+      event: "dblclick",
+      modifier: undefined,
+      func: "expandOrCollapseEvent",
+      defaultEvent: true
+    }];
+    customEventlisteners.forEach(function (event) {
+      _this.registerEventListener(event.event, event.modifier, event.func);
+    });
     return _this;
   }
+  /**
+   * Event method which either loads more data or removes existing data. 
+   * @param {BaseNode} node The node that recieved the event.
+   */
+
 
   _createClass(TreeLayout, [{
-    key: "registerMouseEvents",
-    value: function registerMouseEvents(changeEvent) {
-      var _this2 = this;
+    key: "expandOrCollapseDataAsyncEvent",
+    value: function () {
+      var _expandOrCollapseDataAsyncEvent = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee(node) {
+        var leaf;
+        return regeneratorRuntime.wrap(function _callee$(_context) {
+          while (1) {
+            switch (_context.prev = _context.next) {
+              case 0:
+                // remove clicked leaf indication
+                leaf = this.leafs.find(function (l) {
+                  return l.id === node.id;
+                });
 
-      // load more data or hide loaded data method
-      var loadOrHideData = /*#__PURE__*/function () {
-        var _ref = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee(node) {
-          var leaf;
-          return regeneratorRuntime.wrap(function _callee$(_context) {
-            while (1) {
-              switch (_context.prev = _context.next) {
-                case 0:
-                  // remove clicked leaf indication
-                  leaf = _this2.leafs.find(function (l) {
-                    return l.id === node.id;
+                if (leaf !== undefined) {
+                  leaf.removeLeaf();
+                  this.leafs = this.leafs.filter(function (l) {
+                    return l.id !== node.id;
                   });
+                } // update the underlying data structure
 
-                  if (leaf !== undefined) {
-                    leaf.removeLeaf();
-                    _this2.leafs = _this2.leafs.filter(function (l) {
-                      return l.id !== node.id;
-                    });
-                  }
 
-                  _context.next = 4;
-                  return _this2.updateTreeDataAsync(node);
+                _context.next = 4;
+                return this.updateTreeDataAsync(node);
 
-                case 4:
-                case "end":
-                  return _context.stop();
-              }
+              case 4:
+              case "end":
+                return _context.stop();
             }
-          }, _callee);
-        }));
+          }
+        }, _callee, this);
+      }));
 
-        return function loadOrHideData(_x) {
-          return _ref.apply(this, arguments);
-        };
-      }();
+      function expandOrCollapseDataAsyncEvent(_x) {
+        return _expandOrCollapseDataAsyncEvent.apply(this, arguments);
+      }
 
-      this.event = {
-        eventlistener: "expandCollapseEvent",
-        func: loadOrHideData,
-        mouse: changeEvent.mouse || "click",
-        modifier: changeEvent.modifier || undefined
-      };
+      return expandOrCollapseDataAsyncEvent;
+    }()
+    /**
+     * Registers a new event listener to the layout.
+     * @param {String} event The layout where to add the event listener.
+     * @param {String} modifier The modifier name.
+     * @param {String} func The method name.
+     */
+
+  }, {
+    key: "registerEventListener",
+    value: function registerEventListener(event, modifier, func) {
+      // remove default event listener
+      if (this.events.find(function (d) {
+        return d.defaultEvent === true;
+      })) {
+        this.events = this.events.filter(function (e) {
+          return e.defaultEvent !== true;
+        });
+      } // add new event listener
+
+
+      this.events.push({
+        event: event,
+        modifier: modifier,
+        func: func
+      });
     }
+    /**
+     * Calculates the tree layout based on an underlying algorithm.
+     * @param {Number} [offset=0] Determines the space the layout has to shift right in order to avoid overlapping layouts.
+     * @param {Object} [opts={ }] An object containing additional information.
+     * @param {Boolean} opts.isReRender Determines if the layout is rerenderd.
+     * @param {Number} opts.x The x coordinate for the clicked node.
+     * @param {Number} opts.y The y coordinate for the clicked node.
+     */
+
   }, {
     key: "calculateLayout",
     value: function calculateLayout() {
-      var _this3 = this;
+      var _this2 = this;
 
       var offset = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
       var opts = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-      var isVertical = this.config.orientation === "vertical"; // construct a tree
+      var isVertical = this.config.orientation === "vertical"; // construct the final tree that is visible
 
-      var constructTree = function constructTree(array, parentRef, rootRef) {
+      var buildTreeFromNodes = function buildTreeFromNodes(array, parentRef, rootRef) {
         var root = rootRef !== undefined ? rootRef : [];
         var parent = parentRef !== undefined ? parentRef : {
           id: null
@@ -29382,22 +29813,26 @@ var TreeLayout = /*#__PURE__*/function (_BaseLayout) {
           }
 
           children.forEach(function (child) {
-            constructTree(array, child);
+            buildTreeFromNodes(array, child);
           });
         }
 
         return root;
-      };
+      }; // initialize the tree with required information
 
-      var initializeNodes = function initializeNodes(node, parent, prevSibling, depth) {
+
+      var initializeNodes = function initializeNodes(node) {
+        var parent = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+        var prevSibling = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
+        var depth = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 0;
         node.setDepth(depth);
         node.setParent(parent);
         node.setPrevSibling(prevSibling);
 
         if (isVertical) {
-          node.setFinalY(depth);
+          node.setFinalY(depth + _this2.config.translateY);
         } else {
-          node.setFinalX(depth);
+          node.setFinalX(depth + _this2.config.translateX);
         }
 
         if (node.getChildren() === undefined) {
@@ -29408,36 +29843,17 @@ var TreeLayout = /*#__PURE__*/function (_BaseLayout) {
           var prev = i >= 1 ? node.children[i - 1] : null;
           initializeNodes(child, node, prev, depth + 1);
         });
-      };
+      }; // calculates the initial X and Y position
 
-      var finalizeTree = function finalizeTree(node) {
-        node.setFinalX(node.getFinalX() + _this3.config.translateX);
-        node.setFinalY(node.getFinalY() + _this3.config.translateY);
+
+      var calculateXYPositions = function calculateXYPositions(node) {
         node.children.forEach(function (child) {
-          finalizeTree(child);
+          calculateXYPositions(child);
         });
-      };
-
-      var calculateFinalPositions = function calculateFinalPositions(node, modifier) {
-        if (isVertical) {
-          node.setFinalX(node.getFinalX() + modifier);
-        } else {
-          node.setFinalY(node.getFinalY() + modifier);
-        }
-
-        node.children.forEach(function (child) {
-          calculateFinalPositions(child, node.modifier + modifier);
-        });
-      };
-
-      var calculateInitialX = function calculateInitialX(node) {
-        node.children.forEach(function (child) {
-          calculateInitialX(child);
-        });
-        var w = _this3.config.renderingSize === "max" ? node.config.maxWidth : node.config.minWidth;
-        var h = _this3.config.renderingSize === "max" ? node.config.maxHeight : node.config.minHeight;
-        w += _this3.config.hSpacing;
-        h += _this3.config.vSpacing;
+        var w = _this2.config.renderingSize === "max" ? node.config.maxWidth : node.config.minWidth;
+        var h = _this2.config.renderingSize === "max" ? node.config.maxHeight : node.config.minHeight;
+        w += _this2.config.hSpacing;
+        h += _this2.config.vSpacing;
 
         if (isVertical) {
           node.setFinalY(node.getDepth() * h); // if node has no children
@@ -29502,11 +29918,27 @@ var TreeLayout = /*#__PURE__*/function (_BaseLayout) {
             }
           }
         }
-      };
+      }; // apply shift modifier
 
-      var fixOverlappingConflicts = function fixOverlappingConflicts(node) {
+
+      var calculateModifier = function calculateModifier(node) {
+        var modifier = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+
+        if (isVertical) {
+          node.setFinalX(node.getFinalX() + modifier);
+        } else {
+          node.setFinalY(node.getFinalY() + modifier);
+        }
+
         node.children.forEach(function (child) {
-          fixOverlappingConflicts(child);
+          calculateModifier(child, node.modifier + modifier);
+        });
+      }; // fixes any possible node overlapps 
+
+
+      var fixConflicts = function fixConflicts(node) {
+        node.children.forEach(function (child) {
+          fixConflicts(child);
         });
 
         var getLeftContour = function getLeftContour(current) {
@@ -29567,27 +29999,27 @@ var TreeLayout = /*#__PURE__*/function (_BaseLayout) {
         };
 
         var distance = 0;
-        var w = _this3.config.renderingSize === "max" ? node.config.maxWidth : node.config.minWidth;
-        var h = _this3.config.renderingSize === "max" ? node.config.maxHeight : node.config.minHeight;
+        var w = _this2.config.renderingSize === "max" ? node.config.maxWidth : node.config.minWidth;
+        var h = _this2.config.renderingSize === "max" ? node.config.maxHeight : node.config.minHeight;
 
         if (isVertical) {
-          distance = w + _this3.config.hSpacing;
+          distance = w + _this2.config.hSpacing;
         } else {
-          distance = h + _this3.config.vSpacing;
+          distance = h + _this2.config.vSpacing;
         }
 
         for (var i = 0; i < node.children.length - 1; i += 1) {
           var c1 = getLeftContour(node.children[i]);
           var c2 = getRightContour(node.children[i + 1]);
-          console.log("fix", node.id);
 
           if (c1 >= c2) {
             shift(node.children[i + 1], c1 - c2 + distance);
           }
         }
-      };
+      }; // fix root and move it to the absolute layout center
 
-      var centerRoot = function centerRoot(node) {
+
+      var centerRootNode = function centerRootNode(node) {
         if (isVertical) {
           (function () {
             var minX = 0;
@@ -29623,39 +30055,42 @@ var TreeLayout = /*#__PURE__*/function (_BaseLayout) {
             node.setFinalY((minY + maxY) / 2);
           })();
         }
-      };
+      }; // helper method to tell each edge to calculate its position
+
 
       var calculateEdgePositions = function calculateEdgePositions(edges) {
         edges.forEach(function (edge) {
           edge.calculateEdge();
         });
-      };
+      }; // add a visual indication that there are more nodes loadable
 
-      var manageLeafs = function manageLeafs(node, root) {
-        if (_this3.config.showLeafIndications === false) {
+
+      var calculateLeafs = function calculateLeafs(node) {
+        if (_this2.config.showLeafIndications === false) {
           return;
         }
 
+        var root = node;
         var config = {
-          animationSpeed: _this3.config.animationSpeed,
-          strokeWidth: _this3.config.leafStrokeWidth,
-          strokeColor: _this3.config.leafStrokeColor,
-          marker: _this3.config.leafMarker
+          animationSpeed: _this2.config.animationSpeed,
+          strokeWidth: _this2.config.leafStrokeWidth,
+          strokeColor: _this2.config.leafStrokeColor,
+          marker: _this2.config.leafMarker
         };
 
         var addLeaf = function addLeaf(node) {
-          if (node.children.length === 0 && (node.childrenIds.length > 0 || node.invisibleChildren.length >= _this3.config.visibleNodeLimit)) {
+          if (node.children.length === 0 && (node.childrenIds.length > 0 || node.invisibleChildren.length >= _this2.config.visibleNodeLimit)) {
             if (node.invisibleChildren.length > 0) {
               node.childrenIds = node.invisibleChildren;
             }
 
-            var existing = _this3.leafs.find(function (l) {
+            var existing = _this2.leafs.find(function (l) {
               return l.id === node.id;
             });
 
             if (existing === undefined) {
-              var isHorizontal = _this3.config.orientation === "horizontal";
-              var leaf = new TreeLeaf(_this3.canvas, node, _this3.config.leafIndicationLimit, config, isHorizontal);
+              var isHorizontal = _this2.config.orientation === "horizontal";
+              var leaf = new TreeLeaf(_this2.canvas, node, _this2.config.leafIndicationLimit, config, isHorizontal);
               var x = opts.x ? opts.x : node.finalX;
               var y = opts.y ? opts.y : node.finalY;
               leaf.finalX = x;
@@ -29664,7 +30099,7 @@ var TreeLayout = /*#__PURE__*/function (_BaseLayout) {
               leaf.initialY = root.getFinalY();
               leaf.isReRender = opts.isReRender || false;
 
-              _this3.leafs.push(leaf);
+              _this2.leafs.push(leaf);
             }
           }
 
@@ -29673,16 +30108,14 @@ var TreeLayout = /*#__PURE__*/function (_BaseLayout) {
           });
         };
 
-        addLeaf(node);
-
         var removeLeaf = function removeLeaf() {
           var toRemove = [];
 
-          var existingNodeIds = _this3.nodes.map(function (n) {
+          var existingNodeIds = _this2.nodes.map(function (n) {
             return n.id;
           });
 
-          _this3.leafs.forEach(function (leaf) {
+          _this2.leafs.forEach(function (leaf) {
             if (!existingNodeIds.includes(leaf.id)) {
               toRemove.push(leaf);
             }
@@ -29691,24 +30124,28 @@ var TreeLayout = /*#__PURE__*/function (_BaseLayout) {
           toRemove.forEach(function (leaf) {
             leaf.removeLeaf();
           });
-          _this3.leafs = _this3.leafs.filter(function (l) {
+          _this2.leafs = _this2.leafs.filter(function (l) {
             return !toRemove.map(function (l) {
               return l.id;
             }).includes(l.id);
           });
-        };
+        }; // add new leafs
+
+
+        addLeaf(node); // remove existing leafs which are not used anymore
 
         removeLeaf();
-      };
+      }; // calculate the layout dimensions
 
-      var adjustPositions = function adjustPositions(tree) {
+
+      var calculateLayoutInfo = function calculateLayoutInfo(tree) {
         var toRender = [tree];
         var rendered = [];
 
         var _loop = function _loop() {
           var current = toRender.shift();
 
-          var node = _this3.nodes.find(function (n) {
+          var node = _this2.nodes.find(function (n) {
             return n.id === current.id;
           });
 
@@ -29723,46 +30160,44 @@ var TreeLayout = /*#__PURE__*/function (_BaseLayout) {
         }
 
         var hAdjustment = Math.min.apply(Math, _toConsumableArray(rendered.map(function (node) {
-          var w = _this3.config.renderingSize === "max" ? node.getMaxWidth() : node.getMinWidth();
+          var w = _this2.config.renderingSize === "max" ? node.getMaxWidth() : node.getMinWidth();
           return node.getFinalX() - w;
         })));
         var vAdjustment = Math.min.apply(Math, _toConsumableArray(rendered.map(function (node) {
-          var h = _this3.config.renderingSize === "max" ? node.getMaxHeight() : node.getMinHeight();
+          var h = _this2.config.renderingSize === "max" ? node.getMaxHeight() : node.getMinHeight();
           return node.getFinalY() - h;
         })));
         rendered.forEach(function (node) {
-          var x = node.getFinalX() - hAdjustment + offset + _this3.config.translateX;
+          var x = node.getFinalX() - hAdjustment + offset + _this2.config.translateX;
 
-          var y = node.getFinalY() - vAdjustment + _this3.config.translateY;
+          var y = node.getFinalY() - vAdjustment + _this2.config.translateY;
 
           node.setFinalX(x);
           node.setFinalY(y);
         });
 
-        _this3.edges.forEach(function (edge) {
-          edge.finalToX = edge.finalToX - hAdjustment + offset + _this3.config.translateX;
-          edge.finalFromX = edge.finalFromX - hAdjustment + offset + _this3.config.translateX;
-          edge.finalToY = edge.finalToY - vAdjustment + _this3.config.translateY;
-          edge.finalFromY = edge.finalFromY - vAdjustment + _this3.config.translateY;
+        _this2.edges.forEach(function (edge) {
+          edge.finalToX = edge.finalToX - hAdjustment + offset + _this2.config.translateX;
+          edge.finalFromX = edge.finalFromX - hAdjustment + offset + _this2.config.translateX;
+          edge.finalToY = edge.finalToY - vAdjustment + _this2.config.translateY;
+          edge.finalFromY = edge.finalFromY - vAdjustment + _this2.config.translateY;
         });
 
         var x0 = Math.min.apply(Math, _toConsumableArray(rendered.map(function (n) {
-          var w = _this3.config.renderingSize === "max" ? n.getMaxWidth() : n.getMinWidth();
+          var w = _this2.config.renderingSize === "max" ? n.getMaxWidth() : n.getMinWidth();
           return n.getFinalX() - w;
         })));
         var y0 = 0;
         var x1 = Math.max.apply(Math, _toConsumableArray(rendered.map(function (n) {
-          var w = _this3.config.renderingSize === "max" ? n.getMaxWidth() : n.getMinWidth();
+          var w = _this2.config.renderingSize === "max" ? n.getMaxWidth() : n.getMinWidth();
           return n.getFinalX() + w;
         })));
         var y1 = 0;
         var x2 = x1;
         var y2 = Math.max.apply(Math, _toConsumableArray(rendered.map(function (n) {
-          var h = _this3.config.renderingSize === "max" ? n.getMaxHeight() : n.getMinHeight();
+          var h = _this2.config.renderingSize === "max" ? n.getMaxHeight() : n.getMinHeight();
           return n.getFinalY() + h;
-        }))); // this.canvas.circle(5).fill("#000").center(x0, y0)
-        // this.canvas.circle(5).fill("#75f").center(x1, y1)
-        // this.canvas.circle(5).fill("#f75").center(x2, y2)
+        })));
 
         var calculateDistance = function calculateDistance(sx, sy, tx, ty) {
           var dx = tx - sx;
@@ -29770,7 +30205,7 @@ var TreeLayout = /*#__PURE__*/function (_BaseLayout) {
           return Math.sqrt(dx * dx + dy * dy);
         };
 
-        _this3.layoutInfo = {
+        _this2.layoutInfo = {
           x: x0,
           y: y0,
           cx: (x0 + x2) / 2,
@@ -29778,11 +30213,12 @@ var TreeLayout = /*#__PURE__*/function (_BaseLayout) {
           w: calculateDistance(x0, y0, x1, y1),
           h: calculateDistance(x1, y1, x2, y2)
         };
-      };
+      }; // inform nodes about incoming and outgoing edges
+
 
       var addEdgeReferences = function addEdgeReferences(node) {
         node.children.forEach(function (child) {
-          var e = _this3.edges.find(function (e) {
+          var e = _this2.edges.find(function (e) {
             return e.fromNode.id === child.id && e.toNode.id === node.id;
           });
 
@@ -29792,91 +30228,98 @@ var TreeLayout = /*#__PURE__*/function (_BaseLayout) {
         });
       };
 
-      var root = constructTree(this.nodes)[0]; // TODO: re-write
-
-      initializeNodes(root, null, null, 0);
-      calculateInitialX(root);
-      calculateFinalPositions(root, 0);
-      fixOverlappingConflicts(root);
-      centerRoot(root);
-      finalizeTree(root);
+      var tree = buildTreeFromNodes(this.nodes)[0];
+      initializeNodes(tree);
+      calculateXYPositions(tree);
+      calculateModifier(tree);
+      fixConflicts(tree);
+      centerRootNode(tree);
       calculateEdgePositions(this.edges);
-      manageLeafs(root, root);
-      adjustPositions(root);
-      addEdgeReferences(root); // console.log(root)
+      calculateLeafs(tree);
+      calculateLayoutInfo(tree);
+      addEdgeReferences(tree);
+      return this.layoutInfo;
     }
+    /**
+     * Renders the tree layout by creating SVG objects representing nodes, leafs and edges. 
+     * @param {Object} [opts={ }] An object containing additional information.
+     * @param {Boolean} opts.isReRender Determines if the layout is rerenderd.
+     * @param {Number} opts.x The x coordinate for the clicked node.
+     * @param {Number} opts.y The y coordinate for the clicked node.
+     */
+
   }, {
     key: "renderLayout",
     value: function renderLayout() {
-      var _this4 = this;
+      var _this3 = this;
 
-      var opts = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {
-        isReRender: false
-      };
-      var X = this.nodes.find(function (n) {
-        return n.id === _this4.rootId;
+      var opts = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+      var X = opts.x ? opts.x : this.nodes.find(function (n) {
+        return n.id === _this3.rootId;
       }).getFinalX();
-      var Y = this.nodes.find(function (n) {
-        return n.id === _this4.rootId;
-      }).getFinalY();
+      var Y = opts.y ? opts.y : this.nodes.find(function (n) {
+        return n.id === _this3.rootId;
+      }).getFinalY(); // render nodes and edges
 
-      var renderNodes = function renderNodes(opts) {
-        _this4.nodes.forEach(function (node) {
+      var renderNodes = function renderNodes() {
+        _this3.nodes.forEach(function (node) {
+          // render nodes
           if (node.isRendered() === false) {
-            if (_this4.config.renderingSize === "max") {
-              if (opts.isReRender === true) {
-                node.renderAsMax(opts.x, opts.y);
-              } else {
-                node.renderAsMax(X, Y);
-              }
-            }
+            if (_this3.config.renderingSize === "max") node.renderAsMax(X, Y);
+            if (_this3.config.renderingSize === "min") node.renderAsMin(X, Y); // find provided events
 
-            if (_this4.config.renderingSize === "min") {
-              if (opts.isReRender === true) {
-                node.renderAsMin(opts.x, opts.y);
-              } else {
-                node.renderAsMin(X, Y);
-              }
-            } // add mouse event to each node
+            var eventStr = _toConsumableArray(new Set(_this3.events.map(function (e) {
+              return e.event;
+            }))).toString().split(","); // console.log(eventStr, this.events)
 
 
-            node.svg.on(_this4.event.mouse, function (e) {
-              if (_this4.event.modifier !== undefined) {
-                if (_this4.event.modifier, e[_this4.event.modifier]) {
-                  _this4.event.func(node);
+            node.svg.on(eventStr, function (e) {
+              var type = e.type;
+              var modifier = undefined;
+
+              if (e.altKey === true) {
+                modifier = "altKey";
+              } else if (e.ctrlKey === true) {
+                modifier = "ctrlKey";
+              } else if (e.shiftKey === true) {
+                modifier = "shiftKey";
+              } // add all provided event
+
+
+              _this3.events.forEach(function (myevent) {
+                // console.log(myevent.event, type, "-", myevent.modifier, modifier, myevent)
+                if (myevent.event === type && myevent.modifier === modifier) {
+                  _this3.expandOrCollapseDataAsyncEvent(node);
                 }
-              }
+              });
+            }); // render edge references
 
-              if (_this4.event.modifier === undefined) {
-                _this4.event.func(node);
-              }
-            });
             node.outgoingEdges.forEach(function (edge) {
               if (edge.isRendered() === false) {
-                if (opts.isReRender === true) {
-                  edge.render(opts.x, opts.y);
-                } else {
-                  edge.render(X, Y);
-                }
+                edge.render(X, Y);
               }
-            });
+            }); // or transform nodes into position
           } else if (node.isRendered() === true) {
             node.transformToFinalPosition();
           }
         });
+      }; // render possible leafs
 
-        _this4.leafs.forEach(function (leaf) {
+
+      var renderLeafs = function renderLeafs() {
+        _this3.leafs.forEach(function (leaf) {
           if (leaf.isRendered() === false) {
             leaf.render(opts.isReRender === true ? true : false);
           } else if (leaf.isRendered() === true) {
             leaf.transformToFinalPosition();
           }
         });
+      }; // update edges
 
-        _this4.edges.forEach(function (edge) {
-          if (edge.isRendered() === false) {
-            edge.render(X, Y);
-          } else if (edge.isRendered() === true) {
+
+      var renderEdges = function renderEdges() {
+        _this3.edges.forEach(function (edge) {
+          if (edge.isRendered() === true) {
             edge.transformToFinalPosition({
               isReRender: opts.isReRender || false
             });
@@ -29884,7 +30327,9 @@ var TreeLayout = /*#__PURE__*/function (_BaseLayout) {
         });
       };
 
-      renderNodes(opts);
+      renderNodes();
+      renderLeafs();
+      renderEdges();
     }
   }]);
 
@@ -32359,9 +32804,21 @@ var Visualization = /*#__PURE__*/function () {
 
       return update;
     }()
+    /**
+     * Adds an event listener to a given layout.
+     * @param {BaseLayout} layout The layout where to add the event listener.
+     * @param {String} event The event name. 
+     * @param {String} modifier The modifier name. Available: "shiftKey", "altKey", "ctrlKey" or undefined.
+     * @param {String} func The method name.
+     * 
+     * @see Supported events: {@link https://svgjs.com/docs/3.0/events/#element-click}
+     */
+
   }, {
-    key: "updateMouseEvents",
-    value: function updateMouseEvents(event, func) {}
+    key: "addEventListener",
+    value: function addEventListener(layout, event, modifier, func) {
+      layout.registerEventListener(event, modifier, func);
+    }
     /**
      * Transforms a layout from one type into another type
      * @param {Layout} currentLayout

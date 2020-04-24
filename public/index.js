@@ -254,7 +254,28 @@ const treeLayout = () => {
 
   // create a radial layout with a root and a rendering depth
   // const event = { eventlistener: "expandCollapseEvent", mouse: "dblclick", modifier: "shiftKey" }
-  const tree = new TreeLayout({ root: 110, renderDepth: 2 })
+
+  const customConfig = {
+    root: 110,
+    renderDepth: 2
+  }
+  const customEventlisteners = [
+    { event: "click", modifier: "shiftKey", func: "expandOrCollapseEvent" },
+    { event: "dblclick", modifier: "ctrlKey", func: "expandOrCollapseEvent" },
+    { event: "dblclick", modifier: undefined, func: "expandOrCollapseEvent" },
+  ]
+  const tree = new TreeLayout(customConfig, customEventlisteners)
+
+  // visualization.addEventListener(tree, [
+  //   { event: "dblclick", modifier: "shiftKey", func: "expandOrCollapseEvent" },
+  //   { event: "click", modifier: "ctrlKey", func: "expandOrCollapseEvent" }
+  // ])
+
+  // add each event individually
+  // visualization.addEventListener(tree, "click", "shiftKey", "expandOrCollapseEvent")
+  // visualization.addEventListener(tree, "dblclick", "ctrlKey", "expandOrCollapseEvent")
+  // visualization.addEventListener(tree, "dblclick", undefined, "expandOrCollapseEvent")
+
   visualization.render(graph, tree)
 
   const tree2 = new TreeLayout({ root: 153, renderDepth: 1 })

@@ -4,10 +4,15 @@ import TreeLayoutConfiguration from "../configuration/TreeLayoutConfiguration"
 
 
 /**
- * This class is calculates and renders the tree layout.
+ * This class depicts given data within a tree layout. 
+ * 
+ * @param {Object} [customConfig={ }] Overrides default layout configuration properties. Available options: {@link TreeLayoutConfiguration}
+ * @param {Object} [customEvents={ }] Overrides event listener configuration properties.
+ * @param {Object} [customNodes={ }] Overrides default node representation properties.
+ * 
  */
 class TreeLayout extends BaseLayout {
-  constructor(customConfig = {}, customEvent = {}, customNodes = {}) {
+  constructor(customConfig = {}, customEventlisteners = [], customNodes = {}) {
     super(customNodes)
 
     if (customConfig.root === undefined) {
@@ -20,45 +25,78 @@ class TreeLayout extends BaseLayout {
 
     this.config = { ...TreeLayoutConfiguration, ...customConfig }
 
-
     // layout specific
     this.rootId = customConfig.root
     this.renderDepth = customConfig.renderDepth
     this.leafs = []
-    this.registerMouseEvents(customEvent)
 
-  }
-
-  registerMouseEvents(changeEvent) {
-
-    // load more data or hide loaded data method
-    const loadOrHideData = async (node) => {
-
-      // remove clicked leaf indication
-      const leaf = this.leafs.find(l => l.id === node.id)
-      if (leaf !== undefined) {
-        leaf.removeLeaf()
-        this.leafs = this.leafs.filter(l => l.id !== node.id)
+    // events
+    this.events = [
+      {
+        event: "dblclick",
+        modifier: undefined,
+        func: "expandOrCollapseEvent",
+        defaultEvent: true
       }
-
-      await this.updateTreeDataAsync(node)
-    }
-
-    this.event = {
-      eventlistener: "expandCollapseEvent",
-      func: loadOrHideData,
-      mouse: changeEvent.mouse || "click",
-      modifier: changeEvent.modifier || undefined,
-    }
+    ]
+    customEventlisteners.forEach(event => {
+      this.registerEventListener(event.event, event.modifier, event.func)
+    })
   }
 
 
+  /**
+   * Event method which either loads more data or removes existing data. 
+   * @param {BaseNode} node The node that recieved the event.
+   */
+  async expandOrCollapseDataAsyncEvent(node) {
+    // remove clicked leaf indication
+    const leaf = this.leafs.find(l => l.id === node.id)
+    if (leaf !== undefined) {
+      leaf.removeLeaf()
+      this.leafs = this.leafs.filter(l => l.id !== node.id)
+    }
+
+    // update the underlying data structure
+    await this.updateTreeDataAsync(node)
+  }
+
+
+
+  /**
+   * Registers a new event listener to the layout.
+   * @param {String} event The layout where to add the event listener.
+   * @param {String} modifier The modifier name.
+   * @param {String} func The method name.
+   */
+  registerEventListener(event, modifier, func) {
+    // remove default event listener
+    if (this.events.find(d => d.defaultEvent === true)) {
+      this.events = this.events.filter(e => e.defaultEvent !== true)
+    }
+
+    // add new event listener
+    this.events.push({ event, modifier, func })
+  }
+
+
+
+
+
+
+  /**
+   * Calculates the tree layout based on an underlying algorithm.
+   * @param {Number} [offset=0] Determines the space the layout has to shift right in order to avoid overlapping layouts.
+   * @param {Object} [opts={ }] An object containing additional information.
+   * @param {Boolean} opts.isReRender Determines if the layout is rerenderd.
+   * @param {Number} opts.x The x coordinate for the clicked node.
+   * @param {Number} opts.y The y coordinate for the clicked node.
+   */
   calculateLayout(offset = 0, opts = {}) {
     const isVertical = this.config.orientation === "vertical"
 
-
-    // construct a tree
-    const constructTree = (array, parentRef, rootRef) => {
+    // construct the final tree that is visible
+    const buildTreeFromNodes = (array, parentRef, rootRef) => {
       let root = rootRef !== undefined ? rootRef : []
       const parent = parentRef !== undefined ? parentRef : { id: null }
       const children = array.filter((child) => child.parentId === parent.id)
@@ -70,61 +108,38 @@ class TreeLayout extends BaseLayout {
         }
 
         children.forEach((child) => {
-          constructTree(array, child)
+          buildTreeFromNodes(array, child)
         })
       }
       return root
     }
 
-    const initializeNodes = (node, parent, prevSibling, depth) => {
+    // initialize the tree with required information
+    const initializeNodes = (node, parent = null, prevSibling = null, depth = 0) => {
       node.setDepth(depth)
       node.setParent(parent)
       node.setPrevSibling(prevSibling)
 
       if (isVertical) {
-        node.setFinalY(depth)
+        node.setFinalY(depth + this.config.translateY)
       } else {
-        node.setFinalX(depth)
+        node.setFinalX(depth + this.config.translateX)
       }
 
       if (node.getChildren() === undefined) {
         node.setChildren([])
       }
 
-
       node.children.forEach((child, i) => {
         const prev = i >= 1 ? node.children[i - 1] : null
         initializeNodes(child, node, prev, depth + 1)
       })
-
-
     }
 
-    const finalizeTree = (node) => {
-      node.setFinalX(node.getFinalX() + this.config.translateX)
-      node.setFinalY(node.getFinalY() + this.config.translateY)
-
+    // calculates the initial X and Y position
+    const calculateXYPositions = (node) => {
       node.children.forEach((child) => {
-        finalizeTree(child)
-      })
-    }
-
-    const calculateFinalPositions = (node, modifier) => {
-      if (isVertical) {
-        node.setFinalX(node.getFinalX() + modifier)
-      } else {
-        node.setFinalY(node.getFinalY() + modifier)
-      }
-
-
-      node.children.forEach((child) => {
-        calculateFinalPositions(child, node.modifier + modifier)
-      })
-    }
-
-    const calculateInitialX = (node) => {
-      node.children.forEach((child) => {
-        calculateInitialX(child)
+        calculateXYPositions(child)
       })
 
       let w = this.config.renderingSize === "max" ? node.config.maxWidth : node.config.minWidth
@@ -134,7 +149,6 @@ class TreeLayout extends BaseLayout {
 
       if (isVertical) {
         node.setFinalY(node.getDepth() * h)
-
 
         // if node has no children
         if (node.children.length === 0) {
@@ -166,7 +180,6 @@ class TreeLayout extends BaseLayout {
       } else {
         node.setFinalX(node.getDepth() * w)
 
-
         // if node has no children
         if (node.children.length === 0) {
           // set y to prev siblings y, or 0 for first node in col
@@ -197,9 +210,23 @@ class TreeLayout extends BaseLayout {
       }
     }
 
-    const fixOverlappingConflicts = (node) => {
+    // apply shift modifier
+    const calculateModifier = (node, modifier = 0) => {
+      if (isVertical) {
+        node.setFinalX(node.getFinalX() + modifier)
+      } else {
+        node.setFinalY(node.getFinalY() + modifier)
+      }
+
       node.children.forEach((child) => {
-        fixOverlappingConflicts(child)
+        calculateModifier(child, node.modifier + modifier)
+      })
+    }
+
+    // fixes any possible node overlapps 
+    const fixConflicts = (node) => {
+      node.children.forEach((child) => {
+        fixConflicts(child)
       })
 
       const getLeftContour = (current) => {
@@ -271,7 +298,8 @@ class TreeLayout extends BaseLayout {
       }
     }
 
-    const centerRoot = (node) => {
+    // fix root and move it to the absolute layout center
+    const centerRootNode = (node) => {
       if (isVertical) {
         let minX = 0
         let maxX = 0
@@ -299,25 +327,25 @@ class TreeLayout extends BaseLayout {
       }
     }
 
+    // helper method to tell each edge to calculate its position
     const calculateEdgePositions = (edges) => {
       edges.forEach((edge) => {
         edge.calculateEdge()
       })
     }
 
-    const manageLeafs = (node, root) => {
+    // add a visual indication that there are more nodes loadable
+    const calculateLeafs = (node) => {
       if (this.config.showLeafIndications === false) {
         return
       }
-
+      const root = node
       const config = {
         animationSpeed: this.config.animationSpeed,
         strokeWidth: this.config.leafStrokeWidth,
         strokeColor: this.config.leafStrokeColor,
         marker: this.config.leafMarker,
       }
-
-
 
       const addLeaf = (node) => {
         if (node.children.length === 0 && (node.childrenIds.length > 0 || node.invisibleChildren.length >= this.config.visibleNodeLimit)) {
@@ -346,8 +374,6 @@ class TreeLayout extends BaseLayout {
         })
       }
 
-      addLeaf(node)
-
       const removeLeaf = () => {
         const toRemove = []
         const existingNodeIds = this.nodes.map(n => n.id)
@@ -363,13 +389,15 @@ class TreeLayout extends BaseLayout {
         this.leafs = this.leafs.filter(l => !toRemove.map(l => l.id).includes(l.id))
       }
 
+      // add new leafs
+      addLeaf(node)
 
+      // remove existing leafs which are not used anymore
       removeLeaf(node)
-
-
     }
 
-    const adjustPositions = (tree) => {
+    // calculate the layout dimensions
+    const calculateLayoutInfo = (tree) => {
       const toRender = [tree]
       const rendered = []
       while (toRender.length) {
@@ -381,7 +409,6 @@ class TreeLayout extends BaseLayout {
           toRender.push(child)
         })
       }
-
 
       const hAdjustment = Math.min(...rendered.map(node => {
         const w = this.config.renderingSize === "max" ? node.getMaxWidth() : node.getMinWidth()
@@ -423,10 +450,6 @@ class TreeLayout extends BaseLayout {
         return n.getFinalY() + h
       }))
 
-      // this.canvas.circle(5).fill("#000").center(x0, y0)
-      // this.canvas.circle(5).fill("#75f").center(x1, y1)
-      // this.canvas.circle(5).fill("#f75").center(x2, y2)
-
       const calculateDistance = (sx, sy, tx, ty) => {
         const dx = tx - sx
         const dy = ty - sy
@@ -442,10 +465,9 @@ class TreeLayout extends BaseLayout {
         w: calculateDistance(x0, y0, x1, y1),
         h: calculateDistance(x1, y1, x2, y2),
       }
-
-
     }
 
+    // inform nodes about incoming and outgoing edges
     const addEdgeReferences = (node) => {
       node.children.forEach(child => {
         const e = this.edges.find(e => e.fromNode.id === child.id && e.toNode.id === node.id)
@@ -457,75 +479,84 @@ class TreeLayout extends BaseLayout {
     }
 
 
-
-    const root = constructTree(this.nodes)[0] // TODO: re-write
-    initializeNodes(root, null, null, 0)
-    calculateInitialX(root)
-    calculateFinalPositions(root, 0)
-    fixOverlappingConflicts(root)
-    centerRoot(root)
-    finalizeTree(root)
+    const tree = buildTreeFromNodes(this.nodes)[0]
+    initializeNodes(tree)
+    calculateXYPositions(tree)
+    calculateModifier(tree)
+    fixConflicts(tree)
+    centerRootNode(tree)
     calculateEdgePositions(this.edges)
-    manageLeafs(root, root)
-    adjustPositions(root)
-    addEdgeReferences(root)
+    calculateLeafs(tree)
+    calculateLayoutInfo(tree)
+    addEdgeReferences(tree)
 
-
-    // console.log(root)
+    return this.layoutInfo
   }
 
 
-  renderLayout(opts = { isReRender: false }) {
-    const X = this.nodes.find(n => n.id === this.rootId).getFinalX()
-    const Y = this.nodes.find(n => n.id === this.rootId).getFinalY()
+  /**
+   * Renders the tree layout by creating SVG objects representing nodes, leafs and edges. 
+   * @param {Object} [opts={ }] An object containing additional information.
+   * @param {Boolean} opts.isReRender Determines if the layout is rerenderd.
+   * @param {Number} opts.x The x coordinate for the clicked node.
+   * @param {Number} opts.y The y coordinate for the clicked node.
+   */
+  renderLayout(opts = {}) {
+    const X = opts.x ? opts.x : this.nodes.find(n => n.id === this.rootId).getFinalX()
+    const Y = opts.y ? opts.y : this.nodes.find(n => n.id === this.rootId).getFinalY()
 
-    const renderNodes = (opts) => {
+
+    // render nodes and edges
+    const renderNodes = () => {
       this.nodes.forEach((node) => {
 
+        // render nodes
         if (node.isRendered() === false) {
-          if (this.config.renderingSize === "max") {
-            if (opts.isReRender === true) {
-              node.renderAsMax(opts.x, opts.y)
-            } else {
-              node.renderAsMax(X, Y)
-            }
-          }
-          if (this.config.renderingSize === "min") {
-            if (opts.isReRender === true) {
-              node.renderAsMin(opts.x, opts.y)
-            } else {
-              node.renderAsMin(X, Y)
-            }
+          if (this.config.renderingSize === "max") node.renderAsMax(X, Y)
+          if (this.config.renderingSize === "min") node.renderAsMin(X, Y)
 
-          }
 
-          // add mouse event to each node
-          node.svg.on(this.event.mouse, (e) => {
-            if (this.event.modifier !== undefined) {
-              if (this.event.modifier, e[this.event.modifier]) {
-                this.event.func(node)
+          // find provided events
+          const eventStr = [...new Set(this.events.map(e => e.event))].toString().split(",")
+          // console.log(eventStr, this.events)
+          node.svg.on(eventStr, (e) => {
+            const type = e.type
+            let modifier = undefined
+            if (e.altKey === true) {
+              modifier = "altKey"
+            } else if (e.ctrlKey === true) {
+              modifier = "ctrlKey"
+            } else if (e.shiftKey === true) {
+              modifier = "shiftKey"
+            }
+            // add all provided event
+            this.events.forEach(myevent => {
+              // console.log(myevent.event, type, "-", myevent.modifier, modifier, myevent)
+              if (myevent.event === type && myevent.modifier === modifier) {
+                this.expandOrCollapseDataAsyncEvent(node)
               }
-            }
-            if (this.event.modifier === undefined) {
-              this.event.func(node)
-            }
+            })
           })
+
+
+
+
+          // render edge references
           node.outgoingEdges.forEach(edge => {
             if (edge.isRendered() === false) {
-              if (opts.isReRender === true) {
-                edge.render(opts.x, opts.y)
-              } else {
-                edge.render(X, Y)
-              }
+              edge.render(X, Y)
             }
           })
 
+          // or transform nodes into position
         } else if (node.isRendered() === true) {
           node.transformToFinalPosition()
         }
       })
+    }
 
-
+    // render possible leafs
+    const renderLeafs = () => {
       this.leafs.forEach((leaf) => {
         if (leaf.isRendered() === false) {
           leaf.render(opts.isReRender === true ? true : false)
@@ -533,20 +564,20 @@ class TreeLayout extends BaseLayout {
           leaf.transformToFinalPosition()
         }
       })
+    }
 
-
+    // update edges
+    const renderEdges = () => {
       this.edges.forEach((edge) => {
-        if (edge.isRendered() === false) {
-          edge.render(X, Y)
-        } else if (edge.isRendered() === true) {
+        if (edge.isRendered() === true) {
           edge.transformToFinalPosition({ isReRender: opts.isReRender || false })
         }
       })
     }
 
-    renderNodes(opts)
-
-
+    renderNodes()
+    renderLeafs(opts)
+    renderEdges(opts)
   }
 }
 
