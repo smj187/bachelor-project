@@ -1,3 +1,4 @@
+/* eslint-disable class-methods-use-this */
 import { SVG } from "@svgdotjs/svg.js"
 import "@svgdotjs/svg.draggable.js"
 import "./extensions/panzoom"
@@ -6,6 +7,8 @@ import GridLayout from "./layouts/GridLayout"
 import RadialLayout from "./layouts/RadialLayout"
 import TreeLayout from "./layouts/TreeLayout"
 import ContextualLayout from "./layouts/ContextualLayout"
+
+import { createTooltip } from "./utils/Tooltip"
 
 import Graph from "./data/Graph"
 
@@ -18,9 +21,9 @@ import Graph from "./data/Graph"
 
 /**
  * @description A foreign object.
- * 
+ *
  * @typedef {ForeignObject} ForeignObject
- * 
+ *
  * @see https://svgjs.com/docs/3.0/shape-elements/#svg-foreignobject
  */
 
@@ -41,142 +44,128 @@ import Graph from "./data/Graph"
 
 
 /**
+ * ISSUES: svgdotjs library while animating sometimes 0.5 1 xy value (.svg.bbox().cx, .svg.bbox().cy) off calculated position
+ */
+
+const visConfig = {
+  // drawing canvas
+  canvasId: "visualization-canvas",
+  canvasWidth: window.innerWidth - 10,
+  canvasHeight: window.innerHeight - 10,
+
+  // zoom
+  zoomLevel: 0.85,
+  zoomX: 0, // zoom into specified point @see https://github.com/svgdotjs/svg.panzoom.js
+  zoomY: 0,
+  zoomMin: 0.25,
+  zoomMax: 10,
+  zoomStep: 0.25,
+  zoomLabelThreshold: 0.65,
+
+  // endpoints
+  databaseUrl: null,
+  nodeEndpoint: null,
+  edgeEndpoint: null,
+  contextualRelationshipEndpoint: null,
+
+  // global layout settings
+  layoutSpacing: 50,
+}
+
+/**
  * Creates and handles all vizualization operations
  *
  */
 class Visualization {
-  constructor(config) { // TODO: this constructor should receive custom overrides for all nodes, edges and layouts
-    if (config.databaseUrl === undefined || config.databaseUrl === null) {
-      throw new Error("missing database URL")
+  constructor(config = {}) {
+
+    this.config = { ...visConfig, ...config }
+
+    if (this.config.databaseUrl === null ||
+      this.config.nodeEndpoint === null ||
+      this.config.edgeEndpoint === null ||
+      this.config.contextualRelationshipEndpoint === null) {
+      throw new Error(
+        `The following parameters are required:
+          - 'databaseUrl' 
+          - 'nodeEndpoint' 
+          - 'edgeEndpoint 
+          - 'contextualRelationshipEndpoint'
+        `)
     }
 
-    // create the main canvas element dom element
+
+    // create the background element to hold the main canvas
     const element = document.createElement("div")
-    element.setAttribute("id", "canvas")
+    element.setAttribute("id", this.config.canvasId)
     element.style.position = "relative"
     document.body.appendChild(element)
 
-    // create the tooltip dom element
-    const tooltip = document.createElement("div")
-    tooltip.setAttribute("id", "tooltip")
-    tooltip.style.display = "none"
-    tooltip.style.position = "absolute"
-    tooltip.style.background = "#333"
-    tooltip.style.border = "0px"
-    tooltip.style.boxShadow = "0 5px 15px -5px rgba(0, 0, 0, .65)"
-    tooltip.style.color = "#eee"
-    tooltip.style.padding = "0.4rem 0.6rem"
-    tooltip.style.fontSize = "0.85rem"
-    tooltip.style.fontWeight = "400"
-    tooltip.style.fontStyle = "normal"
-    element.appendChild(tooltip)
 
-    // canvas set up
-    this.zoomLevel = 1
-    const w = config.width || window.innerWidth - 10
-    const h = config.height || window.innerHeight - 10
-    const zoom = config.zoom || { lvl: 0.75, x: 100, y: 100 }
+    // add tooltip support
+    createTooltip(element)
+
+
+    // set up canvas and zooming
     this.canvas = SVG()
       .addTo(element)
-      .size(w, h)
-      .viewbox(0, 0, w, h)
+      .size(this.config.canvasWidth, this.config.canvasHeight)
+      .viewbox(0, 0, this.config.canvasWidth, this.config.canvasHeight)
       .panZoom({ zoomMin: 0.25, zoomMax: 10, zoomFactor: 0.25 })
-      .zoom(zoom.lvl, { x: zoom.x, y: zoom.y })
+      .zoom(this.config.zoomLevel, { x: this.config.zoomX, y: this.config.zoomY })
+
+    this.canvas.attr("zoomCurrent", this.config.zoomLevel)
+    this.canvas.attr("zoomThreshold", this.config.zoomLabelThreshold)
 
 
-    // const event = {
-    //   event: "grid.expander",
-    //   mouse: "click",
-    //   modifier: "shiftKey"
-    // }
-
-
-    // const test = this.canvas.rect(100, 100).dmove(200, 300)
-    // const func = () => test.fill("#f75")
-
-    // test.on(event.mouse, (e) => {
-    //   if (event.modifier !== null) {
-    //     if (event.modifier, e[event.modifier]) {
-    //       func()
-    //     }
-    //   }
-    // })
-
-
-
-    // // .on("grid.expander", () => {
-    // //   test.fill("#f75")
-    // // })
-
-
-    // remove text labels when zoomed-in
+    // register mouse wheel zooming
     let textState = null
     this.canvas.on("zoom", (ev) => {
       const currentLevel = ev.detail.level
-      if (currentLevel <= 0.75 && textState !== "hidden") {
-        const labels = document.querySelectorAll("#min-label")
-        labels.forEach(doc => {
-          doc.style.opacity = "0"
+
+      // hide labels by changing their opacity value
+      if (currentLevel <= this.config.zoomLabelThreshold && textState !== "hidden") {
+        document.querySelectorAll("#label").forEach((label) => {
+          label.style.opacity = "0"
         })
         textState = "hidden"
       }
-      if (currentLevel > 0.75 && textState === "hidden") {
-        const labels = document.querySelectorAll("#min-label")
-        labels.forEach(doc => {
-          doc.style.opacity = "1"
+
+      // show hidden labels
+      if (currentLevel > this.config.zoomLabelThreshold && textState === "hidden") {
+        document.querySelectorAll("#label").forEach((label) => {
+          label.style.opacity = "1"
         })
         textState = null
       }
-      this.zoomLevel = currentLevel
+
+      this.canvas.attr("zoomCurrent", currentLevel)
     })
 
 
+    // store all currently known layouts
     this.layouts = []
-    this.lastLayoutWidth = 0
-
-
-    // TODO: talk about this in the thesis ( its required)
-    this.config = {
-      ...config,
-      nodeEndpoint: "node-data",
-      edgeEndpoint: "edge-data",
-      contextualRelationshipEndpoint: "contextual-relationships",
-      layoutSpacing: 50,
-    }
-
-
-    // stores all loaded nodes
-    this.loadedNodes = []
-
-
-    this.knownGraph = new Graph()
-
-    this.fetchedNodes = []
-    this.fetchedEdges = []
-
-    // TODO: further work: implement a store (like in react useState that holds references to all currently knwon nodes in a database
-    //       and to reduce calling a database -> performance improvement)
   }
 
-  test() {
-    this.canvas.rect(100, 100)
-  }
 
+  /**
+   * Creates the underlying graph data strcuture later required to load data from the database.
+   * @param {Array.<Number>} [nodeIds=[ ]] An optional array of node ids.
+   * @param {Array.<Number>} [edgeIds=[ ]] An optional array containing subarrays for edges. 
+   *                         Each subarray consits of an entry for a starting node id and an ending node id.
+   */
   createInitialGraph(nodeIds = [], edgeIds = []) {
     const graph = new Graph()
 
     // add nodes
     nodeIds.forEach((id) => {
       graph.includeNode(id)
-      this.knownGraph.includeNode(id)
     })
 
     // add edges
     edgeIds.forEach((ids) => {
       graph.includeEdge(ids[0], ids[1])
-      this.knownGraph.includeEdge(ids[0], ids[1])
     })
-
 
     return graph
   }
@@ -206,7 +195,7 @@ class Visualization {
       const createdLayout = await layout.loadInitialGridDataAsync()
       const index = this.layouts.indexOf(layout)
       const layouts = this.layouts.slice(0, index)
-      let offset = layouts.map((l) => l.layoutInfo.w).reduce((a, b) => a + b, 0)
+      const offset = layouts.map((l) => l.layoutInfo.w).reduce((a, b) => a + b, 0)
       createdLayout.calculateLayout(offset)
       createdLayout.renderLayout()
     }
@@ -217,7 +206,6 @@ class Visualization {
       const offset = layouts.map((l) => l.layoutInfo.w).reduce((a, b) => a + b, 0)
       createdLayout.calculateLayout(offset)
       createdLayout.renderLayout()
-
     }
 
     if (layout instanceof RadialLayout) {
@@ -237,12 +225,10 @@ class Visualization {
     }
 
 
-
     return layout
   }
 
   async update(layout, graphOrConfig, config = {}) {
-
     if (layout instanceof RadialLayout) {
       if (graphOrConfig instanceof Graph) {
         console.log("update radial graph")
@@ -271,8 +257,8 @@ class Visualization {
       }
     }
 
-    if (layout instanceof GridLayout) {
 
+    if (layout instanceof GridLayout) {
       // update the underlying graph structure and configuration
       if (graphOrConfig instanceof Graph) {
         await layout.updateGridDataWithConfigAsync(graphOrConfig, config)
@@ -311,8 +297,6 @@ class Visualization {
         layout.renderLayout()
       }
     }
-
-
 
 
     // if (graphOrConfig instanceof Graph) {
@@ -354,19 +338,48 @@ class Visualization {
   }
 
 
+  async updateLayout(layout, graphOrConfigData, config) {
+    const conf = graphOrConfigData instanceof Graph ? config : graphOrConfigData
+
+    const reRenderOperations = [
+      // tree
+      "orientation",
+      "renderingSize",
+      "showLeafIndications",
+      "visibleNodeLimit",
+      "leafIndicationLimit",
+      "leafStrokeWidth",
+      "leafStrokeColor",
+      "leafMarker"
+    ]
+    const requireRebuild = reRenderOperations.filter(r => Object.keys(conf).includes(r)).length > 0
+
+    if (layout instanceof TreeLayout) {
+
+      layout.setConfig({ ...layout.getConfig(), ...conf })
+      layout.setRenderDepth(conf.renderDepth || layout.getRenderDepth())
+      layout.setRootId(conf.rootId || layout.getRootId())
+
+      if (requireRebuild === true) {
+        await layout.rebuildTreeLayout()
+      }
+      await layout.updateTreeLayout()
+    }
+  }
+
+
   /**
    * Adds an event listener to a given layout.
    * @param {BaseLayout} layout The layout where to add the event listener.
-   * @param {String} event The event name. 
+   * @param {String} event The event name.
    * @param {String} modifier The modifier name. Available: "shiftKey", "altKey", "ctrlKey" or undefined.
    * @param {String} func The method name.
-   * 
+   *
    * @see Supported events: {@link https://svgjs.com/docs/3.0/events/#element-click}
    */
   addEventListener(layout, event, modifier, func) {
     layout.registerEventListener(event, modifier, func)
   }
-
 
 
   /**
@@ -397,26 +410,6 @@ class Visualization {
 
 
     currentLayout.removeLayout()
-  }
-
-
-  /**
-   * Change the current zoom level
-   * @param {Number} zoom zoom level between 0.25 and 10
-   * @param {Object} [zoomOptions]
-   * @param {Number} [zoomOptions.x] zoom into specified point
-   * @param {Number} [zoomOptions.y] zoom into specified point
-   *
-   */
-  setZoom(zoom, opts) {
-    this.canvas.zoom(zoom, opts)
-  }
-
-  /**
-   * Returns the current canvas element
-   */
-  getCanvas() {
-    return this.canvas
   }
 }
 

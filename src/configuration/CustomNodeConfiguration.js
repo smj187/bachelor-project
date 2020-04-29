@@ -1,7 +1,7 @@
 /**
  * @namespace CustomNodeConfiguration
  * @description This object contains default configuration for custom node representations.
- * 
+ *
  * @property {String} nodeType=rect                 - Determins the form the node is rendered. Available: "path", "rect" or "ellipse".
  * @property {String} svg=null                      - Determines the custom SVG path that is rendered as node but only if nodeType is set to "path".
  *
@@ -52,62 +52,62 @@
 
 const CustomNodeConfiguration = {
 
-    nodeType: "rect", // rect, ellipse or path
-    svgPathElement: null,
+  nodeType: "rect", // rect, ellipse or path
+  svgPathElement: null,
 
-    // large node
-    maxWidth: 275,
-    maxHeight: 175,
-
-
-    // small node
-    minWidth: 200,
-    minHeight: 100,
+  // large node
+  maxWidth: 275,
+  maxHeight: 175,
 
 
-    // icon
-    iconUrl: null,
-    minIconOpacity: 0.3,
-    minIconSize: 70,
-    minIconTranslateX: 0,
-    minIconTranslateY: 0,
-    maxIconOpacity: 0.4,
-    maxIconSize: 200,
-    maxIconTranslateX: 0,
-    maxIconTranslateY: 0,
+  // small node
+  minWidth: 200,
+  minHeight: 100,
 
 
-    // node
-    offset: 8,
-    animationSpeed: 300,
-    borderRadius: 5,
-    borderStrokeWidth: 1,
-    borderStrokeColor: "#222222",
-    borderStrokeDasharray: "0",
-    backgroundColor: "#ffffff",
+  // icon
+  iconUrl: null,
+  minIconOpacity: 0.3,
+  minIconSize: 70,
+  minIconTranslateX: 0,
+  minIconTranslateY: 0,
+  maxIconOpacity: 0.4,
+  maxIconSize: 200,
+  maxIconTranslateX: 0,
+  maxIconTranslateY: 0,
 
 
-    // text
-    minTextWidth: 145,
-    minTextHeight: 75,
-    minTextTranslateX: 0,
-    minTextTranslateY: 0,
-    maxTextWidth: 260,
-    maxTextHeight: 220,
-    maxTextTranslateX: 0,
-    maxTextTranslateY: 0,
-    labelColor: "#444444",
-    labelFontFamily: "Montserrat",
-    labelFontSize: 16,
-    labelFontWeight: 600,
-    labelFontStyle: "normal",
-    labelBackground: "#ffffffcc",
-    detailsColor: "#444444",
-    detailsFontFamily: "Montserrat",
-    detailsFontSize: 12,
-    detailsFontWeight: 600,
-    detailsFontStyle: "normal",
-    detailsBackground: "#ffffffcc",
+  // node
+  offset: 8,
+  animationSpeed: 300,
+  borderRadius: 5,
+  borderStrokeWidth: 1,
+  borderStrokeColor: "#222222",
+  borderStrokeDasharray: "0",
+  backgroundColor: "#ffffff",
+
+
+  // text
+  minTextWidth: 145,
+  minTextHeight: 75,
+  minTextTranslateX: 0,
+  minTextTranslateY: 0,
+  maxTextWidth: 260,
+  maxTextHeight: 220,
+  maxTextTranslateX: 0,
+  maxTextTranslateY: 0,
+  labelColor: "#444444",
+  labelFontFamily: "Montserrat",
+  labelFontSize: 16,
+  labelFontWeight: 600,
+  labelFontStyle: "normal",
+  labelBackground: "#ffffffcc",
+  detailsColor: "#444444",
+  detailsFontFamily: "Montserrat",
+  detailsFontSize: 12,
+  detailsFontWeight: 600,
+  detailsFontStyle: "normal",
+  detailsBackground: "#ffffffcc",
 }
 
 export default CustomNodeConfiguration

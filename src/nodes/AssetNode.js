@@ -31,6 +31,7 @@ class AssetNode extends BaseNode {
     background.style.height = `${this.config.maxTextHeight}px`
     background.style.display = "grid"
     background.style.gridTemplateColumns = "50% 50%"
+    background.setAttribute("id", "label")
 
 
     const labelBg = document.createElement("div")
@@ -108,6 +109,26 @@ class AssetNode extends BaseNode {
 
 
     return text
+  }
+
+
+  /**
+  * Transforms the node to its final rendered position.
+  * @param {Number} X=finalX The final X position.
+  * @param {Number} Y=finalY The final Y position.
+  */
+  transformToFinalPosition(X = this.finalX, Y = this.finalY) {
+    if (this.isRendered() === false) {
+      return
+    }
+
+    this.currentX = X
+    this.currentY = Y
+    this.coords.push([this.currentX, this.currentY])
+
+    this.svg.get(0).animate({ duration: this.config.animationSpeed }).center(X, Y)
+    this.svg.get(1).animate({ duration: this.config.animationSpeed }).center(X, Y)
+    this.svg.get(2).animate({ duration: this.config.animationSpeed }).center(X, Y)
   }
 
 

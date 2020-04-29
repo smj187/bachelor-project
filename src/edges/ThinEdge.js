@@ -16,6 +16,9 @@ class ThinEdge extends BaseEdge {
     super(data, canvas, fromNode, toNode)
 
     this.config = { ...ThinEdgeConfiguration, ...this.config, ...customThinEdgeConfig }
+
+
+    this.animation = null
   }
 
 
@@ -23,6 +26,7 @@ class ThinEdge extends BaseEdge {
    * Creates the initial SVG element and adds hover effect.
    */
   render(X, Y) {
+
     const svg = this.canvas.group() // .draggable()
     svg.css("cursor", "default")
     svg.id(`edge#${this.fromNode.id}_${this.toNode.id}`)
@@ -60,7 +64,6 @@ class ThinEdge extends BaseEdge {
     svg.center(X, Y)
 
 
-
     svg
       .back()
 
@@ -79,87 +82,113 @@ class ThinEdge extends BaseEdge {
       .attr({ opacity: 1 })
 
     if (this.label) {
+      const x = (this.finalFromX + this.finalToX) / 2 + this.config.labelTranslateX
+      const y = (this.finalFromY + this.finalToY) / 2 + this.config.labelTranslateY
       svg
         .get(1)
         .attr({ opacity: 0 })
         .animate({ duration: this.config.animationSpeed })
-        .center((this.finalFromX + this.finalToX) / 2, (this.finalFromY + this.finalToY) / 2)
+        .center(x, y)
         .attr({ opacity: 1 })
     }
     this.svg = svg
-
   }
+
 
 
   /**
    * Transforms an edge to its final rendered position.
    */
   transformToFinalPosition(opts = { isReRender: false }) {
+
+
+
     if (opts.isReRender === true) {
       this
         .svg
         .back()
 
-      // console.log("opts", opts)
+      // console.log("isReRender")
+
+      // this
+      // .svg
+      // .scale(0.001)
+      // .attr({ opacity: 1 })
+      // .animate({ duration: this.config.animationSpeed })
+      // .transform({ scale: 1 })
+
+      if (this.animation !== null) {
+        this.animation.unschedule()
+      }
+      this.animation = this.svg.get(0)
+        .animate({ duration: this.config.animationSpeed })
+        .plot(`M${this.finalFromX},${this.finalFromY} L${this.finalToX},${this.finalToY}`)
+        .after(() => {
+          this.animation = null
+        })
+
+      // console.log("isReRender", this.config.animationSpeed, this.toNode.id, "<-", this.fromNode.id)
+      if (this.animation) {
+        // this.animation.finish()
+      }
+      // const res = this
+      // .svg
+      // .get(0)
+      // .attr({ opacity: 0 })
+      // .animate({ duration: this.config.animationSpeed })
+      // .plot(`M${this.finalFromX},${this.finalFromY} L${this.finalToX},${this.finalToY}`)
+      // .attr({ opacity: 1 })
+      // console.log(this.svg.get(0))
+      // console.log(this.toNode.id, "<-", this.fromNode.id, this.animation, )
+      if (this.label) {
+
+        const x = (this.finalFromX + this.finalToX) / 2 + this.config.labelTranslateX
+        const y = (this.finalFromY + this.finalToY) / 2 + this.config.labelTranslateY
+        this
+          .svg
+          .get(1)
+          // .attr({ opacity: 0 })
+          .animate({ duration: this.config.animationSpeed })
+          .center(x, y)
+        // .attr({ opacity: 1 })
+      }
+    } else {
 
       this
         .svg
-        // .scale(0.001)
-        .attr({ opacity: 1 })
+        .back()
+
+
+      this
+        .svg
+      // .scale(0.001)
+      // .attr({ opacity: 1 })
       // .animate({ duration: this.config.animationSpeed })
       // .transform({ scale: 1 })
 
 
-      this
+      this.animation = this
         .svg
         .get(0)
         // .attr({ opacity: 0 })
         .animate({ duration: this.config.animationSpeed })
         .plot(`M${this.finalFromX},${this.finalFromY} L${this.finalToX},${this.finalToY}`)
+        .after(() => {
+          this.animation = null
+        })
       // .attr({ opacity: 1 })
+
 
       if (this.label) {
         this
           .svg
           .get(1)
           // .attr({ opacity: 0 })
-          // .animate({ duration: this.config.animationSpeed })
-          .center((this.finalFromX + this.finalToX) / 2, (this.finalFromY + this.finalToY) / 2)
-        // .attr({ opacity: 1 })
-      }
-    } else {
-      this
-        .svg
-        .back()
-
-
-      this
-        .svg
-        .scale(0.001)
-        .attr({ opacity: 1 })
-        .animate({ duration: this.config.animationSpeed })
-        .transform({ scale: 1 })
-
-
-      this
-        .svg
-        .get(0)
-        .attr({ opacity: 0 })
-        .animate({ duration: this.config.animationSpeed })
-        .plot(`M${this.finalFromX},${this.finalFromY} L${this.finalToX},${this.finalToY}`)
-        .attr({ opacity: 1 })
-
-      if (this.label) {
-        this
-          .svg
-          .get(1)
-          .attr({ opacity: 0 })
           .animate({ duration: this.config.animationSpeed })
           .center((this.finalFromX + this.finalToX) / 2, (this.finalFromY + this.finalToY) / 2)
           .attr({ opacity: 1 })
       }
     }
-
   }
 
 

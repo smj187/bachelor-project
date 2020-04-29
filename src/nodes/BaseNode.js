@@ -7,7 +7,6 @@ import FallbackCustomIcon from "../resources/fallbackCustomIcon.svg"
 import Colorshift from "../utils/Colorshift"
 
 
-
 /**
  * This is the base class for nodes.
  * @property {Data} data Loaded data from a database.
@@ -16,10 +15,9 @@ import Colorshift from "../utils/Colorshift"
  */
 class BaseNode {
   constructor(data, canvas) {
-
     this.svg = null
     this.canvas = canvas
-    this.config = { ...data.config } // first add any override values 
+    this.config = { ...data.config } // first add any override values
 
     // node data
     this.id = data.id || 0
@@ -69,11 +67,9 @@ class BaseNode {
     this.events = []
     this.outgoingEdges = []
     this.incomingEdges = []
+
+    this.animation = null
   }
-
-
-
-
 
 
   /**
@@ -87,16 +83,21 @@ class BaseNode {
     }
 
 
-
     this.currentX = X
     this.currentY = Y
     this.coords.push([this.currentX, this.currentY])
 
 
-    this
+    if (this.animation !== null) {
+      // this.animation.unschedule()
+    }
+
+
+    this.animation = this
       .svg
       .animate({ duration: this.config.animationSpeed })
-      .transform({ position: [X, Y] })
+      .center(X, Y)
+
   }
 
 
@@ -106,15 +107,19 @@ class BaseNode {
    * @param {Number} Y=initialY The initial Y position.
    */
   transformToInitialPosition(X = this.initialX, Y = this.initialY) {
-
-
     this.currentX = X
     this.currentY = Y
 
     this.coords.push([this.currentX, this.currentY])
 
     this.svg.back()
-    this
+
+    if (this.animation !== null) {
+      // this.animation.unschedule()
+    }
+
+
+    this.animation = this
       .svg
       .attr({ opacity: 1 })
       .animate({ duration: this.config.animationSpeed })
@@ -123,21 +128,45 @@ class BaseNode {
   }
 
 
+  removeSVG() {
+    if (this.isRendered() === false) {
+      return
+    }
+
+    this.svg.back()
+    this.svg
+      .animate({ duration: this.config.animationSpeed })
+      // .transform({ scale: 0.001 })
+      .transform({ scale: 0.001, position: [this.finalX, this.finalY + 100] })
+      .attr({ opacity: 0 })
+      .after(() => {
+        try { this.svg.remove() } catch (error) { }
+        this.svg = null
+      })
+  }
 
 
   /**
    * Removes the rendered SVG node from the canvas.
-   * @param {Number} X The X position to move the elements before removing them. 
+   * @param {Number} X The X position to move the elements before removing them.
    * @param {Number} Y The Y position to move the elements before removing them.
    * @param {Object} opts An object containing additional configuration to control certain behaviours.
    */
-  removeNode(X = this.initialX, Y = this.initialY, opts = { animation: true, opacity: 1 }) {
+  removeNode(X = this.initialX, Y = this.initialY, opts = { animation: true, opacity: 1 }, clickedNode) {
+
+    console.log(clickedNode)
+
     if (opts.animation === true) {
       if (this.svg !== null) {
+        this.svg.back()
+
         this
           .svg
           .animate({ duration: this.config.animationSpeed })
           .transform({ scale: 0.001, position: [X, Y] })
+          .during(() => {
+            console.log(clickedNode.finalX)
+          })
           .after(() => {
             this.svg.remove()
             this.svg = null
@@ -145,6 +174,7 @@ class BaseNode {
       }
     } else if (opts.opacity === 0) {
       if (this.svg !== null) {
+        this.svg.back()
         this
           .svg
           .attr({ opacity: 1 })
@@ -161,7 +191,6 @@ class BaseNode {
       this.svg = null
     }
   }
-
 
 
   /**
@@ -237,7 +266,7 @@ class BaseNode {
 
       // remove hover highlight
       node.filterer().remove()
-      const i = [...this.canvas.defs().node.childNodes].findIndex((d) => d.id === "defaultNodeBorderFilter")
+      // const i = [...this.canvas.defs().node.childNodes].findIndex((d) => d.id === "defaultNodeBorderFilter")
       // const filter = this.canvas.defs().get(i)
       // node.filterWith(filter)
     })
@@ -345,7 +374,7 @@ class BaseNode {
     background.style.padding = `${this.config.offset / 2}px`
     background.style.textAlign = textAlign
     background.style.width = `${this.config.minTextWidth}px`
-    background.setAttribute("id", "min-label")
+    background.setAttribute("id", "label")
 
     const label = document.createElement("div")
     label.innerText = this.label
@@ -453,6 +482,34 @@ class BaseNode {
       return null
     }
     return this.children[this.children.length - 1]
+  }
+
+  hasNoChildren() {
+    return this.children.length === 0
+  }
+
+  hasChildren() {
+    return this.children.length > 0
+  }
+
+  hasNoChildrenIds() {
+    return this.childrenIds.length === 0
+  }
+
+  hasChildrenIds() {
+    return this.childrenIds.length > 0
+  }
+
+  setChildrenIds(childrenIds) {
+    this.childrenIds = childrenIds
+  }
+
+  getInvisibleChildren() {
+    return this.invisibleChildren
+  }
+
+  setInvisibleChildren(invisibleChildren) {
+    this.invisibleChildren = invisibleChildren
   }
 
   setModifier(modifier) {
@@ -577,6 +634,7 @@ class BaseNode {
   getCurrentX() {
     return this.currentX
   }
+
   getCurrentY() {
     return this.currentY
   }

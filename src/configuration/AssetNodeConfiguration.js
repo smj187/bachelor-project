@@ -47,59 +47,59 @@
  * @property {String} detailsBackground=#ffffff     - Determins the background color for the details description.
  */
 const AssetNodeConfiguration = {
-    // large node
-    maxWidth: 350,
-    maxHeight: 225,
+  // large node
+  maxWidth: 350,
+  maxHeight: 225,
 
 
-    // small node
-    minWidth: 150,
-    minHeight: 80,
+  // small node
+  minWidth: 150,
+  minHeight: 80,
 
 
-    // icon
-    iconUrl: null,
-    minIconOpacity: 0.5,
-    minIconSize: 70,
-    minIconTranslateX: 0,
-    minIconTranslateY: 0,
-    maxIconOpacity: 0.75,
-    maxIconSize: 30,
-    maxIconTranslateX: -140,
-    maxIconTranslateY: -85,
+  // icon
+  iconUrl: null,
+  minIconOpacity: 0.5,
+  minIconSize: 70,
+  minIconTranslateX: 0,
+  minIconTranslateY: 0,
+  maxIconOpacity: 0.75,
+  maxIconSize: 30,
+  maxIconTranslateX: -140,
+  maxIconTranslateY: -85,
 
 
-    // node
-    offset: 8,
-    animationSpeed: 800,
-    borderRadius: 5,
-    borderStrokeWidth: 1,
-    borderStrokeColor: "#84a8f2",
-    borderStrokeDasharray: "5",
-    backgroundColor: "#ffffff",
+  // node
+  offset: 8,
+  animationSpeed: 800,
+  borderRadius: 5,
+  borderStrokeWidth: 1,
+  borderStrokeColor: "#84a8f2",
+  borderStrokeDasharray: "5",
+  backgroundColor: "#ffffff",
 
 
-    // text
-    minTextWidth: 145,
-    minTextHeight: 75,
-    minTextTranslateX: 0,
-    minTextTranslateY: 0,
-    maxTextWidth: 345,
-    maxTextHeight: 220,
-    maxTextTranslateX: 0,
-    maxTextTranslateY: 0,
-    labelColor: "#7fa5f5",
-    labelFontFamily: "Montserrat",
-    labelFontSize: 16,
-    labelFontWeight: 600,
-    labelFontStyle: "normal",
-    labelBackground: "#ffffff",
-    detailsColor: "#7fa5f5",
-    detailsFontFamily: "Montserrat",
-    detailsFontSize: 12,
-    detailsFontWeight: 600,
-    detailsFontStyle: "normal",
-    detailsBackground: "#ffffff",
+  // text
+  minTextWidth: 145,
+  minTextHeight: 75,
+  minTextTranslateX: 0,
+  minTextTranslateY: 0,
+  maxTextWidth: 345,
+  maxTextHeight: 220,
+  maxTextTranslateX: 0,
+  maxTextTranslateY: 0,
+  labelColor: "#7fa5f5",
+  labelFontFamily: "Montserrat",
+  labelFontSize: 16,
+  labelFontWeight: 600,
+  labelFontStyle: "normal",
+  labelBackground: "#ffffff",
+  detailsColor: "#7fa5f5",
+  detailsFontFamily: "Montserrat",
+  detailsFontSize: 12,
+  detailsFontWeight: 600,
+  detailsFontStyle: "normal",
+  detailsBackground: "#ffffff",
 }
 
 

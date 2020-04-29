@@ -22,8 +22,6 @@ class GridLayout extends BaseLayout {
    * @param {Object} events The events to be added.
    */
   registerMouseEvents(events) {
-
-
     const expandGridLayoutEvent = async () => {
       if (this.currentLayoutState === "show more") {
         this.currentLayoutState = "show less"
@@ -49,7 +47,6 @@ class GridLayout extends BaseLayout {
       this.renderLayout()
 
 
-
       // update all layouts right side
       this.layoutReferences.forEach((llayout, i) => {
         if (i > this.layoutReferences.indexOf(this)) {
@@ -64,9 +61,9 @@ class GridLayout extends BaseLayout {
         {
           name: "expandGridLayoutEvent",
           func: expandGridLayoutEvent,
-          mouse: events.find(e => e.name === "expandGridLayoutEvent").mouse || "click",
-          modifier: events.find(e => e.name === "expandGridLayoutEvent").modifier || "shiftKey",
-        }
+          mouse: events.find((e) => e.name === "expandGridLayoutEvent").mouse || "click",
+          modifier: events.find((e) => e.name === "expandGridLayoutEvent").modifier || "shiftKey",
+        },
       ]
     } else {
       this.events = [
@@ -74,8 +71,8 @@ class GridLayout extends BaseLayout {
           name: "expandGridLayoutEvent",
           func: expandGridLayoutEvent,
           mouse: "click",
-          modifier: "shiftKey"
-        }
+          modifier: "shiftKey",
+        },
       ]
     }
   }
@@ -86,9 +83,6 @@ class GridLayout extends BaseLayout {
    * @param {Number} offset=0 The width from other layouts.
    */
   calculateLayout(offset = 0) {
-
-
-
     // add additional translation towards X
     this.config = { ...this.config, translateX: this.config.translateX + offset }
 
@@ -273,8 +267,7 @@ class GridLayout extends BaseLayout {
    * all required nodes and transforms them into position.
    */
   renderLayout() {
-
-    var start = window.performance.now();
+    const start = window.performance.now()
 
     const limit = this.config.limitNodes ? this.config.limitNodes : this.nodes.length
     const X = this.layoutInfo.cx
@@ -299,7 +292,6 @@ class GridLayout extends BaseLayout {
 
 
       if (this.gridExpander.svg === null) {
-
         this.gridExpander.render(X, Y)
         // add event to expander
         this.gridExpander.svg.on(this.events[0].mouse, (e) => {
@@ -320,12 +312,10 @@ class GridLayout extends BaseLayout {
       this.nodes.forEach((node, i) => {
         // console.log(node)
         if (i <= limit && node.isRendered() === false) { // create non-existing nodes
-
           if (this.config.renderingSize === "max") node.renderAsMax(X, Y)
           if (this.config.renderingSize === "min") {
             node.renderAsMin(X, Y)
           }
-
         } else if (node.isRendered() === true) { // update nodes
           // console.log("trf", node)
           node.transformToFinalPosition()
@@ -342,11 +332,9 @@ class GridLayout extends BaseLayout {
     renderNodes()
 
 
-
-    var end = window.performance.now();
-    var time = end - start;
+    const end = window.performance.now()
+    const time = end - start
     console.log(`${time}+`)
-
   }
 }
 

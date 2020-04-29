@@ -1,5 +1,4 @@
 
-
 /**
  * @namespace RiskNodeConfiguration
  * @description This object contains default configuration for risk node representations.
@@ -49,59 +48,59 @@
  * @property {String} detailsBackground=#ffffff     - Determins the background color for the details description.
  */
 const RiskNodeConfiguration = {
-    // large node
-    maxWidth: 300,
-    maxHeight: 150,
+  // large node
+  maxWidth: 300,
+  maxHeight: 150,
 
 
-    // small node
-    minWidth: 150,
-    minHeight: 50,
+  // small node
+  minWidth: 150,
+  minHeight: 50,
 
 
-    // icon
-    iconUrl: null,
-    minIconOpacity: 0.5,
-    minIconSize: 35,
-    minIconTranslateX: -45,
-    minIconTranslateY: 0,
-    maxIconOpacity: 0.75,
-    maxIconSize: 30,
-    maxIconTranslateX: -120,
-    maxIconTranslateY: -55,
+  // icon
+  iconUrl: null,
+  minIconOpacity: 0.5,
+  minIconSize: 35,
+  minIconTranslateX: -45,
+  minIconTranslateY: 0,
+  maxIconOpacity: 0.75,
+  maxIconSize: 30,
+  maxIconTranslateX: -120,
+  maxIconTranslateY: -55,
 
 
-    // node
-    offset: 8,
-    animationSpeed: 300,
-    borderRadius: 4,
-    borderStrokeWidth: 1,
-    borderStrokeColor: "#F26A7C",
-    borderStrokeDasharray: "5 10",
-    backgroundColor: "#ffffff",
+  // node
+  offset: 8,
+  animationSpeed: 300,
+  borderRadius: 4,
+  borderStrokeWidth: 1,
+  borderStrokeColor: "#F26A7C",
+  borderStrokeDasharray: "5 10",
+  backgroundColor: "#ffffff",
 
 
-    // text
-    minTextWidth: 90,
-    minTextHeight: 45,
-    minTextTranslateX: 22.5,
-    minTextTranslateY: 0,
-    maxTextWidth: 295,
-    maxTextHeight: 145,
-    maxTextTranslateX: 0,
-    maxTextTranslateY: 0,
-    labelColor: "#ff8e9e",
-    labelFontFamily: "Montserrat",
-    labelFontSize: 14,
-    labelFontWeight: 600,
-    labelFontStyle: "normal",
-    labelBackground: "#ffffff",
-    detailsColor: "#ff8e9e",
-    detailsFontFamily: "Montserrat",
-    detailsFontSize: 12,
-    detailsFontWeight: 600,
-    detailsFontStyle: "normal",
-    detailsBackground: "transparent",
+  // text
+  minTextWidth: 90,
+  minTextHeight: 45,
+  minTextTranslateX: 22.5,
+  minTextTranslateY: 0,
+  maxTextWidth: 295,
+  maxTextHeight: 145,
+  maxTextTranslateX: 0,
+  maxTextTranslateY: 0,
+  labelColor: "#ff8e9e",
+  labelFontFamily: "Montserrat",
+  labelFontSize: 14,
+  labelFontWeight: 600,
+  labelFontStyle: "normal",
+  labelBackground: "#ffffff",
+  detailsColor: "#ff8e9e",
+  detailsFontFamily: "Montserrat",
+  detailsFontSize: 12,
+  detailsFontWeight: 600,
+  detailsFontStyle: "normal",
+  detailsBackground: "transparent",
 }
 
 export default RiskNodeConfiguration

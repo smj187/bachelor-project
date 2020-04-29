@@ -18,7 +18,8 @@ class RequirementNode extends BaseNode {
 
     // map color to respected state
     if (data.state !== null || data.state !== undefined) {
-      const state = this.config.states.find((s) => s.state === data.state.toLowerCase()) || { state: data.state, name: data.state, color: "#84a8f2" }
+      const defaultState = { state: data.state, name: data.state, color: "#84a8f2" }
+      const state = this.config.states.find((s) => s.state === data.state.toLowerCase()) || defaultState
       this.config = {
         ...this.config,
         borderStrokeColor: state.color,
@@ -40,6 +41,7 @@ class RequirementNode extends BaseNode {
     background.style.display = "flex"
     background.style.flexDirection = "column"
     background.style.alignItems = "center"
+    background.setAttribute("id", "label")
     text.add(background)
 
     // create label

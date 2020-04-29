@@ -12,22 +12,24 @@
  * @property {Boolean} showAdditionEdges=true           - Renders additional edges to indicate loadable nodes.
  */
 const TreeLayoutConfiguration = {
-    translateX: 0,
-    translateY: 0,
-    animationSpeed: 400,
-    orientation: "vertical",
-    vSpacing: 100,
-    hSpacing: 25,
-    renderingSize: "min", // min, max
+  translateX: 0,
+  translateY: 0,
+  animationSpeed: 300,
+  orientation: "vertical",
+  vSpacing: 100,
+  hSpacing: 25,
+  rootId: null,
+  renderDepth: 0,
+  renderingSize: "min", // min, max
 
 
-    // renders additional edges to indicate possible nodes
-    showLeafIndications: true,
-    visibleNodeLimit: 4,
-    leafIndicationLimit: 5,
-    leafStrokeWidth: 2,
-    leafStrokeColor: "#aaa",
-    leafMarker: "M 0 0 L 6 3 L 0 6 z"
+  // renders additional edges to indicate possible nodes
+  showLeafIndications: true,
+  visibleNodeLimit: 5,
+  leafIndicationLimit: 5,
+  leafStrokeWidth: 2,
+  leafStrokeColor: "#aaa",
+  leafMarker: "M 0 0 L 6 3 L 0 6 z",
 }
 
 export default TreeLayoutConfiguration

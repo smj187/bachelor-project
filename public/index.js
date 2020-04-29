@@ -1,18 +1,20 @@
-// /* eslint-disable no-unused-vars */
-// /* eslint-disable max-len */
-// /* eslint-disable import/extensions */
-// /* eslint-disable max-classes-per-file */
+/* eslint-disable */
+/* eslint-disable no-unused-vars */
+/* eslint-disable max-len */
+/* eslint-disable import/extensions */
+/* eslint-disable max-classes-per-file */
 
 
-
-import { Visualization, TreeLayout, ContextualLayout, GridLayout, RadialLayout, Asset } from "./graphVisualization.js"
-
+import {
+  Visualization, TreeLayout, ContextualLayout, GridLayout, RadialLayout, Asset,
+} from "./graphVisualization.js"
 
 
 const visualization = new Visualization({
   databaseUrl: "http://localhost:3001",
   nodeEndpoint: "node-data",
-  edgeEndpoint: "edge-data"
+  edgeEndpoint: "edge-data",
+  contextualRelationshipEndpoint: "contextual-relationships"
 })
 
 // const data = { "id": 74, "label": "TEST ASSET 1", "description": "Lorem ipsum dolor sit amet consectetur adipisicing elit. Quibusdam maxime cupiditate fugiat deserunt libero, ab temporibus delectus sunt et doloribus. Voluptate expedita dicta neque harum debitis laudantium molestias velit aut, quos impedit consequatur est libero aliquam enim quibusdam optio nisi aspernatur. Voluptates iure reiciendis, eos illo explicabo sequi architecto! Iure numquam officia temporibus et, mollitia, dolore quas eos non quibusdam quia hic dolores impedit debitis eligendi? Sequi a maxime provident tenetur eveniet modi animi consectetur vitae, nostrum amet ad iusto accusamus placeat, beatae saepe voluptatum! Veritatis architecto error cum eaque. Ipsam blanditiis ab, tenetur eveniet modi doloribus aspernatur aliquid dicta.", "type": "asset", "keyValuePairs": [{ "key": "key 1", "value": "key value pair: value 1" }, { "key": "key 2", "value": "key value pair: value 2" }, { "key": "key 3", "value": "key value pair: value 3" }, { "key": "key 4", "value": "key value pair: value 4" }, { "key": "key 5", "value": "key value pair: value 5" }, { "key": "key 6", "value": "key value pair: value 6" }], "tooltip": "Asset with <br> tooltip", "parent": null, "children": [], "config": null }
@@ -23,7 +25,6 @@ const visualization = new Visualization({
 
 // // setTimeout(() => asset.transformToMin(100, 50), 1000)
 // setTimeout(() => asset.transformToMax(500, 500), 1000)
-
 
 
 // const asset = new Asset(data, visualization.canvas)
@@ -48,7 +49,7 @@ const basicGridLayout = () => {
   // create a grid layout with additional layout configuration
   const grid = new GridLayout({ limitNodes: 10, limitColumns: 5 })
 
-  // render the layout 
+  // render the layout
   visualization.render(graph, grid)
 }
 
@@ -68,13 +69,12 @@ const updateGridLayout = () => {
   // create a grid layout with additional layout configuration
   const grid = new GridLayout({ limitNodes: 10, limitColumns: 5 })
 
-  // render the layout 
+  // render the layout
   visualization.render(graph, grid)
 
 
   // or update both, the underlying data and the layout configuration
   setTimeout(() => {
-
     // add nodes
     graph.includeNode(4)
     graph.includeNode(5)
@@ -85,12 +85,9 @@ const updateGridLayout = () => {
 
 
   setTimeout(() => {
-
     // update the layout
     visualization.update(grid, { limitNodes: 8, limitColumns: 4 })
-
   }, 3000)
-
 }
 
 const changeGridMouseEvent = () => {
@@ -110,22 +107,18 @@ const changeGridMouseEvent = () => {
   const events = [{ name: "expandGridLayoutEvent", mouse: "dblclick", modifier: "shiftKey" }]
   const grid = new GridLayout({ limitNodes: 10, limitColumns: 5 }, event)
 
-  // render the layout 
+  // render the layout
   visualization.render(graph, grid)
 }
 const evaltest = async () => {
-
-  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
+  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 
   for (let i = 0; i < 100; i += 1) {
-
-
     const visualization = new Visualization({
       databaseUrl: "http://localhost:3001",
       nodeEndpoint: "node-data",
-      edgeEndpoint: "edge-data"
+      edgeEndpoint: "edge-data",
     })
     const graph1 = visualization.createInitialGraph()
 
@@ -134,21 +127,16 @@ const evaltest = async () => {
     for (let i = 6; i <= 11; i += 1) { graph1.includeNode(i) }
 
 
-
-
     const grid1 = new GridLayout({ limitNodes: null, animationSpeed: 300, limitColumns: 20 })
     visualization.render(graph1, grid1)
 
-    await sleep(400);
+    await sleep(400)
     const elem = document.getElementById("canvas")
     elem.remove()
     // await sleep(100);
   }
 
   console.log("done")
-
-
-
 }
 
 // evaltest()
@@ -162,7 +150,7 @@ const multipleLayoutsSideBySide = () => {
   const grid3 = new GridLayout(
     { limitNodes: 1, limitColumns: 3, translateY: 0 },
     [{ name: "expandGridLayoutEvent", mouse: "dblclick", modifier: "shiftKey" }],
-    { asset: { borderStrokeColor: "#fff", borderStrokeDasharray: "0" } }
+    { asset: { borderStrokeColor: "#fff", borderStrokeDasharray: "0" } },
   )
   const grid4 = new GridLayout({ limitNodes: null, limitColumns: 1, translateY: 0 })
   const grid5 = new GridLayout({ limitNodes: null, limitColumns: 1, translateX: 0 })
@@ -191,11 +179,10 @@ const radialLayout = () => {
   // create a radial layout with a root and a rendering depth
   const radial = new RadialLayout({ root: 110, renderDepth: 3 })
 
-  // render the layout 
+  // render the layout
   visualization.render(graph, radial)
 }
 const updateRadialLayout = () => {
-
   const graph = visualization.createInitialGraph()
 
   // add nodes
@@ -211,14 +198,14 @@ const updateRadialLayout = () => {
   // create a radial layout with a root and a rendering depth
   const radial = new RadialLayout({ root: 110, renderDepth: 3 })
 
-  // render the layout 
+  // render the layout
   visualization.render(graph, radial)
 
   setTimeout(() => {
-
     // update the layout
-    visualization.update(radial, { translateX: 100, translateY: 0, radialRadius: 200, radiusDelta: 150, hAspect: 4 / 2 })
-
+    visualization.update(radial, {
+      translateX: 100, translateY: 0, radialRadius: 200, radiusDelta: 150, hAspect: 4 / 2,
+    })
   }, 1000)
 }
 
@@ -256,38 +243,42 @@ const treeLayout = () => {
   // const event = { eventlistener: "expandCollapseEvent", mouse: "dblclick", modifier: "shiftKey" }
 
   const customConfig = {
-    root: 110,
-    renderDepth: 2
+    rootId: 110,
+    renderDepth: 2,
   }
   const customEventlisteners = [
     { event: "click", modifier: "shiftKey", func: "expandOrCollapseEvent" },
     { event: "dblclick", modifier: "ctrlKey", func: "expandOrCollapseEvent" },
     { event: "dblclick", modifier: undefined, func: "expandOrCollapseEvent" },
   ]
-  const tree = new TreeLayout(customConfig, customEventlisteners)
-
-  // visualization.addEventListener(tree, [
-  //   { event: "dblclick", modifier: "shiftKey", func: "expandOrCollapseEvent" },
-  //   { event: "click", modifier: "ctrlKey", func: "expandOrCollapseEvent" }
-  // ])
+  // const tree = new TreeLayout(customConfig, customEventlisteners)
 
   // add each event individually
   // visualization.addEventListener(tree, "click", "shiftKey", "expandOrCollapseEvent")
   // visualization.addEventListener(tree, "dblclick", "ctrlKey", "expandOrCollapseEvent")
   // visualization.addEventListener(tree, "dblclick", undefined, "expandOrCollapseEvent")
 
-  visualization.render(graph, tree)
+  // visualization.render(graph, tree)
 
-  const tree2 = new TreeLayout({ root: 153, renderDepth: 1 })
-  // visualization.render(graph, tree2)
-
-  const tree3 = new TreeLayout({ root: 137, renderDepth: 0 })
+  const cc = { control: {} }
+  const ec = { thinEdge: { type: "solid" } }
+  const tree3 = new TreeLayout({ rootId: 137, renderDepth: 1 }, undefined, cc, ec)
   // visualization.render(graph, tree3)
 
-  const tree4 = new TreeLayout({ root: 16, renderDepth: 0 })
+  const tree2 = new TreeLayout({ "rootId": 153, renderDepth: 2 })
+  // visualization.render(graph, tree2)
+
+
+  const tree4 = new TreeLayout({ rootId: 16, renderDepth: 1, animationSpeed: 900 })
   // visualization.render(graph, tree4)
-  const tree5 = new TreeLayout({ root: 161, renderDepth: 1 })
-  // visualization.render(graph, tree5)
+
+  const tree5 = new TreeLayout({ rootId: 161, renderDepth: 1 })
+  visualization.render(graph, tree5)
+
+  setTimeout(() => {
+    // visualization.updateLayout(tree3, { orientation: "horizontal", translateX: 0, translateY: 100, renderDepth: 1 })
+    // visualization.updateLayout(tree3, { orientation: "horizontal" })
+  }, 2000)
 }
 
 
@@ -308,7 +299,3 @@ treeLayout()
 
 // multipleLayoutsSideBySide()
 // contextualLayout()
-
-
-
-

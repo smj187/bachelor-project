@@ -8,13 +8,12 @@ import ControlNode from "./ControlNode"
  * This class makes use of the factory pattern and creates nodes based on a given type.
  */
 class NodeFactory {
-
   /**
    * Creates a new node class.
    * @param {Data} data The loaded data element from a database.
    * @param {Canvas} canvas The canvas to draw the node on.
    * @param {Object} additionalNodeRepresentations Some additional configuration to override default behaviour.
-   * 
+   *
    * @return {BaseNode} The base class representing the node.
    */
   static create(data, canvas, additionalNodeRepresentations) {

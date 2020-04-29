@@ -46,7 +46,7 @@
             <div class="column is-3" id="sidebarNav">
                 <div class="sidebar">
                     <nav>
-                        <h2><a href="index.html">Home</a></h2><div class="category"><h3>Tutorials</h3><ul><li><a href="tutorial-advanced-layouts.html">Advanced Layout Examples</a></li><li><a href="tutorial-contextual-layout.html">Contextual Layout Examples</a></li><li><a href="tutorial-grid-layout.html">Grid Layout Examples</a></li><li><a href="tutorial-radial-layout.html">Radial Layout Examples</a></li><li><a href="tutorial-tree-layout.html">Tree Layout Examples</a></li></ul><h3>Namespaces</h3><ul><li><a href="AssetNodeConfiguration.html">AssetNodeConfiguration</a></li><li><a href="BoldEdgeConfiguration.html">BoldEdgeConfiguration</a></li><li><a href="ContextualLayoutConfiguration.html">ContextualLayoutConfiguration</a></li><li><a href="ControlNodeConfiguration.html">ControlNodeConfiguration</a></li><li><a href="CustomNodeConfiguration.html">CustomNodeConfiguration</a></li><li><a href="GridLayoutConfiguration.html">GridLayoutConfiguration</a></li><li><a href="RadialLayoutConfiguration.html">RadialLayoutConfiguration</a></li><li><a href="RequirementNodeConfiguration.html">RequirementNodeConfiguration</a></li><li><a href="RiskNodeConfiguration.html">RiskNodeConfiguration</a></li><li><a href="ThinEdgeConfiguration.html">ThinEdgeConfiguration</a></li><li><a href="TreeLayoutConfiguration.html">TreeLayoutConfiguration</a></li></ul><h3>Classes</h3><ul><li><a href="AssetNode.html">AssetNode</a></li><li><a href="BaseEdge.html">BaseEdge</a></li><li><a href="BaseLayout.html">BaseLayout</a></li><li><a href="BaseNode.html">BaseNode</a></li><li><a href="BoldEdge.html">BoldEdge</a></li><li><a href="ContextualLayout.html">ContextualLayout</a></li><li><a href="ControlNode.html">ControlNode</a></li><li><a href="CustomNode.html">CustomNode</a></li><li><a href="EdgeFactory.html">EdgeFactory</a></li><li><a href="Graph.html">Graph</a></li><li><a href="GraphEdge.html">GraphEdge</a></li><li><a href="GraphNode.html">GraphNode</a></li><li><a href="GridExpander.html">GridExpander</a></li><li><a href="GridLayout.html">GridLayout</a></li><li><a href="NodeFactory.html">NodeFactory</a></li><li><a href="RadialLayout.html">RadialLayout</a></li><li><a href="RequirementNode.html">RequirementNode</a></li><li><a href="RiskNode.html">RiskNode</a></li><li><a href="ThinEdge.html">ThinEdge</a></li><li><a href="TreeLayout.html">TreeLayout</a></li><li><a href="TreeLeaf.html">TreeLeaf</a></li><li><a href="Visualization.html">Visualization</a></li></ul><h3><a href="global.html">Global</a></h3></div>
+                        <h2><a href="index.html">Home</a></h2><div class="category"><h3>Tutorials</h3><ul><li><a href="tutorial-advanced-layouts.html">Advanced Layout Examples</a></li><li><a href="tutorial-contextual-layout.html">Contextual Layout Examples</a></li><li><a href="tutorial-grid-layout.html">Grid Layout Examples</a></li><li><a href="tutorial-radial-layout.html">Radial Layout Examples</a></li><li><a href="tutorial-tree-layout.html">Tree Layout Examples</a></li></ul><h3>Namespaces</h3><ul><li><a href="AssetNodeConfiguration.html">AssetNodeConfiguration</a></li><li><a href="BoldEdgeConfiguration.html">BoldEdgeConfiguration</a></li><li><a href="ContextualLayoutConfiguration.html">ContextualLayoutConfiguration</a></li><li><a href="ControlNodeConfiguration.html">ControlNodeConfiguration</a></li><li><a href="CustomNodeConfiguration.html">CustomNodeConfiguration</a></li><li><a href="GridLayoutConfiguration.html">GridLayoutConfiguration</a></li><li><a href="RadialLayoutConfiguration.html">RadialLayoutConfiguration</a></li><li><a href="RequirementNodeConfiguration.html">RequirementNodeConfiguration</a></li><li><a href="RiskNodeConfiguration.html">RiskNodeConfiguration</a></li><li><a href="ThinEdgeConfiguration.html">ThinEdgeConfiguration</a></li><li><a href="TreeLayoutConfiguration.html">TreeLayoutConfiguration</a></li></ul><h3>Classes</h3><ul><li><a href="AssetNode.html">AssetNode</a></li><li><a href="BaseEdge.html">BaseEdge</a></li><li><a href="BaseLayout.html">BaseLayout</a></li><li><a href="BaseNode.html">BaseNode</a></li><li><a href="BoldEdge.html">BoldEdge</a></li><li><a href="ContextualLayout.html">ContextualLayout</a></li><li><a href="ControlNode.html">ControlNode</a></li><li><a href="CustomNode.html">CustomNode</a></li><li><a href="EdgeFactory.html">EdgeFactory</a></li><li><a href="Graph.html">Graph</a></li><li><a href="GraphEdge.html">GraphEdge</a></li><li><a href="GraphNode.html">GraphNode</a></li><li><a href="GridExpander.html">GridExpander</a></li><li><a href="GridLayout.html">GridLayout</a></li><li><a href="NodeFactory.html">NodeFactory</a></li><li><a href="RadialLayout.html">RadialLayout</a></li><li><a href="RequirementNode.html">RequirementNode</a></li><li><a href="RiskNode.html">RiskNode</a></li><li><a href="ThinEdge.html">ThinEdge</a></li><li><a href="TreeLayout.html">TreeLayout</a></li><li><a href="TreeLeaf.html">TreeLeaf</a></li><li><a href="Visualization.html">Visualization</a></li></ul><h3>Global</h3><ul><li><a href="global.html#visConfig">visConfig</a></li></ul></div>
                     </nav>
                 </div>
             </div>
@@ -84,217 +84,224 @@ class BoldEdge extends BaseEdge {
     this.config = { ...BoldEdgeConfiguration, ...customBoldEdgeConfig }
   }
 
-
-  /**
-   * Creates the initial SVG element and adds hover effect.
-   */
-  render() {
+  render(X, Y) {
     const svg = this.canvas.group()
     svg.css("cursor", "default")
     svg.id(`edge#${this.fromNode.id}_${this.toNode.id}`)
+    svg.back()
 
-    svg.attr({ opacity: 0 })
-    this.svg = svg
+    const lineWidth = this.config.lineWidth
+    const arrowWidth = this.config.arrowWidth
+    const arrowHeight = this.config.arrowHeight
 
-    this
-      .svg
-      .attr({ opacity: 1 })
-
-
-    // create new elements
-    const lw = this.config.blockarrowLineWidth
-    const aw = this.config.blockarrowArrowWidth
-    const al = this.config.blockarrowArrowLength
 
     const dx = this.finalToX - this.finalFromX
     const dy = this.finalToY - this.finalFromY
-    const len = Math.sqrt(dx * dx + dy * dy)
-    const dW = aw - lw
-    const angle = (Math.atan2(dy, dx) * 180) / Math.PI
-    this.angle = angle
+    const length = Math.sqrt(dx * dx + dy * dy)
 
-    const svgPath = `
-      M 0,${-lw / 2}
-      h ${len - al}
-      v ${-dW / 2}
-      L ${len},0
-      L ${len - al},${aw / 2}
-      v ${-dW / 2}
-      H 0
-      Z
+    const delta = (Math.PI / 180) * 90
+    const theta = Math.atan2(this.finalToY - this.finalFromY, this.finalToX - this.finalFromX)
+
+
+    const x0 = this.finalFromX
+    const y0 = this.finalFromY
+
+    const x1 = x0 + (lineWidth / 2) * Math.cos(theta + delta)
+    const y1 = y0 + (lineWidth / 2) * Math.sin(theta + delta)
+
+    const x2 = x1 + (length - arrowHeight) * Math.cos(theta)
+    const y2 = y1 + (length - arrowHeight) * Math.sin(theta)
+
+    const x3 = x2 + ((arrowWidth - lineWidth) / 2) * Math.cos(theta + delta)
+    const y3 = y2 + ((arrowWidth - lineWidth) / 2) * Math.sin(theta + delta)
+
+    const x4 = this.finalToX
+    const y4 = this.finalToY
+
+    const x5 = x3 + arrowWidth * Math.cos(theta - delta)
+    const y5 = y3 + arrowWidth * Math.sin(theta - delta)
+
+    const x6 = x5 + ((arrowWidth - lineWidth) / 2) * Math.cos(theta + delta)
+    const y6 = y5 + ((arrowWidth - lineWidth) / 2) * Math.sin(theta + delta)
+
+    const x7 = x0 + (lineWidth / 2) * Math.cos(theta + delta * -1)
+    const y7 = y0 + (lineWidth / 2) * Math.sin(theta + delta * -1)
+
+    const cx = (x0 + x4) / 2
+    const cy = (y0 + y4) / 2
+
+    // this.canvas.circle(2).fill("#0f0").center(x0, y0)
+    // this.canvas.circle(2).fill("#75f").center(x1, y1)
+    // this.canvas.circle(2).fill("#00f").center(x2, y2)
+    // this.canvas.circle(2).fill("#f00").center(x3, y3)
+    // this.canvas.circle(2).fill("#ccc").center(x4, y4)
+    // this.canvas.circle(2).fill("#222").center(x5, y5)
+    // this.canvas.circle(2).fill("#000").center(x6, y6)
+    // this.canvas.circle(2).fill("#f0f").center(x7, y7)
+    // this.canvas.circle(2).fill("#f0f").center(cx, cy)
+
+    const plot = `
+      M ${x0},${y0}
+      L ${x1},${y1}
+      L ${x2},${y2}
+      L ${x3},${y3}
+      L ${x4},${y4}
+      L ${x5},${y5}
+      L ${x6},${y6}
+      L ${x7},${y7}
+      L ${x0},${y0}
     `
 
-    const path = this.canvas.path()
-    path.plot(svgPath)
 
-    const getColor = (where) => {
+    const path = this.canvas.path(plot).stroke({
+      color: this.config.strokeColor,
+      width: this.config.strokeWidth,
+      dasharray: this.config.strokeDasharray,
+    })
 
-      if (where.type === "requirement") {
-        return where.config.backgroundColor
+
+
+    if (this.config.color !== null) {
+      path.fill(this.config.color)
+    } else {
+
+      path.rotate(-(theta) * (180 / Math.PI))
+      let c1 = this.fromNode.config.borderStrokeColor
+      let c2 = this.toNode.config.borderStrokeColor
+      if ((-(theta) * (180 / Math.PI)) > 90) {
+        const t = c1
+        c1 = c2
+        c2 = t
       }
-      return where.config.borderStrokeColor
+      const gradient = this.canvas.gradient("linear", (add) => {
+        add.stop(0, c1)
+        add.stop(1, c2)
+      })
+
+      // svgdotjs bug: if a gradient gets an id, there is no way to create a gradient with a different color pairing
+      // gradient.id("defaultBoldGradient")
+      path.fill(gradient)
+      path.rotate((theta) * (180 / Math.PI))
     }
 
-    const c1 = this.config.color1 !== null ? this.config.color1 : getColor(this.fromNode)
-    const c2 = this.config.color2 !== null ? this.config.color2 : getColor(this.toNode)
-    const gradient = this.canvas.gradient("linear", (add) => {
-      add.stop(0, c1)
-      add.stop(1, c2)
-    })
-    path.fill(gradient)
-    path.center(this.finalFromX, this.finalFromY)
-    path.rotate(angle)
-    path.scale(0.0001)
-    this.svg.add(path)
+
+
+
+
+    path.center(X, Y)
+    svg.add(path)
+
 
     if (this.label !== null) {
       const label = this.createLabel()
-      this.svg.add(label)
+      label.center(X, Y)
+      svg.add(label)
     }
 
 
-    // put new elements into position
-    this
-      .svg
+    // // put new elements into position
+    svg
       .get(0)
       .attr({ opacity: 0 })
       .animate({ duration: this.config.animationSpeed })
-      .transform({
-        scale: 1,
-        rotate: angle,
-        position: [(this.finalFromX + this.finalToX) / 2, (this.finalFromY + this.finalToY) / 2],
-      })
-
       .attr({ opacity: 1 })
+      .center(cx, cy)
 
-    if (this.label) {
-      const cx = (this.finalFromX + this.finalToX) / 2 + this.config.labelTranslateX
-      const cy = (this.finalFromY + this.finalToY) / 2 + this.config.labelTranslateY
-      this
-        .svg
+    if (this.label !== null) {
+      svg
         .get(1)
         .attr({ opacity: 0 })
         .animate({ duration: this.config.animationSpeed })
-        .center(cx, cy)
         .attr({ opacity: 1 })
+        .center(cx + this.config.labelTranslateX, cy + this.config.labelTranslateY)
     }
+
+    this.svg = svg
   }
+
+
 
 
   /**
    * Transforms an edge to its final rendered position.
    */
   transformToFinalPosition() {
-    this
-      .svg
-      .attr({ opacity: 1 })
 
 
-    // create new elements
-    const lw = this.config.blockarrowLineWidth
-    const aw = this.config.blockarrowArrowWidth
-    const al = this.config.blockarrowArrowLength
+    this.svg.back()
+
+
+    const lineWidth = this.config.lineWidth
+    const arrowWidth = this.config.arrowWidth
+    const arrowHeight = this.config.arrowHeight
+
 
     const dx = this.finalToX - this.finalFromX
     const dy = this.finalToY - this.finalFromY
-    const len = Math.sqrt(dx * dx + dy * dy)
-    const dW = aw - lw
-    const angle = (Math.atan2(dy, dx) * 180) / Math.PI
-    this.angle = angle
+    const length = Math.sqrt(dx * dx + dy * dy)
 
-    const svgPath = `
-      M 0,${-lw / 2}
-      h ${len - al}
-      v ${-dW / 2}
-      L ${len},0
-      L ${len - al},${aw / 2}
-      v ${-dW / 2}
-      H 0
-      Z
+    const delta = (Math.PI / 180) * 90
+    const theta = Math.atan2(this.finalToY - this.finalFromY, this.finalToX - this.finalFromX)
+
+
+    const x0 = this.finalFromX
+    const y0 = this.finalFromY
+
+    const x1 = x0 + (lineWidth / 2) * Math.cos(theta + delta)
+    const y1 = y0 + (lineWidth / 2) * Math.sin(theta + delta)
+
+    const x2 = x1 + (length - arrowHeight) * Math.cos(theta)
+    const y2 = y1 + (length - arrowHeight) * Math.sin(theta)
+
+    const x3 = x2 + ((arrowWidth - lineWidth) / 2) * Math.cos(theta + delta)
+    const y3 = y2 + ((arrowWidth - lineWidth) / 2) * Math.sin(theta + delta)
+
+    const x4 = this.finalToX
+    const y4 = this.finalToY
+
+    const x5 = x3 + arrowWidth * Math.cos(theta - delta)
+    const y5 = y3 + arrowWidth * Math.sin(theta - delta)
+
+    const x6 = x5 + ((arrowWidth - lineWidth) / 2) * Math.cos(theta + delta)
+    const y6 = y5 + ((arrowWidth - lineWidth) / 2) * Math.sin(theta + delta)
+
+    const x7 = x0 + (lineWidth / 2) * Math.cos(theta + delta * -1)
+    const y7 = y0 + (lineWidth / 2) * Math.sin(theta + delta * -1)
+
+    const cx = (x0 + x4) / 2
+    const cy = (y0 + y4) / 2
+
+
+
+    const plot = `
+      M ${x0},${y0}
+      L ${x1},${y1}
+      L ${x2},${y2}
+      L ${x3},${y3}
+      L ${x4},${y4}
+      L ${x5},${y5}
+      L ${x6},${y6}
+      L ${x7},${y7}
+      L ${x0},${y0}
     `
 
-    const path = this.canvas.path()
-    path.plot(svgPath)
-
-    const getColor = (where) => {
-
-      if (where.type === "requirement") {
-        return where.config.backgroundColor
-      }
-      return where.config.borderStrokeColor
-    }
-
-    const c1 = this.config.color1 !== null ? this.config.color1 : getColor(this.fromNode)
-    const c2 = this.config.color2 !== null ? this.config.color2 : getColor(this.toNode)
-    const gradient = this.canvas.gradient("linear", (add) => {
-      add.stop(0, c1)
-      add.stop(1, c2)
-    })
-    path.fill(gradient)
-    path.center(this.finalFromX, this.finalFromY)
-    path.rotate(angle)
-    path.scale(0.0001)
-    this.svg.add(path)
-
-    if (this.label !== null) {
-      const label = this.createLabel()
-      this.svg.add(label)
-    }
-
-
-    // put new elements into position
     this
       .svg
       .get(0)
-      .attr({ opacity: 0 })
       .animate({ duration: this.config.animationSpeed })
-      .transform({
-        scale: 1,
-        rotate: angle,
-        position: [(this.finalFromX + this.finalToX) / 2, (this.finalFromY + this.finalToY) / 2],
-      })
+      .plot(plot)
 
-      .attr({ opacity: 1 })
-
-    if (this.label) {
-      const cx = (this.finalFromX + this.finalToX) / 2 + this.config.labelTranslateX
-      const cy = (this.finalFromY + this.finalToY) / 2 + this.config.labelTranslateY
+    if (this.label !== null) {
       this
         .svg
         .get(1)
-        .attr({ opacity: 0 })
         .animate({ duration: this.config.animationSpeed })
-        .center(cx, cy)
-        .attr({ opacity: 1 })
+        .center(cx + this.config.labelTranslateX, cy + this.config.labelTranslateY)
     }
+
   }
 
 
-  /**
-   * Transforms an edge from its final position to its initial rendered position.
-   * @param {Number} X=finalFromX The X position the edge will be translated.
-   * @param {Number} Y=finalFromY The Y position the edge will be translated.
-   */
-  transformToInitialPosition(X = this.finalFromX, Y = this.finalFromY) {
-    const blockArrow = this.svg.get(0)
-    const label = this.svg.get(1)
-
-    blockArrow
-      .attr({ opacity: 1 })
-      .animate({ duration: this.config.animationSpeed })
-      .transform({ position: [X, Y], scale: 0.0001, rotate: this.angle })
-      .attr({ opacity: 0 })
-      .after(() => blockArrow.remove())
-
-    if (this.label) {
-      label
-        .attr({ opacity: 1 })
-        .animate({ duration: this.config.animationSpeed })
-        .transform({ position: [X, Y], scale: 0.0001 })
-        .attr({ opacity: 0 })
-        .after(() => label.remove())
-    }
-  }
 }
 
 export default BoldEdge
@@ -313,7 +320,7 @@ export default BoldEdge
 
 <footer class="footer">
     <div class="content has-text-centered">
-        <p>Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.3</a> on Fri Apr 24 2020 23:40:28 GMT+0200 (GMT+02:00)</p>
+        <p>Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.3</a> on Wed Apr 29 2020 02:41:52 GMT+0200 (GMT+02:00)</p>
         <p class="sidebar-created-by">
             <a href="https://github.com/SoftwareBrothers/better-docs" target="_blank">BetterDocs theme</a> provided with <i class="fas fa-heart"></i> by 
             <a href="http://softwarebrothers.co" target="_blank">SoftwareBrothers - JavaScript Development Agency</a>

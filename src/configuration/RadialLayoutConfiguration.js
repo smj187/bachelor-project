@@ -12,14 +12,14 @@
  * @property {String} renderingSize=min                 - Determins the node render representation. Available: "min" or "max".
  */
 const RadialLayoutConfiguration = {
-    translateX: 0,
-    translateY: 0,
-    animationSpeed: 300,
-    radialRadius: 200,
-    radiusDelta: 150,
-    hAspect: 4 / 3,
-    wAspect: 4 / 4,
-    renderingSize: "min",
+  translateX: 0,
+  translateY: 0,
+  animationSpeed: 300,
+  radialRadius: 200,
+  radiusDelta: 150,
+  hAspect: 4 / 3,
+  wAspect: 4 / 4,
+  renderingSize: "min",
 }
 
 export default RadialLayoutConfiguration

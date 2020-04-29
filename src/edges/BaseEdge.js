@@ -4,7 +4,7 @@ import clamp from "clamp-js"
 
 /**
  * This is the base class for edges.
- * 
+ *
  * @property {Data} data The loaded data element from a database.
  * @property {Canvas} canvas The nested canvas to render the edge on.
  * @property {BaseNode} fromNode The starting node reference.
@@ -37,20 +37,17 @@ class BaseEdge {
   }
 
 
-
   /**
    * Calculates the two points indicating the starting and end point for edges.
    * @param {Object} opts Additional configuration required for calculating certain edges.
    */
   calculateEdge(opts = { isContextualParent: false, isContextualChild: false }) {
-
-
     let fx = this.fromNode.getFinalX()
-    let fy = this.fromNode.getFinalY()
+    const fy = this.fromNode.getFinalY()
 
 
     let tx = this.toNode.getFinalX()
-    let ty = this.toNode.getFinalY()
+    const ty = this.toNode.getFinalY()
 
     if (opts.isContextualParent) {
       fx = tx
@@ -59,9 +56,6 @@ class BaseEdge {
     if (opts.isContextualChild) {
       tx = fx
     }
-
-
-
 
 
     const line = shape("line", {
@@ -133,6 +127,9 @@ class BaseEdge {
     })
 
 
+
+
+
     // from intersection point calculation
     const w2 = this.fromNode.getNodeSize() === "min" ? this.fromNode.config.minWidth : this.fromNode.config.maxWidth
     const h2 = this.fromNode.getNodeSize() === "min" ? this.fromNode.config.minHeight : this.fromNode.config.maxHeight
@@ -190,10 +187,28 @@ class BaseEdge {
           if (this.svg !== null) {
             this.svg.remove()
             this.svg = null
-
           }
         })
     }
+  }
+
+
+  removeSVG() {
+    if (this.isRendered() === false) {
+      return
+    }
+
+    const x = (this.finalFromX + this.finalToX) / 2
+    const y = (this.finalFromY + this.finalToY) / 2
+    this.svg.back()
+    this.svg
+      .animate({ duration: this.config.animationSpeed })
+      // .transform({ scale: 0.001 })
+      .transform({ scale: 0.001, position: [x, y + 100] })
+      .after(() => {
+        try { this.svg.remove() } catch (error) { }
+        this.svg = null
+      })
   }
 
 
@@ -216,8 +231,9 @@ class BaseEdge {
     background.style.background = this.config.labelBackground
     background.style.padding = `${this.config.offset / 2}px`
     background.style.textAlign = "center"
-    background.style.width = "100px"
-    background.style.minWidth = "100px" // FIXME: this creates a new row for each word
+    background.style.width = `${this.config.labelWidth}px`
+    background.style.wordWrap = "break-word"
+    background.setAttribute("id", "label")
 
     const label = document.createElement("p")
     label.innerText = this.label
@@ -226,7 +242,7 @@ class BaseEdge {
     label.style.fontFamily = this.config.labelFontFamily
     label.style.fontWeight = this.config.labelFontWeight
     label.style.fontStyle = this.config.labelFontStyle
-    clamp(label, { clamp: 2 })
+    clamp(label, { clamp: this.config.labelLineClamp })
 
     background.appendChild(label)
     fobj.add(background)
@@ -245,6 +261,39 @@ class BaseEdge {
    */
   setLabel(label) {
     this.label = label || null
+  }
+
+
+  setFinalToX(finalToX) {
+    this.finalToX = finalToX
+  }
+
+  setFinalToY(finalToY) {
+    this.finalToY = finalToY
+  }
+
+  getFinalToX() {
+    return this.finalToX
+  }
+
+  getFinalToY() {
+    return this.finalToY
+  }
+
+  setFinalFromX(finalFromX) {
+    this.finalFromX = finalFromX
+  }
+
+  setFinalFromY(finalFromY) {
+    this.finalFromY = finalFromY
+  }
+
+  getFinalFromX() {
+    return this.finalFromX
+  }
+
+  getFinalFromY() {
+    return this.finalFromY
   }
 }
 

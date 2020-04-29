@@ -12,7 +12,7 @@ import { shape, intersect } from "svg-intersections"
 /**
  * This class calculates and renders an indication if more child nodes may be available.
  * @property {Canvas} canvas The current canvas to render the element on.
- * @property {BaseNode} node The currently active and real leaf node representaion. 
+ * @property {BaseNode} node The currently active and real leaf node representaion.
  * @property {Number} renderLimit Limits how many edges are visible.
  * @property {TreeLeafConfiguration} config An object containing visual restrictions.
  * @property {Boolean} [isHorizontal=false] Determins if the current tree is vertical or horizontal.
@@ -46,7 +46,6 @@ class TreeLeaf {
     this.isHorizontal = isHorizontal
     this.isReRender = false
   }
-
 
 
   /**
@@ -115,12 +114,12 @@ class TreeLeaf {
       })
 
       // create a re-useable marker
-      const index = [...this.canvas.defs().node.childNodes].findIndex((d) => d.id === "defaultThinMarker")
+      const index = [...this.canvas.defs().node.childNodes].findIndex((d) => d.id === "defaultLeafMarker")
       if (index === -1) {
         const marker = this.canvas.marker(12, 6, (add) => {
           add.path(this.config.marker).fill(this.config.strokeColor).dx(1)
         })
-        marker.id("defaultThinMarker")
+        marker.id("defaultLeafMarker")
         this.canvas.defs().add(marker)
         simplePath.marker("end", marker)
       } else {
@@ -170,7 +169,6 @@ class TreeLeaf {
    * @param {Number} [Y=this.node.finalY] The parent's final Y render position.
    */
   transformToFinalPosition(X = this.node.finalX, Y = this.node.finalY) {
-
     const w = this.node.nodeSize === "min" ? this.node.config.minWidth : this.node.config.maxWidth
     const h = this.node.nodeSize === "min" ? this.node.config.minHeight : this.node.config.maxHeight
 
@@ -181,15 +179,16 @@ class TreeLeaf {
       .svg
       .animate({ duration: this.config.animationSpeed })
       .transform({ position: [x, y] })
-
   }
 
   /**
    * Removes the leaf node from the canvas and resets clears its SVG representation.
    */
   removeLeaf() {
-    this.svg.remove()
-    this.svg = null
+    if (this.isRendered()) {
+      this.svg.remove()
+      this.svg = null
+    }
   }
 
 
@@ -199,6 +198,30 @@ class TreeLeaf {
    */
   isRendered() {
     return this.svg !== null
+  }
+
+  getId() {
+    return this.id
+  }
+
+  setIsReRender(isReRender) {
+    this.isReRender = isReRender
+  }
+
+  setFinalX(finalX) {
+    this.finalX = finalX
+  }
+
+  setFinalY(finalY) {
+    this.finalY = finalY
+  }
+
+  setInitialX(initialX) {
+    this.initialX = initialX
+  }
+
+  setInitialY(initialY) {
+    this.initialY = initialY
   }
 }
 

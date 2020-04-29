@@ -7,7 +7,7 @@
  * @property {Number} maxHeight=225                 - Sets the detailed height.
  * @property {Number} minWidth=150                  - Sets the minimal node width.
  * @property {Number} minHeight=80                  - Sets the minimal node height.
- * 
+ *
  * @property {Array} states=StateArray              - Determins an array of aviable requirement states.
  *
  * @property {String} iconUrl=null                  - Determins the path to the image icon (if this value is null, the default icon is used).
@@ -51,57 +51,57 @@
  */
 
 const RequirementNodeConfiguration = {
-    // large node
-    maxWidth: 370,
-    maxHeight: 200,
+  // large node
+  maxWidth: 370,
+  maxHeight: 200,
 
 
-    // small node
-    minWidth: 155,
-    minHeight: 50,
+  // small node
+  minWidth: 155,
+  minHeight: 50,
 
 
-    // predefined node states
-    states: [
-        { state: "fulfilled", name: "Fulfilled", color: "#7ed167" },
-        { state: "partially-fulfilled", name: "Partially Fulfilled", color: "#ffc453" },
-        { state: "not-fulfilled", name: "Not Fulfilled", color: "#ff6655" },
-        { state: "Unknown State", name: "Unknown State", color: "#84a8f2" },
-    ],
+  // predefined node states
+  states: [
+    { state: "fulfilled", name: "Fulfilled", color: "#7ed167" },
+    { state: "partially-fulfilled", name: "Partially Fulfilled", color: "#ffc453" },
+    { state: "not-fulfilled", name: "Not Fulfilled", color: "#ff6655" },
+    { state: "Unknown State", name: "Unknown State", color: "#84a8f2" },
+  ],
 
 
-    // node
-    offset: 8,
-    animationSpeed: 300,
-    borderRadius: 8,
-    borderStrokeWidth: 1,
-    borderStrokeColor: "#666666",
-    borderStrokeDasharray: "0",
-    backgroundColor: "#ffffff",
+  // node
+  offset: 8,
+  animationSpeed: 300,
+  borderRadius: 8,
+  borderStrokeWidth: 1,
+  borderStrokeColor: "#666666",
+  borderStrokeDasharray: "0",
+  backgroundColor: "#ffffff",
 
 
-    // text
-    minTextWidth: 150,
-    minTextHeight: 45,
-    minTextTranslateX: 0,
-    minTextTranslateY: 0,
-    maxTextWidth: 365,
-    maxTextHeight: 195,
-    maxTextTranslateX: 0,
-    maxTextTranslateY: 0,
-    maxLabelColor: "#ffffff",
-    labelColor: "#ffffff",
-    labelFontFamily: "Montserrat",
-    labelFontSize: 14,
-    labelFontWeight: 600,
-    labelFontStyle: "normal",
-    labelBackground: "none",
-    detailsColor: "#ffffff",
-    detailsFontFamily: "Montserrat",
-    detailsFontSize: 12,
-    detailsFontWeight: 600,
-    detailsFontStyle: "normal",
-    detailsBackground: "none",
+  // text
+  minTextWidth: 150,
+  minTextHeight: 45,
+  minTextTranslateX: 0,
+  minTextTranslateY: 0,
+  maxTextWidth: 365,
+  maxTextHeight: 195,
+  maxTextTranslateX: 0,
+  maxTextTranslateY: 0,
+  maxLabelColor: "#ffffff",
+  labelColor: "#ffffff",
+  labelFontFamily: "Montserrat",
+  labelFontSize: 14,
+  labelFontWeight: 600,
+  labelFontStyle: "normal",
+  labelBackground: "none",
+  detailsColor: "#ffffff",
+  detailsFontFamily: "Montserrat",
+  detailsFontSize: 12,
+  detailsFontWeight: 600,
+  detailsFontStyle: "normal",
+  detailsBackground: "none",
 }
 
 export default RequirementNodeConfiguration

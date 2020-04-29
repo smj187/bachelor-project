@@ -1753,10 +1753,7 @@
             "attributes": null,
             "tooltip": null,
             "parent": 161,
-            "children": [
-                164,
-                165
-            ],
+            "children": [],
             "config": null
         },
         {
@@ -1769,37 +1766,13 @@
             "tooltip": null,
             "parent": 161,
             "children": [
-                166
+                164
             ],
             "config": null
         },
         {
             "id": 164,
             "label": "Control 164",
-            "description": "amet dictum",
-            "type": "control",
-            "state": "FULFILLED",
-            "attributes": null,
-            "tooltip": null,
-            "parent": 162,
-            "children": [],
-            "config": null
-        },
-        {
-            "id": 165,
-            "label": "Control 165",
-            "description": "amet dictum",
-            "type": "control",
-            "state": "FULFILLED",
-            "attributes": null,
-            "tooltip": null,
-            "parent": 162,
-            "children": [],
-            "config": null
-        },
-        {
-            "id": 166,
-            "label": "Control 166",
             "description": "amet dictum",
             "type": "control",
             "state": "FULFILLED",
@@ -2164,6 +2137,26 @@
             "id": 22,
             "fromNode": 113,
             "toNode": 110
+        },
+        {
+            "id": 23,
+            "label": "two line label",
+            "fromNode": 138,
+            "toNode": 137
+        },
+        {
+            "id": 24,
+            "type": "bold",
+            "label": "A",
+            "fromNode": 162,
+            "toNode": 161
+        },
+        {
+            "id": 25,
+            "type": "bold",
+            "label": "B",
+            "fromNode": 163,
+            "toNode": 161
         }
     ]
 }

@@ -3,7 +3,6 @@ import BaseNode from "./BaseNode"
 import CustomNodeConfiguration from "../configuration/CustomNodeConfiguration"
 
 
-
 /**
  * This class is responsible for the visual representation of custom types.
  * @property {Data} data Loaded data from a database.
@@ -31,6 +30,7 @@ class CustomNode extends BaseNode {
     background.style.flexDirection = "column"
     background.style.justifyContent = "center"
     background.style.alignItems = "center"
+    background.setAttribute("id", "label")
     text.add(background)
 
     // add label

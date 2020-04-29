@@ -50,10 +50,23 @@ Updating the layout configuration can be achieved using the "update" method. Ava
 The default mouse events can be overridden by passing an array as the second argument to the constructor. Note: the tree layout only has two events.
 
 ```javascript
-const events = [{ name: "nodeEvent", mouse: "dblclick", modifier: "ctrlKey" }]
-const radial = new TreeLayout({ root: 110, renderDepth: 1 }, events)
+const customConfig = {
+  root: 110,
+  renderDepth: 2,
+}
+const customEventlisteners = [
+  { event: "click", modifier: "shiftKey", func: "expandOrCollapseEvent" },
+  { event: "dblclick", modifier: "ctrlKey", func: "expandOrCollapseEvent" },
+  { event: "dblclick", modifier: undefined, func: "expandOrCollapseEvent" },
+]
+const tree = new TreeLayout(customConfig, customEventlisteners)
 
-visualization.render(graph, radial)
+// or add each event individually
+visualization.addEventListener(tree, "click", "shiftKey", "expandOrCollapseEvent")
+visualization.addEventListener(tree, "dblclick", "ctrlKey", "expandOrCollapseEvent")
+visualization.addEventListener(tree, "dblclick", undefined, "expandOrCollapseEvent")
+
+visualization.render(graph, tree)
 ```
 
 ### Override default node and edge representations

@@ -16,7 +16,7 @@ const GridExpanderConfiguration = {
  * Class representing the option to collapse or expand the grid layout.
  *
  * @param {Canvas} canvas The canvas to render this expander on.
- * @param {String} type The type the expander is. 
+ * @param {String} type The type the expander is.
  */
 class GridExpander {
   constructor(canvas, type) {
@@ -28,7 +28,6 @@ class GridExpander {
     // the re-render function reference
     this.reRenderFunc = null
   }
-
 
 
   /**
@@ -125,7 +124,6 @@ class GridExpander {
     }
 
 
-
     this.isExpanded = false
     this.svg = svg
   }
@@ -187,8 +185,6 @@ class GridExpander {
   isRendered() {
     return this.svg !== null
   }
-
-
 
 
   /**

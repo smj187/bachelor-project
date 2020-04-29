@@ -33,6 +33,7 @@ class RiskNode extends BaseNode {
     background.style.alignItems = "center"
     background.style.gridTemplateColumns = "auto 10px auto"
     background.style.gridTemplateRows = `${this.config.labelFontSize + 4 + this.config.offset * 2}px auto`
+    background.setAttribute("id", "label")
     text.add(background)
 
     // create label

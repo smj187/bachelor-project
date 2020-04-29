@@ -23,21 +23,19 @@ class RadialLayout extends BaseLayout {
     this.rootId = customConfig.root
     this.renderDepth = customConfig.renderDepth
     this.registerMouseEvents(events)
-
   }
 
 
   registerMouseEvents(events) {
-
     const loadOrHideData = async (node) => { await this.updateRadialDataAsync(node) }
     if (events.length > 0) {
       this.events = [
         {
           name: "nodeEvent",
           func: loadOrHideData,
-          mouse: events.find(e => e.name === "nodeEvent").mouse || "dblclick",
-          modifier: events.find(e => e.name === "nodeEvent").modifier || "ctrlKey",
-        }
+          mouse: events.find((e) => e.name === "nodeEvent").mouse || "dblclick",
+          modifier: events.find((e) => e.name === "nodeEvent").modifier || "ctrlKey",
+        },
       ]
     } else {
       this.events = [
@@ -46,10 +44,9 @@ class RadialLayout extends BaseLayout {
           func: loadOrHideData,
           mouse: "dblclick",
           modifier: "ctrlKey",
-        }
+        },
       ]
     }
-
   }
 
   // calculates the radial layout positions for all given nodes and edges
@@ -81,7 +78,6 @@ class RadialLayout extends BaseLayout {
     }
 
     const calculateFinalPosition = (node, alfa, beta) => {
-
       const w = this.config.renderingSize === "max" ? node.getMaxWidth() : node.getMinWidth()
 
       // center root
@@ -89,7 +85,6 @@ class RadialLayout extends BaseLayout {
         node.setFinalX(this.config.translateX + w / 2)
         node.setFinalY(this.config.translateY)
       }
-
 
 
       // depth of node inside tree
@@ -150,7 +145,7 @@ class RadialLayout extends BaseLayout {
         }
 
         // calculate edge
-        const e = this.edges.find(e => e.fromNode.id === child.id && e.toNode.id === node.id)
+        const e = this.edges.find((e) => e.fromNode.id === child.id && e.toNode.id === node.id)
         e.calculateEdge()
 
         node.addIncomingEdge(e)
@@ -165,43 +160,43 @@ class RadialLayout extends BaseLayout {
       const rendered = []
       while (toRender.length) {
         const current = toRender.shift()
-        const node = this.nodes.find(n => n.id === current.id)
+        const node = this.nodes.find((n) => n.id === current.id)
         rendered.push(node)
 
-        current.children.forEach(child => {
+        current.children.forEach((child) => {
           toRender.push(child)
         })
       }
 
-      const hAdjustment = Math.min(...rendered.map(node => {
+      const hAdjustment = Math.min(...rendered.map((node) => {
         const w = this.config.renderingSize === "max" ? node.getMaxWidth() : node.getMinWidth()
         return node.getFinalX() - w
       }))
-      const vAdjustment = Math.min(...rendered.map(node => {
+      const vAdjustment = Math.min(...rendered.map((node) => {
         const h = this.config.renderingSize === "max" ? node.getMaxHeight() : node.getMinHeight()
         return node.getFinalY() - h
       }))
 
-      rendered.forEach(node => {
+      rendered.forEach((node) => {
         const x = ((node.getFinalX() - hAdjustment) + offset) + this.config.translateX
         const y = (node.getFinalY() - vAdjustment) + this.config.translateY
         node.setFinalX(x)
         node.setFinalY(y)
       })
-      this.edges.forEach(edge => {
+      this.edges.forEach((edge) => {
         edge.finalToX = (edge.finalToX - hAdjustment) + offset + this.config.translateX
         edge.finalFromX = (edge.finalFromX - hAdjustment) + offset + this.config.translateX
         edge.finalToY = edge.finalToY - vAdjustment + this.config.translateY
         edge.finalFromY = edge.finalFromY - vAdjustment + this.config.translateY
       })
 
-      const x0 = Math.min(...rendered.map(n => {
+      const x0 = Math.min(...rendered.map((n) => {
         const w = this.config.renderingSize === "max" ? n.getMaxWidth() : n.getMinWidth()
         return n.getFinalX() - w
       }))
       const y0 = 0
 
-      const x1 = Math.max(...rendered.map(n => {
+      const x1 = Math.max(...rendered.map((n) => {
         const w = this.config.renderingSize === "max" ? n.getMaxWidth() : n.getMinWidth()
         return n.getFinalX() + w
       }))
@@ -232,11 +227,7 @@ class RadialLayout extends BaseLayout {
         w: calculateDistance(x0, y0, x1, y1),
         h: calculateDistance(x1, y1, x2, y2),
       }
-
-
     }
-
-
 
 
     this.tree = constructTree(this.nodes)[0]
@@ -249,22 +240,19 @@ class RadialLayout extends BaseLayout {
   }
 
   renderLayout() {
-
-    const X = this.nodes.find(n => n.id === this.rootId).getFinalX()
-    const Y = this.nodes.find(n => n.id === this.rootId).getFinalY()
+    const X = this.nodes.find((n) => n.id === this.rootId).getFinalX()
+    const Y = this.nodes.find((n) => n.id === this.rootId).getFinalY()
 
     // console.log(this.nodes)
     // console.log(this.edges)
 
     const renderNodes = () => {
-
       const toRender = [this.tree]
       while (toRender.length) {
         const current = toRender.shift()
-        const node = this.nodes.find(n => n.id === current.id)
+        const node = this.nodes.find((n) => n.id === current.id)
 
         if (node.isRendered() === false) {
-
           // add add or remove event
           // node.addEvent("dblclick", () => { this.updateRadialDataAsync(node) })
 
@@ -290,8 +278,7 @@ class RadialLayout extends BaseLayout {
           // })
 
 
-
-          node.outgoingEdges.forEach(edge => {
+          node.outgoingEdges.forEach((edge) => {
             if (edge.isRendered() === false) {
               edge.render(X, Y)
             }
@@ -300,7 +287,7 @@ class RadialLayout extends BaseLayout {
           node.transformToFinalPosition()
         }
 
-        current.children.forEach(child => {
+        current.children.forEach((child) => {
           toRender.push(child)
         })
       }
@@ -310,12 +297,9 @@ class RadialLayout extends BaseLayout {
           edge.transformToFinalPosition()
         }
       })
-
     }
 
     renderNodes()
-
-
   }
 }
 

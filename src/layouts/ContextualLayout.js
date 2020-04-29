@@ -713,10 +713,9 @@ class ContextualLayout extends BaseLayout {
 
 
     const calculateParentEdges = () => {
-
       if (this.parents.length > this.config.parentContainerColumns) {
         this.parentEdges = []
-        const con = this.containers.find(c => c.type === "parent")
+        const con = this.containers.find((c) => c.type === "parent")
         const tx = con.finalX
         const ty = con.finalY + con.h / 2 + 4
         const fx = this.focus.getFinalX()
@@ -725,29 +724,26 @@ class ContextualLayout extends BaseLayout {
         const ix = this.focus.getFinalX()
         const iy = this.focus.getFinalY()
 
-        const color2 = this.parents.map(p => p.config.borderStrokeColor)
+        const color2 = this.parents.map((p) => p.config.borderStrokeColor)
 
         const mostCommon = (array) => {
-          if (array.length == 0)
-            return null;
-          const modeMap = {};
-          let maxEl = array[0], maxCount = 1;
+          if (array.length == 0) return null
+          const modeMap = {}
+          let maxEl = array[0]; let
+            maxCount = 1
           for (let i = 0; i < array.length; i++) {
-            const el = array[i];
-            if (modeMap[el] == null)
-              modeMap[el] = 1;
-            else
-              modeMap[el]++;
+            const el = array[i]
+            if (modeMap[el] == null) modeMap[el] = 1
+            else { modeMap[el]++ }
             if (modeMap[el] > maxCount) {
-              maxEl = el;
-              maxCount = modeMap[el];
+              maxEl = el
+              maxCount = modeMap[el]
             }
           }
-          return maxEl;
+          return maxEl
         }
         const color1 = this.focus.config.borderStrokeColor
         this.connections.push(new ContextualContainerConnection(this.canvas, ix, iy, fx, fy, tx, ty, color1, mostCommon(color2), 100))
-
       }
 
       this.parentEdges.forEach((edge) => {
@@ -756,10 +752,9 @@ class ContextualLayout extends BaseLayout {
     }
 
     const calculateChildEdges = () => {
-
       if (this.children.length > this.config.childContainerColumns) {
         this.childEdges = []
-        const con = this.containers.find(c => c.type === "child")
+        const con = this.containers.find((c) => c.type === "child")
         const fx = con.finalX
         const fy = con.finalY - con.h / 2 - 4
         const tx = this.focus.getFinalX()
@@ -769,29 +764,26 @@ class ContextualLayout extends BaseLayout {
         const iy = this.focus.getFinalY()
 
 
-        const color2 = this.children.map(p => p.config.borderStrokeColor)
+        const color2 = this.children.map((p) => p.config.borderStrokeColor)
 
         const mostCommon = (array) => {
-          if (array.length == 0)
-            return null;
-          const modeMap = {};
-          let maxEl = array[0], maxCount = 1;
+          if (array.length == 0) return null
+          const modeMap = {}
+          let maxEl = array[0]; let
+            maxCount = 1
           for (let i = 0; i < array.length; i++) {
-            const el = array[i];
-            if (modeMap[el] == null)
-              modeMap[el] = 1;
-            else
-              modeMap[el]++;
+            const el = array[i]
+            if (modeMap[el] == null) modeMap[el] = 1
+            else { modeMap[el]++ }
             if (modeMap[el] > maxCount) {
-              maxEl = el;
-              maxCount = modeMap[el];
+              maxEl = el
+              maxCount = modeMap[el]
             }
           }
-          return maxEl;
+          return maxEl
         }
         const color1 = this.focus.config.borderStrokeColor
         this.connections.push(new ContextualContainerConnection(this.canvas, ix, iy, fx, fy, tx, ty, color1, mostCommon(color2), -100))
-
       }
 
       this.childEdges.forEach((edge) => {
@@ -819,7 +811,7 @@ class ContextualLayout extends BaseLayout {
       const rx = this.focus.getFinalX() + this.config.riskFocusDistance
       let ry = this.focus.getFinalY() + 50 + this.config.spacing - 4
 
-      if (this.containers.find(c => c.type === "risk") === undefined) {
+      if (this.containers.find((c) => c.type === "risk") === undefined) {
         ry += this.config.spacing / 2
       }
 
@@ -827,17 +819,15 @@ class ContextualLayout extends BaseLayout {
     }
 
     const calculateLayoutInfo = () => {
-
-
       const nodes = [
         ...this.parents.slice(0, this.config.parentContainerNodeLimit),
         ...this.children.slice(0, this.config.childContainerNodeLimit),
         ...this.risks.slice(0, this.config.riskContainerNodeLimit),
-        this.assgined
+        this.assgined,
       ]
 
 
-      let x0 = Math.min(...nodes.map(n => {
+      let x0 = Math.min(...nodes.map((n) => {
         const w = n.getMinWidth()
         return n.getFinalX() - w / 2 - this.config.spacing * 2
       }))
@@ -848,7 +838,6 @@ class ContextualLayout extends BaseLayout {
 
       const y0 = 0
       // this.canvas.circle(5).fill("#f75").center(x0, y0)
-
 
 
       // top right
@@ -865,10 +854,9 @@ class ContextualLayout extends BaseLayout {
       // this.canvas.circle(5).fill("#75f").center(x1, y1)
 
 
-
       // bottom right
       const x2 = x1
-      const y2 = Math.max(...this.nodes.map(n => {
+      const y2 = Math.max(...this.nodes.map((n) => {
         const h = n.getMinHeight()
         return n.getFinalY() + h / 2 + this.config.spacing / 2
       }))
@@ -1092,7 +1080,7 @@ class ContextualLayout extends BaseLayout {
     }
 
     const renderConnections = () => {
-      this.connections.forEach(connection => {
+      this.connections.forEach((connection) => {
         if (connection.isRendered() === false) {
           connection.render()
         }
@@ -1135,7 +1123,6 @@ class ContextualLayout extends BaseLayout {
       }
 
 
-
       // remove nodes
       const nodesToRemove = this.nodes.filter((n) => {
         if (n.id === node.id) {
@@ -1166,7 +1153,7 @@ class ContextualLayout extends BaseLayout {
       })
       this.expanders = []
 
-      this.connections.forEach(connection => {
+      this.connections.forEach((connection) => {
         connection.removeConnection()
       })
       this.connections = []
@@ -1247,7 +1234,7 @@ class ContextualLayout extends BaseLayout {
     }
 
     const renderEdges = () => {
-      this.parentEdges.forEach(edge => {
+      this.parentEdges.forEach((edge) => {
         if (edge.isRendered() === false) {
           edge.render(X, Y)
         } else if (edge.isRendered() === true) {
@@ -1255,7 +1242,7 @@ class ContextualLayout extends BaseLayout {
         }
       })
 
-      this.childEdges.forEach(edge => {
+      this.childEdges.forEach((edge) => {
         if (edge.isRendered() === false) {
           edge.render(X, Y)
         } else if (edge.isRendered() === true) {
@@ -1271,7 +1258,6 @@ class ContextualLayout extends BaseLayout {
     renderConnections()
     renderNodes()
     renderEdges()
-
 
 
     // // render containers
