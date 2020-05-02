@@ -7,26 +7,27 @@ import AssetNodeConfiguration from "../configuration/AssetNodeConfiguration"
  * This class is responsible for the visual representation of assets.
  * @property {Data} data The loaded data element from a database.
  * @property {Canvas} canvas The nested canvas to render the node on.
- * @property {Object} layoutConfig The nested canvas to render the node on.
- *
+ * @property {Object} overrideRepresentation An optional object that contains information to override default representations.
  */
 class AssetNode extends BaseNode {
-  constructor(data, canvas, layoutConfig = {}) {
+  constructor(data, canvas, overrideRepresentation = {}) {
     super(data, canvas)
 
-    this.config = { ...AssetNodeConfiguration, ...data.config, ...layoutConfig }
+    this.config = { ...AssetNodeConfiguration, ...data.config, ...overrideRepresentation }
   }
 
 
   /**
    * Creates the asset details description.
    *
-   * @return {ForeignObject} text A foreign object containing some html and the node's label.
+   * @return {ForeignObject} A foreign object containing some html and the node's label.
    */
   createAssetDetails() {
-    const text = this.canvas.foreignObject(this.config.maxTextWidth, this.config.maxTextHeight)
+    const fobj = this.canvas.foreignObject(this.config.maxTextWidth, this.config.maxTextHeight)
+
+    // add text background
     const background = document.createElement("div")
-    text.add(background)
+    fobj.add(background)
     background.style.width = `${this.config.maxTextWidth}px`
     background.style.height = `${this.config.maxTextHeight}px`
     background.style.display = "grid"
@@ -34,16 +35,17 @@ class AssetNode extends BaseNode {
     background.setAttribute("id", "label")
 
 
+    // add label background
     const labelBg = document.createElement("div")
     labelBg.style.gridColumn = "1 / 3"
     labelBg.style.display = "flex"
     labelBg.style.justifyContent = "center"
     background.appendChild(labelBg)
 
+    // add label
     const label = document.createElement("p")
     label.innerHTML = this.label
     label.style.textAlign = "center"
-
     label.style.background = this.config.labelBackground
     label.style.margin = `${this.config.offset * 2}px 0 ${this.config.offset}px`
     label.style.color = this.config.labelColor
@@ -51,9 +53,10 @@ class AssetNode extends BaseNode {
     label.style.fontFamily = this.config.labelFontFamily
     label.style.fontWeight = this.config.labelFontWeight
     label.style.fontStyle = this.config.labelFontStyle
+    clamp(label, { clamp: this.config.maxLabelLineClamp })
     labelBg.appendChild(label)
 
-
+    // add description background
     const descriptionBg = document.createElement("div")
     if (this.keyValuePairs.length === 0) {
       descriptionBg.style.gridRow = "2"
@@ -61,6 +64,8 @@ class AssetNode extends BaseNode {
     }
     descriptionBg.style.overflow = "hidden"
     background.appendChild(descriptionBg)
+
+    // add description text
     const description = document.createElement("p")
     description.style.background = this.config.detailsBackground
     description.style.padding = `${this.config.offset / 2}px 0 ${this.config.offset / 2}px ${this.config.offset}px`
@@ -75,10 +80,13 @@ class AssetNode extends BaseNode {
     clamp(description, { clamp: `${maxH}px` })
     descriptionBg.style.height = `${description.clientHeight - 2}px`
 
+    // add key-value pair background
     const kvBg = document.createElement("div")
     kvBg.style.overflow = "hidden"
     background.appendChild(kvBg)
     let kvH = 0
+
+    // add each key value pair entry
     this.keyValuePairs.forEach((elem) => {
       const key = document.createElement("p")
       key.innerText = `• ${elem.key}`
@@ -107,16 +115,15 @@ class AssetNode extends BaseNode {
       }
     })
 
-
-    return text
+    return fobj
   }
 
 
   /**
-  * Transforms the node to its final rendered position.
-  * @param {Number} X=finalX The final X position.
-  * @param {Number} Y=finalY The final Y position.
-  */
+   * Transforms the node to its final rendered position.
+   * @param {Number} [X=finalX] The final X position.
+   * @param {Number} [Y=finalY] The final Y position.
+   */
   transformToFinalPosition(X = this.finalX, Y = this.finalY) {
     if (this.isRendered() === false) {
       return
@@ -126,18 +133,24 @@ class AssetNode extends BaseNode {
     this.currentY = Y
     this.coords.push([this.currentX, this.currentY])
 
-    this.svg.get(0).animate({ duration: this.config.animationSpeed }).center(X, Y)
-    this.svg.get(1).animate({ duration: this.config.animationSpeed }).center(X, Y)
-    this.svg.get(2).animate({ duration: this.config.animationSpeed }).center(X, Y)
+    if (this.getNodeSize() === "min") {
+      this.svg.get(0).animate({ duration: this.config.animationSpeed }).center(X, Y)
+      this.svg.get(1).animate({ duration: this.config.animationSpeed }).center(X + this.config.minIconTranslateX, Y + this.config.minIconTranslateY)
+      this.svg.get(2).animate({ duration: this.config.animationSpeed }).center(X, Y)
+    } else {
+      this.svg.get(0).animate({ duration: this.config.animationSpeed }).center(X, Y)
+      this.svg.get(1).animate({ duration: this.config.animationSpeed }).center(X + this.config.maxIconTranslateX, Y + this.config.maxIconTranslateY)
+      this.svg.get(2).animate({ duration: this.config.animationSpeed }).center(X, Y)
+    }
   }
 
 
   /**
   * Renders an asset node in minimal representation.
-  * @param  {Number} IX=initialX The initial X render position.
-  * @param  {Number} IY=initialY The initial Y render position.
-  * @param  {Number} FX=finalX The final X render position.
-  * @param  {Number} FY=finalY The final Y render position.
+  * @param  {Number} [IX=initialX] The initial X render position.
+  * @param  {Number} [IY=initialY] The initial Y render position.
+  * @param  {Number} [FX=finalX] The final X render position.
+  * @param  {Number} [FY=finalY] The final Y render position.
   */
   renderAsMin(IX = this.initialX, IY = this.initialY, FX = this.finalX, FY = this.finalY) {
     // create svg elements
@@ -181,18 +194,22 @@ class AssetNode extends BaseNode {
     this.currentWidth = this.config.minWidth
     this.currentHeight = this.config.minHeight
     this.nodeSize = "min"
+
     this.currentX = IX
     this.currentY = IY
+    this.coords.push([this.finalX, this.finalY])
+
+
     this.svg = svg
   }
 
 
   /**
   * Renders an asset node in detailed representation.
-  * @param  {Number} IX=initialX The initial X render position.
-  * @param  {Number} IY=initialY The initial Y render position.
-  * @param  {Number} FX=finalX The final X render position.
-  * @param  {Number} FY=finalY The final Y render position.
+  * @param  {Number} [IX=initialX] The initial X render position.
+  * @param  {Number} [IY=initialY] The initial Y render position.
+  * @param  {Number} [FX=finalX] The final X render position.
+  * @param  {Number} [FY=finalY] The final Y render position.
   */
   renderAsMax(IX = this.initialX, IY = this.initialY, FX = this.finalX, FY = this.finalY) {
     // create svg elements
@@ -215,7 +232,6 @@ class AssetNode extends BaseNode {
       .animate({ duration: this.config.animationSpeed })
       .center(FX, FY)
 
-
     icon
       .center(IX + this.config.maxIconTranslateX, IY + this.config.maxIconTranslateY)
       .attr({ opacity: this.config.maxIconOpacity })
@@ -236,16 +252,20 @@ class AssetNode extends BaseNode {
     this.currentWidth = this.config.maxWidth
     this.currentHeight = this.config.maxHeight
     this.nodeSize = "max"
+
     this.currentX = IX
     this.currentY = IY
+    this.coords.push([this.finalX, this.finalY])
+
+
     this.svg = svg
   }
 
 
   /**
   * Transforms a node from minimal version to detailed representation.
-  * @param {Number} X=finalX The final X render position.
-  * @param {Number} Y=finalY The final Y render position.
+  * @param {Number} [X=finalX] The final X render position.
+  * @param {Number} [Y=finalY] The final Y render position.
   */
   transformToMax(X = this.finalX, Y = this.finalY) {
     // update current elements
@@ -314,8 +334,8 @@ class AssetNode extends BaseNode {
 
   /**
   * Transforms a node from detailed representation to minimal version.
-  * @param {Number} X=finalX The final Xrender position.
-  * @param {Number} Y=finalY The final Y render position.
+  * @param {Number} [X=finalX] The final X render position.
+  * @param {Number} [Y=finalY] The final Y render position.
   */
   transformToMin(X = this.finalX, Y = this.finalY) {
     // update current elements

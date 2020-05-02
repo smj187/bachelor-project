@@ -33,30 +33,30 @@ class Graph {
     // remove edge references
     node.neighbors.forEach((neighbor) => {
       // edge from end node to removed node
-      const edge1 = this.edges.find((e) => e.startNode === id && e.endNode === neighbor.id)
+      const edge1 = this.edges.find((e) => e.fromNode === id && e.toNode === neighbor.id)
       if (edge1 !== undefined) {
         this.edges = this.edges.filter((e) => e !== edge1)
 
         // remove start node edge reference
-        const endNode = this.nodes.find((n) => n.id === edge1.endNode)
-        endNode.edges = endNode.edges.filter((e) => e !== edge1)
+        const toNode = this.nodes.find((n) => n.id === edge1.toNode)
+        toNode.edges = toNode.edges.filter((e) => e !== edge1)
 
         // remove start node neighbor
-        endNode.removeNeighbor(node)
+        toNode.removeNeighbor(node)
       }
 
 
       // edge from start node to removed node
-      const edge2 = this.edges.find((e) => e.startNode === neighbor.id && e.endNode === id)
+      const edge2 = this.edges.find((e) => e.fromNode === neighbor.id && e.toNode === id)
       if (edge2 !== undefined) {
         this.edges = this.edges.filter((e) => e !== edge2)
 
         // remove start node edge reference
-        const startNode = this.nodes.find((n) => n.id === edge2.startNode)
-        startNode.edges = startNode.edges.filter((e) => e !== edge2)
+        const fromNode = this.nodes.find((n) => n.id === edge2.fromNode)
+        fromNode.edges = fromNode.edges.filter((e) => e !== edge2)
 
         // remove start node neighbor
-        startNode.removeNeighbor(node)
+        fromNode.removeNeighbor(node)
       }
     })
   }
@@ -64,20 +64,20 @@ class Graph {
 
   /**
    * Creates a new edge and update the current graph.
-   * @param {Number} startNode The start node id.
-   * @param {Number} endNode The end node id.
+   * @param {Number} fromNode The start node id.
+   * @param {Number} toNode The end node id.
    */
-  includeEdge(startNode, endNode) {
-    if (startNode === endNode) {
+  includeEdge(fromNode, toNode) {
+    if (fromNode === toNode) {
       throw new Error("could not create an edge between two identical nodes")
     }
-    const fromNodeRef = this.nodes.find((n) => n.id === startNode)
+    const fromNodeRef = this.nodes.find((n) => n.id === fromNode)
     if (fromNodeRef === undefined) {
-      throw new Error(`could not find start node ${startNode}`)
+      throw new Error(`could not find start node ${fromNode}`)
     }
-    const toNodeRef = this.nodes.find((n) => n.id === endNode)
+    const toNodeRef = this.nodes.find((n) => n.id === toNode)
     if (toNodeRef === undefined) {
-      throw new Error(`could not find start node ${endNode}`)
+      throw new Error(`could not find start node ${toNode}`)
     }
 
     // add neigbhor
@@ -85,7 +85,7 @@ class Graph {
     toNodeRef.addNeighbor(fromNodeRef)
 
     // create edge
-    const edge = new GraphEdge(startNode, endNode)
+    const edge = new GraphEdge(fromNode, toNode)
     fromNodeRef.addEdge(edge)
     toNodeRef.addEdge(edge)
     this.edges.push(edge)
@@ -94,24 +94,24 @@ class Graph {
 
   /**
    * Removes an edge and all its occurrences within the current graph.
-   * @param {Number} startNode The start node id.
-   * @param {Number} endNode The end node id.
+   * @param {Number} fromNode The start node id.
+   * @param {Number} toNode The end node id.
    */
-  excludeEdge(startNode, endNode) {
-    if (startNode === endNode) {
+  excludeEdge(fromNode, toNode) {
+    if (fromNode === toNode) {
       throw new Error("could not remove an edge between two identical nodes")
     }
-    const fromNodeRef = this.nodes.find((n) => n.id === startNode)
+    const fromNodeRef = this.nodes.find((n) => n.id === fromNode)
     if (fromNodeRef === undefined) {
-      throw new Error(`could not find start node ${startNode}`)
+      throw new Error(`could not find start node ${fromNode}`)
     }
-    const toNodeRef = this.nodes.find((n) => n.id === endNode)
+    const toNodeRef = this.nodes.find((n) => n.id === toNode)
     if (toNodeRef === undefined) {
-      throw new Error(`could not find start node ${endNode}`)
+      throw new Error(`could not find start node ${toNode}`)
     }
 
     // remove edge
-    const edge = this.edges.find((e) => e.startNode === startNode && e.endNode === endNode)
+    const edge = this.edges.find((e) => e.fromNode === fromNode && e.toNode === toNode)
     this.edges = this.edges.filter((e) => e !== edge)
 
     // remove edge reference from nodes

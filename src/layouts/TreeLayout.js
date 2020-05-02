@@ -1,17 +1,20 @@
 import BaseLayout from "./BaseLayout"
 import Leaf from "./helpers/TreeLeaf"
 import TreeLayoutConfiguration from "../configuration/TreeLayoutConfiguration"
-import BoldEdge from "../edges/BoldEdge"
+import { buildTreeFromNodes } from "../utils/TreeConstruction"
+
+
 
 
 /**
- * This class depicts given data within a tree layout.
+ * This class depicts given data within a tree layout. The algorithm to achieve this visualization is based on the Reingold-Tilford Algorithm. The main calculation process
+ * is based on the initial work found in an article, but extended in such a way that it fits the needs for the defined scope of this project.
  *
- * @param {Object} [customConfig={ }] Overrides default layout configuration properties.
- *                                    Available options: {@link TreeLayoutConfiguration}
+ * @param {Object} [customConfig={ }] Overrides default layout configuration properties. Available options: {@link TreeLayoutConfiguration}
  * @param {Object} [customEvents={ }] Overrides event listener configuration properties.
  * @param {Object} [customNodes={ }] Overrides default node representation properties.
  *
+ * @see https://rachel53461.wordpress.com/2014/04/20/algorithm-for-drawing-trees/
  */
 class TreeLayout extends BaseLayout {
   constructor(customConfig = {}, customEventlisteners = [], customNodes = {}, customEdges = {}) {
@@ -53,7 +56,7 @@ class TreeLayout extends BaseLayout {
     // remove clicked leaf indication
     const leaf = this.leafs.find((l) => l.id === node.id)
     if (leaf !== undefined) {
-      leaf.removeLeaf()
+      leaf.removeSVG()
       this.leafs = this.leafs.filter((l) => l.id !== node.id)
     }
 
@@ -83,32 +86,14 @@ class TreeLayout extends BaseLayout {
    * Calculates the tree layout based on an underlying algorithm.
    * @param {Number} [offset=0] Determines the space the layout has to shift in order to avoid overlapping layouts.
    * @param {Object} [opts={ }] An object containing additional information.
-   * @param {Boolean} opts.isReRender Determines if the layout is rerenderd.
-   * @param {Number} opts.x The x coordinate for the clicked node.
-   * @param {Number} opts.y The y coordinate for the clicked node.
+   * @param {Boolean} [opts.isReRender=false] Determines if the layout is rerenderd.
+   * @param {Number} [opts.x=null] The x coordinate for the clicked node.
+   * @param {Number} [opts.y=null] The y coordinate for the clicked node.
    */
-  calculateLayout(offset = 0, opts = {}) {
+  calculateLayout(offset = 0, { isReRender = false }) {
     const isVertical = this.config.orientation === "vertical"
     this.initialOffset = offset
 
-    // construct the final tree that is visible
-    const buildTreeFromNodes = (array, parentRef, rootRef) => {
-      let root = rootRef !== undefined ? rootRef : []
-      const parent = parentRef !== undefined ? parentRef : { id: null }
-      const children = array.filter((child) => child.parentId === parent.id)
-      if (children.length > 0) {
-        if (parent.id === null) {
-          root = children
-        } else {
-          parent.children = children
-        }
-
-        children.forEach((child) => {
-          buildTreeFromNodes(array, child)
-        })
-      }
-      return root
-    }
 
     // initialize the tree with required information
     const initializeNodes = (node, parent = null, prevSibling = null, depth = 0) => {
@@ -300,6 +285,14 @@ class TreeLayout extends BaseLayout {
 
       // fix spacing issue for 1 child
       const fixOneChildProblem = (node) => {
+        if (isReRender) {
+          const depthNodes = this.nodes.filter(n => n.depth === node.depth + 1)
+          if (depthNodes.length === 1) {
+            return
+          }
+        }
+
+
         let nodes = []
 
         // find parent nodes
@@ -313,7 +306,7 @@ class TreeLayout extends BaseLayout {
         // find children  nodes
         const addChildren = (node) => {
           nodes.push(node)
-          node.children.forEach(child => {
+          node.children.forEach((child) => {
             addChildren(child)
           })
         }
@@ -337,16 +330,15 @@ class TreeLayout extends BaseLayout {
           return
         }
 
-        sibs.forEach(sibling => {
+        sibs.forEach((sibling) => {
           if (sibling.children.length === 0) {
             sibling.setFinalX(sibling.getFinalX() + w / 2 + this.config.hSpacing / 2)
           }
         })
 
 
-
         // console.log(sibs)
-        nodes.forEach(node => {
+        nodes.forEach((node) => {
           if (isVertical) {
             node.setFinalX(node.getFinalX() + w / 2 + this.config.hSpacing / 2)
           } else {
@@ -356,14 +348,13 @@ class TreeLayout extends BaseLayout {
       }
 
       if (node.children.length === 1) {
-        // console.log(node, node.isRightMost())
         fixOneChildProblem(node)
       }
     }
 
     // center node between two nodes if it does not have any children but left and right do
     const fixZeroChildProblem = (node) => {
-      node.children.forEach(child => {
+      node.children.forEach((child) => {
         fixZeroChildProblem(child)
       })
 
@@ -437,9 +428,7 @@ class TreeLayout extends BaseLayout {
       }
 
       const addLeaf = (currentNode) => {
-        if (currentNode.hasNoChildren()
-          && (currentNode.hasChildrenIds() || currentNode.getInvisibleChildren().length >= this.config.visibleNodeLimit)
-        ) {
+        if (currentNode.hasNoChildren() && (currentNode.hasChildrenIds() || currentNode.getInvisibleChildren().length >= this.config.visibleNodeLimit)) {
           if (currentNode.getInvisibleChildren().length > 0) {
             currentNode.setChildrenIds(currentNode.getInvisibleChildren())
           }
@@ -447,15 +436,15 @@ class TreeLayout extends BaseLayout {
 
           if (existing === undefined) {
             const isHorizontal = this.config.orientation === "horizontal"
-            const leaf = new Leaf(this.canvas, currentNode, this.config.leafIndicationLimit, config, isHorizontal)
-            const x = opts.x ? opts.x : currentNode.getFinalX()
-            const y = opts.y ? opts.y : currentNode.getFinalY()
+            const leaf = new Leaf(this.canvas, currentNode, config, isHorizontal)
+            const x = x ? x : currentNode.getFinalX()
+            const y = y ? y : currentNode.getFinalY()
 
             leaf.setFinalX(x)
             leaf.setFinalY(y)
             leaf.setInitialX(root.getFinalX())
             leaf.setInitialY(root.getFinalY())
-            leaf.setIsReRender(opts.isReRender || false)
+            leaf.setIsReRender(isReRender || false)
             this.leafs.push(leaf)
           }
         }
@@ -571,7 +560,6 @@ class TreeLayout extends BaseLayout {
       })
     }
 
-
     const tree = buildTreeFromNodes(this.nodes)[0]
     initializeNodes(tree)
     calculateXYPositions(tree)
@@ -587,7 +575,6 @@ class TreeLayout extends BaseLayout {
     addEdgeReferences(tree)
 
 
-
     return this.layoutInfo
   }
 
@@ -595,13 +582,13 @@ class TreeLayout extends BaseLayout {
   /**
    * Renders the tree layout by creating SVG objects representing nodes, leafs and edges.
    * @param {Object} [opts={ }] An object containing additional information.
-   * @param {Boolean} opts.isReRender Determines if the layout is rerenderd.
-   * @param {Number} opts.x The x coordinate for the clicked node.
-   * @param {Number} opts.y The y coordinate for the clicked node.
+   * @param {Boolean} [opts.isReRender=false] Determines if the layout is rerenderd.
+   * @param {Number} [opts.x=null] The x coordinate for the clicked node.
+   * @param {Number} [opts.y=null] The y coordinate for the clicked node.
    */
-  renderLayout(opts = {}) {
-    const X = opts.x ? opts.x : this.nodes.find((n) => n.id === this.rootId).getFinalX()
-    const Y = opts.y ? opts.y : this.nodes.find((n) => n.id === this.rootId).getFinalY()
+  renderLayout({ isReRender = false, x = null, y = null }) {
+    const X = x ? x : this.nodes.find((n) => n.id === this.rootId).getFinalX()
+    const Y = y ? y : this.nodes.find((n) => n.id === this.rootId).getFinalY()
 
 
     // render nodes and edges
@@ -616,7 +603,6 @@ class TreeLayout extends BaseLayout {
           const eventStr = [...new Set(this.events.map((e) => e.event))].toString().split(",")
           // console.log(eventStr, this.events)
           node.svg.on(eventStr, (e) => {
-
             const { type } = e
             let modifier
             if (e.altKey === true) {
@@ -653,7 +639,7 @@ class TreeLayout extends BaseLayout {
     const renderLeafs = () => {
       this.leafs.forEach((leaf) => {
         if (leaf.isRendered() === false) {
-          leaf.render(opts.isReRender === true)
+          leaf.render(isReRender === true)
         } else if (leaf.isRendered() === true) {
           leaf.transformToFinalPosition()
         }
@@ -661,23 +647,17 @@ class TreeLayout extends BaseLayout {
     }
 
     // update edges
-    const renderEdges = (opts) => {
-      if (opts.isReRender !== true) {
-        // console.log("edge rernder")
-        return
-      }
+    const renderEdges = () => {
       this.edges.forEach((edge) => {
         if (edge.isRendered() === true) {
-          edge.transformToFinalPosition({ isReRender: opts.isReRender || false })
+          edge.transformToFinalPosition({ isReRender: isReRender || false })
         }
       })
-
-
     }
 
     renderNodes()
-    renderLeafs(opts)
-    renderEdges(opts)
+    renderLeafs()
+    renderEdges()
   }
 }
 

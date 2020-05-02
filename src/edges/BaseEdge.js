@@ -24,8 +24,6 @@ class BaseEdge {
     // node position
     this.initialX = 0
     this.initialY = 0
-
-
     this.finalToX = 0
     this.finalToY = 0
     this.finalFromX = 0
@@ -34,6 +32,7 @@ class BaseEdge {
 
     this.opacity = 1
     this.isHidden = false
+    this.layoutId = null
   }
 
 
@@ -106,76 +105,9 @@ class BaseEdge {
   }
 
 
-  /**
-   * Updates the two points indicating an edge.
-   */
-  updateEdgePosition() {
-    const fx = this.fromNode.getFinalX()
-    const fy = this.fromNode.getFinalY()
-
-    const tx = this.toNode.getFinalX()
-    const ty = this.toNode.getFinalY()
-
-    // this.canvas.circle(5).fill("#75f").center(fx, fy)
-    // this.canvas.circle(5).fill("#000").center(tx, ty)
-
-    const line = shape("line", {
-      x1: fx,
-      y1: fy,
-      x2: tx,
-      y2: ty,
-    })
 
 
-
-
-
-    // from intersection point calculation
-    const w2 = this.fromNode.getNodeSize() === "min" ? this.fromNode.config.minWidth : this.fromNode.config.maxWidth
-    const h2 = this.fromNode.getNodeSize() === "min" ? this.fromNode.config.minHeight : this.fromNode.config.maxHeight
-    const rect2 = shape("rect", {
-      x: fx - w2 / 2 - this.fromNode.config.borderStrokeWidth / 2 - this.config.offset / 2,
-      y: fy - h2 / 2 - this.fromNode.config.borderStrokeWidth / 2 - this.config.offset / 2,
-      width: w2 + this.fromNode.config.borderStrokeWidth + this.config.offset,
-      height: h2 + this.fromNode.config.borderStrokeWidth + this.config.offset,
-      rx: this.fromNode.config.borderRadius,
-      ry: this.fromNode.config.borderRadius,
-    })
-
-    const fromPoints = intersect(rect2, line)
-    // console.log(fromPoints)
-    this.finalFromX = fromPoints.points[0].x
-    this.finalFromY = fromPoints.points[0].y
-
-
-    // to intersection point calculation
-    const w1 = this.toNode.getNodeSize() === "min" ? this.toNode.config.minWidth : this.toNode.config.maxWidth
-    const h1 = this.toNode.getNodeSize() === "min" ? this.toNode.config.minHeight : this.toNode.config.maxHeight
-    const rect1 = shape("rect", {
-      x: tx - w1 / 2 - this.toNode.config.borderStrokeWidth / 2 - this.config.offset / 2,
-      y: ty - h2 / 2 - this.toNode.config.borderStrokeWidth / 2 - this.config.offset / 2,
-      width: w1 + this.toNode.config.borderStrokeWidth + this.config.offset,
-      height: h1 + this.toNode.config.borderStrokeWidth + this.config.offset,
-      rx: this.toNode.config.borderRadius,
-      ry: this.toNode.config.borderRadius,
-    })
-
-    const toPoints = intersect(rect1, line)
-    this.finalToX = toPoints.points[0].x
-    this.finalToY = toPoints.points[0].y
-
-
-    // this.canvas.circle(5).fill("#75f").center(this.finalFromX, this.finalFromY)
-    // this.canvas.circle(5).fill("#000").center(this.finalToX, this.finalToY)
-  }
-
-
-  /**
-   * Removes the rendered SVG edge from the canvas.
-   * @param {Number} X The X position to move the elements before removing them.
-   * @param {Number} Y The Y position to move the elements before removing them.
-   */
-  removeEdge(X = 0, Y = 0) {
+  removeEdge(X = 0, Y = 0) { // TODO: remove
     if (this.svg !== null) {
       this
         .svg
@@ -193,17 +125,17 @@ class BaseEdge {
   }
 
 
+  /**
+   * Removes the rendered SVG object from the canvas.
+   */
   removeSVG() {
-    if (this.isRendered() === false) {
-      return
-    }
+    if (this.isRendered() === false) return
 
     const x = (this.finalFromX + this.finalToX) / 2
     const y = (this.finalFromY + this.finalToY) / 2
     this.svg.back()
     this.svg
       .animate({ duration: this.config.animationSpeed })
-      // .transform({ scale: 0.001 })
       .transform({ scale: 0.001, position: [x, y + 100] })
       .after(() => {
         try { this.svg.remove() } catch (error) { }
@@ -294,6 +226,14 @@ class BaseEdge {
 
   getFinalFromY() {
     return this.finalFromY
+  }
+
+  setLayoutId(layoutId) {
+    this.layoutId = layoutId
+  }
+
+  getLayoutId() {
+    return this.layoutId
   }
 }
 

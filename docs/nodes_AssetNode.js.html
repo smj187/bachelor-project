@@ -46,7 +46,7 @@
             <div class="column is-3" id="sidebarNav">
                 <div class="sidebar">
                     <nav>
-                        <h2><a href="index.html">Home</a></h2><div class="category"><h3>Tutorials</h3><ul><li><a href="tutorial-advanced-layouts.html">Advanced Layout Examples</a></li><li><a href="tutorial-contextual-layout.html">Contextual Layout Examples</a></li><li><a href="tutorial-grid-layout.html">Grid Layout Examples</a></li><li><a href="tutorial-radial-layout.html">Radial Layout Examples</a></li><li><a href="tutorial-tree-layout.html">Tree Layout Examples</a></li></ul><h3>Namespaces</h3><ul><li><a href="AssetNodeConfiguration.html">AssetNodeConfiguration</a></li><li><a href="BoldEdgeConfiguration.html">BoldEdgeConfiguration</a></li><li><a href="ContextualLayoutConfiguration.html">ContextualLayoutConfiguration</a></li><li><a href="ControlNodeConfiguration.html">ControlNodeConfiguration</a></li><li><a href="CustomNodeConfiguration.html">CustomNodeConfiguration</a></li><li><a href="GridLayoutConfiguration.html">GridLayoutConfiguration</a></li><li><a href="RadialLayoutConfiguration.html">RadialLayoutConfiguration</a></li><li><a href="RequirementNodeConfiguration.html">RequirementNodeConfiguration</a></li><li><a href="RiskNodeConfiguration.html">RiskNodeConfiguration</a></li><li><a href="ThinEdgeConfiguration.html">ThinEdgeConfiguration</a></li><li><a href="TreeLayoutConfiguration.html">TreeLayoutConfiguration</a></li></ul><h3>Classes</h3><ul><li><a href="AssetNode.html">AssetNode</a></li><li><a href="BaseEdge.html">BaseEdge</a></li><li><a href="BaseLayout.html">BaseLayout</a></li><li><a href="BaseNode.html">BaseNode</a></li><li><a href="BoldEdge.html">BoldEdge</a></li><li><a href="ContextualLayout.html">ContextualLayout</a></li><li><a href="ControlNode.html">ControlNode</a></li><li><a href="CustomNode.html">CustomNode</a></li><li><a href="EdgeFactory.html">EdgeFactory</a></li><li><a href="Graph.html">Graph</a></li><li><a href="GraphEdge.html">GraphEdge</a></li><li><a href="GraphNode.html">GraphNode</a></li><li><a href="GridExpander.html">GridExpander</a></li><li><a href="GridLayout.html">GridLayout</a></li><li><a href="NodeFactory.html">NodeFactory</a></li><li><a href="RadialLayout.html">RadialLayout</a></li><li><a href="RequirementNode.html">RequirementNode</a></li><li><a href="RiskNode.html">RiskNode</a></li><li><a href="ThinEdge.html">ThinEdge</a></li><li><a href="TreeLayout.html">TreeLayout</a></li><li><a href="TreeLeaf.html">TreeLeaf</a></li><li><a href="Visualization.html">Visualization</a></li></ul><h3>Global</h3><ul><li><a href="global.html#visConfig">visConfig</a></li></ul></div>
+                        <h2><a href="index.html">Home</a></h2><div class="category"><h3>Tutorials</h3><ul><li><a href="tutorial-advanced-layouts.html">Advanced Layout Examples</a></li><li><a href="tutorial-contextual-layout.html">Contextual Layout Examples</a></li><li><a href="tutorial-grid-layout.html">Grid Layout Examples</a></li><li><a href="tutorial-radial-layout.html">Radial Layout Examples</a></li><li><a href="tutorial-tree-layout.html">Tree Layout Examples</a></li></ul><h3>Namespaces</h3><ul><li><a href="AssetNodeConfiguration.html">AssetNodeConfiguration</a></li><li><a href="BoldEdgeConfiguration.html">BoldEdgeConfiguration</a></li><li><a href="ContextualLayoutConfiguration.html">ContextualLayoutConfiguration</a></li><li><a href="ControlNodeConfiguration.html">ControlNodeConfiguration</a></li><li><a href="CustomEdgeConfiguration.html">CustomEdgeConfiguration</a></li><li><a href="CustomNodeConfiguration.html">CustomNodeConfiguration</a></li><li><a href="GridLayoutConfiguration.html">GridLayoutConfiguration</a></li><li><a href="RadialLayoutConfiguration.html">RadialLayoutConfiguration</a></li><li><a href="RequirementNodeConfiguration.html">RequirementNodeConfiguration</a></li><li><a href="RiskNodeConfiguration.html">RiskNodeConfiguration</a></li><li><a href="ThinEdgeConfiguration.html">ThinEdgeConfiguration</a></li><li><a href="TreeLayoutConfiguration.html">TreeLayoutConfiguration</a></li><li><a href="VisualizationConfiguration.html">VisualizationConfiguration</a></li></ul><h3>Classes</h3><ul><li><a href="AssetNode.html">AssetNode</a></li><li><a href="BaseEdge.html">BaseEdge</a></li><li><a href="BaseLayout.html">BaseLayout</a></li><li><a href="BaseNode.html">BaseNode</a></li><li><a href="BoldEdge.html">BoldEdge</a></li><li><a href="ContextualLayout.html">ContextualLayout</a></li><li><a href="ControlNode.html">ControlNode</a></li><li><a href="CustomEdge.html">CustomEdge</a></li><li><a href="CustomNode.html">CustomNode</a></li><li><a href="EdgeFactory.html">EdgeFactory</a></li><li><a href="Graph.html">Graph</a></li><li><a href="GraphEdge.html">GraphEdge</a></li><li><a href="GraphNode.html">GraphNode</a></li><li><a href="GridExpander.html">GridExpander</a></li><li><a href="GridLayout.html">GridLayout</a></li><li><a href="NodeFactory.html">NodeFactory</a></li><li><a href="RadialLayout.html">RadialLayout</a></li><li><a href="RequirementNode.html">RequirementNode</a></li><li><a href="RiskNode.html">RiskNode</a></li><li><a href="ThinEdge.html">ThinEdge</a></li><li><a href="TreeLayout.html">TreeLayout</a></li><li><a href="TreeLeaf.html">TreeLeaf</a></li><li><a href="Visualization.html">Visualization</a></li></ul><h3>Global</h3><ul><li><a href="global.html#buildTreeFromNodes">buildTreeFromNodes</a></li><li><a href="global.html#colorshift">colorshift</a></li><li><a href="global.html#constructTree">constructTree</a></li><li><a href="global.html#Request">Request</a></li><li><a href="global.html#RequestMultiple2">RequestMultiple2</a></li></ul></div>
                     </nav>
                 </div>
             </div>
@@ -73,26 +73,27 @@ import AssetNodeConfiguration from "../configuration/AssetNodeConfiguration"
  * This class is responsible for the visual representation of assets.
  * @property {Data} data The loaded data element from a database.
  * @property {Canvas} canvas The nested canvas to render the node on.
- * @property {Object} layoutConfig The nested canvas to render the node on.
- *
+ * @property {Object} overrideRepresentation An optional object that contains information to override default representations.
  */
 class AssetNode extends BaseNode {
-  constructor(data, canvas, layoutConfig = {}) {
+  constructor(data, canvas, overrideRepresentation = {}) {
     super(data, canvas)
 
-    this.config = { ...AssetNodeConfiguration, ...data.config, ...layoutConfig }
+    this.config = { ...AssetNodeConfiguration, ...data.config, ...overrideRepresentation }
   }
 
 
   /**
    * Creates the asset details description.
    *
-   * @return {ForeignObject} text A foreign object containing some html and the node's label.
+   * @return {ForeignObject} A foreign object containing some html and the node's label.
    */
   createAssetDetails() {
-    const text = this.canvas.foreignObject(this.config.maxTextWidth, this.config.maxTextHeight)
+    const fobj = this.canvas.foreignObject(this.config.maxTextWidth, this.config.maxTextHeight)
+
+    // add text background
     const background = document.createElement("div")
-    text.add(background)
+    fobj.add(background)
     background.style.width = `${this.config.maxTextWidth}px`
     background.style.height = `${this.config.maxTextHeight}px`
     background.style.display = "grid"
@@ -100,16 +101,17 @@ class AssetNode extends BaseNode {
     background.setAttribute("id", "label")
 
 
+    // add label background
     const labelBg = document.createElement("div")
     labelBg.style.gridColumn = "1 / 3"
     labelBg.style.display = "flex"
     labelBg.style.justifyContent = "center"
     background.appendChild(labelBg)
 
+    // add label
     const label = document.createElement("p")
     label.innerHTML = this.label
     label.style.textAlign = "center"
-
     label.style.background = this.config.labelBackground
     label.style.margin = `${this.config.offset * 2}px 0 ${this.config.offset}px`
     label.style.color = this.config.labelColor
@@ -117,9 +119,10 @@ class AssetNode extends BaseNode {
     label.style.fontFamily = this.config.labelFontFamily
     label.style.fontWeight = this.config.labelFontWeight
     label.style.fontStyle = this.config.labelFontStyle
+    clamp(label, { clamp: this.config.maxLabelLineClamp })
     labelBg.appendChild(label)
 
-
+    // add description background
     const descriptionBg = document.createElement("div")
     if (this.keyValuePairs.length === 0) {
       descriptionBg.style.gridRow = "2"
@@ -127,6 +130,8 @@ class AssetNode extends BaseNode {
     }
     descriptionBg.style.overflow = "hidden"
     background.appendChild(descriptionBg)
+
+    // add description text
     const description = document.createElement("p")
     description.style.background = this.config.detailsBackground
     description.style.padding = `${this.config.offset / 2}px 0 ${this.config.offset / 2}px ${this.config.offset}px`
@@ -141,10 +146,13 @@ class AssetNode extends BaseNode {
     clamp(description, { clamp: `${maxH}px` })
     descriptionBg.style.height = `${description.clientHeight - 2}px`
 
+    // add key-value pair background
     const kvBg = document.createElement("div")
     kvBg.style.overflow = "hidden"
     background.appendChild(kvBg)
     let kvH = 0
+
+    // add each key value pair entry
     this.keyValuePairs.forEach((elem) => {
       const key = document.createElement("p")
       key.innerText = `• ${elem.key}`
@@ -173,16 +181,15 @@ class AssetNode extends BaseNode {
       }
     })
 
-
-    return text
+    return fobj
   }
 
 
   /**
-  * Transforms the node to its final rendered position.
-  * @param {Number} X=finalX The final X position.
-  * @param {Number} Y=finalY The final Y position.
-  */
+   * Transforms the node to its final rendered position.
+   * @param {Number} [X=finalX] The final X position.
+   * @param {Number} [Y=finalY] The final Y position.
+   */
   transformToFinalPosition(X = this.finalX, Y = this.finalY) {
     if (this.isRendered() === false) {
       return
@@ -192,18 +199,24 @@ class AssetNode extends BaseNode {
     this.currentY = Y
     this.coords.push([this.currentX, this.currentY])
 
-    this.svg.get(0).animate({ duration: this.config.animationSpeed }).center(X, Y)
-    this.svg.get(1).animate({ duration: this.config.animationSpeed }).center(X, Y)
-    this.svg.get(2).animate({ duration: this.config.animationSpeed }).center(X, Y)
+    if (this.getNodeSize() === "min") {
+      this.svg.get(0).animate({ duration: this.config.animationSpeed }).center(X, Y)
+      this.svg.get(1).animate({ duration: this.config.animationSpeed }).center(X + this.config.minIconTranslateX, Y + this.config.minIconTranslateY)
+      this.svg.get(2).animate({ duration: this.config.animationSpeed }).center(X, Y)
+    } else {
+      this.svg.get(0).animate({ duration: this.config.animationSpeed }).center(X, Y)
+      this.svg.get(1).animate({ duration: this.config.animationSpeed }).center(X + this.config.maxIconTranslateX, Y + this.config.maxIconTranslateY)
+      this.svg.get(2).animate({ duration: this.config.animationSpeed }).center(X, Y)
+    }
   }
 
 
   /**
   * Renders an asset node in minimal representation.
-  * @param  {Number} IX=initialX The initial X render position.
-  * @param  {Number} IY=initialY The initial Y render position.
-  * @param  {Number} FX=finalX The final X render position.
-  * @param  {Number} FY=finalY The final Y render position.
+  * @param  {Number} [IX=initialX] The initial X render position.
+  * @param  {Number} [IY=initialY] The initial Y render position.
+  * @param  {Number} [FX=finalX] The final X render position.
+  * @param  {Number} [FY=finalY] The final Y render position.
   */
   renderAsMin(IX = this.initialX, IY = this.initialY, FX = this.finalX, FY = this.finalY) {
     // create svg elements
@@ -247,18 +260,22 @@ class AssetNode extends BaseNode {
     this.currentWidth = this.config.minWidth
     this.currentHeight = this.config.minHeight
     this.nodeSize = "min"
+
     this.currentX = IX
     this.currentY = IY
+    this.coords.push([this.finalX, this.finalY])
+
+
     this.svg = svg
   }
 
 
   /**
   * Renders an asset node in detailed representation.
-  * @param  {Number} IX=initialX The initial X render position.
-  * @param  {Number} IY=initialY The initial Y render position.
-  * @param  {Number} FX=finalX The final X render position.
-  * @param  {Number} FY=finalY The final Y render position.
+  * @param  {Number} [IX=initialX] The initial X render position.
+  * @param  {Number} [IY=initialY] The initial Y render position.
+  * @param  {Number} [FX=finalX] The final X render position.
+  * @param  {Number} [FY=finalY] The final Y render position.
   */
   renderAsMax(IX = this.initialX, IY = this.initialY, FX = this.finalX, FY = this.finalY) {
     // create svg elements
@@ -281,7 +298,6 @@ class AssetNode extends BaseNode {
       .animate({ duration: this.config.animationSpeed })
       .center(FX, FY)
 
-
     icon
       .center(IX + this.config.maxIconTranslateX, IY + this.config.maxIconTranslateY)
       .attr({ opacity: this.config.maxIconOpacity })
@@ -302,16 +318,20 @@ class AssetNode extends BaseNode {
     this.currentWidth = this.config.maxWidth
     this.currentHeight = this.config.maxHeight
     this.nodeSize = "max"
+
     this.currentX = IX
     this.currentY = IY
+    this.coords.push([this.finalX, this.finalY])
+
+
     this.svg = svg
   }
 
 
   /**
   * Transforms a node from minimal version to detailed representation.
-  * @param {Number} X=finalX The final X render position.
-  * @param {Number} Y=finalY The final Y render position.
+  * @param {Number} [X=finalX] The final X render position.
+  * @param {Number} [Y=finalY] The final Y render position.
   */
   transformToMax(X = this.finalX, Y = this.finalY) {
     // update current elements
@@ -380,8 +400,8 @@ class AssetNode extends BaseNode {
 
   /**
   * Transforms a node from detailed representation to minimal version.
-  * @param {Number} X=finalX The final Xrender position.
-  * @param {Number} Y=finalY The final Y render position.
+  * @param {Number} [X=finalX] The final X render position.
+  * @param {Number} [Y=finalY] The final Y render position.
   */
   transformToMin(X = this.finalX, Y = this.finalY) {
     // update current elements
@@ -470,7 +490,7 @@ export default AssetNode
 
 <footer class="footer">
     <div class="content has-text-centered">
-        <p>Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.3</a> on Wed Apr 29 2020 02:41:52 GMT+0200 (GMT+02:00)</p>
+        <p>Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.3</a> on Fri May 01 2020 16:43:29 GMT+0200 (GMT+02:00)</p>
         <p class="sidebar-created-by">
             <a href="https://github.com/SoftwareBrothers/better-docs" target="_blank">BetterDocs theme</a> provided with <i class="fas fa-heart"></i> by 
             <a href="http://softwarebrothers.co" target="_blank">SoftwareBrothers - JavaScript Development Agency</a>

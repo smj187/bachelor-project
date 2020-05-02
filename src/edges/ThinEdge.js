@@ -9,6 +9,8 @@ import ThinEdgeConfiguration from "../configuration/ThinEdgeConfiguration"
  * @property {BaseEdge} fromNode The starting node reference.
  * @property {BaseEdge} toNode The ending node reference.
  * @property {Object} customThinEdgeConfig An object containing information to change the default visualization.
+ * 
+ * @see ThinEdgeConfiguration
  *
  */
 class ThinEdge extends BaseEdge {
@@ -23,13 +25,14 @@ class ThinEdge extends BaseEdge {
 
 
   /**
-   * Creates the initial SVG element and adds hover effect.
+   * Calculates and renders a bold edge between two given nodes.
+   * @param {Number} [X=finalFromX] The final X position.
+   * @param {Number} [Y=finalFromY] The final Y position.
    */
-  render(X, Y) {
-
-    const svg = this.canvas.group() // .draggable()
+  render(X = this.finalFromX, Y = this.finalFromY) {
+    const svg = this.canvas.group()
     svg.css("cursor", "default")
-    svg.id(`edge#${this.fromNode.id}_${this.toNode.id}`)
+    svg.id(`edge#${this.layoutId}_${this.fromNode.id}_${this.toNode.id}`)
 
     const line = `M${this.finalFromX},${this.finalFromY} L${this.finalToX},${this.finalToY}`
     const dasharray = this.config.type === "dashed" ? this.config.strokeDasharray : "0"
@@ -39,20 +42,21 @@ class ThinEdge extends BaseEdge {
       dasharray,
     })
 
+
     // create a re-useable marker
-    const i = [...this.canvas.defs().node.childNodes].findIndex((d) => d.id === "defaultThinMarker")
+    const defId = `defaultThinMarker#${this.layoutId}`
+    const i = [...this.canvas.defs().node.childNodes].findIndex((d) => d.id === defId)
     if (i === -1) {
       const marker = this.canvas.marker(12, 6, (add) => {
         add.path(this.config.marker).fill(this.config.strokeColor).dx(1)
       })
-      marker.id("defaultThinMarker")
+      marker.id(defId)
       this.canvas.defs().add(marker)
       path.marker("end", marker)
     } else {
       const marker = this.canvas.defs().get(i)
       path.marker("end", marker)
     }
-
 
     svg.add(path)
 
@@ -62,10 +66,7 @@ class ThinEdge extends BaseEdge {
     }
 
     svg.center(X, Y)
-
-
-    svg
-      .back()
+    svg.back()
 
     svg
       .scale(0.001)
@@ -95,131 +96,61 @@ class ThinEdge extends BaseEdge {
   }
 
 
-
   /**
    * Transforms an edge to its final rendered position.
    */
-  transformToFinalPosition(opts = { isReRender: false }) {
+  transformToFinalPosition({ isReRender = false }) {
 
+    this.svg.back()
 
+    if (this.animation !== null) {
+      this.animation.unschedule()
+    }
 
-    if (opts.isReRender === true) {
-      this
+    if (isReRender === true) {
+
+      this.animation = this
         .svg
-        .back()
-
-      // console.log("isReRender")
-
-      // this
-      // .svg
-      // .scale(0.001)
-      // .attr({ opacity: 1 })
-      // .animate({ duration: this.config.animationSpeed })
-      // .transform({ scale: 1 })
-
-      if (this.animation !== null) {
-        this.animation.unschedule()
-      }
-      this.animation = this.svg.get(0)
+        .get(0)
         .animate({ duration: this.config.animationSpeed })
         .plot(`M${this.finalFromX},${this.finalFromY} L${this.finalToX},${this.finalToY}`)
         .after(() => {
           this.animation = null
         })
 
-      // console.log("isReRender", this.config.animationSpeed, this.toNode.id, "<-", this.fromNode.id)
-      if (this.animation) {
-        // this.animation.finish()
-      }
-      // const res = this
-      // .svg
-      // .get(0)
-      // .attr({ opacity: 0 })
-      // .animate({ duration: this.config.animationSpeed })
-      // .plot(`M${this.finalFromX},${this.finalFromY} L${this.finalToX},${this.finalToY}`)
-      // .attr({ opacity: 1 })
-      // console.log(this.svg.get(0))
-      // console.log(this.toNode.id, "<-", this.fromNode.id, this.animation, )
       if (this.label) {
-
         const x = (this.finalFromX + this.finalToX) / 2 + this.config.labelTranslateX
         const y = (this.finalFromY + this.finalToY) / 2 + this.config.labelTranslateY
         this
           .svg
           .get(1)
-          // .attr({ opacity: 0 })
           .animate({ duration: this.config.animationSpeed })
           .center(x, y)
-        // .attr({ opacity: 1 })
       }
-    } else {
-
-      this
-        .svg
-        .back()
-
-
-      this
-        .svg
-      // .scale(0.001)
-      // .attr({ opacity: 1 })
-      // .animate({ duration: this.config.animationSpeed })
-      // .transform({ scale: 1 })
-
+    }
+    else {
 
       this.animation = this
         .svg
         .get(0)
-        // .attr({ opacity: 0 })
         .animate({ duration: this.config.animationSpeed })
         .plot(`M${this.finalFromX},${this.finalFromY} L${this.finalToX},${this.finalToY}`)
         .after(() => {
           this.animation = null
         })
-      // .attr({ opacity: 1 })
-
 
       if (this.label) {
         this
           .svg
           .get(1)
-          // .attr({ opacity: 0 })
           .animate({ duration: this.config.animationSpeed })
           .center((this.finalFromX + this.finalToX) / 2, (this.finalFromY + this.finalToY) / 2)
-          .attr({ opacity: 1 })
       }
     }
   }
 
 
-  /**
-   * Transforms an edge from its visible position to its initial rendered position.
-   * @param {Number} X=finalFromX The X position the edge will be translated.
-   * @param {Number} Y=finalFromY The Y position the edge will be translated.
-   */
-  transformToInitialPosition(X = this.finalFromX, Y = this.finalFromY) {
-    this
-      .svg
-      .back()
 
-    this
-      .svg
-      .get(0)
-      .attr({ opacity: 1 })
-      .animate({ duration: this.config.animationSpeed })
-      .plot(`M${X},${Y} L${X},${Y}`)
-      .attr({ opacity: 0 })
-
-    if (this.label) {
-      this
-        .svg
-        .get(1)
-        .attr({ opacity: 1 })
-        .animate({ duration: this.config.animationSpeed })
-        .center(X, Y)
-        .attr({ opacity: 0 })
-    }
-  }
 }
 
 

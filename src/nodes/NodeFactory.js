@@ -16,13 +16,13 @@ class NodeFactory {
    *
    * @return {BaseNode} The base class representing the node.
    */
-  static create(data, canvas, additionalNodeRepresentations) {
+  static create(data, canvas, { risk, asset, custom, requirement, control }) {
     let node
-    if (data.type === "risk") node = new RiskNode(data, canvas, additionalNodeRepresentations.risk)
-    if (data.type === "asset") node = new AssetNode(data, canvas, additionalNodeRepresentations.asset)
-    if (data.type === "custom") node = new CustomNode(data, canvas, additionalNodeRepresentations.custom)
-    if (data.type === "requirement") node = new RequirementNode(data, canvas, additionalNodeRepresentations.requirement)
-    if (data.type === "control") node = new ControlNode(data, canvas, additionalNodeRepresentations.control)
+    if (data.type === "risk") node = new RiskNode(data, canvas, risk)
+    if (data.type === "asset") node = new AssetNode(data, canvas, asset)
+    if (data.type === "custom") node = new CustomNode(data, canvas, custom)
+    if (data.type === "requirement") node = new RequirementNode(data, canvas, requirement)
+    if (data.type === "control") node = new ControlNode(data, canvas, control)
 
 
     return node

@@ -8,15 +8,19 @@ import ThinEdge from "../edges/ThinEdge"
 import BoldEdge from "../edges/BoldEdge"
 
 import { Request, RequestMultiple } from "../utils/HttpRequests"
+import { constructTree } from "../utils/TreeConstruction"
 import NodeFactory from "../nodes/NodeFactory"
 import EdgeFactory from "../edges/EdgeFactory"
 
 
 /**
  * This is the base class for layouts.
+ * @property {Object} additionalNodeRepresentations An object containing additional node representations.
+ * @property {Object} additionalEdgeRepresentations An object containing additional edge representations.
  */
 class BaseLayout {
   constructor(additionalNodeRepresentations, additionalEdgeRepresentations) {
+    this.layoutIdentifier = null
     this.canvas = null
 
 
@@ -50,9 +54,6 @@ class BaseLayout {
     }
 
 
-
-
-
     this.layoutInfo = {
       x: 0,
       y: 0,
@@ -69,8 +70,9 @@ class BaseLayout {
 
 
     this.layoutReferences = []
-
   }
+
+
 
   // GRID
   async loadAdditionalGridDataAsync() {
@@ -115,83 +117,65 @@ class BaseLayout {
   }
 
 
-  // TREE
+  /**
+   * Loads the initial tree layout data.
+   * @async
+   */
   async loadInitialTreeDataAsync() {
-    // first, load the root node
-    const request1 = [
-      {
-        url: `${this.config.databaseUrl}/${this.config.nodeEndpoint}`,
-        body: [this.rootId],
-      },
-    ]
-    const response1 = await RequestMultiple(request1)
-    const root = response1[0].data[0]
 
+    // first, load the root node
+    const response1 = await Request(`${this.config.databaseUrl}/${this.config.nodeEndpoint}`, [this.rootId])
+    const root = response1[0] || null
+    if (root === null) {
+      throw new Error(`Failed to load root id ${this.rootId}.`)
+    }
+
+
+    // unfortunately make a request for each depth level
     let nodes = [root]
     let childNodeIds = root.children
     for (let i = 0; i < this.renderDepth && childNodeIds.length > 0; i += 1) {
-      const request = [
-        {
-          url: `${this.config.databaseUrl}/${this.config.nodeEndpoint}`,
-          body: childNodeIds,
-        },
-      ]
-      const response = await RequestMultiple(request)
-      const children = response[0].data
+      const response = await Request(`${this.config.databaseUrl}/${this.config.nodeEndpoint}`, childNodeIds)
+      const children = response
       childNodeIds = children.map((c) => c.children).flat()
-      nodes.push(children.flat())
+      nodes.push(children)
     }
 
+    // create fake root
     nodes = nodes.flat()
+    nodes.find((n) => n.id === this.rootId).parent = null
 
-    // make fake root
-    nodes.find(n => n.id === this.rootId).parent = null
 
     // construct a tree data structure to generate edges and calculate node positions
-    const constructTree = (array, parentRef, rootRef) => {
-      let root = rootRef !== undefined ? rootRef : []
-      const parent = parentRef !== undefined ? parentRef : { id: null }
-      const children = array.filter((child) => child.parent === parent.id)
-      if (children.length > 0) {
-        if (parent.id === null) {
-          root = children
-        } else {
-          parent.children = children
-        }
-
-        children.forEach((child) => {
-          constructTree(array, child)
-        })
-      }
-      return root
-    }
-
-    const construct = constructTree(nodes)
-    const trees = construct
+    const trees = constructTree(nodes)
 
 
     // search for the root tree node
-    let tree
-    const searchForRoot = (root) => {
-      if (root.id === this.rootId) {
+    let tree = null
+    const searchRootRecursive = (root, currentRootId) => {
+      if (root.id === currentRootId) {
         tree = root
         return root
       }
       root.children.forEach((child) => {
-        searchForRoot(child)
+        searchRootRecursive(child, currentRootId)
       })
     }
-    trees.forEach((tree) => {
-      searchForRoot(tree)
-    })
+
+    trees.forEach((tree) => searchRootRecursive(tree, this.rootId))
+
+    if (tree === null) {
+      throw new Error(`Failed to create tree. Root ${this.rootId} was not found within the provided data.`)
+    }
 
 
-    const checkVisible = (node) => {
+    // transform children deeper than the current render depth to "invisible" children
+    const checkVisibilityRecursive = (node, visibleNodeLimit) => {
       if (isNaN(node)) {
         node.visible = true
-        if (node.children.length < this.config.visibleNodeLimit) {
+        if (node.children.length < visibleNodeLimit) {
           node.children.forEach((child) => {
-            checkVisible(child)
+            checkVisibilityRecursive(child, visibleNodeLimit)
           })
         } else {
           const ids = node.children.map((n) => (isNaN(n) ? n.id : n))
@@ -201,36 +185,11 @@ class BaseLayout {
         }
       }
     }
+    checkVisibilityRecursive(tree, this.config.visibleNodeLimit)
 
 
-    checkVisible(tree)
 
-
-    // console.log(tree)
-    // let hiddenNodes = []
-    // const checkChildLimitations = (root) => {
-    //   if (root.children !== undefined) {
-    //     if (root.children.length <= this.config.childLimit) {
-    //       root.children.forEach(child => {
-    //         checkChildLimitations(child)
-    //       })
-    //     } else {
-    //       // console.log("root", root, root.children.map(c => c.id))
-    //       // root.childrenIds = root.children.map(c => c.id)
-    //       hiddenNodes = [...hiddenNodes, ...root.children.map(c => c.id)]
-
-    //       root.children = []
-    //     }
-    //     // console.log()
-
-    //   }
-    //   return root
-    // }
-    // // hiddenNodes.flat()
-    // tree = checkChildLimitations(tree)
-    // console.log("-->", tree)
-
-    // find edges all the layout requires
+    // calculate unique edges between the nodes
     const createEdgeConnections = (root, edgeList) => {
       if (root.children) {
         root.children.forEach((child) => {
@@ -241,236 +200,195 @@ class BaseLayout {
       return edgeList
     }
     const requiredEdges = [...new Set(createEdgeConnections(tree, []))]
-    // console.log(requiredEdges)
-
-    const request2 = [
-      {
-        url: `${this.config.databaseUrl}/${this.config.edgeEndpoint}`,
-        body: requiredEdges,
-      },
-    ]
-
-    const response2 = await RequestMultiple(request2)
-    const edges = response2[0].data
 
 
+    // only fetch edges known to the graph
+    const edgesToFetch = requiredEdges.filter(edge => {
+      return this.edgeData.find((e) => e.fromNode === edge.fromNode && e.toNode === e.toNode)
+    })
+
+    const edges = await Request(`${this.config.databaseUrl}/${this.config.edgeEndpoint}`, edgesToFetch)
+
+
+    // create node and edge visualizations
     this.createRepresentations(nodes, edges)
 
-    // create not existing child and parent edges manually
+    // fallback: if an edge was not provided, create it manualy as solid edge
     requiredEdges.forEach((e) => {
       const existingEdge = edges.find((x) => x.fromNode === e.fromNode && x.toNode === e.toNode)
+
       if (existingEdge === undefined) {
         const fromNode = this.nodes.find((n) => n.id === e.fromNode)
         const toNode = this.nodes.find((n) => n.id === e.toNode)
+
         if (fromNode !== undefined && toNode !== undefined) {
+
           const edge = EdgeFactory.create(
             { type: "solid", config: { animationSpeed: this.config.animationSpeed } },
             this.canvas,
             fromNode,
             toNode,
-            this.additionalEdgeRepresentations
+            this.additionalEdgeRepresentations,
           )
-
+          // dont add a label
           edge.setLabel(null)
+          edge.setLayoutId(this.layoutIdentifier)
           this.edges.push(edge)
         }
       }
     })
 
-
-    // console.log(tree)
-
     return this
   }
 
+
+  /**
+   * Performs an add or removal operations.
+   * @param {BaseNode} clickedNode The clicked node.
+   * @async
+   */
   async updateTreeDataAsync(clickedNode) {
 
-    // determine if the data operation is add or remove
+    // if the clicked node has no renderd children, its an add operation, else its a remove operation
     const isAddOperation = clickedNode.children.map((child) => child.svg).length === 0
 
-    // remove data
+    // remove operation
     if (isAddOperation === false) {
+
+      // find nodes for removal
       const nodesToRemove = []
       const queue = [clickedNode]
       while (queue.length) {
-        const current = queue.shift()
+        const currentNode = queue.shift()
 
-        if (clickedNode.id !== current.id) {
-          nodesToRemove.push(current)
+        if (clickedNode.id !== currentNode.id) {
+          nodesToRemove.push(currentNode)
+          currentNode.removeSVG()
         }
-
-        current.children.forEach((child) => {
-          queue.push(child)
-        })
+        currentNode.children.forEach((child) => queue.push(child))
       }
 
-      const coords = clickedNode.coords[clickedNode.coords.length - 2] || clickedNode.coords[0]
-
-
-      const removedNodes = []
-      nodesToRemove.forEach((child) => {
-        child.removeSVG()
-        removedNodes.push(child.id)
-      })
+      // update current information
       clickedNode.setChildren([])
-      this.nodes = this.nodes.filter((node) => !removedNodes.includes(node.id))
+      this.nodes = this.nodes.filter((node) => !nodesToRemove.map(n => n.id).includes(node.id))
 
 
-      // find edges that we need to remove
+      // find edges that we need to remove and update
       const edgesToRemove = [...nodesToRemove.map((n) => n.outgoingEdges)].flat()
       const edgesToBeUpdated = []
       this.edges.forEach((edge) => {
         if (edgesToRemove.includes(edge) === false) {
           edgesToBeUpdated.push(edge)
+        } else {
+          edge.removeSVG()
         }
       })
 
-      // remove edges
-      edgesToRemove.forEach((edge) => {
-        // edge.removeEdge(coords[0], coords[1])
-        edge.removeSVG()
-      })
+      // update current information
       this.edges = []
       this.edges = [...edgesToBeUpdated]
+    }
 
 
-      // // remove leafs (tree specific)
-      // this.leafs.forEach((leafe) => {
-      //   leafe.removeLeaf(clickedNode.getFinalX(), clickedNode.getFinalY())
-      // })
-      // this.leafs = []
-    } else {
-      // add data
-      if (clickedNode.childrenIds.length === 0) {
-        return
-      }
-      // console.log(clickedNode)
+    // add operation
+    if (isAddOperation === true) {
+      if (clickedNode.childrenIds.length === 0) return
+
       const requestedNodes = clickedNode.childrenIds.map((n) => (isNaN(n) ? n.id : n))
-      const request1 = [
-        {
-          url: `${this.config.databaseUrl}/${this.config.nodeEndpoint}`,
-          body: requestedNodes,
-        },
-      ]
-      const response1 = await RequestMultiple(request1)
-      const nodes = response1[0].data
-
+      const nodes = await Request(`${this.config.databaseUrl}/${this.config.nodeEndpoint}`, requestedNodes)
 
       // find edges between new children and clicked node
       const requiredEdges = []
-      nodes.forEach((node) => {
-        requiredEdges.push({ fromNode: node.id, toNode: clickedNode.id })
+      nodes.forEach((node) => requiredEdges.push({ fromNode: node.id, toNode: clickedNode.id }))
+
+      // only fetch edges known to the graph
+      const edgesToFetch = requiredEdges.filter(edge => {
+        return this.edgeData.find((e) => e.fromNode === edge.fromNode && e.toNode === e.toNode)
       })
+      const edges = await Request(`${this.config.databaseUrl}/${this.config.edgeEndpoint}`, edgesToFetch)
 
-
-      const request2 = [
-        {
-          url: `${this.config.databaseUrl}/${this.config.edgeEndpoint}`,
-          body: requiredEdges,
-        },
-      ]
-
-      const response2 = await RequestMultiple(request2)
-      const edges = response2[0].data
-
-
+      // create node and edge visualizations
       this.createRepresentations(nodes, edges)
 
+      // fallback: if an edge was not provided, create it manualy as solid edge
       requiredEdges.forEach((e) => {
         const existingEdge = edges.find((x) => x.fromNode === e.fromNode && x.toNode === e.toNode)
+
         if (existingEdge === undefined) {
           const fromNode = this.nodes.find((n) => n.id === e.fromNode)
           const toNode = this.nodes.find((n) => n.id === e.toNode)
+
           if (fromNode !== undefined && toNode !== undefined) {
+
             const edge = EdgeFactory.create(
               { type: "solid", config: { animationSpeed: this.config.animationSpeed } },
               this.canvas,
               fromNode,
               toNode,
-              this.additionalEdgeRepresentations
+              this.additionalEdgeRepresentations,
             )
-
+            // dont add a label
             edge.setLabel(null)
+            edge.setLayoutId(this.layoutIdentifier)
             this.edges.push(edge)
           }
         }
       })
     }
 
-
-
-
-    const index = this.layoutReferences.indexOf(this)
-    const layouts = this.layoutReferences.slice(0, index)
-    const offset = layouts.map((l) => l.layoutInfo.w).reduce((a, b) => a + b, 0)
-
-    const prevInfo = this.layoutInfo
-    this.calculateLayout(offset, { x: clickedNode.getFinalX(), y: clickedNode.getFinalY(), isReRender: true })
-
-    // const { w, h, x, y } = this.layoutInfo
-    const w = this.layoutInfo.w + this.config.translateX
-    // this.canvas.line(x + w, y, x + w, y + h).stroke({ width: 2, color: "red" })
-    // this.canvas.rect(10, 10).center(x + w, y)
-
-    // const newInfo = this.layoutInfo
-    // const w = newInfo.w - prevInfo.w
-    // console.log(prevInfo, newInfo, w)
-
-    // update all layouts right side
-    this.layoutReferences.forEach((llayout, i) => {
-      if (i > index) {
-        // llayout.canvas.animate({ duration: this.config.animationSpeed }).dx(w - 175)
-        // console.log(llayout, llayout.initialOffset - (w - prevInfo.w))
-
-        llayout.calculateLayout(llayout.initialOffset + (w - prevInfo.w))
-        llayout.renderLayout()
-      }
-    })
+    this.updateLayoutsToTheRight(clickedNode)
 
 
     const coords = clickedNode.coords[clickedNode.coords.length - 1]
+    const x = coords[0]
+    const y = coords[1]
 
-    this.renderLayout({ isReRender: true, x: coords[0], y: coords[1] })
+    this.renderLayout({ isReRender: true, x, y })
   }
 
+
+  /**
+   * Rebuilds the entire tree layout.
+   * @async
+   */
   async rebuildTreeLayout() {
     await this.removeLayoutAsync()
     await this.loadInitialTreeDataAsync()
   }
 
-  async updateTreeLayout() {
 
+  /**
+   * Updates all layouts to the right if necessary.
+   */
+  updateLayoutsToTheRight({ isReRender = false }) {
     const index = this.layoutReferences.indexOf(this)
     const layouts = this.layoutReferences.slice(0, index)
     const offset = layouts.map((l) => l.layoutInfo.w).reduce((a, b) => a + b, 0)
 
     const prevInfo = this.layoutInfo
-    this.calculateLayout(offset)
-
+    this.calculateLayout(offset, { isReRender: true })
     const w = this.layoutInfo.w + this.config.translateX
-    // const { w, h, x, y } = this.layoutInfo
-    // this.canvas.line(x + w, y, x + w, y + h).stroke({ width: 2, color: "red" })
-    // this.canvas.rect(10, 10).center(x + w, y)
-
-    // const newInfo = this.layoutInfo
-    // const w = newInfo.w - prevInfo.w
-    // console.log(prevInfo, newInfo, w)
 
     // update all layouts right side
     this.layoutReferences.forEach((llayout, i) => {
       if (i > index) {
-        // llayout.canvas.animate({ duration: this.config.animationSpeed }).dx(w - 175)
-        console.log(llayout, llayout.initialOffset - (w - prevInfo.w))
 
-        llayout.calculateLayout(llayout.initialOffset + (w - prevInfo.w))
-        llayout.renderLayout()
+        llayout.calculateLayout(llayout.initialOffset + (w - prevInfo.w), {})
+        llayout.renderLayout({})
       }
     })
 
-    // const coords = clickedNode.coords[clickedNode.coords.length - 1]
-    this.renderLayout()
-
+    if (isReRender === true) {
+      this.renderLayout({})
+    }
   }
+
+
+
+
+
+
+
 
 
 
@@ -479,76 +397,74 @@ class BaseLayout {
 
   // RADIAL
   async loadInitialRadialDataAsync() {
-    // first, load the root node
-    const request1 = [
-      {
-        url: `${this.config.databaseUrl}/${this.config.nodeEndpoint}`,
-        body: [this.rootId],
-      },
-    ]
-    const response1 = await RequestMultiple(request1)
-    const root = response1[0].data[0]
 
-    let nodes = [root]
-    let childNodeIds = root.children
-    for (let i = 0; i < this.renderDepth; i += 1) {
-      const request = [
-        {
-          url: `${this.config.databaseUrl}/${this.config.nodeEndpoint}`,
-          body: childNodeIds,
-        },
-      ]
-      const response = await RequestMultiple(request)
-      const children = response[0].data
-      childNodeIds = children.map((c) => c.children).flat()
-      nodes.push(children.flat())
+    // first, load the root node
+    const response1 = await Request(`${this.config.databaseUrl}/${this.config.nodeEndpoint}`, [this.rootId])
+    const root = response1[0] || null
+    if (root === null) {
+      throw new Error(`Failed to load root id ${this.rootId}.`)
     }
 
-    nodes = nodes.flat()
 
-    // console.log(nodes)
+    // unfortunately make a request for each depth level
+    let nodes = [root]
+    let childNodeIds = root.children
+    for (let i = 0; i < this.renderDepth && childNodeIds.length > 0; i += 1) {
+      const response = await Request(`${this.config.databaseUrl}/${this.config.nodeEndpoint}`, childNodeIds)
+      const children = response
+      childNodeIds = children.map((c) => c.children).flat()
+      nodes.push(children)
+    }
+
+    // create fake root
+    nodes = nodes.flat()
+    nodes.find((n) => n.id === this.rootId).parent = null
 
 
     // construct a tree data structure to generate edges and calculate node positions
-    const constructTree = (array, parentRef, rootRef) => {
-      let root = rootRef !== undefined ? rootRef : []
-      const parent = parentRef !== undefined ? parentRef : { id: null }
-      const children = array.filter((child) => child.parent === parent.id)
-      if (children.length > 0) {
-        if (parent.id === null) {
-          root = children
-        } else {
-          parent.children = children
-        }
-
-        children.forEach((child) => {
-          constructTree(array, child)
-        })
-      }
-      return root
-    }
     const trees = constructTree(nodes)
 
 
     // search for the root tree node
-    let tree
-    const searchForRoot = (root) => {
-      if (root.id === this.rootId) {
+    let tree = null
+    const searchRootRecursive = (root, currentRootId) => {
+      if (root.id === currentRootId) {
         tree = root
         return root
       }
       root.children.forEach((child) => {
-        searchForRoot(child)
+        searchRootRecursive(child, currentRootId)
       })
     }
-    trees.forEach((tree) => {
-      searchForRoot(tree)
-    })
 
-    // console.log(tree)
+    trees.forEach((tree) => searchRootRecursive(tree, this.rootId))
+
+    if (tree === null) {
+      throw new Error(`Failed to create tree. Root ${this.rootId} was not found within the provided data.`)
+    }
 
 
-    // find edges all the layout requires
+    // transform children deeper than the current render depth to "invisible" children
+    const checkVisibilityRecursive = (node, visibleNodeLimit) => {
+      if (isNaN(node)) {
+        node.visible = true
+        if (node.children.length < visibleNodeLimit) {
+          node.children.forEach((child) => {
+            checkVisibilityRecursive(child, visibleNodeLimit)
+          })
+        } else {
+          const ids = node.children.map((n) => (isNaN(n) ? n.id : n))
+          nodes = nodes.filter((n) => !ids.includes(n.id))
+          node.invisibleChildren = ids
+          node.children = []
+        }
+      }
+    }
+    checkVisibilityRecursive(tree, this.config.visibleNodeLimit)
+
+
+
+    // calculate unique edges between the nodes
     const createEdgeConnections = (root, edgeList) => {
       if (root.children) {
         root.children.forEach((child) => {
@@ -560,169 +476,142 @@ class BaseLayout {
     }
     const requiredEdges = [...new Set(createEdgeConnections(tree, []))]
 
-    const request2 = [
-      {
-        url: `${this.config.databaseUrl}/${this.config.edgeEndpoint}`,
-        body: requiredEdges,
-      },
-    ]
 
-    const response2 = await RequestMultiple(request2)
-    const edges = response2[0].data
+    // only fetch edges known to the graph
+    const edgesToFetch = requiredEdges.filter(edge => {
+      return this.edgeData.find((e) => e.fromNode === edge.fromNode && e.toNode === e.toNode)
+    })
 
-    // console.log(edges)
+    const edges = await Request(`${this.config.databaseUrl}/${this.config.edgeEndpoint}`, edgesToFetch)
 
 
+    // create node and edge visualizations
     this.createRepresentations(nodes, edges)
 
-
-    // create not existing child and parent edges manually
+    // fallback: if an edge was not provided, create it manualy as solid edge
     requiredEdges.forEach((e) => {
       const existingEdge = edges.find((x) => x.fromNode === e.fromNode && x.toNode === e.toNode)
+
       if (existingEdge === undefined) {
         const fromNode = this.nodes.find((n) => n.id === e.fromNode)
         const toNode = this.nodes.find((n) => n.id === e.toNode)
+
         if (fromNode !== undefined && toNode !== undefined) {
+
           const edge = EdgeFactory.create(
             { type: "solid", config: { animationSpeed: this.config.animationSpeed } },
             this.canvas,
             fromNode,
             toNode,
+            this.additionalEdgeRepresentations,
           )
-
+          // dont add a label
           edge.setLabel(null)
+          edge.setLayoutId(this.layoutIdentifier)
           this.edges.push(edge)
         }
       }
     })
-
 
     return this
   }
 
   async updateRadialDataAsync(clickedNode) {
-    // determine if the data operation is add or remove
+    // if the clicked node has no renderd children, its an add operation, else its a remove operation
     const isAddOperation = clickedNode.children.map((child) => child.svg).length === 0
 
-    // remove data
+    // remove operation
     if (isAddOperation === false) {
+
+      // find nodes for removal
       const nodesToRemove = []
       const queue = [clickedNode]
       while (queue.length) {
-        const current = queue.shift()
+        const currentNode = queue.shift()
 
-        if (clickedNode.id !== current.id) {
-          nodesToRemove.push(current)
+        if (clickedNode.id !== currentNode.id) {
+          nodesToRemove.push(currentNode)
+          currentNode.removeSVG()
         }
-
-        current.children.forEach((child) => {
-          queue.push(child)
-        })
+        currentNode.children.forEach((child) => queue.push(child))
       }
 
-
-      const X = clickedNode.getFinalX()
-      const Y = clickedNode.getFinalY()
-
-      const removedNodes = []
-      nodesToRemove.forEach((child) => {
-        child.removeNode(X, Y)
-        removedNodes.push(child.id)
-      })
+      // update current information
       clickedNode.setChildren([])
-      this.nodes = this.nodes.filter((node) => !removedNodes.includes(node.id))
+      this.nodes = this.nodes.filter((node) => !nodesToRemove.map(n => n.id).includes(node.id))
 
 
-      // find edges that we need to remove
+      // find edges that we need to remove and update
       const edgesToRemove = [...nodesToRemove.map((n) => n.outgoingEdges)].flat()
       const edgesToBeUpdated = []
       this.edges.forEach((edge) => {
         if (edgesToRemove.includes(edge) === false) {
           edgesToBeUpdated.push(edge)
+        } else {
+          edge.removeSVG()
         }
       })
 
-      // remove edges
-      edgesToRemove.forEach((edge) => {
-        edge.removeEdge(clickedNode.getFinalX(), clickedNode.getFinalY())
-      })
+      // update current information
       this.edges = []
       this.edges = [...edgesToBeUpdated]
-    } else {
-      // add data
-      if (clickedNode.childrenIds.length === 0) {
-        return
-      }
+    }
+
+
+    // add operation
+    if (isAddOperation === true) {
+      if (clickedNode.childrenIds.length === 0) return
 
       const requestedNodes = clickedNode.childrenIds.map((n) => (isNaN(n) ? n.id : n))
-      const request1 = [
-        {
-          url: `${this.config.databaseUrl}/${this.config.nodeEndpoint}`,
-          body: requestedNodes,
-        },
-      ]
-      const response1 = await RequestMultiple(request1)
-      const nodes = response1[0].data
-
+      const nodes = await Request(`${this.config.databaseUrl}/${this.config.nodeEndpoint}`, requestedNodes)
 
       // find edges between new children and clicked node
       const requiredEdges = []
-      nodes.forEach((node) => {
-        requiredEdges.push({ startNodeId: node.id, endNodeId: clickedNode.id })
+      nodes.forEach((node) => requiredEdges.push({ fromNode: node.id, toNode: clickedNode.id }))
+
+      // only fetch edges known to the graph
+      const edgesToFetch = requiredEdges.filter(edge => {
+        return this.edgeData.find((e) => e.fromNode === edge.fromNode && e.toNode === e.toNode)
       })
+      const edges = await Request(`${this.config.databaseUrl}/${this.config.edgeEndpoint}`, edgesToFetch)
 
-
-      const request2 = [
-        {
-          url: `${this.config.databaseUrl}/${this.config.edgeEndpoint}`,
-          body: requiredEdges,
-        },
-      ]
-
-      const response2 = await RequestMultiple(request2)
-      const edges = response2[0].data
-
+      // create node and edge visualizations
       this.createRepresentations(nodes, edges)
 
+      // fallback: if an edge was not provided, create it manualy as solid edge
       requiredEdges.forEach((e) => {
         const existingEdge = edges.find((x) => x.fromNode === e.fromNode && x.toNode === e.toNode)
-        if (existingEdge === undefined) {
-          const fromNode = this.nodes.find((n) => n.id === e.startNodeId)
-          const toNode = this.nodes.find((n) => n.id === e.endNodeId)
-          // if (fromNode !== undefined && toNode !== undefined) {
-          const edge = EdgeFactory.create(
-            { type: "solid", config: { animationSpeed: this.config.animationSpeed } },
-            this.canvas,
-            fromNode,
-            toNode,
-          )
 
-          edge.setLabel(null)
-          this.edges.push(edge)
-          // }
+        if (existingEdge === undefined) {
+          const fromNode = this.nodes.find((n) => n.id === e.fromNode)
+          const toNode = this.nodes.find((n) => n.id === e.toNode)
+
+          if (fromNode !== undefined && toNode !== undefined) {
+
+            const edge = EdgeFactory.create(
+              { type: "solid", config: { animationSpeed: this.config.animationSpeed } },
+              this.canvas,
+              fromNode,
+              toNode,
+              this.additionalEdgeRepresentations,
+            )
+            // dont add a label
+            edge.setLabel(null)
+            edge.setLayoutId(this.layoutIdentifier)
+            this.edges.push(edge)
+          }
         }
       })
     }
 
+    this.updateLayoutsToTheRight(clickedNode)
 
-    const index = this.layoutReferences.indexOf(this)
-    const layouts = this.layoutReferences.slice(0, index)
-    const offset = layouts.map((l) => l.layoutInfo.w).reduce((a, b) => a + b, 0)
 
-    const prevW = this.layoutInfo.w
-    this.calculateLayout(offset)
+    const coords = clickedNode.coords[clickedNode.coords.length - 1]
+    const x = coords[0]
+    const y = coords[1]
 
-    const newW = this.layoutInfo.w
-
-    // update all layouts right side
-    this.layoutReferences.forEach((llayout, i) => {
-      if (i > index) {
-        llayout.calculateLayout(newW - prevW)
-        llayout.renderLayout()
-      }
-    })
-
-    this.renderLayout()
+    this.renderLayout({ isReRender: true, x, y })
   }
 
   async updateRadialDataWithConfigAsync(newGraph, newConfiguration) {
@@ -757,24 +646,23 @@ class BaseLayout {
 
 
   async removeLayoutAsync() {
-
     this.nodeData = []
     this.edgeData = []
 
     this.nodes.forEach((node) => {
-      node.removeNode()
+      node.removeSVG()
     })
 
     this.nodes = []
 
     this.edges.forEach((edge) => {
-      edge.removeEdge()
+      edge.removeSVG()
     })
 
     this.edges = []
 
-    this.leafs.forEach(leaf => {
-      leaf.removeLeaf()
+    this.leafs.forEach((leaf) => {
+      leaf.removeSVG()
     })
 
     this.leafs = []
@@ -805,106 +693,6 @@ class BaseLayout {
   }
 
 
-  async loadInitialTreeDataAsyncOLD() {
-    const nodeIds = this.nodeData.map((n) => n.id)
-    // const edgeIds = this.edgeData.map(e => e.id)
-
-    const request1 = [
-      {
-        url: `${this.config.databaseUrl}/${this.config.nodeEndpoint}`,
-        body: nodeIds,
-      },
-    ]
-
-    const response1 = await RequestMultiple(request1)
-    const nodeData = response1[0].data
-
-    // construct a tree data structure to generate edges and calculate node positions
-    const constructTree = (array, parentRef, rootRef) => {
-      let root = rootRef !== undefined ? rootRef : []
-      const parent = parentRef !== undefined ? parentRef : { id: null }
-      const children = array.filter((child) => child.parent === parent.id)
-      if (children.length > 0) {
-        if (parent.id === null) {
-          root = children
-        } else {
-          parent.children = children
-        }
-
-        children.forEach((child) => {
-          constructTree(array, child)
-        })
-      }
-      return root
-    }
-    const trees = constructTree(nodeData) // .find(t => t.id === this.rootId)
-
-
-    let tree
-
-    const bfs = (root) => {
-      if (root.id === this.rootId) {
-        tree = root
-        return root
-      }
-      root.children.forEach((child) => {
-        bfs(child)
-      })
-    }
-
-
-    trees.forEach((tree) => {
-      bfs(tree)
-    })
-    this.tree = tree
-
-
-    // find edges that the layout needs
-    const createEdges = (root, edgeList) => {
-      if (root.children) {
-        root.children.forEach((child) => {
-          edgeList.push({ fromNode: child.id, toNode: root.id })
-          createEdges(child, edgeList)
-        })
-      }
-      return edgeList
-    }
-    const requiredEdges = [...new Set(createEdges(tree, []))]
-
-
-    const request2 = [
-
-      {
-        url: `${this.config.databaseUrl}/${this.config.edgeEndpoint}`,
-        body: requiredEdges,
-      },
-    ]
-
-    const response2 = await RequestMultiple(request2)
-    const edgeData = response2[0].data.map((e) => ({ ...e, type: "solid" }))
-
-
-    this.createRepresentations(nodeData, edgeData)
-
-
-    // create not existing child and parent edges manually
-    const find = (x, e) => x.fromNode === e.fromNode && x.toNode === e.toNode
-
-    requiredEdges.forEach((e) => {
-      const existingEdge = edgeData.find((x) => x.fromNode === e.fromNode && x.toNode === e.toNode)
-      if (existingEdge === undefined) {
-        const fromNode = this.nodes.find((n) => n.id === e.fromNode)
-        const toNode = this.nodes.find((n) => n.id === e.toNode)
-        const edge = EdgeFactory.create({ type: "solid" }, this.canvas, fromNode, toNode)
-
-        edge.setLabel(null)
-        this.edges.push(edge)
-      }
-    })
-
-
-    return this
-  }
 
 
   async loadAdditionalContextualDataAsync() {
@@ -1117,7 +905,6 @@ class BaseLayout {
 
 
   createRepresentations(nodes = [], edges = [], renderingSize = this.config.renderingSize) {
-
     const currentZoomLevel = this.canvas.parent().attr().zoomCurrent
     const currenZoomThreshold = this.canvas.parent().attr().zoomThreshold
 
@@ -1140,22 +927,18 @@ class BaseLayout {
       const edge = EdgeFactory.create({ ...rawEdge, type, config }, this.canvas, fromNode, toNode, this.additionalEdgeRepresentations)
 
       edge.setLabel(rawEdge.label || null)
+      edge.setLayoutId(this.layoutIdentifier)
       this.edges.push(edge)
     })
 
 
     if (currentZoomLevel <= currenZoomThreshold) {
-
-      setTimeout(() => {
+      setTimeout(() => { // this sort timeous is unfortunately needed..
         const labels = document.querySelectorAll("#label")
-        console.log(labels)
         labels.forEach((doc) => {
           doc.style.opacity = "0"
         })
       }, 1)
-
-
-
     }
   }
 
@@ -1184,20 +967,20 @@ class BaseLayout {
 
 
     // in order to load parents and children, the data of the focus node has to be loaded first
-    const focusNode = this.nodeData.find((n) => n.id === this.startNodeId)
+    const focusNode = this.nodeData.find((n) => n.id === this.fromNodeId)
     const focusFetchUrl = `${this.config.databaseUrl}/nodes?id=${focusNode.id}`
     const fetchedFocus = await fetch(focusFetchUrl).then((data) => data.json())
     this.createNodeFromData(fetchedFocus[0], "max")
-    this.focus = this.nodes.find((n) => n.id === this.startNodeId)
+    this.focus = this.nodes.find((n) => n.id === this.fromNodeId)
 
 
     // load parents and children passed on edges inside the graph structure
     const parentChildNodeIds = this.edgeData.map((e) => {
-      if (e.startNodeId === this.startNodeId) {
-        return e.endNodeId
+      if (e.fromNodeId === this.fromNodeId) {
+        return e.toNodeId
       }
-      if (e.endNodeId === this.startNodeId) {
-        return e.startNodeId
+      if (e.toNodeId === this.fromNodeId) {
+        return e.fromNodeId
       }
       return null
     }).filter((id) => id !== null)
@@ -1209,16 +992,16 @@ class BaseLayout {
     fetchedNodes.forEach((rawNode) => {
       this.createNodeFromData(rawNode, "min")
     })
-    const parentNodeIds = this.edgeData.filter((e) => e.startNodeId === this.startNodeId).map((e) => e.endNodeId)
-    const childNodeIds = this.edgeData.filter((e) => e.endNodeId === this.startNodeId).map((e) => e.startNodeId)
+    const parentNodeIds = this.edgeData.filter((e) => e.fromNodeId === this.fromNodeId).map((e) => e.toNodeId)
+    const childNodeIds = this.edgeData.filter((e) => e.toNodeId === this.fromNodeId).map((e) => e.fromNodeId)
     this.parents = this.nodes.filter((n) => parentNodeIds.includes(n.id))
     this.children = this.nodes.filter((n) => childNodeIds.includes(n.id))
 
 
     // here we load attached risks which are attached to a different node
-    const assignedNodeDataUrl = `${this.config.databaseUrl}/RiskEdgeConnectionTable?startNodeId=${this.startNodeId}`
+    const assignedNodeDataUrl = `${this.config.databaseUrl}/RiskEdgeConnectionTable?fromNodeId=${this.fromNodeId}`
     const assignedNodeData = await fetch(assignedNodeDataUrl).then((data) => data.json())
-    const assignedNodeId = assignedNodeData[0].endNodeId
+    const assignedNodeId = assignedNodeData[0].toNodeId
     const riskIds = assignedNodeData[0].risks
 
     const assignedNodeUrl = `${this.config.databaseUrl}/nodes?id=${assignedNodeId}`
@@ -1244,25 +1027,25 @@ class BaseLayout {
 
     // load edges
     const parentChildEdges = this.edgeData.filter((e) => {
-      if (e.startNodeId === this.startNodeId) {
+      if (e.fromNodeId === this.fromNodeId) {
         return true
       }
-      if (e.endNodeId === this.startNodeId) {
+      if (e.toNodeId === this.fromNodeId) {
         return true
       }
       return false
     })
 
     // fetch edges based on given ids
-    const mapEdgeIdsToUrl = (n) => `endNodeId=${n.endNodeId}&startNodeId=${n.startNodeId}&`
+    const mapEdgeIdsToUrl = (n) => `toNodeId=${n.toNodeId}&fromNodeId=${n.fromNodeId}&`
     const edgeIdsToFetch = parentChildEdges.map(mapEdgeIdsToUrl).join("").slice(0, -1)
     const edgeFetchUrl = `${this.config.databaseUrl}/edges?${edgeIdsToFetch}`
     const fetchedEdges = await fetch(edgeFetchUrl).then((data) => data.json())
 
     // create new edges
     fetchedEdges.forEach((rawEdge) => {
-      const fromNode = this.nodes.find((n) => n.id === rawEdge.startNodeId)
-      const toNode = this.nodes.find((n) => n.id === rawEdge.endNodeId)
+      const fromNode = this.nodes.find((n) => n.id === rawEdge.fromNodeId)
+      const toNode = this.nodes.find((n) => n.id === rawEdge.toNodeId)
 
       let edge = null
       if (rawEdge.type === "solid") edge = new ThinEdge(this.canvas, fromNode, toNode, { type: "solid" })
@@ -1329,7 +1112,7 @@ class BaseLayout {
 
     // // add data
 
-    this.startNodeId = clickedNode.id
+    this.fromNodeId = clickedNode.id
     this.createContextualDataAsync(this.nodeData, this.edgeData)
 
     // // in order to load parents and children, the data of the focus node has to be loaded first
@@ -1341,15 +1124,15 @@ class BaseLayout {
 
 
     // // load parents and children edges
-    // const parentEdgeFetchUrl = `${this.config.databaseUrl}/edges?startNodeId=${fetchedFocus[0].id}`
-    // const childrenEdgeFetchUrl = `${this.config.databaseUrl}/edges?endNodeId=${fetchedFocus[0].id}`
+    // const parentEdgeFetchUrl = `${this.config.databaseUrl}/edges?fromNodeId=${fetchedFocus[0].id}`
+    // const childrenEdgeFetchUrl = `${this.config.databaseUrl}/edges?toNodeId=${fetchedFocus[0].id}`
     // const fetchedParentEdges = await fetch(parentEdgeFetchUrl).then((data) => data.json())
     // const fetchedChildrenEdges = await fetch(childrenEdgeFetchUrl).then((data) => data.json())
     // const fetchedEdges = [...fetchedChildrenEdges, ...fetchedParentEdges]
 
 
     // // load nodes based on edngNodeIds in edge response
-    // const nodeIds = fetchedEdges.map((e) => e.endNodeId)
+    // const nodeIds = fetchedEdges.map((e) => e.toNodeId)
     // const mapNodeIdsToUrl = (id) => `id=${id}&`
     // const nodeIdsToFetch = nodeIds.map(mapNodeIdsToUrl).join("").slice(0, -1)
     // const nodeFetchUrl = `${this.config.databaseUrl}/nodes?${nodeIdsToFetch}`
@@ -1359,8 +1142,8 @@ class BaseLayout {
     // })
     // // console.log(fetchedEdges)
 
-    // const parentNodeIds = fetchedEdges.filter((e) => e.endNodeId !== clickedNode.id).map((n) => n.endNodeId)
-    // const childNodeIds = fetchedEdges.filter((e) => e.startNodeId !== clickedNode.id).map((n) => n.startNodeId)
+    // const parentNodeIds = fetchedEdges.filter((e) => e.toNodeId !== clickedNode.id).map((n) => n.toNodeId)
+    // const childNodeIds = fetchedEdges.filter((e) => e.fromNodeId !== clickedNode.id).map((n) => n.fromNodeId)
     // this.parents = this.nodes.filter((n) => parentNodeIds.includes(n.id))
     // this.children = this.nodes.filter((n) => childNodeIds.includes(n.id))
     // console.log(childNodeIds, this.nodes)
@@ -1370,8 +1153,8 @@ class BaseLayout {
 
     // create new edges
     // fetchedEdges.forEach((rawEdge) => {
-    //   const fromNode = this.nodes.find((n) => n.id === rawEdge.startNodeId)
-    //   const toNode = this.nodes.find((n) => n.id === rawEdge.endNodeId)
+    //   const fromNode = this.nodes.find((n) => n.id === rawEdge.fromNodeId)
+    //   const toNode = this.nodes.find((n) => n.id === rawEdge.toNodeId)
 
     //   let edge = null
     //   if (rawEdge.type === "solid") edge = new ThinEdge(this.canvas, fromNode, toNode, { type: "solid" })
@@ -1407,266 +1190,21 @@ class BaseLayout {
   }
 
 
-  async createTreeDataAsync(nodeData, edgeData) { // FIXME: ask: what if an edge dose not exist?
-    this.nodeData = nodeData
-    this.edgeData = edgeData
-
-
-    // find children ids that we need to fetch
-    const mapNodeIdsToUrl = (n) => `id=${n.id}&`
-    const nodeIdsToFetch = nodeData.map(mapNodeIdsToUrl).join("").slice(0, -1)
-    const nodeFetchUrl = `${this.config.databaseUrl}/nodes?${nodeIdsToFetch}`
-    const fetchedNodes = await fetch(nodeFetchUrl).then((data) => data.json())
-
-
-    // create new nodes
-    fetchedNodes.forEach((rawNode) => {
-      let node
-      if (rawNode.type === "risk") node = new RiskNode(rawNode, this.canvas)
-      if (rawNode.type === "asset") node = new AssetNode(rawNode, this.canvas)
-      if (rawNode.type === "custom") node = new CustomNode(rawNode, this.canvas)
-      if (rawNode.type === "requirement") node = new RequirementNode(rawNode, this.canvas)
-      if (rawNode.type === "control") node = new ControlNode(rawNode, this.canvas)
-
-      // sets the currently used rendering size
-      node.setNodeSize(this.config.renderingSize)
-      node.addEvent("dblclick", () => { this.manageTreeDataAsync(node) })
-
-      this.nodes.push(node)
-    })
-
-
-    // construct a tree data structure to generate edges and calculate node positions
-    const constructTree = (array, parentRef, rootRef) => {
-      let root = rootRef !== undefined ? rootRef : []
-      const parent = parentRef !== undefined ? parentRef : { id: null }
-      const children = array.filter((child) => child.parentId === parent.id)
-      if (children.length > 0) {
-        if (parent.id === null) {
-          root = children
-        } else {
-          parent.children = children
-        }
-
-        children.forEach((child) => {
-          constructTree(array, child)
-        })
-      }
-      return root
-    }
-    const tree = constructTree(fetchedNodes)[0] // FIXME: where is the root?
-
-
-    // find edges that the layout needs
-    const createEdges = (root, edgeList) => {
-      if (root.children) {
-        root.children.forEach((child) => {
-          edgeList.push({ startNodeId: child.id, endNodeId: root.id })
-          createEdges(child, edgeList)
-        })
-      }
-      return edgeList
-    }
-    const requiredEdges = [...new Set(createEdges(tree, []))]
-
-
-    // fetch edges based on given ids
-    const mapEdgeIdsToUrl = (n) => `endNodeId=${n.endNodeId}&startNodeId=${n.startNodeId}&`
-    const edgeIdsToFetch = requiredEdges.map(mapEdgeIdsToUrl).join("").slice(0, -1)
-    const edgeFetchUrl = `${this.config.databaseUrl}/edges?${edgeIdsToFetch}`
-    const fetchedEdges = await fetch(edgeFetchUrl).then((data) => data.json())
-
-
-    // create new edges
-    fetchedEdges.forEach((rawEdge) => {
-      const fromNode = this.nodes.find((n) => n.id === rawEdge.startNodeId)
-      const toNode = this.nodes.find((n) => n.id === rawEdge.endNodeId)
-
-
-      let edge = null
-      if (rawEdge.type === "solid") edge = new ThinEdge(this.canvas, fromNode, toNode, { type: "solid" })
-      else if (rawEdge.type === "dashed") edge = new ThinEdge(this.canvas, fromNode, toNode, { type: "dashed" })
-      else if (rawEdge.type === "bold") edge = new BoldEdge(this.canvas, fromNode, toNode, { type: "bold" })
-      else edge = new ThinEdge(this.canvas, fromNode, toNode, { type: "solid" })
-
-      fromNode.addOutgoingEdge(edge)
-      toNode.addIncomingEdge(edge)
-      edge.setLabel(rawEdge.label)
-      this.edges.push(edge)
-    })
-
-
-    // re-calculate and re-render layout
-    this.calculateLayout()
-    this.renderLayout()
+  setLayoutIdentifier(id) {
+    this.layoutIdentifier = id
   }
 
 
-  async manageTreeDataAsync(clickedNode) {
-    const BFS = (root) => {
-      const remove = []
-      const queue = []
-
-      queue.push(root)
 
 
-      while (queue.length) {
-        const current = queue.shift()
-        if (current.id !== root.id) {
-          remove.push(current)
-        }
-
-        current.children.forEach((child) => {
-          if (!queue.includes(child)) {
-            queue.push(child)
-          }
-        })
-      }
-
-      return remove
-    }
-
-    // skip, if node has no children
-    if (clickedNode.childrenIds.length === 0) {
-      return
-    }
-
-
-    const isAddOperation = clickedNode.children.map((child) => child.svg).length === 0
-
-    // add new data
-    if (isAddOperation) {
-      // find children ids that we need to fetch
-      const requestedNodes = []
-      const existingNodes = this.nodes.map((n) => n.id)
-      clickedNode.childrenIds.forEach((id) => {
-        if (!existingNodes.includes(id)) {
-          requestedNodes.push(id)
-        }
-      })
-
-      // // remove leafs (tree specific)
-      // this.leafs.forEach((leafe) => {
-      //   leafe.removeLeaf(clickedNode.getFinalX(), clickedNode.getFinalY())
-      // })
-      // this.leafs = []
-
-
-      // fetch children based on given ids
-      const mapNodeIdsToUrl = (id) => `id=${id}&`
-      const nodeIdsToFetch = requestedNodes.map(mapNodeIdsToUrl).join("").slice(0, -1)
-      const nodeFetchUrl = `${this.config.databaseUrl}/nodes?${nodeIdsToFetch}`
-      const fetchedNodes = await fetch(nodeFetchUrl).then((data) => data.json())
-
-
-      // create new children nodes
-      fetchedNodes.forEach((rawNode) => {
-        let node
-        if (rawNode.type === "risk") node = new RiskNode(rawNode, this.canvas)
-        if (rawNode.type === "asset") node = new AssetNode(rawNode, this.canvas)
-        if (rawNode.type === "custom") node = new CustomNode(rawNode, this.canvas)
-        if (rawNode.type === "requirement") node = new RequirementNode(rawNode, this.canvas)
-        if (rawNode.type === "control") node = new ControlNode(rawNode, this.canvas)
-
-        // sets the currently used rendering size
-        node.setNodeSize(this.config.renderingSize)
-        node.addEvent("dblclick", () => { this.manageTreeDataAsync(node) })
-
-        this.nodes.push(node)
-      })
-
-
-      // find edges between new children and clicked node
-      const requiredEdges = []
-      fetchedNodes.forEach((node) => {
-        requiredEdges.push({ startNodeId: node.id, endNodeId: clickedNode.id })
-      })
-
-
-      // fetch edges based on given ids
-      const mapEdgeIdsToUrl = (n) => `endNodeId=${n.endNodeId}&startNodeId=${n.startNodeId}&`
-      const edgeIdsToFetch = requiredEdges.map(mapEdgeIdsToUrl).join("").slice(0, -1)
-      const edgeFetchUrl = `${this.config.databaseUrl}/edges?${edgeIdsToFetch}`
-      const fetchedEdges = await fetch(edgeFetchUrl).then((data) => data.json())
-
-
-      // create new edges
-      fetchedEdges.forEach((rawEdge) => {
-        const fromNode = this.nodes.find((n) => n.id === rawEdge.startNodeId)
-        const toNode = this.nodes.find((n) => n.id === rawEdge.endNodeId)
-
-
-        let edge = null
-        if (rawEdge.type === "solid") edge = new ThinEdge(this.canvas, fromNode, toNode, { type: "solid" })
-        else if (rawEdge.type === "dashed") edge = new ThinEdge(this.canvas, fromNode, toNode, { type: "dashed" })
-        else if (rawEdge.type === "bold") edge = new BoldEdge(this.canvas, fromNode, toNode, { type: "bold" })
-        else edge = new ThinEdge(this.canvas, fromNode, toNode, { type: "solid" })
-
-        fromNode.addOutgoingEdge(edge)
-        toNode.addIncomingEdge(edge)
-        edge.setLabel(rawEdge.label)
-        this.edges.push(edge)
-      })
-
-
-      // re-calculate and re-render layout
-      this.calculateLayout()
-      this.renderLayout()
-    }
-
-    // remove existing data
-    if (isAddOperation === false) {
-      // find children ids that we need to remove
-      const removedNodes = []
-      const nodesToRemove = BFS(clickedNode)
-      const X = clickedNode.getFinalX()
-      const Y = clickedNode.getFinalY()
-
-
-      // remove children
-      nodesToRemove.forEach((child) => {
-        child.removeNode(X, Y)
-        removedNodes.push(child.id)
-      })
-      clickedNode.setChildren([])
-      this.nodes = this.nodes.filter((node) => !removedNodes.includes(node.id))
-
-
-      // find edges that we need to remove
-      const edgesToRemove = [...nodesToRemove.map((n) => n.outgoingEdges)].flat()
-      const edgesToBeUpdated = []
-      this.edges.forEach((edge) => {
-        if (edgesToRemove.includes(edge) === false) {
-          edgesToBeUpdated.push(edge)
-        }
-      })
-
-
-      // remove edges
-      edgesToRemove.forEach((edge) => {
-        edge.removeEdge(clickedNode.getFinalX(), clickedNode.getFinalY())
-      })
-      this.edges = []
-      this.edges = [...edgesToBeUpdated]
-
-
-      // // remove leafs (tree specific)
-      // this.leafs.forEach((leafe) => {
-      //   leafe.removeLeaf(clickedNode.getFinalX(), clickedNode.getFinalY())
-      // })
-      // this.leafs = []
-
-      // re-calculate and re-render layout
-      this.calculateLayout()
-      this.renderLayout()
-
-
-      // update existing edges
-      this.edges.forEach((edge) => {
-        edge.updateEdgePosition()
-      })
-    }
+  registerAdditionalNodeRepresentation({ control = {}, asset = {}, custom = {}, requirement = {}, risk = {} }) {
+    this.additionalNodeRepresentations = { control, asset, custom, requirement, risk }
   }
+
+  registerAdditionalEdgeRepresentation({ thinEdge = {}, boldEdge = {}, customEdge = {} }) {
+    this.additionalEdgeRepresentations = { thinEdge, boldEdge, customEdge }
+  }
+
 
   setLayoutReferences(layoutReferences) {
     this.layoutReferences = layoutReferences
@@ -1676,6 +1214,9 @@ class BaseLayout {
     return this.layoutReferences
   }
 
+  getLayoutIdentifier() {
+    return this.layoutIdentifier
+  }
 
   setConfig(config) {
     this.config = { ...this.config, ...config }
@@ -1686,7 +1227,8 @@ class BaseLayout {
   }
 
   setCanvas(canvas) {
-    this.canvas = canvas.nested() //.draggable()
+    this.canvas = canvas.nested() // .draggable()
+
   }
 
 
@@ -1737,9 +1279,8 @@ class BaseLayout {
   getRootId() {
     return this.rootId
   }
-
-
 }
 
 
 export default BaseLayout
+// 1669

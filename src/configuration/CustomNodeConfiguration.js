@@ -2,7 +2,7 @@
  * @namespace CustomNodeConfiguration
  * @description This object contains default configuration for custom node representations.
  *
- * @property {String} nodeType=rect                 - Determins the form the node is rendered. Available: "path", "rect" or "ellipse".
+ * @property {String} nodeType=rect                 - Determines the form the node is rendered. Available: "path", "rect" or "ellipse".
  * @property {String} svg=null                      - Determines the custom SVG path that is rendered as node but only if nodeType is set to "path".
  *
  * @property {Number} maxWidth=275                  - Sets the detailed node width.
@@ -10,44 +10,45 @@
  * @property {Number} minWidth=200                  - Sets the minimal node width.
  * @property {Number} minHeight=100                 - Sets the minimal node height.
  *
- * @property {String} iconUrl=null                  - Determins the path to the image icon (if this value is null, the default icon is used).
- * @property {Number} minIconOpacity=0.3            - Determins the basic visibility of the icon in minimal representation.
- * @property {Number} minIconSize=70                - Determins the width and height for the image icon in minimal representation.
- * @property {Number} minIconTranslateX=0           - Determins the horizontal adjustment for the icon in minimal representation.
- * @property {Number} minIconTranslateY=0           - Determins the vertical adjustment for the icon in minimal representation.
- * @property {Number} maxIconOpacity=0.4            - Determins the basic visibility of the icon in detailed representation.
- * @property {Number} maxIconSize=200               - Determins the width and height for the image icon in detailed representation.
- * @property {Number} maxIconTranslateX=0           - Determins the horizontal adjustment for the icon in detailed representation.
- * @property {Number} maxIconTranslateY=0           - Determins the vertical adjustment for the icon in detailed representation.
+ * @property {String} iconUrl=null                  - Determines the path to the image icon (if this value is null, the default icon is used).
+ * @property {Number} minIconOpacity=0.3            - Determines the basic visibility of the icon in minimal representation.
+ * @property {Number} minIconSize=70                - Determines the width and height for the image icon in minimal representation.
+ * @property {Number} minIconTranslateX=0           - Determines the horizontal adjustment for the icon in minimal representation.
+ * @property {Number} minIconTranslateY=0           - Determines the vertical adjustment for the icon in minimal representation.
+ * @property {Number} maxIconOpacity=0.4            - Determines the basic visibility of the icon in detailed representation.
+ * @property {Number} maxIconSize=200               - Determines the width and height for the image icon in detailed representation.
+ * @property {Number} maxIconTranslateX=0           - Determines the horizontal adjustment for the icon in detailed representation.
+ * @property {Number} maxIconTranslateY=0           - Determines the vertical adjustment for the icon in detailed representation.
  *
- * @property {Number} offset=8                      - Determins the spacing used for padding between label and background.
- * @property {Number} animationSpeed=300            - Determins how fast SVG elements animates inside the current layout.
- * @property {Number} borderRadius=5                - Determins the nodes border radius.
- * @property {Number} borderStrokeWidth=1           - Determins the nodes border stroke width.
- * @property {String} borderStrokeColor=#222222     - Determins the nodes border color.
- * @property {String} borderStrokeDasharray="0"     - Determins the nodes gaps used inside the border.
- * @property {String} backgroundColor=#ffffff       - Determins the nodes background color.
+ * @property {Number} offset=8                      - Determines the spacing used for padding between label and background.
+ * @property {Number} animationSpeed=300            - Determines how fast SVG elements animates inside the current layout.
+ * @property {Number} borderRadius=5                - Determines the nodes border radius.
+ * @property {Number} borderStrokeWidth=1           - Determines the nodes border stroke width.
+ * @property {String} borderStrokeColor=#222222     - Determines the nodes border color.
+ * @property {String} borderStrokeDasharray="0"     - Determines the nodes gaps used inside the border.
+ * @property {String} backgroundColor=#ffffff       - Determines the nodes background color.
  *
- * @property {Number} minTextWidth=145              - Determins the text width for the label in minimal representation.
- * @property {Number} minTextHeight=75              - Determins the text height for the label in minimal representation.
- * @property {Number} minTextTranslateX=0           - Determins the horizontal adjustment for the label in minimal representation.
- * @property {Number} minTextTranslateY=0           - Determins the vertical adjustment for the label in minimal representation.
- * @property {Number} maxTextWidth=260              - Determins the text width for the label in detailed representation.
- * @property {Number} maxTextHeight=220             - Determins the text height for the label in detailed representation.
- * @property {Number} maxTextTranslateX=0           - Determins the horizontal adjustment for the label in detailed representation.
- * @property {Number} maxTextTranslateY=0           - Determins the vertical adjustment for the label in detailed representation.
- * @property {String} labelColor=#444444            - Determins the color for the label.
- * @property {String} labelFontFamily=Montserrat    - Determins the font family for the label.
- * @property {Number} labelFontSize=16              - Determins the font size for the label.
- * @property {Number} labelFontWeight=600           - Determins the font weight for the label.
- * @property {String} labelFontStyle=normal         - Determins the font style for the label.
- * @property {String} labelBackground=#ffffffcc     - Determins the background color for the label.
- * @property {String} detailsColor=#444444          - Determins the color for the details description.
- * @property {String} detailsFontFamily=Montserrat  - Determins the font family for the details description.
- * @property {Number} detailsFontSize=12            - Determins the font size for the details description.
- * @property {Number} detailsFontWeight=600         - Determins the font weight for the details description.
- * @property {String} detailsFontStyle=normal       - Determins the font style for the details description.
- * @property {String} detailsBackground=#ffffffcc   - Determins the background color for the details description.
+ * @property {Number} minTextWidth=145              - Determines the text width for the label in minimal representation.
+ * @property {Number} minLabelLineClamp=2           - Determines how many lines are visible for the label in minimal representation.
+ * @property {Number} minTextTranslateX=0           - Determines the horizontal adjustment for the label in minimal representation.
+ * @property {Number} minTextTranslateY=0           - Determines the vertical adjustment for the label in minimal representation.
+ * @property {Number} maxTextWidth=260              - Determines the text width for the label in detailed representation.
+ * @property {Number} maxTextHeight=220             - Determines the text height for the label in detailed representation.
+ * @property {Number} maxLabelLineClamp=4           - Determines how many lines are visible for the label in detailed representation.
+ * @property {Number} maxTextTranslateX=0           - Determines the horizontal adjustment for the label in detailed representation.
+ * @property {Number} maxTextTranslateY=0           - Determines the vertical adjustment for the label in detailed representation.
+ * @property {String} labelColor=#444444            - Determines the color for the label.
+ * @property {String} labelFontFamily=Montserrat    - Determines the font family for the label.
+ * @property {Number} labelFontSize=16              - Determines the font size for the label.
+ * @property {Number} labelFontWeight=600           - Determines the font weight for the label.
+ * @property {String} labelFontStyle=normal         - Determines the font style for the label.
+ * @property {String} labelBackground=#ffffffcc     - Determines the background color for the label.
+ * @property {String} detailsColor=#444444          - Determines the color for the details description.
+ * @property {String} detailsFontFamily=Montserrat  - Determines the font family for the details description.
+ * @property {Number} detailsFontSize=12            - Determines the font size for the details description.
+ * @property {Number} detailsFontWeight=600         - Determines the font weight for the details description.
+ * @property {String} detailsFontStyle=normal       - Determines the font style for the details description.
+ * @property {String} detailsBackground=#ffffffcc   - Determines the background color for the details description.
  */
 
 const CustomNodeConfiguration = {
@@ -88,12 +89,13 @@ const CustomNodeConfiguration = {
 
 
   // text
-  minTextWidth: 145,
-  minTextHeight: 75,
+  minTextWidth: 145, // recommended: min node width - some padding
+  minLabelLineClamp: 2,
   minTextTranslateX: 0,
   minTextTranslateY: 0,
   maxTextWidth: 260,
   maxTextHeight: 220,
+  maxLabelLineClamp: 4,
   maxTextTranslateX: 0,
   maxTextTranslateY: 0,
   labelColor: "#444444",

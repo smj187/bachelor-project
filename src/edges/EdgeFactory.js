@@ -1,5 +1,6 @@
 import BoldEdge from "./BoldEdge"
 import ThinEdge from "./ThinEdge"
+import CustomEdge from "./CustomEdge"
 
 
 /**
@@ -15,26 +16,33 @@ class EdgeFactory {
    *
    * @return {BaseEdge} The base class representing the edge.
    */
-  static create(data, canvas, fromNode, toNode, additionalEdgeRepresentations) {
+  static create(data, canvas, fromNode, toNode, { thinEdge, customEdge, boldEdge }) {
+
+    const validTypes = ["dashed", "solid", "bold", "custom"]
+    const type = validTypes.includes(data.type) ? data.type : "solid"
 
 
     let edge
-    if (data.type === "dashed") {
-      const config = { type: "dashed", ...data.config, ...additionalEdgeRepresentations.thinEdge }
+    if (type === "dashed") {
+      const config = { type: "dashed", ...data.config, ...thinEdge }
       edge = new ThinEdge(data, canvas, fromNode, toNode, config)
     }
-    if (data.type === "solid") {
-      const config = { type: "solid", ...data.config, ...additionalEdgeRepresentations.thinEdge }
+
+    if (type === "custom") {
+      const config = { ...data.config, ...customEdge }
+      edge = new CustomEdge(data, canvas, fromNode, toNode, config)
+    }
+
+    if (type === "solid") {
+      const config = { type: "solid", ...data.config, ...thinEdge }
       edge = new ThinEdge(data, canvas, fromNode, toNode, config)
     }
-    if (data.type === "bold") {
-      const config = {
-        type: "bold",
-        ...data.config,
-        ...additionalEdgeRepresentations.boldEdge
-      }
+
+    if (type === "bold") {
+      const config = { type: "bold", ...data.config, ...boldEdge }
       edge = new BoldEdge(data, canvas, fromNode, toNode, config)
     }
+
 
     return edge
   }

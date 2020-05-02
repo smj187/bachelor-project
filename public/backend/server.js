@@ -12,6 +12,8 @@ app.use(cors())
 
 const DATABASE_URL = `${__dirname}\\database.json`
 
+
+
 app.post("/contextual-relationships", (req, res) => {
   fs.readFile(DATABASE_URL, "utf8", (err, data) => {
     if (err) {
@@ -41,7 +43,7 @@ app.post("/node-data", (req, res) => {
         requested.push(node)
       }
     })
-    console.log("req @:", new Date().toLocaleTimeString(), "<->", req.body)
+    // console.log("req @:", new Date().toLocaleTimeString(), "<->", req.body)
     res.send(requested)
 
 
@@ -97,6 +99,11 @@ const deleteEntry = (req, res, name) => {
 
     const toDelete = req.body || []
     const deleted = parsed.filter((n) => !toDelete.includes(n.id))
+
+    const toModify = deleted.filter(n => n.children.includes(toDelete[0]))
+    toModify.forEach(node => {
+      node.children = node.children.filter(id => id !== toDelete[0])
+    })
 
     all[name] = deleted
     fs.writeFile(DATABASE_URL, JSON.stringify(all, null, 4), "utf8", (writeErr) => {

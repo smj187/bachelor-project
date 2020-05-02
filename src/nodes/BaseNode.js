@@ -4,7 +4,7 @@ import FallbackControlIcon from "../resources/fallbackControlIcon.svg"
 import FallbackAssetIcon from "../resources/fallbackAssetIcon.svg"
 import FallbackRiskIcon from "../resources/fallbackRiskIcon.svg"
 import FallbackCustomIcon from "../resources/fallbackCustomIcon.svg"
-import Colorshift from "../utils/Colorshift"
+import colorshift from "../utils/Colorshift"
 
 
 /**
@@ -72,73 +72,19 @@ class BaseNode {
   }
 
 
-  /**
-   * Transforms a node to its final rendered position.
-   * @param {Number} X=finalX The final X position.
-   * @param {Number} Y=finalY The final Y position.
-   */
-  transformToFinalPosition(X = this.finalX, Y = this.finalY) {
-    if (this.isRendered() === false) {
-      return
-    }
-
-
-    this.currentX = X
-    this.currentY = Y
-    this.coords.push([this.currentX, this.currentY])
-
-
-    if (this.animation !== null) {
-      // this.animation.unschedule()
-    }
-
-
-    this.animation = this
-      .svg
-      .animate({ duration: this.config.animationSpeed })
-      .center(X, Y)
-
-  }
-
 
   /**
-   * Transforms a node from its final position to its initial rendered position.
-   * @param {Number} X=initialX The initial X position.
-   * @param {Number} Y=initialY The initial Y position.
+   * Removes the rendered SVG object from the canvas.
    */
-  transformToInitialPosition(X = this.initialX, Y = this.initialY) {
-    this.currentX = X
-    this.currentY = Y
-
-    this.coords.push([this.currentX, this.currentY])
-
-    this.svg.back()
-
-    if (this.animation !== null) {
-      // this.animation.unschedule()
-    }
-
-
-    this.animation = this
-      .svg
-      .attr({ opacity: 1 })
-      .animate({ duration: this.config.animationSpeed })
-      .transform({ position: [X, Y] })
-      .attr({ opacity: 1 })
-  }
-
-
   removeSVG() {
-    if (this.isRendered() === false) {
-      return
-    }
+    if (this.isRendered() === false) return
 
+    const x = (this.finalFromX + this.finalToX) / 2
+    const y = (this.finalFromY + this.finalToY) / 2
     this.svg.back()
     this.svg
       .animate({ duration: this.config.animationSpeed })
-      // .transform({ scale: 0.001 })
-      .transform({ scale: 0.001, position: [this.finalX, this.finalY + 100] })
-      .attr({ opacity: 0 })
+      .transform({ scale: 0.001, position: [x, y + 100] })
       .after(() => {
         try { this.svg.remove() } catch (error) { }
         this.svg = null
@@ -146,14 +92,8 @@ class BaseNode {
   }
 
 
-  /**
-   * Removes the rendered SVG node from the canvas.
-   * @param {Number} X The X position to move the elements before removing them.
-   * @param {Number} Y The Y position to move the elements before removing them.
-   * @param {Object} opts An object containing additional configuration to control certain behaviours.
-   */
-  removeNode(X = this.initialX, Y = this.initialY, opts = { animation: true, opacity: 1 }, clickedNode) {
 
+  removeNode(X = this.initialX, Y = this.initialY, opts = { animation: true, opacity: 1 }, clickedNode) { // TODO: remove
     console.log(clickedNode)
 
     if (opts.animation === true) {
@@ -207,21 +147,27 @@ class BaseNode {
    * Creates the initial SVG object reference.
    */
   createSVGElement() {
-    // const svg = this.canvas.group().draggable()
-    const svg = this.canvas.group()
+    const svg = this.canvas.group().draggable()
+    // const svg = this.canvas.group()
     svg.css("cursor", "pointer")
     svg.id(`node#${this.id}`)
 
     svg.on("mouseover", () => {
       svg.front()
 
-      if (this.tooltipText !== null && this.nodeSize === "min") {
+      const currentZoomLevel = this.canvas.parent().attr().zoomCurrent
+      const currenZoomThreshold = this.canvas.parent().attr().zoomThreshold
+
+      // show tooltip only if text is set, the node is in minimal representation and the 
+      // current zoom level is smaller then the threshold
+      if (this.tooltipText !== null && this.nodeSize === "min" && currentZoomLevel <= currenZoomThreshold) {
         svg.on("mousemove", (ev) => {
           // show tooltip
           const tooltip = document.getElementById("tooltip")
           tooltip.innerHTML = this.tooltipText
           tooltip.style.display = "block"
 
+          tooltip.style.fontFamily = this.config.labelFontFamily
           tooltip.style.left = `${ev.clientX - tooltip.clientWidth / 2}px`
           tooltip.style.top = `${ev.clientY - tooltip.clientHeight - 15}px`
         })
@@ -244,7 +190,7 @@ class BaseNode {
 
       node.filterWith((add) => {
         const blur = add.offset(0, 0).in(add.$source).gaussianBlur(3)
-        const color = add.composite(add.flood(`#${Colorshift(toDark, -10)}`), blur, "in")
+        const color = add.composite(add.flood(`#${toDark}`), blur, "in")
         add.merge(color, add.$source)
       })
     })
@@ -362,6 +308,7 @@ class BaseNode {
    * Creates the nodes label.
    */
   createLabel(textAlign = "center") {
+    // this.config.minTextHeight is actually not useful for a colored background, therefore its omitted
     const fobj = this.canvas.foreignObject(this.config.minTextWidth, 1)
 
 
@@ -383,7 +330,7 @@ class BaseNode {
     label.style.fontFamily = this.config.labelFontFamily
     label.style.fontWeight = this.config.labelFontWeight
     label.style.fontStyle = this.config.labelFontStyle
-    clamp(label, { clamp: 2 })
+    clamp(label, { clamp: this.config.minLabelLineClamp })
 
     background.appendChild(label)
     fobj.add(background)
@@ -496,6 +443,10 @@ class BaseNode {
     return this.childrenIds.length === 0
   }
 
+  getChildrenIds() {
+    return this.childrenIds
+  }
+
   hasChildrenIds() {
     return this.childrenIds.length > 0
   }
@@ -594,6 +545,7 @@ class BaseNode {
   getCurrentHeight() {
     return this.currentHeight
   }
+
 
   getNodeSize() {
     return this.nodeSize

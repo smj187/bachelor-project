@@ -14,7 +14,8 @@ const visualization = new Visualization({
   databaseUrl: "http://localhost:3001",
   nodeEndpoint: "node-data",
   edgeEndpoint: "edge-data",
-  contextualRelationshipEndpoint: "contextual-relationships"
+  contextualRelationshipEndpoint: "contextual-relationships",
+  zoomLevel: 0.85
 })
 
 // const data = { "id": 74, "label": "TEST ASSET 1", "description": "Lorem ipsum dolor sit amet consectetur adipisicing elit. Quibusdam maxime cupiditate fugiat deserunt libero, ab temporibus delectus sunt et doloribus. Voluptate expedita dicta neque harum debitis laudantium molestias velit aut, quos impedit consequatur est libero aliquam enim quibusdam optio nisi aspernatur. Voluptates iure reiciendis, eos illo explicabo sequi architecto! Iure numquam officia temporibus et, mollitia, dolore quas eos non quibusdam quia hic dolores impedit debitis eligendi? Sequi a maxime provident tenetur eveniet modi animi consectetur vitae, nostrum amet ad iusto accusamus placeat, beatae saepe voluptatum! Veritatis architecto error cum eaque. Ipsam blanditiis ab, tenetur eveniet modi doloribus aspernatur aliquid dicta.", "type": "asset", "keyValuePairs": [{ "key": "key 1", "value": "key value pair: value 1" }, { "key": "key 2", "value": "key value pair: value 2" }, { "key": "key 3", "value": "key value pair: value 3" }, { "key": "key 4", "value": "key value pair: value 4" }, { "key": "key 5", "value": "key value pair: value 5" }, { "key": "key 6", "value": "key value pair: value 6" }], "tooltip": "Asset with <br> tooltip", "parent": null, "children": [], "config": null }
@@ -162,26 +163,7 @@ const multipleLayoutsSideBySide = () => {
 }
 
 
-const radialLayout = () => {
-  // create the underlying graph structure which holds references to our data
-  const graph = visualization.createInitialGraph()
 
-  // add nodes
-  for (let i = 110; i <= 149; i += 1) {
-    graph.includeNode(i)
-  }
-
-  // add edges
-  graph.includeEdge(111, 110)
-  graph.includeEdge(112, 110)
-  graph.includeEdge(113, 110)
-
-  // create a radial layout with a root and a rendering depth
-  const radial = new RadialLayout({ root: 110, renderDepth: 3 })
-
-  // render the layout
-  visualization.render(graph, radial)
-}
 const updateRadialLayout = () => {
   const graph = visualization.createInitialGraph()
 
@@ -224,13 +206,12 @@ const contextualLayout = () => {
   visualization.render(graph6, contextual1)
 }
 
-
-const treeLayout = () => {
-  // create the underlying graph structure that holds references to our data
+const radialLayout = () => {
+  // create the underlying graph structure which holds references to our data
   const graph = visualization.createInitialGraph()
 
   // add nodes
-  for (let i = 0; i <= 160; i += 1) {
+  for (let i = 0; i <= 168; i += 1) {
     graph.includeNode(i)
   }
 
@@ -238,6 +219,32 @@ const treeLayout = () => {
   graph.includeEdge(111, 110)
   graph.includeEdge(112, 110)
   graph.includeEdge(113, 110)
+  graph.includeEdge(163, 161)
+
+  // create a radial layout with a root and a rendering depth
+  const radial = new RadialLayout({ rootId: 110, renderDepth: 1 })
+  // const radial = new RadialLayout({ rootId: 16, renderDepth: 1 })
+  // const radial = new RadialLayout({ rootId: 161, renderDepth: 1 })
+  // const radial = new RadialLayout({ rootId: 137, renderDepth: 2 })
+
+  // render the layout
+  visualization.render(graph, radial)
+}
+
+const treeLayout = async () => {
+  // create the underlying graph structure that holds references to our data
+  const graph = visualization.createInitialGraph()
+
+  // add nodes
+  for (let i = 0; i <= 163; i += 1) {
+    graph.includeNode(i)
+  }
+
+  // add edges
+  graph.includeEdge(111, 110)
+  graph.includeEdge(112, 110)
+  graph.includeEdge(113, 110)
+  graph.includeEdge(163, 161)
 
   // create a radial layout with a root and a rendering depth
   // const event = { eventlistener: "expandCollapseEvent", mouse: "dblclick", modifier: "shiftKey" }
@@ -260,29 +267,36 @@ const treeLayout = () => {
 
   // visualization.render(graph, tree)
 
-  const cc = { control: {} }
+  const cc = { control: {}, customEdge: { labelColor: "#f00" } }
   const ec = { thinEdge: { type: "solid" } }
-  const tree3 = new TreeLayout({ rootId: 137, renderDepth: 1 }, undefined, cc, ec)
-  // visualization.render(graph, tree3)
-
-  const tree2 = new TreeLayout({ "rootId": 153, renderDepth: 2 })
-  // visualization.render(graph, tree2)
-
-
-  const tree4 = new TreeLayout({ rootId: 16, renderDepth: 1, animationSpeed: 900 })
+  const tree4 = new TreeLayout({ rootId: 16, renderDepth: 2, animationSpeed: 900 })
   // visualization.render(graph, tree4)
 
-  const tree5 = new TreeLayout({ rootId: 161, renderDepth: 1 })
-  visualization.render(graph, tree5)
+  const tree3 = new TreeLayout({ rootId: 137, renderDepth: 1, animationSpeed: 300 })
+  // visualization.render(graph, tree3)
+
+  const tree2 = new TreeLayout({ rootId: 153, renderDepth: 3, animationSpeed: 300 })
+  await visualization.render(graph, tree2)
+
+
+
+  const tree5 = new TreeLayout({ rootId: 161, renderDepth: 1, animationSpeed: 300 })
+  // visualization.addCustomNodeRepresentation(tree5, { control: { borderStrokeColor: "#f0f" } })
+  // visualization.addCustomEdgeRepresentation(tree5, { customEdge: { labelColor: "#f0f" } })
+  // await visualization.render(graph, tree5)
 
   setTimeout(() => {
-    // visualization.updateLayout(tree3, { orientation: "horizontal", translateX: 0, translateY: 100, renderDepth: 1 })
-    // visualization.updateLayout(tree3, { orientation: "horizontal" })
-  }, 2000)
+    // visualization.update(tree3, { orientation: "horizontal", translateX: 0, translateY: 100, renderDepth: 1 })
+    console.log("update now")
+    graph.excludeNode(160)
+
+    visualization.update(tree2, graph, { orientation: "horizontal" })
+  }, 1000)
 }
 
 
-treeLayout()
+radialLayout()
+// treeLayout()
 
 
 // basicGridLayout()
@@ -291,7 +305,6 @@ treeLayout()
 
 // manyElementsRendered()
 
-// radialLayout()
 // updateRadialLayout()
 
 

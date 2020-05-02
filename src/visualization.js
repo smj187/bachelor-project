@@ -11,6 +11,9 @@ import ContextualLayout from "./layouts/ContextualLayout"
 import { createTooltip } from "./utils/Tooltip"
 
 import Graph from "./data/Graph"
+import VisualizationConfiguration from "./configuration/VisualizationConfiguration"
+
+
 
 /**
  * @description The canvas element where all svgs are held.
@@ -20,7 +23,7 @@ import Graph from "./data/Graph"
  */
 
 /**
- * @description A foreign object.
+ * @description A foreign object which holds custom HTML.
  *
  * @typedef {ForeignObject} ForeignObject
  *
@@ -44,54 +47,34 @@ import Graph from "./data/Graph"
 
 
 /**
- * ISSUES: svgdotjs library while animating sometimes 0.5 1 xy value (.svg.bbox().cx, .svg.bbox().cy) off calculated position
+ * KNOWN ISSUES:
+ *    - svgdotjs library while animating sometimes 0.5 1 xy value (.svg.bbox().cx, .svg.bbox().cy) off calculated position
  */
 
-const visConfig = {
-  // drawing canvas
-  canvasId: "visualization-canvas",
-  canvasWidth: window.innerWidth - 10,
-  canvasHeight: window.innerHeight - 10,
 
-  // zoom
-  zoomLevel: 0.85,
-  zoomX: 0, // zoom into specified point @see https://github.com/svgdotjs/svg.panzoom.js
-  zoomY: 0,
-  zoomMin: 0.25,
-  zoomMax: 10,
-  zoomStep: 0.25,
-  zoomLabelThreshold: 0.65,
 
-  // endpoints
-  databaseUrl: null,
-  nodeEndpoint: null,
-  edgeEndpoint: null,
-  contextualRelationshipEndpoint: null,
-
-  // global layout settings
-  layoutSpacing: 50,
-}
 
 /**
- * Creates and handles all vizualization operations
+ * The class is responsible for creating and updating layouts and serves as main entry point.
  *
+ * @property {VisualizationConfiguration} config An object containing required and additional configurations.
  */
 class Visualization {
   constructor(config = {}) {
+    this.config = { ...VisualizationConfiguration, ...config }
 
-    this.config = { ...visConfig, ...config }
-
-    if (this.config.databaseUrl === null ||
-      this.config.nodeEndpoint === null ||
-      this.config.edgeEndpoint === null ||
-      this.config.contextualRelationshipEndpoint === null) {
+    if (this.config.databaseUrl === null
+      || this.config.nodeEndpoint === null
+      || this.config.edgeEndpoint === null
+      || this.config.contextualRelationshipEndpoint === null) {
       throw new Error(
         `The following parameters are required:
           - 'databaseUrl' 
           - 'nodeEndpoint' 
           - 'edgeEndpoint 
           - 'contextualRelationshipEndpoint'
-        `)
+        `,
+      )
     }
 
 
@@ -151,7 +134,7 @@ class Visualization {
   /**
    * Creates the underlying graph data strcuture later required to load data from the database.
    * @param {Array.<Number>} [nodeIds=[ ]] An optional array of node ids.
-   * @param {Array.<Number>} [edgeIds=[ ]] An optional array containing subarrays for edges. 
+   * @param {Array.<Number>} [edgeIds=[ ]] An optional array containing subarrays for edges.
    *                         Each subarray consits of an entry for a starting node id and an ending node id.
    */
   createInitialGraph(nodeIds = [], edgeIds = []) {
@@ -172,9 +155,18 @@ class Visualization {
 
 
   /**
-   * Renders a layout
-   * @param {Graph} initialGraphData the initial graph that should be displayed
-   * @param {Layout} layout the layout type
+   * This is the main method to gernate layouts. It calls the required methods for each layout type and
+   * passes further information about the new layout.
+   *
+   * @async
+   * @param {Graph} initialGraphData The initial graph data structure containing nodes and edges.
+   * @param {BaseLayout} layout The requested layout type.
+   * @return {Promise<BaseLayout>} A promise with the calculated and rendered layout.
+   *
+   * @see TreeLayout
+   * @see RadialLayout
+   * @see ContextualLayout
+   * @see GridLayout
    */
   async render(initialGraphData, layout) {
     layout.setCanvas(this.canvas)
@@ -190,6 +182,10 @@ class Visualization {
 
     this.layouts.push(layout)
     layout.setLayoutReferences(this.layouts)
+    layout.setLayoutIdentifier(this.layouts.length - 1)
+
+
+
 
     if (layout instanceof GridLayout) {
       const createdLayout = await layout.loadInitialGridDataAsync()
@@ -209,162 +205,206 @@ class Visualization {
     }
 
     if (layout instanceof RadialLayout) {
-      const createdLayout = await layout.loadInitialRadialDataAsync()
-      const layouts = this.layouts.slice(0, this.layouts.indexOf(layout))
-      const offset = layouts.map((l) => l.layoutInfo.w).reduce((a, b) => a + b, 0)
-      createdLayout.calculateLayout(offset)
-      createdLayout.renderLayout()
+      await layout.loadInitialRadialDataAsync()
+
     }
 
     if (layout instanceof TreeLayout) {
-      const createdLayout = await layout.loadInitialTreeDataAsync()
-      const layouts = this.layouts.slice(0, this.layouts.indexOf(layout))
-      const offset = layouts.map((l) => l.layoutInfo.w).reduce((a, b) => a + b, 0)
-      createdLayout.calculateLayout(offset)
-      createdLayout.renderLayout()
+      await layout.loadInitialTreeDataAsync()
     }
+
+    const layouts = this.layouts.slice(0, this.layouts.indexOf(layout))
+    const offset = layouts.map((l) => l.layoutInfo.w).reduce((a, b) => a + b, 0)
+    layout.calculateLayout(offset, {})
+    layout.renderLayout({})
 
 
     return layout
   }
 
-  async update(layout, graphOrConfig, config = {}) {
-    if (layout instanceof RadialLayout) {
-      if (graphOrConfig instanceof Graph) {
-        console.log("update radial graph")
+  /*
+    async update(layout, graphOrConfig, config = {}) {
+      if (layout instanceof RadialLayout) {
+        if (graphOrConfig instanceof Graph) {
+          console.log("update radial graph")
 
-        await layout.updateRadialDataWithConfigAsync(graphOrConfig, config)
-      } else {
-        layout.setConfig(graphOrConfig)
-        await layout.removeLayoutAsync()
+          await layout.updateRadialDataWithConfigAsync(graphOrConfig, config)
+        } else {
+          layout.setConfig(graphOrConfig)
+          await layout.removeLayoutAsync()
 
-        const layouts = this.layouts.slice(0, this.layouts.indexOf(layout))
-        const offset = layouts.map((l) => l.layoutInfo.w).reduce((a, b) => a + b, 0)
-        const prevW = layout.layoutInfo.w
-        layout.calculateLayout(offset)
+          const layouts = this.layouts.slice(0, this.layouts.indexOf(layout))
+          const offset = layouts.map((l) => l.layoutInfo.w).reduce((a, b) => a + b, 0)
+          const prevW = layout.layoutInfo.w
+          layout.calculateLayout(offset)
 
-        const newW = layout.layoutInfo.w
+          const newW = layout.layoutInfo.w
 
-        // update all layouts right side
-        this.layouts.forEach((llayout, i) => {
-          if (i > this.layouts.indexOf(layout)) {
-            llayout.calculateLayout(newW - prevW)
-            llayout.renderLayout()
-          }
-        })
+          // update all layouts right side
+          this.layouts.forEach((llayout, i) => {
+            if (i > this.layouts.indexOf(layout)) {
+              llayout.calculateLayout(newW - prevW)
+              llayout.renderLayout()
+            }
+          })
 
-        layout.renderLayout()
+          layout.renderLayout()
+        }
       }
+
+
+      if (layout instanceof GridLayout) {
+        // update the underlying graph structure and configuration
+        if (graphOrConfig instanceof Graph) {
+          await layout.updateGridDataWithConfigAsync(graphOrConfig, config)
+          await layout.loadAdditionalGridDataAsync()
+
+          const prevW = layout.layoutInfo.w
+          layout.calculateLayout()
+          const newW = layout.layoutInfo.w
+
+          // update all layouts right side
+          this.layouts.forEach((llayout, i) => {
+            if (i > this.layouts.indexOf(layout)) {
+              llayout.calculateLayout(newW - prevW)
+              llayout.renderLayout()
+            }
+          })
+
+          layout.renderLayout()
+        } else { // update only configuration
+          layout.setConfig(graphOrConfig)
+          await layout.removeLayoutAsync()
+          await layout.loadAdditionalGridDataAsync()
+
+          const prevW = layout.layoutInfo.w
+          layout.calculateLayout()
+          const newW = layout.layoutInfo.w
+
+          // update all layouts right side
+          this.layouts.forEach((llayout, i) => {
+            if (i > this.layouts.indexOf(layout)) {
+              llayout.calculateLayout(newW - prevW)
+              llayout.renderLayout()
+            }
+          })
+
+          layout.renderLayout()
+        }
+      }
+
+
+      // if (graphOrConfig instanceof Graph) {
+      //   await layout.updateGraphStructure(graphOrConfig, config)
+      //   const updatedLayout = await layout.loadAdditionalGridDataAsync()
+      //   const prevW = updatedLayout.layoutInfo.w
+      //   updatedLayout.calculateLayout()
+      //   const newW = updatedLayout.layoutInfo.w
+
+      //   // update all layouts right side
+      //   this.layouts.forEach((llayout, i) => {
+      //     if (i > this.layouts.indexOf(layout)) {
+      //       llayout.calculateLayout(newW - prevW)
+      //       llayout.renderLayout()
+      //     }
+      //   })
+
+      //   updatedLayout.renderLayout()
+      // } else {
+
+      //   console.log(layout, graphOrConfig, this)
+      //   const updatedLayout = await layout.updateLayoutConfiguration(graphOrConfig)
+      //   await updatedLayout.loadAdditionalGridDataAsync()
+
+      //   const prevW = updatedLayout.layoutInfo.w
+      //   updatedLayout.calculateLayout()
+      //   const newW = updatedLayout.layoutInfo.w
+
+      //   // update all layouts right side
+      //   this.layouts.forEach((llayout, i) => {
+      //     if (i > this.layouts.indexOf(layout)) {
+      //       llayout.calculateLayout(newW - prevW)
+      //       llayout.renderLayout()
+      //     }
+      //   })
+
+      //   updatedLayout.renderLayout()
+      // }
+    }
+  */
+
+  /**
+   * Updates an existing layout.
+   *
+   * @async
+   * @param {BaseLayout} layout The layout which is about to be updated.
+   * @param {Graph|Object} graphOrConfigData Either an updated graph instance or new layout configuration that alternates the existing one.
+   * @param {Object} config An optional layout configuration object if the previouse parameter is set.
+   *
+   * @see TreeLayoutConfiguration
+   * @see RadialLayoutConfiguration
+   * @see ContextualLayoutConfiguration
+   * @see GridLayoutConfiguration
+   */
+  async update(layout, graphOrConfigData, config) {
+
+    if (graphOrConfigData instanceof Graph) {
+
+      if (config) {
+        layout.setConfig({ ...layout.getConfig(), ...config })
+
+        if (layout instanceof TreeLayout) {
+          layout.setRenderDepth(config.renderDepth || layout.getRenderDepth())
+          layout.setRootId(config.rootId || layout.getRootId())
+        }
+
+      }
+
+      await layout.removeLayoutAsync()
+      layout.setNodeData(graphOrConfigData.getNodes())
+      layout.setEdgeData(graphOrConfigData.getEdges())
+
+      if (layout instanceof TreeLayout) {
+        await layout.loadInitialTreeDataAsync()
+      }
+
+      const layouts = this.layouts.slice(0, this.layouts.indexOf(layout))
+      const offset = layouts.map((l) => l.layoutInfo.w).reduce((a, b) => a + b, 0)
+      layout.calculateLayout(offset, {})
+      layout.renderLayout({})
+
+    } else {
+      const conf = graphOrConfigData instanceof Graph ? config : graphOrConfigData
+
+
+      const reRenderOperations = [
+        // tree
+        "orientation",
+        "renderingSize",
+        "showLeafIndications",
+        "visibleNodeLimit",
+        "leafIndicationLimit",
+        "leafStrokeWidth",
+        "leafStrokeColor",
+        "leafMarker",
+      ]
+      const requireRebuild = reRenderOperations.filter((r) => Object.keys(conf).includes(r)).length > 0
+
+      if (layout instanceof TreeLayout) {
+        layout.setConfig({ ...layout.getConfig(), ...conf })
+        layout.setRenderDepth(conf.renderDepth || layout.getRenderDepth())
+        layout.setRootId(conf.rootId || layout.getRootId())
+
+        if (requireRebuild === true) {
+          await layout.rebuildTreeLayout()
+        }
+      }
+
+      layout.updateLayoutsToTheRight({ isReRender: true })
+
     }
 
 
-    if (layout instanceof GridLayout) {
-      // update the underlying graph structure and configuration
-      if (graphOrConfig instanceof Graph) {
-        await layout.updateGridDataWithConfigAsync(graphOrConfig, config)
-        await layout.loadAdditionalGridDataAsync()
-
-        const prevW = layout.layoutInfo.w
-        layout.calculateLayout()
-        const newW = layout.layoutInfo.w
-
-        // update all layouts right side
-        this.layouts.forEach((llayout, i) => {
-          if (i > this.layouts.indexOf(layout)) {
-            llayout.calculateLayout(newW - prevW)
-            llayout.renderLayout()
-          }
-        })
-
-        layout.renderLayout()
-      } else { // update only configuration
-        layout.setConfig(graphOrConfig)
-        await layout.removeLayoutAsync()
-        await layout.loadAdditionalGridDataAsync()
-
-        const prevW = layout.layoutInfo.w
-        layout.calculateLayout()
-        const newW = layout.layoutInfo.w
-
-        // update all layouts right side
-        this.layouts.forEach((llayout, i) => {
-          if (i > this.layouts.indexOf(layout)) {
-            llayout.calculateLayout(newW - prevW)
-            llayout.renderLayout()
-          }
-        })
-
-        layout.renderLayout()
-      }
-    }
-
-
-    // if (graphOrConfig instanceof Graph) {
-    //   await layout.updateGraphStructure(graphOrConfig, config)
-    //   const updatedLayout = await layout.loadAdditionalGridDataAsync()
-    //   const prevW = updatedLayout.layoutInfo.w
-    //   updatedLayout.calculateLayout()
-    //   const newW = updatedLayout.layoutInfo.w
-
-    //   // update all layouts right side
-    //   this.layouts.forEach((llayout, i) => {
-    //     if (i > this.layouts.indexOf(layout)) {
-    //       llayout.calculateLayout(newW - prevW)
-    //       llayout.renderLayout()
-    //     }
-    //   })
-
-    //   updatedLayout.renderLayout()
-    // } else {
-
-    //   console.log(layout, graphOrConfig, this)
-    //   const updatedLayout = await layout.updateLayoutConfiguration(graphOrConfig)
-    //   await updatedLayout.loadAdditionalGridDataAsync()
-
-    //   const prevW = updatedLayout.layoutInfo.w
-    //   updatedLayout.calculateLayout()
-    //   const newW = updatedLayout.layoutInfo.w
-
-    //   // update all layouts right side
-    //   this.layouts.forEach((llayout, i) => {
-    //     if (i > this.layouts.indexOf(layout)) {
-    //       llayout.calculateLayout(newW - prevW)
-    //       llayout.renderLayout()
-    //     }
-    //   })
-
-    //   updatedLayout.renderLayout()
-    // }
-  }
-
-
-  async updateLayout(layout, graphOrConfigData, config) {
-    const conf = graphOrConfigData instanceof Graph ? config : graphOrConfigData
-
-    const reRenderOperations = [
-      // tree
-      "orientation",
-      "renderingSize",
-      "showLeafIndications",
-      "visibleNodeLimit",
-      "leafIndicationLimit",
-      "leafStrokeWidth",
-      "leafStrokeColor",
-      "leafMarker"
-    ]
-    const requireRebuild = reRenderOperations.filter(r => Object.keys(conf).includes(r)).length > 0
-
-    if (layout instanceof TreeLayout) {
-
-      layout.setConfig({ ...layout.getConfig(), ...conf })
-      layout.setRenderDepth(conf.renderDepth || layout.getRenderDepth())
-      layout.setRootId(conf.rootId || layout.getRootId())
-
-      if (requireRebuild === true) {
-        await layout.rebuildTreeLayout()
-      }
-      await layout.updateTreeLayout()
-    }
   }
 
 
@@ -376,16 +416,57 @@ class Visualization {
    * @param {String} func The method name.
    *
    * @see Supported events: {@link https://svgjs.com/docs/3.0/events/#element-click}
+   * @see TreeLayout
+   * @see RadialLayout
+   * @see ContextualLayout
+   * @see GridLayout
    */
   addEventListener(layout, event, modifier, func) {
     layout.registerEventListener(event, modifier, func)
   }
 
 
+
   /**
-   * Transforms a layout from one type into another type
-   * @param {Layout} currentLayout
-   * @param {Layout} newLayout
+   * Adds a custom node representation for all nodes in the layout.
+   * @param {BaseLayout} layout The layout where to add additional custom node representations.
+   * @param {Object} representation An object containing the custom representation key-value pairs.
+   * 
+   * @see AssetNodeConfiguration
+   * @see ControlNodeConfiguration
+   * @see CustomNodeConfiguration
+   * @see RequirementNodeConfiguration
+   * @see RiskNodeConfiguration
+   */
+  addCustomNodeRepresentation(layout, representation) {
+    layout.registerAdditionalNodeRepresentation(representation)
+  }
+
+  /**
+   * Adds a custom edge representation for all nodes in the layout.
+   * @param {BaseLayout} layout The layout where to add additional custom edge representations.
+   * @param {Object} representation An object containing the custom representation key-value pairs.
+   * 
+   * @see BoldEdgeConfiguration
+   * @see CustomEdgeConfiguration
+   * @see ThinEdgeConfiguration
+   */
+  addCustomEdgeRepresentation(layout, representation) {
+    layout.registerAdditionalEdgeRepresentation(representation)
+  }
+
+
+  /**
+   * Transforms a layout from one type into another type.
+   *
+   * @async
+   * @param {BaseLayout} currentLayout The currently rendered layout.
+   * @param {BaseLayout} newLayout The requested new layout type.
+   *
+   * @see TreeLayout
+   * @see RadialLayout
+   * @see ContextualLayout
+   * @see GridLayout
    */
   async transform(currentLayout, newLayout) {
     newLayout.setCanvas(this.canvas)

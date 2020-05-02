@@ -1,12 +1,5 @@
 import { shape, intersect } from "svg-intersections"
 
-/**
- * @typedef {Object} TreeLeafConfiguration
- * @property {Number} animationSpeed The animationSpeed inherited from the tree layout configuration.
- * @property {String} strokeWidth The edge stroke width inherited from the tree layout configuration.
- * @property {String} strokeColor The edge color inherited from the tree layout configuration.
- * @property {String} marker The edge arrow head inherited from the tree layout configuration.
- */
 
 
 /**
@@ -18,7 +11,7 @@ import { shape, intersect } from "svg-intersections"
  * @property {Boolean} [isHorizontal=false] Determins if the current tree is vertical or horizontal.
  */
 class TreeLeaf {
-  constructor(canvas, node, renderLimit, config, isHorizontal = false) {
+  constructor(canvas, node, config, isHorizontal = false) {
     this.svg = null
     this.canvas = canvas
 
@@ -26,7 +19,6 @@ class TreeLeaf {
     this.id = node.id
     this.node = node
     this.nodeSize = node.childrenIds.length
-    this.leafIndicationLimit = renderLimit
     this.config = config
 
     // position
@@ -54,17 +46,15 @@ class TreeLeaf {
   render() {
     const svg = this.canvas.group().draggable()
 
-    const nodeSize = this.nodeSize < this.leafIndicationLimit ? this.nodeSize : this.leafIndicationLimit
+    const nodeSize = this.nodeSize < this.config.leafIndicationLimit ? this.nodeSize : this.config.leafIndicationLimit
     const w = this.node.nodeSize === "min" ? this.node.config.minWidth : this.node.config.maxWidth
     const h = this.node.nodeSize === "min" ? this.node.config.minHeight : this.node.config.maxHeight
     const spacing = this.node.config.offset
     const tx = this.node.getFinalX()
     const ty = this.node.getFinalY()
 
-    // this.canvas.circle(5).fill("#75f").center(tx, ty)
 
-
-    // create helper line, indicating possible children
+    // create helper line that indicats possible children
     let edgesStartingLine
     if (this.isHorizontal === true) {
       const x0 = tx + w / 2 + this.translateX + spacing
@@ -81,6 +71,7 @@ class TreeLeaf {
         .stroke({ width: 0, color: "red" })
         .center(tx, ty + h / 2 + spacing + this.translateY)
     }
+
 
     // calculates unique positions across the helper line
     const interval = edgesStartingLine.length() / nodeSize
@@ -112,6 +103,7 @@ class TreeLeaf {
         width: this.config.strokeWidth,
         color: this.config.strokeColor,
       })
+
 
       // create a re-useable marker
       const index = [...this.canvas.defs().node.childNodes].findIndex((d) => d.id === "defaultLeafMarker")
@@ -146,7 +138,6 @@ class TreeLeaf {
     const cx = this.isReRender ? coords[0] : this.node.currentX
     const cy = this.isReRender ? coords[1] : this.node.currentY
 
-
     svg
       .attr({ opacity: 0 })
       .center(cx, cy)
@@ -156,9 +147,11 @@ class TreeLeaf {
     this.finalX = svg.cx()
     this.finalY = svg.cy()
 
+
     // remove helper line
     edgesStartingLine.remove()
 
+    svg.id(`treeLeaf#${this.node.id}`)
     this.svg = svg
   }
 
@@ -184,7 +177,7 @@ class TreeLeaf {
   /**
    * Removes the leaf node from the canvas and resets clears its SVG representation.
    */
-  removeLeaf() {
+  removeSVG() {
     if (this.isRendered()) {
       this.svg.remove()
       this.svg = null

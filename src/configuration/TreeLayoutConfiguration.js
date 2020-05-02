@@ -4,12 +4,19 @@
  *
  * @property {Number} translateX=0                      - Adds additional X translation for all SVG elements before rendering.
  * @property {Number} translateY=0                      - Adds additional Y translation for all SVG elements before rendering.
- * @property {Number} animationSpeed=300                - Determins how fast SVG elements animates inside the current layout.
- * @property {Number} orientation=vertical              - Determins how tree orientation. Available: "vertical" or "horizontal"
- * @property {Number} vSpacing=100                      - Determins the vertical spacing between nodes.
- * @property {Number} hSpacing=25                       - Determins the horizontal spacing between nodes.
- * @property {String} renderingSize=min                 - Determins the node render representation. Available: "min" or "max".
- * @property {Boolean} showAdditionEdges=true           - Renders additional edges to indicate loadable nodes.
+ * @property {Number} animationSpeed=300                - Determines how fast SVG elements animates inside the current layout.
+ * @property {Number} orientation=vertical              - Determines how tree orientation. Available: "vertical" or "horizontal"
+ * @property {Number} vSpacing=100                      - Determines the vertical spacing between nodes.
+ * @property {Number} rootId=null                       - Determines the selected root id.
+ * @property {Number} renderDepth=0                     - Determines the current render depth.
+ * @property {String} renderingSize=min                 - Determines the node render representation. Available: "min" or "max".
+ * 
+ * @property {Boolean} showLeafIndications=true         - Determines whether additional indications for possible children are visible.
+ * @property {Boolean} visibleNodeLimit=5               - Determines at how many child nodes an indication is shown.
+ * @property {Boolean} leafIndicationLimit=5            - Determines the maximal amount of indications per node.
+ * @property {Boolean} leafStrokeWidth=2                - Determines a leafs thickness.
+ * @property {Boolean} leafStrokeColor="#aaa"           - Determines a leafs color.
+ * @property {Boolean} leafMarker="M 0 0 L 6 3 L 0 6 z" - Determines a leafs arrow head shape.
  */
 const TreeLayoutConfiguration = {
   translateX: 0,
@@ -21,7 +28,6 @@ const TreeLayoutConfiguration = {
   rootId: null,
   renderDepth: 0,
   renderingSize: "min", // min, max
-
 
   // renders additional edges to indicate possible nodes
   showLeafIndications: true,

@@ -1,13 +1,13 @@
 
 /**
  * This class represents a graph node.
- * @param {Number} startNode The start node id.
- * @param {Number} endNode The end node id.
+ * @param {Number} fromNode The start node id.
+ * @param {Number} toNode The end node id.
  */
 class GraphEdge {
-  constructor(startNode, endNode) {
-    this.startNode = startNode
-    this.endNode = endNode
+  constructor(fromNode, toNode) {
+    this.fromNode = fromNode
+    this.toNode = toNode
   }
 }
 

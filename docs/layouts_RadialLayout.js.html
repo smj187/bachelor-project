@@ -46,7 +46,7 @@
             <div class="column is-3" id="sidebarNav">
                 <div class="sidebar">
                     <nav>
-                        <h2><a href="index.html">Home</a></h2><div class="category"><h3>Tutorials</h3><ul><li><a href="tutorial-advanced-layouts.html">Advanced Layout Examples</a></li><li><a href="tutorial-contextual-layout.html">Contextual Layout Examples</a></li><li><a href="tutorial-grid-layout.html">Grid Layout Examples</a></li><li><a href="tutorial-radial-layout.html">Radial Layout Examples</a></li><li><a href="tutorial-tree-layout.html">Tree Layout Examples</a></li></ul><h3>Namespaces</h3><ul><li><a href="AssetNodeConfiguration.html">AssetNodeConfiguration</a></li><li><a href="BoldEdgeConfiguration.html">BoldEdgeConfiguration</a></li><li><a href="ContextualLayoutConfiguration.html">ContextualLayoutConfiguration</a></li><li><a href="ControlNodeConfiguration.html">ControlNodeConfiguration</a></li><li><a href="CustomNodeConfiguration.html">CustomNodeConfiguration</a></li><li><a href="GridLayoutConfiguration.html">GridLayoutConfiguration</a></li><li><a href="RadialLayoutConfiguration.html">RadialLayoutConfiguration</a></li><li><a href="RequirementNodeConfiguration.html">RequirementNodeConfiguration</a></li><li><a href="RiskNodeConfiguration.html">RiskNodeConfiguration</a></li><li><a href="ThinEdgeConfiguration.html">ThinEdgeConfiguration</a></li><li><a href="TreeLayoutConfiguration.html">TreeLayoutConfiguration</a></li></ul><h3>Classes</h3><ul><li><a href="AssetNode.html">AssetNode</a></li><li><a href="BaseEdge.html">BaseEdge</a></li><li><a href="BaseLayout.html">BaseLayout</a></li><li><a href="BaseNode.html">BaseNode</a></li><li><a href="BoldEdge.html">BoldEdge</a></li><li><a href="ContextualLayout.html">ContextualLayout</a></li><li><a href="ControlNode.html">ControlNode</a></li><li><a href="CustomNode.html">CustomNode</a></li><li><a href="EdgeFactory.html">EdgeFactory</a></li><li><a href="Graph.html">Graph</a></li><li><a href="GraphEdge.html">GraphEdge</a></li><li><a href="GraphNode.html">GraphNode</a></li><li><a href="GridExpander.html">GridExpander</a></li><li><a href="GridLayout.html">GridLayout</a></li><li><a href="NodeFactory.html">NodeFactory</a></li><li><a href="RadialLayout.html">RadialLayout</a></li><li><a href="RequirementNode.html">RequirementNode</a></li><li><a href="RiskNode.html">RiskNode</a></li><li><a href="ThinEdge.html">ThinEdge</a></li><li><a href="TreeLayout.html">TreeLayout</a></li><li><a href="TreeLeaf.html">TreeLeaf</a></li><li><a href="Visualization.html">Visualization</a></li></ul><h3>Global</h3><ul><li><a href="global.html#visConfig">visConfig</a></li></ul></div>
+                        <h2><a href="index.html">Home</a></h2><div class="category"><h3>Tutorials</h3><ul><li><a href="tutorial-advanced-layouts.html">Advanced Layout Examples</a></li><li><a href="tutorial-contextual-layout.html">Contextual Layout Examples</a></li><li><a href="tutorial-grid-layout.html">Grid Layout Examples</a></li><li><a href="tutorial-radial-layout.html">Radial Layout Examples</a></li><li><a href="tutorial-tree-layout.html">Tree Layout Examples</a></li></ul><h3>Namespaces</h3><ul><li><a href="AssetNodeConfiguration.html">AssetNodeConfiguration</a></li><li><a href="BoldEdgeConfiguration.html">BoldEdgeConfiguration</a></li><li><a href="ContextualLayoutConfiguration.html">ContextualLayoutConfiguration</a></li><li><a href="ControlNodeConfiguration.html">ControlNodeConfiguration</a></li><li><a href="CustomEdgeConfiguration.html">CustomEdgeConfiguration</a></li><li><a href="CustomNodeConfiguration.html">CustomNodeConfiguration</a></li><li><a href="GridLayoutConfiguration.html">GridLayoutConfiguration</a></li><li><a href="RadialLayoutConfiguration.html">RadialLayoutConfiguration</a></li><li><a href="RequirementNodeConfiguration.html">RequirementNodeConfiguration</a></li><li><a href="RiskNodeConfiguration.html">RiskNodeConfiguration</a></li><li><a href="ThinEdgeConfiguration.html">ThinEdgeConfiguration</a></li><li><a href="TreeLayoutConfiguration.html">TreeLayoutConfiguration</a></li><li><a href="VisualizationConfiguration.html">VisualizationConfiguration</a></li></ul><h3>Classes</h3><ul><li><a href="AssetNode.html">AssetNode</a></li><li><a href="BaseEdge.html">BaseEdge</a></li><li><a href="BaseLayout.html">BaseLayout</a></li><li><a href="BaseNode.html">BaseNode</a></li><li><a href="BoldEdge.html">BoldEdge</a></li><li><a href="ContextualLayout.html">ContextualLayout</a></li><li><a href="ControlNode.html">ControlNode</a></li><li><a href="CustomEdge.html">CustomEdge</a></li><li><a href="CustomNode.html">CustomNode</a></li><li><a href="EdgeFactory.html">EdgeFactory</a></li><li><a href="Graph.html">Graph</a></li><li><a href="GraphEdge.html">GraphEdge</a></li><li><a href="GraphNode.html">GraphNode</a></li><li><a href="GridExpander.html">GridExpander</a></li><li><a href="GridLayout.html">GridLayout</a></li><li><a href="NodeFactory.html">NodeFactory</a></li><li><a href="RadialLayout.html">RadialLayout</a></li><li><a href="RequirementNode.html">RequirementNode</a></li><li><a href="RiskNode.html">RiskNode</a></li><li><a href="ThinEdge.html">ThinEdge</a></li><li><a href="TreeLayout.html">TreeLayout</a></li><li><a href="TreeLeaf.html">TreeLeaf</a></li><li><a href="Visualization.html">Visualization</a></li></ul><h3>Global</h3><ul><li><a href="global.html#buildTreeFromNodes">buildTreeFromNodes</a></li><li><a href="global.html#colorshift">colorshift</a></li><li><a href="global.html#constructTree">constructTree</a></li><li><a href="global.html#Request">Request</a></li><li><a href="global.html#RequestMultiple2">RequestMultiple2</a></li></ul></div>
                     </nav>
                 </div>
             </div>
@@ -66,53 +66,52 @@
         <article>
             <pre class="prettyprint source linenums"><code>import BaseLayout from "./BaseLayout"
 import RadialLayoutConfiguration from "../configuration/RadialLayoutConfiguration"
-
+import { buildTreeFromNodes } from "../utils/TreeConstruction"
 
 /**
  * This class is calculates and renders the radial layout.
  */
 class RadialLayout extends BaseLayout {
-  constructor(customConfig = {}, events = [], additionalNodeRepresentations) {
-    super(additionalNodeRepresentations)
+  constructor(customConfig = {}, customEventlisteners = [], customNodes = {}, customEdges = {}) {
+    super(customNodes, customEdges)
 
-    if (customConfig.root === undefined) {
-      throw new Error("No Focus element reference id provided")
-    }
-
-    if (customConfig.renderDepth === undefined) {
-      throw new Error("The radial layout requires a defined render depth")
+    if (customConfig.rootId === undefined) {
+      throw new Error("No root element reference id provided")
     }
 
     this.config = { ...RadialLayoutConfiguration, ...customConfig }
 
     // layout specific
-    this.rootId = customConfig.root
-    this.renderDepth = customConfig.renderDepth
-    this.registerMouseEvents(events)
+    this.rootId = customConfig.rootId
+    this.renderDepth = customConfig.renderDepth || 0
+
+    // events
+    this.events = [
+      {
+        event: "click",
+        modifier: undefined,
+        func: "expandOrCollapseEvent",
+        defaultEvent: true,
+      },
+    ]
+    customEventlisteners.forEach((event) => {
+      this.registerEventListener(event.event, event.modifier, event.func)
+    })
+  }
+
+  async expandOrCollapseDataAsyncEvent(node) {
+    await this.updateRadialDataAsync(node)
   }
 
 
-  registerMouseEvents(events) {
-    const loadOrHideData = async (node) => { await this.updateRadialDataAsync(node) }
-    if (events.length > 0) {
-      this.events = [
-        {
-          name: "nodeEvent",
-          func: loadOrHideData,
-          mouse: events.find((e) => e.name === "nodeEvent").mouse || "dblclick",
-          modifier: events.find((e) => e.name === "nodeEvent").modifier || "ctrlKey",
-        },
-      ]
-    } else {
-      this.events = [
-        {
-          name: "nodeEvent",
-          func: loadOrHideData,
-          mouse: "dblclick",
-          modifier: "ctrlKey",
-        },
-      ]
+  registerEventListener(event, modifier, func) {
+    // remove default event listener
+    if (this.events.find((d) => d.defaultEvent === true)) {
+      this.events = this.events.filter((e) => e.defaultEvent !== true)
     }
+
+    // add new event listener
+    this.events.push({ event, modifier, func })
   }
 
   // calculates the radial layout positions for all given nodes and edges
@@ -295,13 +294,14 @@ class RadialLayout extends BaseLayout {
       }
     }
 
-
+    const tree = buildTreeFromNodes(this.nodes)[0]
     this.tree = constructTree(this.nodes)[0]
+    console.log(tree)
     updateNodeDepth(this.tree, 0)
     calculateFinalPosition(this.tree, 0, 2 * Math.PI)
     adjustPositions(this.tree)
 
-    // console.log("Radial", this.layoutInfo)
+    console.log("Radial", this.layoutInfo, this.nodes, this.tree)
     return this.layoutInfo
   }
 
@@ -325,13 +325,13 @@ class RadialLayout extends BaseLayout {
           if (this.config.renderingSize === "max") node.renderAsMax(X, Y)
           if (this.config.renderingSize === "min") node.renderAsMin(X, Y)
 
-          node.svg.on(this.events[0].mouse, (e) => {
-            if (this.events[0].modifier !== null) {
-              if (this.events[0].modifier, e[this.events[0].modifier]) {
-                this.events[0].func(node)
-              }
-            }
-          })
+          // node.svg.on(this.events[0].mouse, (e) => {
+          //   if (this.events[0].modifier !== null) {
+          //     if (this.events[0].modifier, e[this.events[0].modifier]) {
+          //       this.events[0].func(node)
+          //     }
+          //   }
+          // })
 
           //   this.gridExpander.svg.on(this.events[0].mouse, (e) => {
           //   if (this.events[0].modifier !== null) {
@@ -386,7 +386,7 @@ export default RadialLayout
 
 <footer class="footer">
     <div class="content has-text-centered">
-        <p>Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.3</a> on Wed Apr 29 2020 02:41:52 GMT+0200 (GMT+02:00)</p>
+        <p>Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.3</a> on Fri May 01 2020 16:43:29 GMT+0200 (GMT+02:00)</p>
         <p class="sidebar-created-by">
             <a href="https://github.com/SoftwareBrothers/better-docs" target="_blank">BetterDocs theme</a> provided with <i class="fas fa-heart"></i> by 
             <a href="http://softwarebrothers.co" target="_blank">SoftwareBrothers - JavaScript Development Agency</a>

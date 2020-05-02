@@ -1,6 +1,6 @@
 
 // canvas element
-export { default as Visualization } from "./visualization"
+export { default as Visualization } from "./Visualization"
 
 // nodes
 export { default as NodeFactory } from "./nodes/NodeFactory"

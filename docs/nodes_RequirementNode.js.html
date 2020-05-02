@@ -46,7 +46,7 @@
             <div class="column is-3" id="sidebarNav">
                 <div class="sidebar">
                     <nav>
-                        <h2><a href="index.html">Home</a></h2><div class="category"><h3>Tutorials</h3><ul><li><a href="tutorial-advanced-layouts.html">Advanced Layout Examples</a></li><li><a href="tutorial-contextual-layout.html">Contextual Layout Examples</a></li><li><a href="tutorial-grid-layout.html">Grid Layout Examples</a></li><li><a href="tutorial-radial-layout.html">Radial Layout Examples</a></li><li><a href="tutorial-tree-layout.html">Tree Layout Examples</a></li></ul><h3>Namespaces</h3><ul><li><a href="AssetNodeConfiguration.html">AssetNodeConfiguration</a></li><li><a href="BoldEdgeConfiguration.html">BoldEdgeConfiguration</a></li><li><a href="ContextualLayoutConfiguration.html">ContextualLayoutConfiguration</a></li><li><a href="ControlNodeConfiguration.html">ControlNodeConfiguration</a></li><li><a href="CustomNodeConfiguration.html">CustomNodeConfiguration</a></li><li><a href="GridLayoutConfiguration.html">GridLayoutConfiguration</a></li><li><a href="RadialLayoutConfiguration.html">RadialLayoutConfiguration</a></li><li><a href="RequirementNodeConfiguration.html">RequirementNodeConfiguration</a></li><li><a href="RiskNodeConfiguration.html">RiskNodeConfiguration</a></li><li><a href="ThinEdgeConfiguration.html">ThinEdgeConfiguration</a></li><li><a href="TreeLayoutConfiguration.html">TreeLayoutConfiguration</a></li></ul><h3>Classes</h3><ul><li><a href="AssetNode.html">AssetNode</a></li><li><a href="BaseEdge.html">BaseEdge</a></li><li><a href="BaseLayout.html">BaseLayout</a></li><li><a href="BaseNode.html">BaseNode</a></li><li><a href="BoldEdge.html">BoldEdge</a></li><li><a href="ContextualLayout.html">ContextualLayout</a></li><li><a href="ControlNode.html">ControlNode</a></li><li><a href="CustomNode.html">CustomNode</a></li><li><a href="EdgeFactory.html">EdgeFactory</a></li><li><a href="Graph.html">Graph</a></li><li><a href="GraphEdge.html">GraphEdge</a></li><li><a href="GraphNode.html">GraphNode</a></li><li><a href="GridExpander.html">GridExpander</a></li><li><a href="GridLayout.html">GridLayout</a></li><li><a href="NodeFactory.html">NodeFactory</a></li><li><a href="RadialLayout.html">RadialLayout</a></li><li><a href="RequirementNode.html">RequirementNode</a></li><li><a href="RiskNode.html">RiskNode</a></li><li><a href="ThinEdge.html">ThinEdge</a></li><li><a href="TreeLayout.html">TreeLayout</a></li><li><a href="TreeLeaf.html">TreeLeaf</a></li><li><a href="Visualization.html">Visualization</a></li></ul><h3>Global</h3><ul><li><a href="global.html#visConfig">visConfig</a></li></ul></div>
+                        <h2><a href="index.html">Home</a></h2><div class="category"><h3>Tutorials</h3><ul><li><a href="tutorial-advanced-layouts.html">Advanced Layout Examples</a></li><li><a href="tutorial-contextual-layout.html">Contextual Layout Examples</a></li><li><a href="tutorial-grid-layout.html">Grid Layout Examples</a></li><li><a href="tutorial-radial-layout.html">Radial Layout Examples</a></li><li><a href="tutorial-tree-layout.html">Tree Layout Examples</a></li></ul><h3>Namespaces</h3><ul><li><a href="AssetNodeConfiguration.html">AssetNodeConfiguration</a></li><li><a href="BoldEdgeConfiguration.html">BoldEdgeConfiguration</a></li><li><a href="ContextualLayoutConfiguration.html">ContextualLayoutConfiguration</a></li><li><a href="ControlNodeConfiguration.html">ControlNodeConfiguration</a></li><li><a href="CustomEdgeConfiguration.html">CustomEdgeConfiguration</a></li><li><a href="CustomNodeConfiguration.html">CustomNodeConfiguration</a></li><li><a href="GridLayoutConfiguration.html">GridLayoutConfiguration</a></li><li><a href="RadialLayoutConfiguration.html">RadialLayoutConfiguration</a></li><li><a href="RequirementNodeConfiguration.html">RequirementNodeConfiguration</a></li><li><a href="RiskNodeConfiguration.html">RiskNodeConfiguration</a></li><li><a href="ThinEdgeConfiguration.html">ThinEdgeConfiguration</a></li><li><a href="TreeLayoutConfiguration.html">TreeLayoutConfiguration</a></li><li><a href="VisualizationConfiguration.html">VisualizationConfiguration</a></li></ul><h3>Classes</h3><ul><li><a href="AssetNode.html">AssetNode</a></li><li><a href="BaseEdge.html">BaseEdge</a></li><li><a href="BaseLayout.html">BaseLayout</a></li><li><a href="BaseNode.html">BaseNode</a></li><li><a href="BoldEdge.html">BoldEdge</a></li><li><a href="ContextualLayout.html">ContextualLayout</a></li><li><a href="ControlNode.html">ControlNode</a></li><li><a href="CustomEdge.html">CustomEdge</a></li><li><a href="CustomNode.html">CustomNode</a></li><li><a href="EdgeFactory.html">EdgeFactory</a></li><li><a href="Graph.html">Graph</a></li><li><a href="GraphEdge.html">GraphEdge</a></li><li><a href="GraphNode.html">GraphNode</a></li><li><a href="GridExpander.html">GridExpander</a></li><li><a href="GridLayout.html">GridLayout</a></li><li><a href="NodeFactory.html">NodeFactory</a></li><li><a href="RadialLayout.html">RadialLayout</a></li><li><a href="RequirementNode.html">RequirementNode</a></li><li><a href="RiskNode.html">RiskNode</a></li><li><a href="ThinEdge.html">ThinEdge</a></li><li><a href="TreeLayout.html">TreeLayout</a></li><li><a href="TreeLeaf.html">TreeLeaf</a></li><li><a href="Visualization.html">Visualization</a></li></ul><h3>Global</h3><ul><li><a href="global.html#buildTreeFromNodes">buildTreeFromNodes</a></li><li><a href="global.html#colorshift">colorshift</a></li><li><a href="global.html#constructTree">constructTree</a></li><li><a href="global.html#Request">Request</a></li><li><a href="global.html#RequestMultiple2">RequestMultiple2</a></li></ul></div>
                     </nav>
                 </div>
             </div>
@@ -73,13 +73,13 @@ import RequirementNodeConfiguration from "../configuration/RequirementNodeConfig
  * This class is responsible for the visual representation of requirements.
  * @property {Data} data Loaded data from a database.
  * @property {Canvas} canvas The nested canvas to render the node on.
- *
+ * @property {Object} overrideRepresentation An optional object that contains information to override default representations.
  */
 class RequirementNode extends BaseNode {
-  constructor(data, canvas, layoutConfig = {}) {
+  constructor(data, canvas, overrideRepresentation = {}) {
     super(data, canvas)
 
-    this.config = { ...RequirementNodeConfiguration, ...data.config, ...layoutConfig }
+    this.config = { ...RequirementNodeConfiguration, ...data.config, ...overrideRepresentation }
 
 
     // map color to respected state
@@ -98,19 +98,20 @@ class RequirementNode extends BaseNode {
   /**
    * Creates the requirements details description.
    *
-   * @return {ForeignObject} text A foreign object containing some html and the node's label.
+   * @return {ForeignObject} A foreign object containing some html and the node's label.
    */
   createRequirementDetails() {
-    const text = this.canvas.foreignObject(this.config.maxTextWidth, this.config.maxTextHeight)
+    const fobj = this.canvas.foreignObject(this.config.maxTextWidth, this.config.maxTextHeight)
 
+    // add text background
     const background = document.createElement("div")
     background.style.display = "flex"
     background.style.flexDirection = "column"
     background.style.alignItems = "center"
     background.setAttribute("id", "label")
-    text.add(background)
+    fobj.add(background)
 
-    // create label
+    // add label
     const label = document.createElement("p")
     label.innerHTML = this.label
     label.style.textAlign = "center"
@@ -121,9 +122,10 @@ class RequirementNode extends BaseNode {
     label.style.fontFamily = this.config.labelFontFamily
     label.style.fontWeight = this.config.labelFontWeight
     label.style.fontStyle = this.config.labelFontStyle
+    clamp(label, { clamp: this.config.maxLabelLineClamp })
     background.appendChild(label)
 
-    // create status, if any exists
+    // add status, if any exists
     const status = document.createElement("p")
     if (this.state !== null) {
       const res = this.config.states.find((s) => s.state.toLowerCase() === this.state.toLowerCase())
@@ -143,9 +145,11 @@ class RequirementNode extends BaseNode {
       }
     }
 
-    // create description
+    // add description background
     const descriptionBg = document.createElement("div")
     background.appendChild(descriptionBg)
+
+    // add description text
     const description = document.createElement("p")
     description.style.background = this.config.detailsBackground
     description.style.padding = `0 ${this.config.offset}px`
@@ -161,19 +165,42 @@ class RequirementNode extends BaseNode {
     description.innerText = this.description
     descriptionBg.appendChild(description)
 
-
     const h = this.config.maxTextHeight - label.clientHeight - status.clientHeight - this.config.offset * 3.5
     clamp(description, { clamp: `${h}px` })
-    return text
+
+    return fobj
+  }
+
+  /**
+   * Transforms the node to its final rendered position.
+   * @param {Number} [X=finalX] The final X position.
+   * @param {Number} [Y=finalY] The final Y position.
+   */
+  transformToFinalPosition(X = this.finalX, Y = this.finalY) {
+    if (this.isRendered() === false) {
+      return
+    }
+
+    this.currentX = X
+    this.currentY = Y
+    this.coords.push([this.currentX, this.currentY])
+
+    if (this.getNodeSize() === "min") {
+      this.svg.get(0).animate({ duration: this.config.animationSpeed }).center(X, Y)
+      this.svg.get(1).animate({ duration: this.config.animationSpeed }).center(X, Y)
+    } else {
+      this.svg.get(0).animate({ duration: this.config.animationSpeed }).center(X, Y)
+      this.svg.get(1).animate({ duration: this.config.animationSpeed }).center(X, Y)
+    }
   }
 
 
   /**
   * Renders a requirement node in minimal representation.
-  * @param  {Number} IX=initialX The initial X render position.
-  * @param  {Number} IY=initialY The initial Y render position.
-  * @param  {Number} FX=finalX The final X render position.
-  * @param  {Number} FY=finalY The final Y render position.
+  * @param  {Number} [IX=initialX] The initial X render position.
+  * @param  {Number} [IY=initialY] The initial Y render position.
+  * @param  {Number} [FX=finalX] The final X render position.
+  * @param  {Number} [FY=finalY] The final Y render position.
   */
   renderAsMin(IX = this.initialX, IY = this.initialY, FX = this.finalX, FY = this.finalY) {
     // create svg elements
@@ -219,10 +246,10 @@ class RequirementNode extends BaseNode {
 
   /**
   * Renders a requirement node in detailed representation.
-  * @param  {Number} IX=initialX The initial X render position.
-  * @param  {Number} IY=initialY The initial Y render position.
-  * @param  {Number} FX=finalX The final X render position.
-  * @param  {Number} FY=finalY The final Y render position.
+  * @param  {Number} [IX=initialX] The initial X render position.
+  * @param  {Number} [IY=initialY] The initial Y render position.
+  * @param  {Number} [FX=finalX] The final X render position.
+  * @param  {Number} [FY=finalY] The final Y render position.
   */
   renderAsMax(IX = this.initialX, IY = this.initialY, FX = this.finalX, FY = this.finalY) {
     // create svg elements
@@ -266,8 +293,8 @@ class RequirementNode extends BaseNode {
 
   /**
   * Transforms a node from minimal version to detailed representation.
-  * @param {Number} X=finalX The final Xrender position.
-  * @param {Number} Y=finalY The final Y render position.
+  * @param {Number} [X=finalX] The final X render position.
+  * @param {Number} [Y=finalY] The final Y render position.
   */
   transformToMax(X = this.finalX, Y = this.finalY) {
     // update current elements
@@ -315,8 +342,8 @@ class RequirementNode extends BaseNode {
 
   /**
   * Transforms a node from detailed representation to minimal version.
-  * @param {Number} X=finalX The final Xrender position.
-  * @param {Number} Y=finalY The final Y render position.
+  * @param {Number} [X=finalX] The final X render position.
+  * @param {Number} [Y=finalY] The final Y render position.
   */
   transformToMin(X = this.finalX, Y = this.finalY) {
     // update current elements
@@ -380,7 +407,7 @@ export default RequirementNode
 
 <footer class="footer">
     <div class="content has-text-centered">
-        <p>Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.3</a> on Wed Apr 29 2020 02:41:52 GMT+0200 (GMT+02:00)</p>
+        <p>Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.3</a> on Fri May 01 2020 16:43:29 GMT+0200 (GMT+02:00)</p>
         <p class="sidebar-created-by">
             <a href="https://github.com/SoftwareBrothers/better-docs" target="_blank">BetterDocs theme</a> provided with <i class="fas fa-heart"></i> by 
             <a href="http://softwarebrothers.co" target="_blank">SoftwareBrothers - JavaScript Development Agency</a>

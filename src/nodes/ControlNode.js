@@ -7,29 +7,30 @@ import ControlNodeConfiguration from "../configuration/ControlNodeConfiguration"
  * This class is responsible for the visual representation of controls.
  * @property {Data} data Loaded data from a database.
  * @property {Canvas} canvas The nested canvas to render the node on.
- *
+ * @property {Object} overrideRepresentation An optional object that contains information to override default representations.
  */
 class ControlNode extends BaseNode {
-  constructor(data, canvas, layoutConfig = {}) {
+  constructor(data, canvas, overrideRepresentation = {}) {
     super(data, canvas)
-    this.config = { ...ControlNodeConfiguration, ...data.config, ...layoutConfig }
-
+    this.config = { ...ControlNodeConfiguration, ...data.config, ...overrideRepresentation }
   }
 
 
   /**
    * Creates the control details description.
    *
-   * @return {ForeignObject} text A foreign object containing some html and the node's label.
+   * @return {ForeignObject} A foreign object containing some html and the node's label and description.
    */
   createControlDetails() {
-    const text = this.canvas.foreignObject(this.config.maxTextWidth / 2, this.config.maxTextHeight)
+    const fobj = this.canvas.foreignObject(this.config.maxTextWidth, this.config.maxTextHeight)
+
+    // add text background
     const background = document.createElement("div")
-    background.style.width = `${this.config.maxTextWidth / 2}px`
+    background.style.width = `${this.config.maxTextWidth}px`
     background.style.height = `${this.config.maxTextHeight}px`
-    background.style.width = "100px" // TODO:
+    background.style.background = this.config.detailsBackground
     background.setAttribute("id", "label")
-    text.add(background)
+    fobj.add(background)
 
     // add label
     const label = document.createElement("p")
@@ -41,14 +42,16 @@ class ControlNode extends BaseNode {
     label.style.fontWeight = this.config.labelFontWeight
     label.style.fontStyle = this.config.labelFontStyle
     label.style.textAlign = "left"
+    clamp(label, { clamp: this.config.maxLabelLineClamp })
     background.appendChild(label)
 
-    // add description
+    // add description background
     const descriptionBg = document.createElement("div")
     descriptionBg.style.overflow = "hidden"
     descriptionBg.style.margin = `${this.config.offset}px ${this.config.offset}px ${this.config.offset}px 0`
     background.appendChild(descriptionBg)
 
+    // add description text
     const description = document.createElement("p")
     description.innerText = this.description
     description.style.color = this.config.detailsColor
@@ -58,17 +61,17 @@ class ControlNode extends BaseNode {
     description.style.fontStyle = this.config.detailsFontStyle
     descriptionBg.appendChild(description)
 
-    // FIXME: fix overflow text
-    clamp(description, { clamp: `${this.config.maxTextHeight - label.clientHeight - this.config.offset * 2.5}px` })
-    return text
-  }
 
+    clamp(description, { clamp: `${this.config.maxTextHeight - label.clientHeight - this.config.offset * 2.5}px` })
+    fobj.css("user-select", "none")
+    return fobj
+  }
 
 
   /**
    * Transforms the node to its final rendered position.
-   * @param {Number} X=finalX The final X position.
-   * @param {Number} Y=finalY The final Y position.
+   * @param {Number} [X=finalX] The final X position.
+   * @param {Number} [Y=finalY] The final Y position.
    */
   transformToFinalPosition(X = this.finalX, Y = this.finalY) {
     if (this.isRendered() === false) {
@@ -79,18 +82,24 @@ class ControlNode extends BaseNode {
     this.currentY = Y
     this.coords.push([this.currentX, this.currentY])
 
-    this.svg.get(0).animate({ duration: this.config.animationSpeed }).center(X, Y)
-    this.svg.get(1).animate({ duration: this.config.animationSpeed }).center(X, Y)
-    this.svg.get(2).animate({ duration: this.config.animationSpeed }).center(X, Y)
+    if (this.getNodeSize() === "min") {
+      this.svg.get(0).animate({ duration: this.config.animationSpeed }).center(X, Y)
+      this.svg.get(1).animate({ duration: this.config.animationSpeed }).center(X + this.config.minIconTranslateX, Y + this.config.minIconTranslateY)
+      this.svg.get(2).animate({ duration: this.config.animationSpeed }).center(X, Y)
+    } else {
+      this.svg.get(0).animate({ duration: this.config.animationSpeed }).center(X, Y)
+      this.svg.get(1).animate({ duration: this.config.animationSpeed }).center(X + this.config.maxIconTranslateX, Y + this.config.maxIconTranslateY)
+      this.svg.get(2).animate({ duration: this.config.animationSpeed }).center(X, Y)
+    }
   }
 
 
   /**
   * Renders a control node in minimal representation.
-  * @param  {Number} IX=initialX The initial X render position.
-  * @param  {Number} IY=initialY The initial Y render position.
-  * @param  {Number} FX=finalX The final X render position.
-  * @param  {Number} FY=finalY The final Y render position.
+  * @param  {Number} [IX=initialX] The initial X render position.
+  * @param  {Number} [IY=initialY] The initial Y render position.
+  * @param  {Number} [FX=finalX] The final X render position.
+  * @param  {Number} [FY=finalY] The final Y render position.
   */
   renderAsMin(IX = this.initialX, IY = this.initialY, FX = this.finalX, FY = this.finalY) {
     // create svg elements
@@ -146,10 +155,10 @@ class ControlNode extends BaseNode {
 
   /**
   * Renders a control node in detailed representation.
-  * @param  {Number} IX=initialX The initial X render position.
-  * @param  {Number} IY=initialY The initial Y render position.
-  * @param  {Number} FX=finalX The final X render position.
-  * @param  {Number} FY=finalY The final Y render position.
+  * @param  {Number} [IX=initialX] The initial X render position.
+  * @param  {Number} [IY=initialY] The initial Y render position.
+  * @param  {Number} [FX=finalX] The final X render position.
+  * @param  {Number} [FY=finalY] The final Y render position.
   */
   renderAsMax(IX = this.initialX, IY = this.initialY, FX = this.finalX, FY = this.finalY) {
     // create svg elements
@@ -204,8 +213,8 @@ class ControlNode extends BaseNode {
 
   /**
   * Transforms a node from minimal version to detailed representation.
-  * @param {Number} X=finalX The final Xrender position.
-  * @param {Number} Y=finalY The final Y render position.
+  * @param {Number} [X=finalX] The final X render position.
+  * @param {Number} [Y=finalY] The final Y render position.
   */
   transformToMax(X = this.finalX, Y = this.finalY) {
     // update current elements
@@ -274,8 +283,8 @@ class ControlNode extends BaseNode {
 
   /**
   * Transforms a node from detailed representation to minimal version.
-  * @param {Number} X=finalX The final Xrender position.
-  * @param {Number} Y=finalY The final Y render position.
+  * @param {Number} [X=finalX] The final X render position.
+  * @param {Number} [Y=finalY] The final Y render position.
   */
   transformToMin(X = this.finalX, Y = this.finalY) {
     // update current elements
