@@ -1,8 +1,8 @@
 import BaseLayout from "./BaseLayout"
 import RadialLeaf from "./helpers/RadialLeaf"
-import RadialLeaf1 from "./helpers/RadialLeaf1"
 import RadialLayoutConfiguration from "../configuration/RadialLayoutConfiguration"
 import { buildTreeFromNodes } from "../utils/TreeConstruction"
+import { calculateDistance } from "../utils/Calculations"
 
 /**
  * This class is calculates and renders the radial layout.
@@ -24,7 +24,7 @@ class RadialLayout extends BaseLayout {
     // events
     this.events = [
       {
-        event: "dblclick",
+        event: "click",
         modifier: undefined,
         func: "expandOrCollapseEvent",
         defaultEvent: true,
@@ -59,8 +59,9 @@ class RadialLayout extends BaseLayout {
 
   // calculates the radial layout positions for all given nodes and edges
   calculateLayout(offset = 0, { isReRender = false }) {
+    this.initialOffset = offset
 
-
+    // updates the depth level for each node
     const updateNodeDepth = (node, depth) => {
       node.setDepth(depth)
       node.children.forEach((child) => {
@@ -68,9 +69,11 @@ class RadialLayout extends BaseLayout {
       })
     }
 
+    // calculates the X and Y position for nodes and edges
     const calculateFinalPosition = (node, root, alfa, beta) => {
 
       const w = this.config.renderingSize === "max" ? node.getMaxWidth() : node.getMinWidth()
+      const h = this.config.renderingSize === "max" ? node.getMaxHeight() : node.getMinHeight()
 
       // center root
       if (node.parentId === null || node.id === this.rootId) {
@@ -86,10 +89,10 @@ class RadialLayout extends BaseLayout {
       let theta = alfa
 
       // multipler for depth levels after the first circle
-      const delta = this.config.radiusDelta
+      const delta = Math.max(w, h)
 
       // innermost circle radius + delta angle
-      const radius = this.config.initialRadius + (delta * depth)
+      const radius = Math.max(w, h) * 1.35 + (delta * depth)
 
 
       const BFS = (root) => {
@@ -118,10 +121,8 @@ class RadialLayout extends BaseLayout {
         return leaves
       }
 
-      // number of children in the subtree
+      // find the number of children in the subtree
       const children = BFS(node)
-
-
 
       node.children.forEach((child) => {
         // number of leaves in subtree
@@ -133,62 +134,11 @@ class RadialLayout extends BaseLayout {
 
         child.setFinalX(x + this.config.translateX + w / 2)
         child.setFinalY(y + this.config.translateY)
-        // if (child.hasNoChildren() && (child.hasChildrenIds() || child.getInvisibleChildren().length >= this.config.visibleNodeLimit)) {
-        //   const leaf = new RadialLeaf1(this.canvas, child, root, this.config)
-        //   leaf.parentId = node.id
-        //   calculateFinalPosition(leaf, root, theta, mü)
-        //   this.leafs.push(lea)
-        // }
 
         if (child.children.length > 0) {
           calculateFinalPosition(child, root, theta, mü)
         }
 
-
-        // if (child.hasNoChildren() && (child.hasChildrenIds() || child.getInvisibleChildren().length >= this.config.visibleNodeLimit)) {
-        //   const x0 = root.getFinalX()
-        //   const y0 = root.getFinalY()
-        //   const x1 = child.getFinalX()
-        //   const y1 = child.getFinalY()
-
-        //   const w = this.config.renderingSize === "max" ? node.config.maxWidth : node.config.minWidth
-        //   const h = this.config.renderingSize === "max" ? node.config.maxHeight : node.config.minHeight
-
-        //   // this.canvas.circle(10).center(x0, y0).fill("#f75")
-        //   // this.canvas.circle(10).center(x1, y1).fill("#f0f")
-        //   // this.canvas.rect(10, 10).center(x1, y1)
-
-        //   const x2 = x0 * this.config.hAspect
-        //   const y2 = y0 * this.config.wAspect
-        //   // const r = radius + (delta * 3)
-        //   const r = radius + (delta * (depth + 2)) + Math.min(w, h)
-        //   // console.log(radius + this.config.initialRadius, x2, y2)
-        //   // this.canvas.ellipse(r * this.config.hAspect, r * this.config.wAspect).center(x0, y0).fill("none").stroke({ width: 1, color: "red" })
-
-
-
-        //   const angle = Math.atan2(y1 - y0, x1 - x0)
-        //   // // console.log(child.id, theta, mü, angle)
-        //   // // console.log(alfa, beta, theta)
-
-        //   // console.log(Math.min(w,h))
-
-        //   const x3 = x1 + (this.config.radiusDelta * 2) * Math.cos(angle)
-        //   const y3 = y1 + (this.config.radiusDelta * 2) * Math.sin(angle)
-
-        //   const line = { x1, y1, x3, y3 }
-        //   const circle = { x0, y0, r, }
-        //   const leaf = new RadialLeaf(this.canvas, child, root, this.config, line, circle)
-        //   leaf.id = i
-        //   console.log("-->", this.nodes.filter(n => n.depth === depth + 1).length)
-        //   leaf.parentChildren = this.nodes.filter(n => n.depth === depth + 1).length
-        //   leaf.rootX = x0
-        //   leaf.rootY = y0
-        //   this.leafs.push(leaf)
-
-        //   // this.canvas.rect(10, 10).center(x3, y3).fill("#000")
-
-        // }
 
         // calculate edge
         const e = this.edges.find((e) => e.fromNode.id === child.id && e.toNode.id === node.id)
@@ -201,72 +151,27 @@ class RadialLayout extends BaseLayout {
       })
     }
 
+
+    // add a visual indication that there is more data available
     const calculateLeafs = (node) => {
+      if (this.config.showLeafIndications === false) {
+        return
+      }
       const root = node
       const addLeaf = (currentNode) => {
         if (currentNode.hasNoChildren() && (currentNode.hasChildrenIds() || currentNode.getInvisibleChildren().length >= this.config.visibleNodeLimit)) {
-          // console.log("cur", currentNode)
 
-
-          if (currentNode.getInvisibleChildren().length > 0) {
-            // currentNode.setChildrenIds(currentNode.getInvisibleChildren())
-          }
           const existing = this.leafs.find((l) => l.id === currentNode.getId())
-          // console.log(existing)
+
           if (existing === undefined) {
-
-            const x0 = root.getFinalX()
-            const y0 = root.getFinalY()
-            const x1 = currentNode.getFinalX()
-            const y1 = currentNode.getFinalY()
-
-            const w = this.config.renderingSize === "max" ? node.config.maxWidth : node.config.minWidth
-            const h = this.config.renderingSize === "max" ? node.config.maxHeight : node.config.minHeight
-
-            // this.canvas.circle(10).center(x0, y0).fill("#f75")
-            // this.canvas.circle(10).center(x1, y1).fill("#f0f")
-            // this.canvas.rect(10, 10).center(x1, y1)
-
-            const x2 = x0 * this.config.hAspect
-            const y2 = y0 * this.config.wAspect
-            // const r = radius + (delta * 3)
-
-
-            // find max radius
-            const depth = currentNode.getDepth()
 
 
             const leaf = new RadialLeaf(this.canvas, currentNode, root, this.config)
-            // console.log("-->", this.nodes.filter(n => n.depth === depth + 1).length)
-            leaf.parentChildren = this.nodes.filter(n => n.depth === depth + 1).length
-            console.log("create leaf for", currentNode.id)
+            leaf.parentChildren = this.nodes.filter(n => n.getDepth() === currentNode.getDepth() + 1).length
 
-
-            leaf.rootX = x0
-            leaf.rootY = y0
+            leaf.setLayoutId(this.layoutIdentifier)
             this.leafs.push(leaf)
 
-            // this.canvas.rect(10, 10).center(x3, y3).fill("#000")
-
-            //   if (currentNode.getInvisibleChildren().length > 0) {
-            //     currentNode.setChildrenIds(currentNode.getInvisibleChildren())
-            //   }
-            //   const existing = this.leafs.find((l) => l.id === currentNode.getId())
-
-            //   if (existing === undefined) {
-            //     const isHorizontal = this.config.orientation === "horizontal"
-            //     const leaf = new Leaf(this.canvas, currentNode, config, isHorizontal)
-            //     const x = x ? x : currentNode.getFinalX()
-            //     const y = y ? y : currentNode.getFinalY()
-
-            //     leaf.setFinalX(x)
-            //     leaf.setFinalY(y)
-            //     leaf.setInitialX(root.getFinalX())
-            //     leaf.setInitialY(root.getFinalY())
-            //     leaf.setIsReRender(isReRender || false)
-            //     this.leafs.push(leaf)
-            //   }
-            // }
           }
 
 
@@ -293,12 +198,16 @@ class RadialLayout extends BaseLayout {
 
 
 
-
+      // add new leafs
       addLeaf(node)
+
+      // remove existing leafs which are not used anymore
       removeLeaf()
     }
 
-    const adjustPositions = (tree) => {
+
+    // calculate the layout dimensions and move off screen objects into the screen
+    const calculateLayoutInfo = (tree) => {
       const toRender = [tree]
       const rendered = []
       while (toRender.length) {
@@ -313,11 +222,13 @@ class RadialLayout extends BaseLayout {
 
       const hAdjustment = Math.min(...rendered.map((node) => {
         const w = this.config.renderingSize === "max" ? node.getMaxWidth() : node.getMinWidth()
-        return node.getFinalX() - w - this.config.radiusDelta / 1.5 // .. and add some space for leafs
+        const h = this.config.renderingSize === "max" ? node.getMaxHeight() : node.getMinHeight()
+        return node.getFinalX() - w - Math.max(w, h) / 1.5 // .. and add some space for leafs
       }))
       const vAdjustment = Math.min(...rendered.map((node) => {
+        const w = this.config.renderingSize === "max" ? node.getMaxWidth() : node.getMinWidth()
         const h = this.config.renderingSize === "max" ? node.getMaxHeight() : node.getMinHeight()
-        return node.getFinalY() - h - this.config.radiusDelta / 1.5 // .. and add some space for leafs
+        return node.getFinalY() - h - Math.max(w, h) / 1.5 // .. and add some space for leafs
       }))
 
       rendered.forEach((node) => {
@@ -351,15 +262,22 @@ class RadialLayout extends BaseLayout {
         return n.getFinalY() + h
       }))
 
-      const calculateDistance = (sx, sy, tx, ty) => {
-        const dx = tx - sx
-        const dy = ty - sy
-        return Math.sqrt(dx * dx + dy * dy)
-      }
+
 
       // this.canvas.line(x1, y1, x2, y2).stroke({ width: 2, color: "red" })
 
+      // this.canvas.circle(5).fill("#000").center(x0, y0)
+      // this.canvas.circle(5).fill("#75f").center(x1, y1)
+      // this.canvas.circle(15).fill("#f75").center(x2, y2 + 300)
+      // if (this.l1) {
+      //   this.l1.remove()
+      //   this.l2.remove()
+      // }
 
+      // this.l1 = this.canvas.line(x0, y0, x0, 300).stroke({ width: 2, color: "red" })
+      // this.l2 = this.canvas.line(x1, y0, x1, 300).stroke({ width: 2, color: "red" })
+
+      // const oldCx = this.layoutInfo.x
       this.layoutInfo = {
         x: x0,
         y: y0,
@@ -368,16 +286,38 @@ class RadialLayout extends BaseLayout {
         w: calculateDistance(x0, y0, x1, y1),
         h: calculateDistance(x1, y1, x2, y2),
       }
+
+      // // shift layout to right if it took space from a left layout
+      // const shiftValue = oldCx - this.layoutInfo.x
+      // if (shiftValue > 0) {
+      //   // console.log("new", shiftValue, this.layoutInfo.x)
+      //   this.nodes.forEach(node => {
+      //     node.setFinalX(node.getFinalX() + shiftValue)
+      //   })
+      //   this.edges.forEach(edge => {
+      //     edge.setFinalToX((edge.getFinalToX() + shiftValue))
+      //     edge.setFinalFromX((edge.getFinalFromX() + shiftValue))
+      //   })
+      //   this.layoutInfo = {
+      //     ...this.layoutInfo,
+      //     x: this.layoutInfo.x + shiftValue,
+      //     cx: this.layoutInfo.cx + shiftValue
+      //   }
+      //   this.l2.dx(shiftValue)
+      // }
+
     }
 
     const tree = buildTreeFromNodes(this.nodes)[0]
     updateNodeDepth(tree, 0)
     calculateFinalPosition(tree, tree, 0, 2 * Math.PI)
     calculateLeafs(tree)
-    adjustPositions(tree)
+    calculateLayoutInfo(tree)
+
+
 
     this.tree = tree
-    // console.log("Radial", this.layoutInfo, this.nodes, this.tree)
+    console.log("Radial", this.layoutInfo)
     return this.layoutInfo
   }
 
@@ -385,8 +325,6 @@ class RadialLayout extends BaseLayout {
     const X = x ? x : this.nodes.find((n) => n.id === this.rootId).getFinalX()
     const Y = y ? y : this.nodes.find((n) => n.id === this.rootId).getFinalY()
 
-    // console.log(this.nodes)
-    // console.log(this.edges)
 
     const renderNodes = () => {
       const toRender = [this.tree]
@@ -440,9 +378,10 @@ class RadialLayout extends BaseLayout {
     const renderLeafs = () => {
       this.leafs.forEach((leaf) => {
         if (leaf.isRendered() === false) {
-          leaf.render(isReRender === true)
+          leaf.render()
         } else if (leaf.isRendered() === true) {
-          leaf.transformToFinalPosition()
+          // console.lo
+          leaf.transformToFinalPosition(isReRender)
         }
       })
     }

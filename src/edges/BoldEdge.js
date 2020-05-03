@@ -29,7 +29,7 @@ class BoldEdge extends BaseEdge {
   render(X = this.finalFromX, Y = this.finalFromY) {
     const svg = this.canvas.group()
     svg.css("cursor", "default")
-    svg.id(`edge#${this.fromNode.id}_${this.toNode.id}`)
+    svg.id(`boldEdge#${this.layoutId}_${this.fromNode.id}_${this.toNode.id}`)
     svg.back()
 
 

@@ -16,7 +16,7 @@
  * @property {String} nodeEndpoint=null                         - Determins the required node endpoint name.
  * @property {String} edgeEndpoint=null                         - Determins the required node endpoint name.
  * @property {String} contextualRelationshipEndpoint=null       - Determins the required contextual relationship endpoint name.
- * @property {Number} layoutSpacing=50                          - Determins the spacing between multiple layouts.
+ * @property {Number} layoutSpacing=150                         - Determins the spacing between multiple layouts.
  *
  *
  * @see https://github.com/svgdotjs/svg.panzoom.js
@@ -43,7 +43,7 @@ const VisualizationConfiguration = {
   contextualRelationshipEndpoint: null,
 
   // global layout settings
-  layoutSpacing: 50
+  layoutSpacing: 100
 }
 
 export default VisualizationConfiguration

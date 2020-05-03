@@ -188,20 +188,20 @@ class Visualization {
 
 
     if (layout instanceof GridLayout) {
-      const createdLayout = await layout.loadInitialGridDataAsync()
-      const index = this.layouts.indexOf(layout)
-      const layouts = this.layouts.slice(0, index)
-      const offset = layouts.map((l) => l.layoutInfo.w).reduce((a, b) => a + b, 0)
-      createdLayout.calculateLayout(offset)
-      createdLayout.renderLayout()
+      // const createdLayout = await layout.loadInitialGridDataAsync()
+      // const index = this.layouts.indexOf(layout)
+      // const layouts = this.layouts.slice(0, index)
+      // const offset = layouts.map((l) => l.layoutInfo.w).reduce((a, b) => a + b, 0)
+      // createdLayout.calculateLayout(offset)
+      // createdLayout.renderLayout()
     }
 
     if (layout instanceof ContextualLayout) {
-      const createdLayout = await layout.loadInitialContextualDataAsync()
-      const layouts = this.layouts.slice(0, this.layouts.indexOf(layout))
-      const offset = layouts.map((l) => l.layoutInfo.w).reduce((a, b) => a + b, 0)
-      createdLayout.calculateLayout(offset)
-      createdLayout.renderLayout()
+      // const createdLayout = await layout.loadInitialContextualDataAsync()
+      // const layouts = this.layouts.slice(0, this.layouts.indexOf(layout))
+      // const offset = layouts.map((l) => l.layoutInfo.w).reduce((a, b) => a + b, 0)
+      // createdLayout.calculateLayout(offset)
+      // createdLayout.renderLayout()
     }
 
     if (layout instanceof RadialLayout) {
@@ -215,123 +215,13 @@ class Visualization {
 
     const layouts = this.layouts.slice(0, this.layouts.indexOf(layout))
     const offset = layouts.map((l) => l.layoutInfo.w).reduce((a, b) => a + b, 0)
-    layout.calculateLayout(offset, {})
+    layout.calculateLayout(offset + (this.config.layoutSpacing * (this.layouts.length - 1)), {})
     layout.renderLayout({})
 
 
     return layout
   }
 
-  /*
-    async update(layout, graphOrConfig, config = {}) {
-      if (layout instanceof RadialLayout) {
-        if (graphOrConfig instanceof Graph) {
-          console.log("update radial graph")
-
-          await layout.updateRadialDataWithConfigAsync(graphOrConfig, config)
-        } else {
-          layout.setConfig(graphOrConfig)
-          await layout.removeLayoutAsync()
-
-          const layouts = this.layouts.slice(0, this.layouts.indexOf(layout))
-          const offset = layouts.map((l) => l.layoutInfo.w).reduce((a, b) => a + b, 0)
-          const prevW = layout.layoutInfo.w
-          layout.calculateLayout(offset)
-
-          const newW = layout.layoutInfo.w
-
-          // update all layouts right side
-          this.layouts.forEach((llayout, i) => {
-            if (i > this.layouts.indexOf(layout)) {
-              llayout.calculateLayout(newW - prevW)
-              llayout.renderLayout()
-            }
-          })
-
-          layout.renderLayout()
-        }
-      }
-
-
-      if (layout instanceof GridLayout) {
-        // update the underlying graph structure and configuration
-        if (graphOrConfig instanceof Graph) {
-          await layout.updateGridDataWithConfigAsync(graphOrConfig, config)
-          await layout.loadAdditionalGridDataAsync()
-
-          const prevW = layout.layoutInfo.w
-          layout.calculateLayout()
-          const newW = layout.layoutInfo.w
-
-          // update all layouts right side
-          this.layouts.forEach((llayout, i) => {
-            if (i > this.layouts.indexOf(layout)) {
-              llayout.calculateLayout(newW - prevW)
-              llayout.renderLayout()
-            }
-          })
-
-          layout.renderLayout()
-        } else { // update only configuration
-          layout.setConfig(graphOrConfig)
-          await layout.removeLayoutAsync()
-          await layout.loadAdditionalGridDataAsync()
-
-          const prevW = layout.layoutInfo.w
-          layout.calculateLayout()
-          const newW = layout.layoutInfo.w
-
-          // update all layouts right side
-          this.layouts.forEach((llayout, i) => {
-            if (i > this.layouts.indexOf(layout)) {
-              llayout.calculateLayout(newW - prevW)
-              llayout.renderLayout()
-            }
-          })
-
-          layout.renderLayout()
-        }
-      }
-
-
-      // if (graphOrConfig instanceof Graph) {
-      //   await layout.updateGraphStructure(graphOrConfig, config)
-      //   const updatedLayout = await layout.loadAdditionalGridDataAsync()
-      //   const prevW = updatedLayout.layoutInfo.w
-      //   updatedLayout.calculateLayout()
-      //   const newW = updatedLayout.layoutInfo.w
-
-      //   // update all layouts right side
-      //   this.layouts.forEach((llayout, i) => {
-      //     if (i > this.layouts.indexOf(layout)) {
-      //       llayout.calculateLayout(newW - prevW)
-      //       llayout.renderLayout()
-      //     }
-      //   })
-
-      //   updatedLayout.renderLayout()
-      // } else {
-
-      //   console.log(layout, graphOrConfig, this)
-      //   const updatedLayout = await layout.updateLayoutConfiguration(graphOrConfig)
-      //   await updatedLayout.loadAdditionalGridDataAsync()
-
-      //   const prevW = updatedLayout.layoutInfo.w
-      //   updatedLayout.calculateLayout()
-      //   const newW = updatedLayout.layoutInfo.w
-
-      //   // update all layouts right side
-      //   this.layouts.forEach((llayout, i) => {
-      //     if (i > this.layouts.indexOf(layout)) {
-      //       llayout.calculateLayout(newW - prevW)
-      //       llayout.renderLayout()
-      //     }
-      //   })
-
-      //   updatedLayout.renderLayout()
-      // }
-    }
-  */
 
   /**
    * Updates an existing layout.
@@ -358,6 +248,11 @@ class Visualization {
           layout.setRootId(config.rootId || layout.getRootId())
         }
 
+        if (layout instanceof RadialLayout) {
+          layout.setRenderDepth(config.renderDepth || layout.getRenderDepth())
+          layout.setRootId(config.rootId || layout.getRootId())
+        }
+
       }
 
       await layout.removeLayoutAsync()
@@ -366,6 +261,10 @@ class Visualization {
 
       if (layout instanceof TreeLayout) {
         await layout.loadInitialTreeDataAsync()
+      }
+
+      if (layout instanceof RadialLayout) {
+        await loadInitialRadialDataAsync()
       }
 
       const layouts = this.layouts.slice(0, this.layouts.indexOf(layout))
@@ -379,6 +278,7 @@ class Visualization {
 
       const reRenderOperations = [
         // tree
+        "animationSpeed",
         "orientation",
         "renderingSize",
         "showLeafIndications",
@@ -387,6 +287,13 @@ class Visualization {
         "leafStrokeWidth",
         "leafStrokeColor",
         "leafMarker",
+
+        // radial
+        "hAspect",
+        "wAspect",
+        "rootId",
+        "renderDepth"
+
       ]
       const requireRebuild = reRenderOperations.filter((r) => Object.keys(conf).includes(r)).length > 0
 
@@ -397,6 +304,16 @@ class Visualization {
 
         if (requireRebuild === true) {
           await layout.rebuildTreeLayout()
+        }
+      }
+
+      if (layout instanceof RadialLayout) {
+        layout.setConfig({ ...layout.getConfig(), ...conf })
+        layout.setRenderDepth(conf.renderDepth || layout.getRenderDepth())
+        layout.setRootId(conf.rootId || layout.getRootId())
+
+        if (requireRebuild === true) {
+          await layout.rebuildRadialLayout()
         }
       }
 

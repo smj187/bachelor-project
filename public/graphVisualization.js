@@ -23652,6 +23652,41 @@ var intersect_1 = intersect;
 var intersect$1 = intersect_1;
 var shape = IntersectionParams_1.newShape;
 
+var calculateNodeLineIntersection = function calculateNodeLineIntersection(x0, y0, x1, y1, node) {
+  var w = node.nodeSize === "min" ? node.config.minWidth : node.config.maxWidth;
+  var h = node.nodeSize === "min" ? node.config.minHeight : node.config.maxHeight; // spacing between node and leaf
+
+  var spacing = node.config.offset;
+  var rect1 = shape("rect", {
+    x: x0 - w / 2 - spacing / 2,
+    y: y0 - h / 2 - spacing / 2,
+    width: w + spacing,
+    height: h + spacing,
+    rx: node.config.borderRadius,
+    ry: node.config.borderRadius
+  });
+  var line1 = shape("line", {
+    x1: x0,
+    y1: y0,
+    x2: x1,
+    y2: y1
+  });
+
+  var _intersect2 = intersect$1(rect1, line1),
+      points = _intersect2.points;
+
+  return {
+    x: points[0].x,
+    y: points[0].y
+  };
+};
+
+var calculateDistance = function calculateDistance(sx, sy, tx, ty) {
+  var dx = tx - sx;
+  var dy = ty - sy;
+  return Math.sqrt(dx * dx + dy * dy);
+};
+
 /**
  * This is the base class for edges.
  *
@@ -23709,42 +23744,12 @@ var BaseEdge = /*#__PURE__*/function () {
         tx = fx;
       }
 
-      var line = shape("line", {
-        x1: fx,
-        y1: fy,
-        x2: tx,
-        y2: ty
-      }); // from intersection point calculation
-
-      var w2 = this.fromNode.getNodeSize() === "min" ? this.fromNode.config.minWidth : this.fromNode.config.maxWidth;
-      var h2 = this.fromNode.getNodeSize() === "min" ? this.fromNode.config.minHeight : this.fromNode.config.maxHeight;
-      var rect2 = shape("rect", {
-        x: fx - w2 / 2 - this.fromNode.config.borderStrokeWidth / 2 - this.config.offset / 2,
-        y: fy - h2 / 2 - this.fromNode.config.borderStrokeWidth / 2 - this.config.offset / 2,
-        width: w2 + this.fromNode.config.borderStrokeWidth + this.config.offset,
-        height: h2 + this.fromNode.config.borderStrokeWidth + this.config.offset,
-        rx: this.fromNode.config.borderRadius,
-        ry: this.fromNode.config.borderRadius
-      });
-      var fromPoints = intersect$1(rect2, line); // console.log(fromPoints)
-
-      this.finalFromX = fromPoints.points[0].x;
-      this.finalFromY = fromPoints.points[0].y; // to intersection point calculation
-
-      var w1 = this.toNode.getNodeSize() === "min" ? this.toNode.config.minWidth : this.toNode.config.maxWidth;
-      var h1 = this.toNode.getNodeSize() === "min" ? this.toNode.config.minHeight : this.toNode.config.maxHeight;
-      var rect1 = shape("rect", {
-        x: tx - w1 / 2 - this.toNode.config.borderStrokeWidth / 2 - this.config.offset / 2,
-        y: ty - h1 / 2 - this.toNode.config.borderStrokeWidth / 2 - this.config.offset / 2,
-        width: w1 + this.toNode.config.borderStrokeWidth + this.config.offset,
-        height: h1 + this.toNode.config.borderStrokeWidth + this.config.offset,
-        rx: this.toNode.config.borderRadius,
-        ry: this.toNode.config.borderRadius
-      });
-      var toPoints = intersect$1(rect1, line);
-      this.finalToX = toPoints.points[0].x;
-      this.finalToY = toPoints.points[0].y; // this.canvas.circle(5).fill("#75f").center(this.finalFromX, this.finalFromY)
-      // this.canvas.circle(5).fill("#0f0").center(this.finalToX, this.finalToY)
+      var fromIntersection = calculateNodeLineIntersection(fx, fy, tx, ty, this.fromNode);
+      this.finalFromX = fromIntersection.x;
+      this.finalFromY = fromIntersection.y;
+      var toIntersection = calculateNodeLineIntersection(tx, ty, fx, fy, this.toNode);
+      this.finalToX = toIntersection.x;
+      this.finalToY = toIntersection.y;
     }
   }, {
     key: "removeEdge",
@@ -24000,7 +24005,7 @@ var ThinEdge = /*#__PURE__*/function (_BaseEdge) {
       var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.finalFromY;
       var svg = this.canvas.group();
       svg.css("cursor", "default");
-      svg.id("edge#".concat(this.layoutId, "_").concat(this.fromNode.id, "_").concat(this.toNode.id));
+      svg.id("thinEdge#".concat(this.layoutId, "_").concat(this.fromNode.id, "_").concat(this.toNode.id));
       var line = "M".concat(this.finalFromX, ",").concat(this.finalFromY, " L").concat(this.finalToX, ",").concat(this.finalToY);
       var dasharray = this.config.type === "dashed" ? this.config.strokeDasharray : "0";
       var path = this.canvas.path(line).stroke({
@@ -24209,7 +24214,7 @@ var BoldEdge = /*#__PURE__*/function (_BaseEdge) {
       var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.finalFromY;
       var svg = this.canvas.group();
       svg.css("cursor", "default");
-      svg.id("edge#".concat(this.fromNode.id, "_").concat(this.toNode.id));
+      svg.id("boldEdge#".concat(this.layoutId, "_").concat(this.fromNode.id, "_").concat(this.toNode.id));
       svg.back();
       var plot = this.generateBoldArrow();
       var path = this.canvas.path(plot).stroke({
@@ -26022,7 +26027,7 @@ var CustomEdge = /*#__PURE__*/function (_BaseEdge) {
       var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.finalFromY;
       var svg = this.canvas.group();
       svg.css("cursor", "default");
-      svg.id("edge#".concat(this.layoutId, "_").concat(this.fromNode.id, "_").concat(this.toNode.id));
+      svg.id("customEdge#".concat(this.layoutId, "_").concat(this.fromNode.id, "_").concat(this.toNode.id));
       var line = "M".concat(this.finalFromX, ",").concat(this.finalFromY, " L").concat(this.finalToX, ",").concat(this.finalToY);
       var dasharray = this.config.strokeDasharray !== "0" ? this.config.strokeDasharray : "0";
       var path = this.canvas.path(line).stroke({
@@ -26503,7 +26508,9 @@ var BaseLayout = /*#__PURE__*/function () {
                       node.children = [];
                     }
                   }
-                };
+                }; // FIXME: cauption while updating a layout, this variable limits the amount of visible nodes
+                //        and if not updated properly, some nodes won't render
+
 
                 checkVisibilityRecursive(tree, this.config.visibleNodeLimit); // calculate unique edges between the nodes
 
@@ -26785,40 +26792,7 @@ var BaseLayout = /*#__PURE__*/function () {
       }
 
       return rebuildTreeLayout;
-    }()
-    /**
-     * Updates all layouts to the right if necessary.
-     */
-
-  }, {
-    key: "updateLayoutsToTheRight",
-    value: function updateLayoutsToTheRight(_ref) {
-      var _ref$isReRender = _ref.isReRender,
-          isReRender = _ref$isReRender === void 0 ? false : _ref$isReRender;
-      var index = this.layoutReferences.indexOf(this);
-      var layouts = this.layoutReferences.slice(0, index);
-      var offset = layouts.map(function (l) {
-        return l.layoutInfo.w;
-      }).reduce(function (a, b) {
-        return a + b;
-      }, 0);
-      var prevInfo = this.layoutInfo;
-      this.calculateLayout(offset, {
-        isReRender: true
-      });
-      var w = this.layoutInfo.w + this.config.translateX; // update all layouts right side
-
-      this.layoutReferences.forEach(function (llayout, i) {
-        if (i > index) {
-          llayout.calculateLayout(llayout.initialOffset + (w - prevInfo.w), {});
-          llayout.renderLayout({});
-        }
-      });
-
-      if (isReRender === true) {
-        this.renderLayout({});
-      }
-    } // RADIAL
+    }() // RADIAL
 
   }, {
     key: "loadInitialRadialDataAsync",
@@ -26927,9 +26901,10 @@ var BaseLayout = /*#__PURE__*/function () {
                       node.children = [];
                     }
                   }
-                };
+                }; // FIXME: bug when updating form a renderdepth of <0 to 0 (does not work)
 
-                checkVisibilityRecursive(tree, this.config.visibleNodeLimit); // calculate unique edges between the nodes
+
+                checkVisibilityRecursive(tree, 100); // calculate unique edges between the nodes
 
                 createEdgeConnections = function createEdgeConnections(root, edgeList) {
                   if (root.children) {
@@ -27171,41 +27146,21 @@ var BaseLayout = /*#__PURE__*/function () {
       return updateRadialDataAsync;
     }()
   }, {
-    key: "updateRadialDataWithConfigAsync",
+    key: "rebuildRadialLayout",
     value: function () {
-      var _updateRadialDataWithConfigAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee9(newGraph, newConfiguration) {
-        var index, layouts, offset, prevW, newW;
+      var _rebuildRadialLayout = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee9() {
         return regeneratorRuntime.wrap(function _callee9$(_context9) {
           while (1) {
             switch (_context9.prev = _context9.next) {
               case 0:
-                this.nodeData = newGraph.getNodes();
-                this.edgeData = newGraph.getEdges();
-                this.removeRepresentation(this.nodes, this.edges);
-                _context9.next = 5;
+                _context9.next = 2;
+                return this.removeLayoutAsync();
+
+              case 2:
+                _context9.next = 4;
                 return this.loadInitialRadialDataAsync();
 
-              case 5:
-                index = this.layoutReferences.indexOf(this);
-                layouts = this.layoutReferences.slice(0, index);
-                offset = layouts.map(function (l) {
-                  return l.layoutInfo.w;
-                }).reduce(function (a, b) {
-                  return a + b;
-                }, 0);
-                prevW = this.layoutInfo.w;
-                this.calculateLayout(offset);
-                newW = this.layoutInfo.w; // update all layouts right side
-
-                this.layoutReferences.forEach(function (llayout, i) {
-                  if (i > index) {
-                    llayout.calculateLayout(newW - prevW);
-                    llayout.renderLayout();
-                  }
-                });
-                this.renderLayout();
-
-              case 13:
+              case 4:
               case "end":
                 return _context9.stop();
             }
@@ -27213,12 +27168,45 @@ var BaseLayout = /*#__PURE__*/function () {
         }, _callee9, this);
       }));
 
-      function updateRadialDataWithConfigAsync(_x5, _x6) {
-        return _updateRadialDataWithConfigAsync.apply(this, arguments);
+      function rebuildRadialLayout() {
+        return _rebuildRadialLayout.apply(this, arguments);
       }
 
-      return updateRadialDataWithConfigAsync;
+      return rebuildRadialLayout;
     }()
+    /**
+     * Updates all layouts to the right if necessary.
+     */
+
+  }, {
+    key: "updateLayoutsToTheRight",
+    value: function updateLayoutsToTheRight(_ref) {
+      var _ref$isReRender = _ref.isReRender,
+          isReRender = _ref$isReRender === void 0 ? false : _ref$isReRender;
+      var index = this.layoutReferences.indexOf(this);
+      var layouts = this.layoutReferences.slice(0, index);
+      var offset = layouts.map(function (l) {
+        return l.layoutInfo.w;
+      }).reduce(function (a, b) {
+        return a + b;
+      }, 0);
+      var prevInfo = this.layoutInfo;
+      this.calculateLayout(offset, {
+        isReRender: true
+      });
+      var w = this.layoutInfo.w + this.config.translateX; // update all layouts right side
+
+      this.layoutReferences.forEach(function (llayout, i) {
+        if (i > index) {
+          llayout.calculateLayout(llayout.initialOffset + (w - prevInfo.w), {});
+          llayout.renderLayout({});
+        }
+      });
+
+      if (isReRender === true) {
+        this.renderLayout({});
+      }
+    }
   }, {
     key: "removeLayoutAsync",
     value: function () {
@@ -27297,7 +27285,7 @@ var BaseLayout = /*#__PURE__*/function () {
         }, _callee11, this);
       }));
 
-      function updateLayoutConfiguration(_x7) {
+      function updateLayoutConfiguration(_x5) {
         return _updateLayoutConfiguration.apply(this, arguments);
       }
 
@@ -27322,7 +27310,7 @@ var BaseLayout = /*#__PURE__*/function () {
         }, _callee12, this);
       }));
 
-      function updateGridLayoutConfiguration(_x8) {
+      function updateGridLayoutConfiguration(_x6) {
         return _updateGridLayoutConfiguration.apply(this, arguments);
       }
 
@@ -27925,7 +27913,7 @@ var BaseLayout = /*#__PURE__*/function () {
         }, _callee15, this);
       }));
 
-      function createContextualDataAsync(_x9, _x10) {
+      function createContextualDataAsync(_x7, _x8) {
         return _createContextualDataAsync.apply(this, arguments);
       }
 
@@ -28031,7 +28019,7 @@ var BaseLayout = /*#__PURE__*/function () {
         }, _callee16, this);
       }));
 
-      function manageContextualDataAsync(_x11) {
+      function manageContextualDataAsync(_x9) {
         return _manageContextualDataAsync.apply(this, arguments);
       }
 
@@ -29244,334 +29232,194 @@ fixRegexpWellKnownSymbolLogic$1('split', 2, function (SPLIT, nativeSplit, maybeC
   ];
 }, !SUPPORTS_Y$1);
 
+/**
+ * This class calculates and renders an indication if more child nodes may be available within a radial layout.
+ * @property {Canvas} canvas The current canvas to render the element on.
+ * @property {BaseNode} node The currently active and real leaf node representaion.
+ * @property {BaseNode} root The root node in the layout.
+ * @property {RadialLayoutConfiguration} config An object containing visual restrictions.
+ */
+
 var RadialLeaf = /*#__PURE__*/function () {
   function RadialLeaf(canvas, node, root, layoutConfig) {
     _classCallCheck(this, RadialLeaf);
 
     this.svg = null;
     this.canvas = canvas;
-    this.config = {
-      animationSpeed: layoutConfig.animationSpeed,
-      strokeWidth: layoutConfig.leafStrokeWidth,
-      strokeColor: layoutConfig.leafStrokeColor,
-      marker: layoutConfig.leafMarker,
-      hAspect: layoutConfig.hAspect,
-      wAspect: layoutConfig.wAspect,
-      leafIndicationLimit: layoutConfig.leafIndicationLimit,
-      radiusDelta: layoutConfig.radiusDelta,
-      initialRadius: layoutConfig.initialRadius
-    }; // node
+    this.config = layoutConfig;
+    this.layoutId = null; // node
 
     this.id = node.id;
     this.node = node;
     this.nodeSize = node.childrenIds.length;
-    this.parentChildren = 0; // position
+    this.parentChildren = 0;
+    this.root = root; // radius
 
-    this.root = root;
-    this.initialX = 0;
-    this.initialY = 0;
-    this.finalX = 0;
-    this.finalY = 0;
-    this.currentX = 0;
-    this.currentY = 0;
     var w = this.node.nodeSize === "min" ? this.node.config.minWidth : this.node.config.maxWidth;
     var h = this.node.nodeSize === "min" ? this.node.config.minHeight : this.node.config.maxHeight;
-    this.radius = Math.max(w, h) * 1.35; // calculate outer radius
+    var nodeSize = Math.max(w, h); // calculate node radius
+
+    this.nodeRadius = nodeSize * 1.35; // calculate new leaf startpoint radius position
+
+    var initialRadius = node.getDepth() === 0 ? nodeSize * 1.35 : nodeSize * 1.35 + nodeSize * node.getDepth();
+    this.leafRadius = initialRadius + nodeSize * node.getDepth() + nodeSize;
   }
+  /**
+   * Calculates and renders the leaf representation.
+   */
+
 
   _createClass(RadialLeaf, [{
     key: "render",
-    value: function render() {
+    value: function render(isReRender) {
       var _this = this;
 
-      var svg = this.canvas.group().draggable();
+      var svg = this.canvas.group();
+      svg.id("radialLeaf#".concat(this.node.id));
       var w = this.node.nodeSize === "min" ? this.node.config.minWidth : this.node.config.maxWidth;
-      var h = this.node.nodeSize === "min" ? this.node.config.minHeight : this.node.config.maxHeight;
-      var spacing = this.node.config.offset;
-      var spreadBreath = Math.max(w * 1.15, h * 1.15);
-      var nodeSize = this.nodeSize < this.config.leafIndicationLimit ? this.nodeSize : this.config.leafIndicationLimit; // console.log("render", this.node)
-      // create outer circle
+      var h = this.node.nodeSize === "min" ? this.node.config.minHeight : this.node.config.maxHeight; // the distance in which all leafs are placed
 
-      var dynamicRadius1 = this.node.depth === 0 ? Math.max(w, h) * 1.35 : Math.max(w, h) * 1.35 + Math.max(w, h) * this.node.depth;
-      var myRadius = dynamicRadius1 + Math.max(w, h) * this.node.depth + Math.min(w, h);
-      var a = myRadius * this.config.hAspect + h / 4;
-      var b = myRadius * this.config.wAspect + w / 4;
-      var myArc = "\n            M ".concat(this.root.getFinalX() - a / 2, ",").concat(this.root.getFinalY(), "\n            A ").concat(a / 2, ",").concat(b / 2, " 0 0,0 ").concat(this.root.getFinalX() + a / 2, ",").concat(this.root.getFinalY(), "\n            A ").concat(a / 2, ",").concat(b / 2, " 0 0,0 ").concat(this.root.getFinalX() - a / 2, ",").concat(this.root.getFinalY(), "\n            "); // create helper circle that holds from positions for possible leafs
+      var spreadBreath = Math.max(w * 1.15, h * 1.15); // set the limit on how many leafs are visible
 
-      var outerCircleRef = this.canvas.path(myArc).stroke({
-        width: 0.5,
-        color: "#ccc"
-      }).fill("none"); // to position
+      var nodeSize = this.nodeSize < this.config.leafIndicationLimit ? this.nodeSize : this.config.leafIndicationLimit; // determins if the current leaf a leaf for the root node
+
+      var isRootLeaf = this.node.childrenIds.length > 0 && this.node.children.length === 0 && this.node.depth === 0; // calculate the outer circle where all leafs have their start position
+
+      var a = this.leafRadius * this.config.hAspect + h / 4;
+      var b = this.leafRadius * this.config.wAspect + w / 4;
+      var myArc = "\n            M ".concat(this.root.getFinalX() - a / 2, ",").concat(this.root.getFinalY(), "\n            A ").concat(a / 2, ",").concat(b / 2, " 0 0,0 ").concat(this.root.getFinalX() + a / 2, ",").concat(this.root.getFinalY(), "\n            A ").concat(a / 2, ",").concat(b / 2, " 0 0,0 ").concat(this.root.getFinalX() - a / 2, ",").concat(this.root.getFinalY(), "\n        "); // create helper circle that holds from positions for possible leafs
+
+      var helperCircle = this.canvas.path(myArc).fill("none"); // to position
 
       var tx = this.node.getFinalX();
-      var ty = this.node.getFinalY(); // this.canvas.circle(5).center(tx, ty).fill("#222")
-
-      var findArcIntersection = function findArcIntersection(x0, y0, x1, y1, path) {
-        var arc = shape("path", {
-          d: path
-        });
-        var line = shape("line", {
-          x1: x0,
-          y1: y0,
-          x2: x1,
-          y2: y1
-        });
-
-        var _intersect = intersect$1(arc, line),
-            points = _intersect.points;
-
-        return {
-          x: points[0].x,
-          y: points[0].y
-        };
-      };
-
-      var findIntersection = function findIntersection(x0, y0, x1, y1) {
-        var rect1 = shape("rect", {
-          x: x0 - w / 2 - spacing / 2,
-          y: y0 - h / 2 - spacing / 2,
-          width: w + spacing,
-          height: h + spacing,
-          rx: 0,
-          ry: 0
-        });
-        var line1 = shape("line", {
-          x1: x0,
-          y1: y0,
-          x2: x1,
-          y2: y1
-        });
-
-        var _intersect2 = intersect$1(rect1, line1),
-            points = _intersect2.points;
-
-        return {
-          x: points[0].x,
-          y: points[0].y
-        };
-      };
-
-      if (this.node.childrenIds.length > 0 && this.node.children.length === 0 && this.node.depth === 0) {
-        console.log("only ONE");
-
-        var _interval = p.length() / nodeSize;
-
-        var _intervalSpaceUsed = 0; // console.log(this.nodeSize, this.config.leafIndicationLimit)
-
-        for (var i = 0; i < nodeSize; i += 1) {
-          _intervalSpaceUsed += _interval / 2;
-          var intervalPosition = p.pointAt(_intervalSpaceUsed);
-          _intervalSpaceUsed += _interval / 2; // this.canvas.circle(5).fill("#222").center(intervalPosition.x, intervalPosition.y)
-
-          var toArc2 = findIntersection(tx, ty, intervalPosition.x, intervalPosition.y); // this.canvas.circle(5).center(toArc2.x, toArc2.y).fill("#f75")
-
-          var outerCirclePoint = findArcIntersection(tx, ty, intervalPosition.x, intervalPosition.y, myArc); // this.canvas.circle(5).center(outerCirclePoint.x, outerCirclePoint.y).fill("#75f")
-
-          var _angle = Math.atan2(outerCirclePoint.y - toArc2.y, outerCirclePoint.x - toArc2.x);
-
-          var test1 = toArc2.x + Math.min(w / 2, h / 2) * Math.cos(_angle);
-          var test2 = toArc2.y + Math.min(w / 2, h / 2) * Math.sin(_angle); // this.canvas.circle(5).center(test1, test2).fill("#00f")
-
-          var fromX = test1;
-          var fromY = test2;
-          var toX = toArc2.x;
-          var toY = toArc2.y; // create simple SVG representation
-          // const simplePath = this.canvas.path(`M${outerCirclePoint.x},${outerCirclePoint.y} L${toArc2.x},${toArc2.y}`).stroke({
-
-          var simplePath = this.canvas.path("M".concat(fromX, ",").concat(fromY, " L").concat(toX, ",").concat(toY)).stroke({
-            width: this.config.strokeWidth,
-            color: this.config.strokeColor
-          }); // create a re-useable marker
-
-          var index = _toConsumableArray(this.canvas.defs().node.childNodes).findIndex(function (d) {
-            return d.id === "defaultRadialLeafMarker";
-          });
-
-          if (index === -1) {
-            var marker = this.canvas.marker(12, 6, function (add) {
-              add.path(_this.config.marker).fill(_this.config.strokeColor).dx(1);
-            });
-            marker.id("defaultRadialLeafMarker");
-            this.canvas.defs().add(marker);
-            simplePath.marker("end", marker);
-          } else {
-            var _marker = this.canvas.defs().get(index);
-
-            simplePath.marker("end", _marker);
-          } // add simple path to the leaf's SVG object
-
-
-          svg.add(simplePath);
-        }
-
-        svg.back(); // remove helper line
-        // outerCircleRef.remove()
-        // put it into position
-
-        var _coords = this.node.coords[this.node.coords.length - 2] || this.node.coords[0];
-
-        var _startX = this.root.getFinalX();
-
-        var _startY = this.root.getFinalY();
-
-        var _finalX = svg.bbox().cx;
-        var _finalY = svg.bbox().cy;
-        svg.attr({
-          opacity: 0
-        }).scale(0.001).center(tx, ty).animate({
-          duration: this.config.animationSpeed
-        }).transform({
-          scale: 1,
-          position: [_finalX, _finalY]
-        }).attr({
-          opacity: 1
-        });
-        this.finalX = svg.cx();
-        this.finalY = svg.cy();
-        svg.id("radialLeaf#".concat(this.node.id));
-        this.svg = svg;
-        return;
-      } // find the line which intersects the current node and the outer circle based on the current angle
-
+      var ty = this.node.getFinalY(); // find the line which intersects the current node and the outer circle based on the current angle
 
       var ax = this.root.getFinalX();
       var ay = this.root.getFinalY();
       var bx = this.node.getFinalX();
       var by = this.node.getFinalY();
-      this.canvas.circle(5).center(bx, by).fill("#222");
-      var angle = Math.atan2(by - ay, bx - ax);
-      var dynamicRadius = this.node.depth === 0 ? Math.max(w, h) * 1.35 : Math.max(w, h) * 1.35;
-      var circleRadius = dynamicRadius; // const circleRadius = this.config.initialRadius
-      // console.log("circleRadius", circleRadius, dynamicRadius, this.node.depth)
-
-      var cx = bx + circleRadius * Math.cos(angle);
-      var cy = by + circleRadius * Math.sin(angle);
-      this.canvas.circle(5).center(cx, cy).fill("#2ccc22");
-      this.canvas.line(bx, by, cx, cy).stroke({
-        width: 0.5,
-        color: "red"
-      }); // find the point where the line and outer circle intersect
-      // console.log("render", this.id, this.node)
-
-      var inter1 = findArcIntersection(bx, by, cx, cy, myArc);
-      this.canvas.circle(5).center(inter1.x, inter1.y).fill("#000"); // indicate how much space is used to show leaf indications
-
-      var theta = angle;
+      var theta = Math.atan2(by - ay, bx - ax);
       var delta = Math.PI / 180 * 90;
+      var cx = bx + this.nodeRadius * Math.cos(theta);
+      var cy = by + this.nodeRadius * Math.sin(theta); // create two more points to create a vertical helper line that indicates the space available for leafs     
+
       var x0 = cx + spreadBreath / 2 * Math.cos(theta + delta);
       var y0 = cy + spreadBreath / 2 * Math.sin(theta + delta);
       var x1 = cx - spreadBreath / 2 * Math.cos(theta + delta);
-      var y1 = cy - spreadBreath / 2 * Math.sin(theta + delta);
-      this.canvas.circle(5).center(x0, y0).fill("#00f");
-      this.canvas.circle(5).center(x1, y1).fill("#00f"); // create a helper line on which al leafs start from
+      var y1 = cy - spreadBreath / 2 * Math.sin(theta + delta); // create an actual SVG path on which the leafs start point lies
 
-      var helperLine = this.canvas.path("M ".concat(x0, " ").concat(y0, " L ").concat(x1, " ").concat(y1)).stroke({
-        width: 1,
-        color: "red"
-      }); // calc edges
+      var helperLine = this.canvas.path("M ".concat(x0, " ").concat(y0, " L ").concat(x1, " ").concat(y1)); // calculate the starting positions based on a given interval step
 
-      var interval = helperLine.length() / nodeSize;
+      var interval = isRootLeaf === true ? helperCircle.length() / nodeSize : helperLine.length() / nodeSize;
       var intervalSpaceUsed = 0;
 
-      for (var _i = 0; _i < nodeSize; _i += 1) {
+      var _loop = function _loop(i) {
+        // calculate the starting point ("from point")
         intervalSpaceUsed += interval / 2;
+        var startingPoint = isRootLeaf === true ? helperCircle.pointAt(intervalSpaceUsed) : helperLine.pointAt(intervalSpaceUsed);
+        intervalSpaceUsed += interval / 2; // calculate the intersection between leaf and node
 
-        var _p = helperLine.pointAt(intervalSpaceUsed);
+        var nodeLeafIntersection = calculateNodeLineIntersection(tx, ty, startingPoint.x, startingPoint.y, _this.node); // calculate the current angle between the starting point and leaf intersection point
 
-        intervalSpaceUsed += interval / 2; // edge starting point
-        // this.canvas.circle(8).center(p.x, p.y).fill("#222")
-        // this.canvas.circle(8).center(tx, ty).fill("#222")
-        // calculate line
-        // edge ending point
+        var angle = Math.atan2(startingPoint.y - nodeLeafIntersection.y, startingPoint.x - nodeLeafIntersection.x); // calculate the actual position where to start the leaf from
 
-        var _toArc = findIntersection(tx, ty, _p.x, _p.y);
+        var fromX = nodeLeafIntersection.x + Math.min(w / 2, h / 2) * Math.cos(angle);
+        var fromY = nodeLeafIntersection.y + Math.min(w / 2, h / 2) * Math.sin(angle);
+        var toX = nodeLeafIntersection.x;
+        var toY = nodeLeafIntersection.y; // create simple SVG representation
 
-        this.canvas.circle(5).center(_toArc.x, _toArc.y).fill("#222"); // edge starting point
-
-        var _outerCirclePoint = findArcIntersection(tx, ty, _p.x, _p.y, myArc);
-
-        this.canvas.circle(5).center(_outerCirclePoint.x, _outerCirclePoint.y).fill("#75f"); // find angle between both points
-        // calculate line with absolute given length
-
-        var _angle2 = Math.atan2(_outerCirclePoint.y - _toArc.y, _outerCirclePoint.x - _toArc.x);
-
-        var _test = _toArc.x + Math.min(w / 2, h / 2) * Math.cos(_angle2);
-
-        var _test2 = _toArc.y + Math.min(w / 2, h / 2) * Math.sin(_angle2);
-
-        this.canvas.circle(5).center(_test, _test2).fill("#00f");
-        var _fromX = _test;
-        var _fromY = _test2;
-        var _toX = _toArc.x;
-        var _toY = _toArc.y; // create simple SVG representation
-        // const simplePath = this.canvas.path(`M${outerCirclePoint.x},${outerCirclePoint.y} L${toArc2.x},${toArc2.y}`).stroke({
-
-        var _simplePath = this.canvas.path("M".concat(_fromX, ",").concat(_fromY, " L").concat(_toX, ",").concat(_toY)).stroke({
-          width: this.config.strokeWidth,
-          color: this.config.strokeColor
+        var simplePath = _this.canvas.path("M".concat(fromX, ",").concat(fromY, " L").concat(toX, ",").concat(toY)).stroke({
+          width: _this.config.leafStrokeWidth,
+          color: _this.config.leafStrokeColor
         }); // create a re-useable marker
 
 
-        var _index = _toConsumableArray(this.canvas.defs().node.childNodes).findIndex(function (d) {
-          return d.id === "defaultRadialLeafMarker";
+        var defId = "defaultRadialLeafMarker#".concat(_this.layoutId);
+
+        var index = _toConsumableArray(_this.canvas.defs().node.childNodes).findIndex(function (d) {
+          return d.id === defId;
         });
 
-        if (_index === -1) {
-          var _marker2 = this.canvas.marker(12, 6, function (add) {
-            add.path(_this.config.marker).fill(_this.config.strokeColor).dx(1);
+        if (index === -1) {
+          var marker = _this.canvas.marker(12, 6, function (add) {
+            add.path(_this.config.leafMarker).fill(_this.config.leafStrokeColor).dx(1);
           });
 
-          _marker2.id("defaultRadialLeafMarker");
+          marker.id(defId);
 
-          this.canvas.defs().add(_marker2);
+          _this.canvas.defs().add(marker);
 
-          _simplePath.marker("end", _marker2);
+          simplePath.marker("end", marker);
         } else {
-          var _marker3 = this.canvas.defs().get(_index);
+          var _marker = _this.canvas.defs().get(index);
 
-          _simplePath.marker("end", _marker3);
+          simplePath.marker("end", _marker);
         } // add simple path to the leaf's SVG object
 
 
-        svg.add(_simplePath);
-      }
+        svg.add(simplePath);
+      };
 
-      svg.back(); // remove helper line
-      // helperLine.remove()
-      // outerCircleRef.remove()
-      // put it into position
+      for (var i = 0; i < nodeSize; i += 1) {
+        _loop();
+      } // move to the background
 
-      var coords = this.node.coords[this.node.coords.length - 2] || this.node.coords[0];
-      var startX = this.isReRender ? coords[0] : this.node.currentX;
-      var startY = this.isReRender ? coords[1] : this.node.currentY;
+
+      svg.back(); // remove the previously created SVG helper objects
+
+      helperCircle.remove();
+
+      if (isRootLeaf === true) {
+        helperLine.remove();
+      } // put it into position
+
+
       var finalX = svg.bbox().cx;
       var finalY = svg.bbox().cy;
-      svg.attr({
-        opacity: 0
-      }).center(startX, startY).animate({
-        duration: this.config.animationSpeed
-      }).transform({
-        position: [finalX, finalY]
-      }).attr({
-        opacity: 1
-      });
-      this.finalX = svg.cx();
-      this.finalY = svg.cy();
-      svg.id("radialLeaf#".concat(this.node.id));
+
+      if (isRootLeaf === false) {
+        var coords = this.node.coords[this.node.coords.length - 2] || this.node.coords[0];
+        var startX = isReRender ? coords[0] : this.node.getCurrentX();
+        var startY = isReRender ? coords[1] : this.node.getCurrentY();
+        svg.attr({
+          opacity: isReRender ? 1 : 0
+        }).center(isReRender ? finalX : startX, isReRender ? finalY : startY).animate({
+          duration: this.config.animationSpeed
+        }).transform({
+          position: [finalX, finalY]
+        }).attr({
+          opacity: 1
+        });
+      } else {
+        svg.attr({
+          opacity: isReRender ? 1 : 0
+        }).scale(isReRender ? 1 : 0.001).center(tx, ty).animate({
+          duration: this.config.animationSpeed
+        }).transform({
+          scale: 1,
+          position: [finalX, finalY]
+        }).attr({
+          opacity: 1
+        });
+      }
+
       this.svg = svg;
     }
+    /**
+     * Transforms the leaf into the final position.
+     */
+
   }, {
     key: "transformToFinalPosition",
     value: function transformToFinalPosition() {
-      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.node.finalX;
-      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.node.finalY;
-      // console.log("rm", this.id)
+      var isReRender = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
       this.removeSVG();
-      this.render(); // this
-      //     .svg
-      //     .animate({ duration: this.config.animationSpeed })
-      //     .transform({ position: [X, Y] })
+      this.render(isReRender);
     }
+    /**
+     * Removes the leaf node from the canvas and resets clears its SVG representation.
+     */
+
   }, {
     key: "removeSVG",
     value: function removeSVG() {
@@ -29595,6 +29443,11 @@ var RadialLeaf = /*#__PURE__*/function () {
     value: function getId() {
       return this.id;
     }
+  }, {
+    key: "setLayoutId",
+    value: function setLayoutId(layoutId) {
+      this.layoutId = layoutId;
+    }
   }]);
 
   return RadialLeaf;
@@ -29607,26 +29460,30 @@ var RadialLeaf = /*#__PURE__*/function () {
  * @property {Number} translateX=0                      - Adds additional X translation for all SVG elements before rendering.
  * @property {Number} translateY=0                      - Adds additional Y translation for all SVG elements before rendering.
  * @property {Number} animationSpeed=300                - Determines how fast SVG elements animates inside the current layout.
- * @property {Number} initialRadius=200                 - Determines the initial radial radius (limited to the first circle).
- * @property {Number} radiusDelta=350                   - Determines the remaining radial radius (starting on the second+ circle).
  * @property {Number} hAspect=4/3                       - Determines the horizontal aspect ratio.
  * @property {Number} wAspect=4/4                       - Determines the verrtical aspect ratio.
+ * @property {Number} rootId=null                       - Determines the selected root id.
+ * @property {Number} renderDepth=0                     - Determines the current render depth.
  * @property {String} renderingSize=min                 - Determines the node render representation. Available: "min" or "max".
+ * 
+ * @property {Boolean} showLeafIndications=true         - Determines whether additional indications for possible children are visible.
+ * @property {Boolean} leafIndicationLimit=5            - Determines the maximal amount of indications per node.
+ * @property {Boolean} leafStrokeWidth=2                - Determines a leafs thickness.
+ * @property {Boolean} leafStrokeColor="#aaa"           - Determines a leafs color.
+ * @property {Boolean} leafMarker="M 0 0 L 6 3 L 0 6 z" - Determines a leafs arrow head shape.
  */
 var RadialLayoutConfiguration = {
   translateX: 0,
   translateY: 0,
   animationSpeed: 300,
-  initialRadius: 200,
-  radiusDelta: 150,
   hAspect: 4 / 3,
   wAspect: 4 / 4,
   rootId: null,
   renderDepth: 0,
   renderingSize: "min",
+  // min, max
   // renders additional edges to indicate possible nodes
   showLeafIndications: true,
-  visibleNodeLimit: 555,
   leafIndicationLimit: 5,
   leafStrokeWidth: 2,
   leafStrokeColor: "#aaa",
@@ -29664,7 +29521,7 @@ var RadialLayout = /*#__PURE__*/function (_BaseLayout) {
     _this.renderDepth = customConfig.renderDepth || 0; // events
 
     _this.events = [{
-      event: "dblclick",
+      event: "click",
       modifier: undefined,
       func: "expandOrCollapseEvent",
       defaultEvent: true
@@ -29742,15 +29599,19 @@ var RadialLayout = /*#__PURE__*/function (_BaseLayout) {
       var _ref = arguments.length > 1 ? arguments[1] : undefined,
           _ref$isReRender = _ref.isReRender;
 
+      this.initialOffset = offset; // updates the depth level for each node
+
       var updateNodeDepth = function updateNodeDepth(node, depth) {
         node.setDepth(depth);
         node.children.forEach(function (child) {
           updateNodeDepth(child, depth + 1);
         });
-      };
+      }; // calculates the X and Y position for nodes and edges
+
 
       var calculateFinalPosition = function calculateFinalPosition(node, root, alfa, beta) {
-        var w = _this2.config.renderingSize === "max" ? node.getMaxWidth() : node.getMinWidth(); // center root
+        var w = _this2.config.renderingSize === "max" ? node.getMaxWidth() : node.getMinWidth();
+        var h = _this2.config.renderingSize === "max" ? node.getMaxHeight() : node.getMinHeight(); // center root
 
         if (node.parentId === null || node.id === _this2.rootId) {
           node.setFinalX(_this2.config.translateX + w / 2);
@@ -29762,9 +29623,9 @@ var RadialLayout = /*#__PURE__*/function (_BaseLayout) {
 
         var theta = alfa; // multipler for depth levels after the first circle
 
-        var delta = _this2.config.radiusDelta; // innermost circle radius + delta angle
+        var delta = Math.max(w, h); // innermost circle radius + delta angle
 
-        var radius = _this2.config.initialRadius + delta * depth;
+        var radius = Math.max(w, h) * 1.35 + delta * depth;
 
         var BFS = function BFS(root) {
           var queue = [];
@@ -29785,7 +29646,7 @@ var RadialLayout = /*#__PURE__*/function (_BaseLayout) {
           }
 
           return leaves;
-        }; // number of children in the subtree
+        }; // find the number of children in the subtree
 
 
         var children = BFS(node);
@@ -29799,49 +29660,11 @@ var RadialLayout = /*#__PURE__*/function (_BaseLayout) {
           var y = radius * Math.sin((theta + mü) / 2) * _this2.config.wAspect;
 
           child.setFinalX(x + _this2.config.translateX + w / 2);
-          child.setFinalY(y + _this2.config.translateY); // if (child.hasNoChildren() && (child.hasChildrenIds() || child.getInvisibleChildren().length >= this.config.visibleNodeLimit)) {
-          //   const leaf = new RadialLeaf1(this.canvas, child, root, this.config)
-          //   leaf.parentId = node.id
-          //   calculateFinalPosition(leaf, root, theta, mü)
-          //   this.leafs.push(lea)
-          // }
+          child.setFinalY(y + _this2.config.translateY);
 
           if (child.children.length > 0) {
             calculateFinalPosition(child, root, theta, mü);
-          } // if (child.hasNoChildren() && (child.hasChildrenIds() || child.getInvisibleChildren().length >= this.config.visibleNodeLimit)) {
-          //   const x0 = root.getFinalX()
-          //   const y0 = root.getFinalY()
-          //   const x1 = child.getFinalX()
-          //   const y1 = child.getFinalY()
-          //   const w = this.config.renderingSize === "max" ? node.config.maxWidth : node.config.minWidth
-          //   const h = this.config.renderingSize === "max" ? node.config.maxHeight : node.config.minHeight
-          //   // this.canvas.circle(10).center(x0, y0).fill("#f75")
-          //   // this.canvas.circle(10).center(x1, y1).fill("#f0f")
-          //   // this.canvas.rect(10, 10).center(x1, y1)
-          //   const x2 = x0 * this.config.hAspect
-          //   const y2 = y0 * this.config.wAspect
-          //   // const r = radius + (delta * 3)
-          //   const r = radius + (delta * (depth + 2)) + Math.min(w, h)
-          //   // console.log(radius + this.config.initialRadius, x2, y2)
-          //   // this.canvas.ellipse(r * this.config.hAspect, r * this.config.wAspect).center(x0, y0).fill("none").stroke({ width: 1, color: "red" })
-          //   const angle = Math.atan2(y1 - y0, x1 - x0)
-          //   // // console.log(child.id, theta, mü, angle)
-          //   // // console.log(alfa, beta, theta)
-          //   // console.log(Math.min(w,h))
-          //   const x3 = x1 + (this.config.radiusDelta * 2) * Math.cos(angle)
-          //   const y3 = y1 + (this.config.radiusDelta * 2) * Math.sin(angle)
-          //   const line = { x1, y1, x3, y3 }
-          //   const circle = { x0, y0, r, }
-          //   const leaf = new RadialLeaf(this.canvas, child, root, this.config, line, circle)
-          //   leaf.id = i
-          //   console.log("-->", this.nodes.filter(n => n.depth === depth + 1).length)
-          //   leaf.parentChildren = this.nodes.filter(n => n.depth === depth + 1).length
-          //   leaf.rootX = x0
-          //   leaf.rootY = y0
-          //   this.leafs.push(leaf)
-          //   // this.canvas.rect(10, 10).center(x3, y3).fill("#000")
-          // }
-          // calculate edge
+          } // calculate edge
 
 
           var e = _this2.edges.find(function (e) {
@@ -29853,64 +29676,30 @@ var RadialLayout = /*#__PURE__*/function (_BaseLayout) {
           child.addOutgoingEdge(e);
           theta = mü;
         });
-      };
+      }; // add a visual indication that there is more data available
+
 
       var calculateLeafs = function calculateLeafs(node) {
+        if (_this2.config.showLeafIndications === false) {
+          return;
+        }
+
         var root = node;
 
         var addLeaf = function addLeaf(currentNode) {
           if (currentNode.hasNoChildren() && (currentNode.hasChildrenIds() || currentNode.getInvisibleChildren().length >= _this2.config.visibleNodeLimit)) {
-            // console.log("cur", currentNode)
-            if (currentNode.getInvisibleChildren().length > 0) ;
-
             var existing = _this2.leafs.find(function (l) {
               return l.id === currentNode.getId();
-            }); // console.log(existing)
-
+            });
 
             if (existing === undefined) {
-              var x0 = root.getFinalX();
-              var y0 = root.getFinalY();
-              var x1 = currentNode.getFinalX();
-              var y1 = currentNode.getFinalY();
-              var w = _this2.config.renderingSize === "max" ? node.config.maxWidth : node.config.minWidth;
-              var h = _this2.config.renderingSize === "max" ? node.config.maxHeight : node.config.minHeight; // this.canvas.circle(10).center(x0, y0).fill("#f75")
-              // this.canvas.circle(10).center(x1, y1).fill("#f0f")
-              // this.canvas.rect(10, 10).center(x1, y1)
-
-              var x2 = x0 * _this2.config.hAspect;
-              var y2 = y0 * _this2.config.wAspect; // const r = radius + (delta * 3)
-              // find max radius
-
-              var depth = currentNode.getDepth();
-              var leaf = new RadialLeaf(_this2.canvas, currentNode, root, _this2.config); // console.log("-->", this.nodes.filter(n => n.depth === depth + 1).length)
-
+              var leaf = new RadialLeaf(_this2.canvas, currentNode, root, _this2.config);
               leaf.parentChildren = _this2.nodes.filter(function (n) {
-                return n.depth === depth + 1;
+                return n.getDepth() === currentNode.getDepth() + 1;
               }).length;
-              console.log("create leaf for", currentNode.id);
-              leaf.rootX = x0;
-              leaf.rootY = y0;
+              leaf.setLayoutId(_this2.layoutIdentifier);
 
-              _this2.leafs.push(leaf); // this.canvas.rect(10, 10).center(x3, y3).fill("#000")
-              //   if (currentNode.getInvisibleChildren().length > 0) {
-              //     currentNode.setChildrenIds(currentNode.getInvisibleChildren())
-              //   }
-              //   const existing = this.leafs.find((l) => l.id === currentNode.getId())
-              //   if (existing === undefined) {
-              //     const isHorizontal = this.config.orientation === "horizontal"
-              //     const leaf = new Leaf(this.canvas, currentNode, config, isHorizontal)
-              //     const x = x ? x : currentNode.getFinalX()
-              //     const y = y ? y : currentNode.getFinalY()
-              //     leaf.setFinalX(x)
-              //     leaf.setFinalY(y)
-              //     leaf.setInitialX(root.getFinalX())
-              //     leaf.setInitialY(root.getFinalY())
-              //     leaf.setIsReRender(isReRender || false)
-              //     this.leafs.push(leaf)
-              //   }
-              // }
-
+              _this2.leafs.push(leaf);
             }
           }
 
@@ -29940,13 +29729,16 @@ var RadialLayout = /*#__PURE__*/function (_BaseLayout) {
               return l.getId();
             }).includes(leaf.getId());
           });
-        };
+        }; // add new leafs
 
-        addLeaf(node);
+
+        addLeaf(node); // remove existing leafs which are not used anymore
+
         removeLeaf();
-      };
+      }; // calculate the layout dimensions and move off screen objects into the screen
 
-      var adjustPositions = function adjustPositions(tree) {
+
+      var calculateLayoutInfo = function calculateLayoutInfo(tree) {
         var toRender = [tree];
         var rendered = [];
 
@@ -29969,11 +29761,13 @@ var RadialLayout = /*#__PURE__*/function (_BaseLayout) {
 
         var hAdjustment = Math.min.apply(Math, _toConsumableArray(rendered.map(function (node) {
           var w = _this2.config.renderingSize === "max" ? node.getMaxWidth() : node.getMinWidth();
-          return node.getFinalX() - w - _this2.config.radiusDelta / 1.5; // .. and add some space for leafs
+          var h = _this2.config.renderingSize === "max" ? node.getMaxHeight() : node.getMinHeight();
+          return node.getFinalX() - w - Math.max(w, h) / 1.5; // .. and add some space for leafs
         })));
         var vAdjustment = Math.min.apply(Math, _toConsumableArray(rendered.map(function (node) {
+          var w = _this2.config.renderingSize === "max" ? node.getMaxWidth() : node.getMinWidth();
           var h = _this2.config.renderingSize === "max" ? node.getMaxHeight() : node.getMinHeight();
-          return node.getFinalY() - h - _this2.config.radiusDelta / 1.5; // .. and add some space for leafs
+          return node.getFinalY() - h - Math.max(w, h) / 1.5; // .. and add some space for leafs
         })));
         rendered.forEach(function (node) {
           var x = node.getFinalX() - hAdjustment + offset + _this2.config.translateX;
@@ -30005,14 +29799,17 @@ var RadialLayout = /*#__PURE__*/function (_BaseLayout) {
         var y2 = Math.max.apply(Math, _toConsumableArray(rendered.map(function (n) {
           var h = _this2.config.renderingSize === "max" ? n.getMaxHeight() : n.getMinHeight();
           return n.getFinalY() + h;
-        })));
-
-        var calculateDistance = function calculateDistance(sx, sy, tx, ty) {
-          var dx = tx - sx;
-          var dy = ty - sy;
-          return Math.sqrt(dx * dx + dy * dy);
-        }; // this.canvas.line(x1, y1, x2, y2).stroke({ width: 2, color: "red" })
-
+        }))); // this.canvas.line(x1, y1, x2, y2).stroke({ width: 2, color: "red" })
+        // this.canvas.circle(5).fill("#000").center(x0, y0)
+        // this.canvas.circle(5).fill("#75f").center(x1, y1)
+        // this.canvas.circle(15).fill("#f75").center(x2, y2 + 300)
+        // if (this.l1) {
+        //   this.l1.remove()
+        //   this.l2.remove()
+        // }
+        // this.l1 = this.canvas.line(x0, y0, x0, 300).stroke({ width: 2, color: "red" })
+        // this.l2 = this.canvas.line(x1, y0, x1, 300).stroke({ width: 2, color: "red" })
+        // const oldCx = this.layoutInfo.x
 
         _this2.layoutInfo = {
           x: x0,
@@ -30021,16 +29818,33 @@ var RadialLayout = /*#__PURE__*/function (_BaseLayout) {
           cy: (y0 + y2) / 2,
           w: calculateDistance(x0, y0, x1, y1),
           h: calculateDistance(x1, y1, x2, y2)
-        };
+        }; // // shift layout to right if it took space from a left layout
+        // const shiftValue = oldCx - this.layoutInfo.x
+        // if (shiftValue > 0) {
+        //   // console.log("new", shiftValue, this.layoutInfo.x)
+        //   this.nodes.forEach(node => {
+        //     node.setFinalX(node.getFinalX() + shiftValue)
+        //   })
+        //   this.edges.forEach(edge => {
+        //     edge.setFinalToX((edge.getFinalToX() + shiftValue))
+        //     edge.setFinalFromX((edge.getFinalFromX() + shiftValue))
+        //   })
+        //   this.layoutInfo = {
+        //     ...this.layoutInfo,
+        //     x: this.layoutInfo.x + shiftValue,
+        //     cx: this.layoutInfo.cx + shiftValue
+        //   }
+        //   this.l2.dx(shiftValue)
+        // }
       };
 
       var tree = buildTreeFromNodes(this.nodes)[0];
       updateNodeDepth(tree, 0);
       calculateFinalPosition(tree, tree, 0, 2 * Math.PI);
       calculateLeafs(tree);
-      adjustPositions(tree);
-      this.tree = tree; // console.log("Radial", this.layoutInfo, this.nodes, this.tree)
-
+      calculateLayoutInfo(tree);
+      this.tree = tree;
+      console.log("Radial", this.layoutInfo);
       return this.layoutInfo;
     }
   }, {
@@ -30049,8 +29863,7 @@ var RadialLayout = /*#__PURE__*/function (_BaseLayout) {
       }).getFinalX();
       var Y = y ? y : this.nodes.find(function (n) {
         return n.id === _this3.rootId;
-      }).getFinalY(); // console.log(this.nodes)
-      // console.log(this.edges)
+      }).getFinalY();
 
       var renderNodes = function renderNodes() {
         var toRender = [_this3.tree];
@@ -30114,9 +29927,10 @@ var RadialLayout = /*#__PURE__*/function (_BaseLayout) {
       var renderLeafs = function renderLeafs() {
         _this3.leafs.forEach(function (leaf) {
           if (leaf.isRendered() === false) {
-            leaf.render(isReRender === true);
+            leaf.render();
           } else if (leaf.isRendered() === true) {
-            leaf.transformToFinalPosition();
+            // console.lo
+            leaf.transformToFinalPosition(isReRender);
           }
         });
       }; // update edges
@@ -30142,18 +29956,14 @@ var RadialLayout = /*#__PURE__*/function (_BaseLayout) {
 }(BaseLayout);
 
 /**
- * This class calculates and renders an indication if more child nodes may be available.
+ * This class calculates and renders an indication if more child nodes may be available within a tree layout.
  * @property {Canvas} canvas The current canvas to render the element on.
  * @property {BaseNode} node The currently active and real leaf node representaion.
- * @property {Number} renderLimit Limits how many edges are visible.
- * @property {TreeLeafConfiguration} config An object containing visual restrictions.
- * @property {Boolean} [isHorizontal=false] Determins if the current tree is vertical or horizontal.
+ * @property {TreeLayoutConfiguration} config An object containing visual restrictions.
  */
 
 var TreeLeaf = /*#__PURE__*/function () {
-  function TreeLeaf(canvas, node, config) {
-    var isHorizontal = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
-
+  function TreeLeaf(canvas, node, layoutConfig) {
     _classCallCheck(this, TreeLeaf);
 
     this.svg = null;
@@ -30162,20 +29972,12 @@ var TreeLeaf = /*#__PURE__*/function () {
     this.id = node.id;
     this.node = node;
     this.nodeSize = node.childrenIds.length;
-    this.config = config; // position
+    this.config = layoutConfig; // position
 
-    this.initialX = 0;
-    this.initialY = 0;
     this.finalX = 0;
     this.finalY = 0;
-    this.currentX = 0;
-    this.currentY = 0; // determins the space between the node and the edge position
+    this.distanceToNode = 0; // this.isHorizontal = layoutConfig.orientation === "horizontal"
 
-    var w = this.node.nodeSize === "min" ? this.node.config.minWidth : this.node.config.maxWidth;
-    var h = this.node.nodeSize === "min" ? this.node.config.minHeight : this.node.config.maxHeight;
-    this.translateX = this.node.nodeSize === "min" ? w / 4 : w / 4;
-    this.translateY = this.node.nodeSize === "min" ? h / 4 : h / 4;
-    this.isHorizontal = isHorizontal;
     this.isReRender = false;
   }
   /**
@@ -30188,104 +29990,117 @@ var TreeLeaf = /*#__PURE__*/function () {
     value: function render() {
       var _this = this;
 
-      var svg = this.canvas.group().draggable();
-      var nodeSize = this.nodeSize < this.config.leafIndicationLimit ? this.nodeSize : this.config.leafIndicationLimit;
+      var svg = this.canvas.group();
+      svg.id("treeLeaf#".concat(this.node.id));
       var w = this.node.nodeSize === "min" ? this.node.config.minWidth : this.node.config.maxWidth;
-      var h = this.node.nodeSize === "min" ? this.node.config.minHeight : this.node.config.maxHeight;
-      var spacing = this.node.config.offset;
+      var h = this.node.nodeSize === "min" ? this.node.config.minHeight : this.node.config.maxHeight; // determins the type of the currently rendered tree
+
+      var isHorizontal = this.config.orientation === "horizontal"; // the distance in which all leafs are placed
+
+      var spreadBreath = isHorizontal ? Math.min(w * 1.15, h * 1.15) : Math.max(w * 1.075, h * 1.075); // set the limit on how many leafs are visible
+
+      var nodeSize = this.nodeSize < this.config.leafIndicationLimit ? this.nodeSize : this.config.leafIndicationLimit; // to position
+
       var tx = this.node.getFinalX();
-      var ty = this.node.getFinalY(); // create helper line that indicats possible children
+      var ty = this.node.getFinalY(); // calculate the distance on which leafs will have their start positions for vertical and horizontal 
 
-      var edgesStartingLine;
+      var vax = this.node.getFinalX() - spreadBreath / 2;
+      var vay = this.node.getFinalY() + Math.min(w, h);
+      var vbx = this.node.getFinalX() + spreadBreath / 2;
+      var vby = this.node.getFinalY() + Math.min(w, h);
+      var hax = this.node.getFinalX() + Math.max(w / 1.25, h / 1.25);
+      var hay = this.node.getFinalY() - spreadBreath / 2;
+      var hbx = this.node.getFinalX() + Math.max(w / 1.25, h / 1.25);
+      var hby = this.node.getFinalY() + spreadBreath / 2; // create an actual SVG path on which the leafs start point lies
 
-      if (this.isHorizontal === true) {
-        var x0 = tx + w / 2 + this.translateX + spacing;
-        var y0 = ty + this.node.currentHeight * 0.6;
-        edgesStartingLine = this.canvas.path("M ".concat(x0, " ").concat(y0, " v").concat(this.node.currentHeight * 1.15)).stroke({
-          width: 0,
-          color: "blue"
-        }).center(tx + w / 2 + this.translateX + spacing, ty);
-      } else {
-        edgesStartingLine = this.canvas.path("M 0 0 h".concat(this.node.currentWidth * 1.35)).stroke({
-          width: 0,
-          color: "red"
-        }).center(tx, ty + h / 2 + spacing + this.translateY);
-      } // calculates unique positions across the helper line
+      var vHelperLine = this.canvas.path("M ".concat(vax, " ").concat(vay, " L ").concat(vbx, " ").concat(vby)).stroke({
+        width: 0.5,
+        color: "blue"
+      });
+      var hHelperLine = this.canvas.path("M ".concat(hax, " ").concat(hay, " L ").concat(hbx, " ").concat(hby)).stroke({
+        width: 0.5,
+        color: "blue"
+      }); // calculate the starting positions based on a given interval step
 
-
-      var interval = edgesStartingLine.length() / nodeSize;
+      var interval = isHorizontal ? hHelperLine.length() / nodeSize : vHelperLine.length() / nodeSize;
       var intervalSpaceUsed = 0;
 
-      for (var i = 0; i < nodeSize; i += 1) {
-        var p = edgesStartingLine.pointAt(intervalSpaceUsed);
-        intervalSpaceUsed += interval; // either horizontal or vertical offset
+      var _loop = function _loop(i) {
+        // calculate the starting point ("from point")
+        intervalSpaceUsed += interval / 2;
+        var startingPoint = isHorizontal ? hHelperLine.pointAt(intervalSpaceUsed) : vHelperLine.pointAt(intervalSpaceUsed);
+        intervalSpaceUsed += interval / 2; // calculate the intersection between leaf and node
 
-        var fx = this.isHorizontal ? p.x : p.x + interval / 2;
-        var fy = this.isHorizontal ? p.y + interval / 2 : p.y;
+        var nodeLeafIntersection = calculateNodeLineIntersection(tx, ty, startingPoint.x, startingPoint.y, _this.node); // this.canvas.circle(5).center(nodeLeafIntersection.x, nodeLeafIntersection.y).fill("#222")
+        // calculate the actual position where to start the leaf from
 
-        var _intersect = intersect$1(shape("rect", {
-          x: tx - w / 2 - spacing / 2,
-          y: ty - h / 2 - spacing / 2,
-          width: w + spacing,
-          height: h + spacing,
-          rx: 0,
-          ry: 0
-        }), shape("line", {
-          x1: fx,
-          y1: fy,
-          x2: tx,
-          y2: ty
-        })),
-            points = _intersect.points; // create simple SVG representation
+        var fromX = startingPoint.x;
+        var fromY = startingPoint.y;
+        var toX = nodeLeafIntersection.x;
+        var toY = nodeLeafIntersection.y; // create simple SVG representation
 
-
-        var simplePath = this.canvas.path("M".concat(fx, ",").concat(fy, " L").concat(points[0].x, ",").concat(points[0].y)).stroke({
-          width: this.config.strokeWidth,
-          color: this.config.strokeColor
+        var simplePath = _this.canvas.path("M".concat(fromX, ",").concat(fromY, " L").concat(toX, ",").concat(toY)).stroke({
+          width: _this.config.leafStrokeWidth,
+          color: _this.config.leafStrokeColor
         }); // create a re-useable marker
 
-        var index = _toConsumableArray(this.canvas.defs().node.childNodes).findIndex(function (d) {
-          return d.id === "defaultLeafMarker";
+
+        var defId = "defaultTreeLeafMarker#".concat(_this.layoutId);
+
+        var index = _toConsumableArray(_this.canvas.defs().node.childNodes).findIndex(function (d) {
+          return d.id === defId;
         });
 
         if (index === -1) {
-          var marker = this.canvas.marker(12, 6, function (add) {
-            add.path(_this.config.marker).fill(_this.config.strokeColor).dx(1);
+          var marker = _this.canvas.marker(12, 6, function (add) {
+            add.path(_this.config.leafMarker).fill(_this.config.leafStrokeColor).dx(1);
           });
-          marker.id("defaultLeafMarker");
-          this.canvas.defs().add(marker);
+
+          marker.id(defId);
+
+          _this.canvas.defs().add(marker);
+
           simplePath.marker("end", marker);
         } else {
-          var _marker = this.canvas.defs().get(index);
+          var _marker = _this.canvas.defs().get(index);
 
           simplePath.marker("end", _marker);
         } // add simple path to the leaf's SVG object
 
 
         svg.add(simplePath);
-      }
+      };
 
-      svg.back(); // put it into position
+      for (var i = 0; i < nodeSize; i += 1) {
+        _loop();
+      } // move to the background
 
-      var x = this.isHorizontal ? this.node.getFinalX() + w / 2 + this.translateX / 2 + spacing : this.node.getFinalX();
-      var y = this.isHorizontal ? this.node.getFinalY() : this.node.getFinalY() + h / 2 + this.translateY / 2 + spacing;
+
+      svg.back(); // remove the previously created SVG helper objects
+
+      vHelperLine.remove();
+      hHelperLine.remove(); // collect position
+
+      var finalX = svg.bbox().cx;
+      var finalY = svg.bbox().cy;
       var coords = this.node.coords[this.node.coords.length - 2] || this.node.coords[0];
-      var cx = this.isReRender ? coords[0] : this.node.currentX;
-      var cy = this.isReRender ? coords[1] : this.node.currentY;
+      var startX = this.isReRender ? coords[0] : this.node.getCurrentX();
+      var startY = this.isReRender ? coords[1] : this.node.getCurrentY(); // animate into position
+
       svg.attr({
         opacity: 0
-      }).center(cx, cy).animate({
+      }).center(startX, startY).animate({
         duration: this.config.animationSpeed
       }).transform({
-        position: [x, y]
+        position: [finalX, finalY]
       }).attr({
         opacity: 1
-      });
-      this.finalX = svg.cx();
-      this.finalY = svg.cy(); // remove helper line
+      }); // save values for transformation later
 
-      edgesStartingLine.remove();
-      svg.id("treeLeaf#".concat(this.node.id));
+      this.finalX = finalX;
+      this.finalY = finalY; // calculate absolute leaf position
+
+      this.distanceToNode = calculateDistance(finalX, finalY, tx, ty);
       this.svg = svg;
     }
     /**
@@ -30296,17 +30111,17 @@ var TreeLeaf = /*#__PURE__*/function () {
 
   }, {
     key: "transformToFinalPosition",
-    value: function transformToFinalPosition() {
-      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.node.finalX;
-      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.node.finalY;
-      var w = this.node.nodeSize === "min" ? this.node.config.minWidth : this.node.config.maxWidth;
-      var h = this.node.nodeSize === "min" ? this.node.config.minHeight : this.node.config.maxHeight;
-      var x = this.isHorizontal ? X + w / 2 + this.translateX / 2 + this.node.config.offset : X;
-      var y = this.isHorizontal ? Y : Y + this.translateY / 2 + this.node.config.offset + h / 2;
+    value: function transformToFinalPosition(_ref) {
+      var _ref$X = _ref.X,
+          X = _ref$X === void 0 ? this.node.finalX : _ref$X,
+          _ref$Y = _ref.Y,
+          Y = _ref$Y === void 0 ? this.node.finalY : _ref$Y;
+      // determins the type of the currently rendered tree
+      var isHorizontal = this.config.orientation === "horizontal";
       this.svg.animate({
         duration: this.config.animationSpeed
       }).transform({
-        position: [x, y]
+        position: [isHorizontal ? X + this.distanceToNode : X, isHorizontal ? Y : this.finalY]
       });
     }
     /**
@@ -30330,6 +30145,11 @@ var TreeLeaf = /*#__PURE__*/function () {
     key: "isRendered",
     value: function isRendered() {
       return this.svg !== null;
+    }
+  }, {
+    key: "setLayoutId",
+    value: function setLayoutId(layoutId) {
+      this.layoutId = layoutId;
     }
   }, {
     key: "getId",
@@ -30885,7 +30705,7 @@ var TreeLayout = /*#__PURE__*/function (_BaseLayout) {
         edges.forEach(function (edge) {
           edge.calculateEdge();
         });
-      }; // add a visual indication that there are more nodes loadable
+      }; // add a visual indication that there is more data available
 
 
       var calculateLeafs = function calculateLeafs(node) {
@@ -30894,12 +30714,6 @@ var TreeLayout = /*#__PURE__*/function (_BaseLayout) {
         }
 
         var root = node;
-        var config = {
-          animationSpeed: _this2.config.animationSpeed,
-          strokeWidth: _this2.config.leafStrokeWidth,
-          strokeColor: _this2.config.leafStrokeColor,
-          marker: _this2.config.leafMarker
-        };
 
         var addLeaf = function addLeaf(currentNode) {
           if (currentNode.hasNoChildren() && (currentNode.hasChildrenIds() || currentNode.getInvisibleChildren().length >= _this2.config.visibleNodeLimit)) {
@@ -30912,10 +30726,10 @@ var TreeLayout = /*#__PURE__*/function (_BaseLayout) {
             });
 
             if (existing === undefined) {
-              var isHorizontal = _this2.config.orientation === "horizontal";
-              var leaf = new TreeLeaf(_this2.canvas, currentNode, config, isHorizontal);
+              var leaf = new TreeLeaf(_this2.canvas, currentNode, _this2.config);
               var x = x ? x : currentNode.getFinalX();
               var y = y ? y : currentNode.getFinalY();
+              leaf.setLayoutId(_this2.layoutIdentifier);
               leaf.setFinalX(x);
               leaf.setFinalY(y);
               leaf.setInitialX(root.getFinalX());
@@ -30945,7 +30759,7 @@ var TreeLayout = /*#__PURE__*/function (_BaseLayout) {
           });
 
           toRemove.forEach(function (leaf) {
-            leaf.removeLeaf();
+            leaf.removeSVG();
           });
           _this2.leafs = _this2.leafs.filter(function (leaf) {
             return !toRemove.map(function (l) {
@@ -31020,15 +30834,23 @@ var TreeLayout = /*#__PURE__*/function (_BaseLayout) {
         var y2 = Math.max.apply(Math, _toConsumableArray(rendered.map(function (n) {
           var h = _this2.config.renderingSize === "max" ? n.getMaxHeight() : n.getMinHeight();
           return n.getFinalY() + h;
-        })));
+        }))); // this.canvas.line(x1, y1, x2, y2).stroke({ width: 2, color: "red" })
 
-        var calculateDistance = function calculateDistance(sx, sy, tx, ty) {
-          var dx = tx - sx;
-          var dy = ty - sy;
-          return Math.sqrt(dx * dx + dy * dy);
-        }; // this.canvas.line(x1, y1, x2, y2).stroke({ width: 2, color: "red" })
+        if (_this2.l1) {
+          _this2.l1.remove();
 
+          _this2.l2.remove();
+        }
 
+        _this2.l1 = _this2.canvas.line(x0, y0, x0, 300).stroke({
+          width: 2,
+          color: "red"
+        });
+        _this2.l2 = _this2.canvas.line(x1, y0, x1, 300).stroke({
+          width: 2,
+          color: "red"
+        });
+        var oldCx = _this2.layoutInfo.x;
         _this2.layoutInfo = {
           x: x0,
           y: y0,
@@ -31036,7 +30858,33 @@ var TreeLayout = /*#__PURE__*/function (_BaseLayout) {
           cy: (y0 + y2) / 2,
           w: calculateDistance(x0, y0, x1, y1),
           h: calculateDistance(x1, y1, x2, y2)
-        };
+        }; // shift layout to right if it took space from a left layout
+
+        var shiftValue = oldCx - _this2.layoutInfo.x;
+
+        if (shiftValue > 0) {
+          // 
+          _this2.nodes.forEach(function (node) {
+            node.setFinalX(node.getFinalX() + shiftValue);
+          });
+
+          _this2.edges.forEach(function (edge) {
+            edge.setFinalToX(edge.getFinalToX() + shiftValue);
+            edge.setFinalFromX(edge.getFinalFromX() + shiftValue);
+          });
+
+          _this2.layoutInfo = _objectSpread2({}, _this2.layoutInfo, {
+            x: _this2.layoutInfo.x + shiftValue,
+            cx: _this2.layoutInfo.cx + shiftValue
+          });
+
+          _this2.l2.dx(shiftValue);
+        }
+
+        if (isReRender === true) {
+          console.log(offset);
+        } // console.log("new", shiftValue, isReRender)
+
       }; // inform nodes about incoming and outgoing edges
 
 
@@ -31144,7 +30992,8 @@ var TreeLayout = /*#__PURE__*/function (_BaseLayout) {
           if (leaf.isRendered() === false) {
             leaf.render(isReRender === true);
           } else if (leaf.isRendered() === true) {
-            leaf.transformToFinalPosition();
+            // console.log("transform leaf", leaf)
+            leaf.transformToFinalPosition({});
           }
         });
       }; // update edges
@@ -33241,7 +33090,7 @@ var Graph = /*#__PURE__*/function () {
  * @property {String} nodeEndpoint=null                         - Determins the required node endpoint name.
  * @property {String} edgeEndpoint=null                         - Determins the required node endpoint name.
  * @property {String} contextualRelationshipEndpoint=null       - Determins the required contextual relationship endpoint name.
- * @property {Number} layoutSpacing=50                          - Determins the spacing between multiple layouts.
+ * @property {Number} layoutSpacing=150                         - Determins the spacing between multiple layouts.
  *
  *
  * @see https://github.com/svgdotjs/svg.panzoom.js
@@ -33265,7 +33114,7 @@ var VisualizationConfiguration = {
   edgeEndpoint: null,
   contextualRelationshipEndpoint: null,
   // global layout settings
-  layoutSpacing: 50
+  layoutSpacing: 100
 };
 
 /**
@@ -33409,8 +33258,7 @@ var Visualization = /*#__PURE__*/function () {
     key: "render",
     value: function () {
       var _render = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee(initialGraphData, layout) {
-        var createdLayout, index, _layouts, _offset, _createdLayout, _layouts2, _offset2, layouts, offset;
-
+        var layouts, offset;
         return regeneratorRuntime.wrap(function _callee$(_context) {
           while (1) {
             switch (_context.prev = _context.next) {
@@ -33428,78 +33276,35 @@ var Visualization = /*#__PURE__*/function () {
                 layout.setLayoutReferences(this.layouts);
                 layout.setLayoutIdentifier(this.layouts.length - 1);
 
-                if (!(layout instanceof GridLayout)) {
-                  _context.next = 16;
-                  break;
-                }
-
-                _context.next = 10;
-                return layout.loadInitialGridDataAsync();
-
-              case 10:
-                createdLayout = _context.sent;
-                index = this.layouts.indexOf(layout);
-                _layouts = this.layouts.slice(0, index);
-                _offset = _layouts.map(function (l) {
-                  return l.layoutInfo.w;
-                }).reduce(function (a, b) {
-                  return a + b;
-                }, 0);
-                createdLayout.calculateLayout(_offset);
-                createdLayout.renderLayout();
-
-              case 16:
-                if (!(layout instanceof ContextualLayout)) {
-                  _context.next = 24;
-                  break;
-                }
-
-                _context.next = 19;
-                return layout.loadInitialContextualDataAsync();
-
-              case 19:
-                _createdLayout = _context.sent;
-                _layouts2 = this.layouts.slice(0, this.layouts.indexOf(layout));
-                _offset2 = _layouts2.map(function (l) {
-                  return l.layoutInfo.w;
-                }).reduce(function (a, b) {
-                  return a + b;
-                }, 0);
-
-                _createdLayout.calculateLayout(_offset2);
-
-                _createdLayout.renderLayout();
-
-              case 24:
                 if (!(layout instanceof RadialLayout)) {
-                  _context.next = 27;
+                  _context.next = 12;
                   break;
                 }
 
-                _context.next = 27;
+                _context.next = 12;
                 return layout.loadInitialRadialDataAsync();
 
-              case 27:
+              case 12:
                 if (!(layout instanceof TreeLayout)) {
-                  _context.next = 30;
+                  _context.next = 15;
                   break;
                 }
 
-                _context.next = 30;
+                _context.next = 15;
                 return layout.loadInitialTreeDataAsync();
 
-              case 30:
+              case 15:
                 layouts = this.layouts.slice(0, this.layouts.indexOf(layout));
                 offset = layouts.map(function (l) {
                   return l.layoutInfo.w;
                 }).reduce(function (a, b) {
                   return a + b;
                 }, 0);
-                layout.calculateLayout(offset, {});
+                layout.calculateLayout(offset + this.config.layoutSpacing * (this.layouts.length - 1), {});
                 layout.renderLayout({});
                 return _context.abrupt("return", layout);
 
-              case 35:
+              case 20:
               case "end":
                 return _context.stop();
             }
@@ -33513,96 +33318,6 @@ var Visualization = /*#__PURE__*/function () {
 
       return render;
     }()
-    /*
-      async update(layout, graphOrConfig, config = {}) {
-        if (layout instanceof RadialLayout) {
-          if (graphOrConfig instanceof Graph) {
-            console.log("update radial graph")
-             await layout.updateRadialDataWithConfigAsync(graphOrConfig, config)
-          } else {
-            layout.setConfig(graphOrConfig)
-            await layout.removeLayoutAsync()
-             const layouts = this.layouts.slice(0, this.layouts.indexOf(layout))
-            const offset = layouts.map((l) => l.layoutInfo.w).reduce((a, b) => a + b, 0)
-            const prevW = layout.layoutInfo.w
-            layout.calculateLayout(offset)
-             const newW = layout.layoutInfo.w
-             // update all layouts right side
-            this.layouts.forEach((llayout, i) => {
-              if (i > this.layouts.indexOf(layout)) {
-                llayout.calculateLayout(newW - prevW)
-                llayout.renderLayout()
-              }
-            })
-             layout.renderLayout()
-          }
-        }
-          if (layout instanceof GridLayout) {
-          // update the underlying graph structure and configuration
-          if (graphOrConfig instanceof Graph) {
-            await layout.updateGridDataWithConfigAsync(graphOrConfig, config)
-            await layout.loadAdditionalGridDataAsync()
-             const prevW = layout.layoutInfo.w
-            layout.calculateLayout()
-            const newW = layout.layoutInfo.w
-             // update all layouts right side
-            this.layouts.forEach((llayout, i) => {
-              if (i > this.layouts.indexOf(layout)) {
-                llayout.calculateLayout(newW - prevW)
-                llayout.renderLayout()
-              }
-            })
-             layout.renderLayout()
-          } else { // update only configuration
-            layout.setConfig(graphOrConfig)
-            await layout.removeLayoutAsync()
-            await layout.loadAdditionalGridDataAsync()
-             const prevW = layout.layoutInfo.w
-            layout.calculateLayout()
-            const newW = layout.layoutInfo.w
-             // update all layouts right side
-            this.layouts.forEach((llayout, i) => {
-              if (i > this.layouts.indexOf(layout)) {
-                llayout.calculateLayout(newW - prevW)
-                llayout.renderLayout()
-              }
-            })
-             layout.renderLayout()
-          }
-        }
-          // if (graphOrConfig instanceof Graph) {
-        //   await layout.updateGraphStructure(graphOrConfig, config)
-        //   const updatedLayout = await layout.loadAdditionalGridDataAsync()
-        //   const prevW = updatedLayout.layoutInfo.w
-        //   updatedLayout.calculateLayout()
-        //   const newW = updatedLayout.layoutInfo.w
-         //   // update all layouts right side
-        //   this.layouts.forEach((llayout, i) => {
-        //     if (i > this.layouts.indexOf(layout)) {
-        //       llayout.calculateLayout(newW - prevW)
-        //       llayout.renderLayout()
-        //     }
-        //   })
-         //   updatedLayout.renderLayout()
-        // } else {
-         //   console.log(layout, graphOrConfig, this)
-        //   const updatedLayout = await layout.updateLayoutConfiguration(graphOrConfig)
-        //   await updatedLayout.loadAdditionalGridDataAsync()
-         //   const prevW = updatedLayout.layoutInfo.w
-        //   updatedLayout.calculateLayout()
-        //   const newW = updatedLayout.layoutInfo.w
-         //   // update all layouts right side
-        //   this.layouts.forEach((llayout, i) => {
-        //     if (i > this.layouts.indexOf(layout)) {
-        //       llayout.calculateLayout(newW - prevW)
-        //       llayout.renderLayout()
-        //     }
-        //   })
-         //   updatedLayout.renderLayout()
-        // }
-      }
-    */
-
     /**
      * Updates an existing layout.
      *
@@ -33627,7 +33342,7 @@ var Visualization = /*#__PURE__*/function () {
             switch (_context2.prev = _context2.next) {
               case 0:
                 if (!(graphOrConfigData instanceof Graph)) {
-                  _context2.next = 15;
+                  _context2.next = 18;
                   break;
                 }
 
@@ -33635,6 +33350,11 @@ var Visualization = /*#__PURE__*/function () {
                   layout.setConfig(_objectSpread2({}, layout.getConfig(), {}, config));
 
                   if (layout instanceof TreeLayout) {
+                    layout.setRenderDepth(config.renderDepth || layout.getRenderDepth());
+                    layout.setRootId(config.rootId || layout.getRootId());
+                  }
+
+                  if (layout instanceof RadialLayout) {
                     layout.setRenderDepth(config.renderDepth || layout.getRenderDepth());
                     layout.setRootId(config.rootId || layout.getRootId());
                   }
@@ -33656,6 +33376,15 @@ var Visualization = /*#__PURE__*/function () {
                 return layout.loadInitialTreeDataAsync();
 
               case 9:
+                if (!(layout instanceof RadialLayout)) {
+                  _context2.next = 12;
+                  break;
+                }
+
+                _context2.next = 12;
+                return loadInitialRadialDataAsync();
+
+              case 12:
                 layouts = this.layouts.slice(0, this.layouts.indexOf(layout));
                 offset = layouts.map(function (l) {
                   return l.layoutInfo.w;
@@ -33664,19 +33393,20 @@ var Visualization = /*#__PURE__*/function () {
                 }, 0);
                 layout.calculateLayout(offset, {});
                 layout.renderLayout({});
-                _context2.next = 26;
+                _context2.next = 36;
                 break;
 
-              case 15:
+              case 18:
                 conf = graphOrConfigData instanceof Graph ? config : graphOrConfigData;
                 reRenderOperations = [// tree
-                "orientation", "renderingSize", "showLeafIndications", "visibleNodeLimit", "leafIndicationLimit", "leafStrokeWidth", "leafStrokeColor", "leafMarker"];
+                "animationSpeed", "orientation", "renderingSize", "showLeafIndications", "visibleNodeLimit", "leafIndicationLimit", "leafStrokeWidth", "leafStrokeColor", "leafMarker", // radial
+                "hAspect", "wAspect", "rootId", "renderDepth"];
                 requireRebuild = reRenderOperations.filter(function (r) {
                   return Object.keys(conf).includes(r);
                 }).length > 0;
 
                 if (!(layout instanceof TreeLayout)) {
-                  _context2.next = 25;
+                  _context2.next = 28;
                   break;
                 }
 
@@ -33685,19 +33415,37 @@ var Visualization = /*#__PURE__*/function () {
                 layout.setRootId(conf.rootId || layout.getRootId());
 
                 if (!(requireRebuild === true)) {
-                  _context2.next = 25;
+                  _context2.next = 28;
                   break;
                 }
 
-                _context2.next = 25;
+                _context2.next = 28;
                 return layout.rebuildTreeLayout();
 
-              case 25:
+              case 28:
+                if (!(layout instanceof RadialLayout)) {
+                  _context2.next = 35;
+                  break;
+                }
+
+                layout.setConfig(_objectSpread2({}, layout.getConfig(), {}, conf));
+                layout.setRenderDepth(conf.renderDepth || layout.getRenderDepth());
+                layout.setRootId(conf.rootId || layout.getRootId());
+
+                if (!(requireRebuild === true)) {
+                  _context2.next = 35;
+                  break;
+                }
+
+                _context2.next = 35;
+                return layout.rebuildRadialLayout();
+
+              case 35:
                 layout.updateLayoutsToTheRight({
                   isReRender: true
                 });
 
-              case 26:
+              case 36:
               case "end":
                 return _context2.stop();
             }

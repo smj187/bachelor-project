@@ -2196,8 +2196,9 @@
         {
             "id": 21,
             "type": "solid",
-            "fromNode": 112,
-            "toNode": 110
+            "label": "geht??",
+            "fromNode": 123,
+            "toNode": 113
         },
         {
             "id": 22,
@@ -2221,8 +2222,8 @@
             "id": 25,
             "type": "bold",
             "label": "B",
-            "fromNode": 163,
-            "toNode": 161,
+            "fromNode": 119,
+            "toNode": 110,
             "config": {}
         }
     ]

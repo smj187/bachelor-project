@@ -1,6 +1,6 @@
-import { intersect, shape } from "svg-intersections"
-import clamp from "clamp-js"
 
+import clamp from "clamp-js"
+import { calculateNodeLineIntersection } from "../utils/Calculations"
 
 /**
  * This is the base class for edges.
@@ -57,51 +57,18 @@ class BaseEdge {
     }
 
 
-    const line = shape("line", {
-      x1: fx,
-      y1: fy,
-      x2: tx,
-      y2: ty,
-    })
+
+    const fromIntersection = calculateNodeLineIntersection(fx, fy, tx, ty, this.fromNode)
+    this.finalFromX = fromIntersection.x
+    this.finalFromY = fromIntersection.y
 
 
-    // from intersection point calculation
-    const w2 = this.fromNode.getNodeSize() === "min" ? this.fromNode.config.minWidth : this.fromNode.config.maxWidth
-    const h2 = this.fromNode.getNodeSize() === "min" ? this.fromNode.config.minHeight : this.fromNode.config.maxHeight
-    const rect2 = shape("rect", {
-      x: fx - w2 / 2 - this.fromNode.config.borderStrokeWidth / 2 - this.config.offset / 2,
-      y: fy - h2 / 2 - this.fromNode.config.borderStrokeWidth / 2 - this.config.offset / 2,
-      width: w2 + this.fromNode.config.borderStrokeWidth + this.config.offset,
-      height: h2 + this.fromNode.config.borderStrokeWidth + this.config.offset,
-      rx: this.fromNode.config.borderRadius,
-      ry: this.fromNode.config.borderRadius,
-    })
 
-    const fromPoints = intersect(rect2, line)
-    // console.log(fromPoints)
-    this.finalFromX = fromPoints.points[0].x
-    this.finalFromY = fromPoints.points[0].y
+    const toIntersection = calculateNodeLineIntersection(tx, ty, fx, fy, this.toNode)
+    this.finalToX = toIntersection.x
+    this.finalToY = toIntersection.y
 
 
-    // to intersection point calculation
-    const w1 = this.toNode.getNodeSize() === "min" ? this.toNode.config.minWidth : this.toNode.config.maxWidth
-    const h1 = this.toNode.getNodeSize() === "min" ? this.toNode.config.minHeight : this.toNode.config.maxHeight
-    const rect1 = shape("rect", {
-      x: tx - w1 / 2 - this.toNode.config.borderStrokeWidth / 2 - this.config.offset / 2,
-      y: ty - h1 / 2 - this.toNode.config.borderStrokeWidth / 2 - this.config.offset / 2,
-      width: w1 + this.toNode.config.borderStrokeWidth + this.config.offset,
-      height: h1 + this.toNode.config.borderStrokeWidth + this.config.offset,
-      rx: this.toNode.config.borderRadius,
-      ry: this.toNode.config.borderRadius,
-    })
-
-    const toPoints = intersect(rect1, line)
-    this.finalToX = toPoints.points[0].x
-    this.finalToY = toPoints.points[0].y
-
-
-    // this.canvas.circle(5).fill("#75f").center(this.finalFromX, this.finalFromY)
-    // this.canvas.circle(5).fill("#0f0").center(this.finalToX, this.finalToY)
   }
 
 

@@ -1,17 +1,14 @@
-import { shape, intersect } from "svg-intersections"
-
+import { calculateNodeLineIntersection, calculateDistance } from "../../utils/Calculations"
 
 
 /**
- * This class calculates and renders an indication if more child nodes may be available.
+ * This class calculates and renders an indication if more child nodes may be available within a tree layout.
  * @property {Canvas} canvas The current canvas to render the element on.
  * @property {BaseNode} node The currently active and real leaf node representaion.
- * @property {Number} renderLimit Limits how many edges are visible.
- * @property {TreeLeafConfiguration} config An object containing visual restrictions.
- * @property {Boolean} [isHorizontal=false] Determins if the current tree is vertical or horizontal.
+ * @property {TreeLayoutConfiguration} config An object containing visual restrictions.
  */
 class TreeLeaf {
-  constructor(canvas, node, config, isHorizontal = false) {
+  constructor(canvas, node, layoutConfig) {
     this.svg = null
     this.canvas = canvas
 
@@ -19,23 +16,14 @@ class TreeLeaf {
     this.id = node.id
     this.node = node
     this.nodeSize = node.childrenIds.length
-    this.config = config
+    this.config = layoutConfig
 
     // position
-    this.initialX = 0
-    this.initialY = 0
     this.finalX = 0
     this.finalY = 0
-    this.currentX = 0
-    this.currentY = 0
+    this.distanceToNode = 0
 
-    // determins the space between the node and the edge position
-    const w = this.node.nodeSize === "min" ? this.node.config.minWidth : this.node.config.maxWidth
-    const h = this.node.nodeSize === "min" ? this.node.config.minHeight : this.node.config.maxHeight
-    this.translateX = this.node.nodeSize === "min" ? w / 4 : w / 4
-    this.translateY = this.node.nodeSize === "min" ? h / 4 : h / 4
-
-    this.isHorizontal = isHorizontal
+    // this.isHorizontal = layoutConfig.orientation === "horizontal"
     this.isReRender = false
   }
 
@@ -44,74 +32,83 @@ class TreeLeaf {
    * Calculates and renders the leaf representation.
    */
   render() {
-    const svg = this.canvas.group().draggable()
+    const svg = this.canvas.group()
+    svg.id(`treeLeaf#${this.node.id}`)
 
-    const nodeSize = this.nodeSize < this.config.leafIndicationLimit ? this.nodeSize : this.config.leafIndicationLimit
     const w = this.node.nodeSize === "min" ? this.node.config.minWidth : this.node.config.maxWidth
     const h = this.node.nodeSize === "min" ? this.node.config.minHeight : this.node.config.maxHeight
-    const spacing = this.node.config.offset
+
+
+    // determins the type of the currently rendered tree
+    const isHorizontal = this.config.orientation === "horizontal"
+
+    // the distance in which all leafs are placed
+    const spreadBreath = isHorizontal ? Math.min(w * 1.15, h * 1.15) : Math.max(w * 1.075, h * 1.075)
+
+    // set the limit on how many leafs are visible
+    const nodeSize = this.nodeSize < this.config.leafIndicationLimit ? this.nodeSize : this.config.leafIndicationLimit
+
+
+    // to position
     const tx = this.node.getFinalX()
     const ty = this.node.getFinalY()
 
 
-    // create helper line that indicats possible children
-    let edgesStartingLine
-    if (this.isHorizontal === true) {
-      const x0 = tx + w / 2 + this.translateX + spacing
-      const y0 = ty + this.node.currentHeight * 0.6
-      edgesStartingLine = this
-        .canvas
-        .path(`M ${x0} ${y0} v${this.node.currentHeight * 1.15}`)
-        .stroke({ width: 0, color: "blue" })
-        .center(tx + w / 2 + this.translateX + spacing, ty)
-    } else {
-      edgesStartingLine = this
-        .canvas
-        .path(`M 0 0 h${this.node.currentWidth * 1.35}`)
-        .stroke({ width: 0, color: "red" })
-        .center(tx, ty + h / 2 + spacing + this.translateY)
-    }
+
+    // calculate the distance on which leafs will have their start positions for vertical and horizontal 
+    const vax = this.node.getFinalX() - spreadBreath / 2
+    const vay = this.node.getFinalY() + Math.min(w, h)
+    const vbx = this.node.getFinalX() + spreadBreath / 2
+    const vby = this.node.getFinalY() + Math.min(w, h)
+
+    const hax = this.node.getFinalX() + Math.max(w / 1.25, h / 1.25)
+    const hay = this.node.getFinalY() - spreadBreath / 2
+    const hbx = this.node.getFinalX() + Math.max(w / 1.25, h / 1.25)
+    const hby = this.node.getFinalY() + spreadBreath / 2
 
 
-    // calculates unique positions across the helper line
-    const interval = edgesStartingLine.length() / nodeSize
+    // create an actual SVG path on which the leafs start point lies
+    const vHelperLine = this.canvas.path(`M ${vax} ${vay} L ${vbx} ${vby}`).stroke({ width: 0.5, color: "blue" })
+    const hHelperLine = this.canvas.path(`M ${hax} ${hay} L ${hbx} ${hby}`).stroke({ width: 0.5, color: "blue" })
+
+
+    // calculate the starting positions based on a given interval step
+    const interval = isHorizontal ? hHelperLine.length() / nodeSize : vHelperLine.length() / nodeSize
     let intervalSpaceUsed = 0
     for (let i = 0; i < nodeSize; i += 1) {
-      const p = edgesStartingLine.pointAt(intervalSpaceUsed)
-      intervalSpaceUsed += interval
 
-      // either horizontal or vertical offset
-      const fx = this.isHorizontal ? p.x : p.x + interval / 2
-      const fy = this.isHorizontal ? p.y + interval / 2 : p.y
+      // calculate the starting point ("from point")
+      intervalSpaceUsed += interval / 2
+      const startingPoint = isHorizontal ? hHelperLine.pointAt(intervalSpaceUsed) : vHelperLine.pointAt(intervalSpaceUsed)
+      intervalSpaceUsed += interval / 2
 
-      const { points } = intersect(shape("rect", {
-        x: tx - w / 2 - spacing / 2,
-        y: ty - h / 2 - spacing / 2,
-        width: w + spacing,
-        height: h + spacing,
-        rx: 0,
-        ry: 0,
-      }), shape("line", {
-        x1: fx,
-        y1: fy,
-        x2: tx,
-        y2: ty,
-      }))
+      // calculate the intersection between leaf and node
+      const nodeLeafIntersection = calculateNodeLineIntersection(tx, ty, startingPoint.x, startingPoint.y, this.node)
+      // this.canvas.circle(5).center(nodeLeafIntersection.x, nodeLeafIntersection.y).fill("#222")
+
+      // calculate the actual position where to start the leaf from
+      const fromX = startingPoint.x
+      const fromY = startingPoint.y
+
+      const toX = nodeLeafIntersection.x
+      const toY = nodeLeafIntersection.y
+
 
       // create simple SVG representation
-      const simplePath = this.canvas.path(`M${fx},${fy} L${points[0].x},${points[0].y}`).stroke({
-        width: this.config.strokeWidth,
-        color: this.config.strokeColor,
+      const simplePath = this.canvas.path(`M${fromX},${fromY} L${toX},${toY}`).stroke({
+        width: this.config.leafStrokeWidth,
+        color: this.config.leafStrokeColor,
       })
 
 
       // create a re-useable marker
-      const index = [...this.canvas.defs().node.childNodes].findIndex((d) => d.id === "defaultLeafMarker")
+      const defId = `defaultTreeLeafMarker#${this.layoutId}`
+      const index = [...this.canvas.defs().node.childNodes].findIndex((d) => d.id === defId)
       if (index === -1) {
         const marker = this.canvas.marker(12, 6, (add) => {
-          add.path(this.config.marker).fill(this.config.strokeColor).dx(1)
+          add.path(this.config.leafMarker).fill(this.config.leafStrokeColor).dx(1)
         })
-        marker.id("defaultLeafMarker")
+        marker.id(defId)
         this.canvas.defs().add(marker)
         simplePath.marker("end", marker)
       } else {
@@ -123,35 +120,36 @@ class TreeLeaf {
       svg.add(simplePath)
     }
 
+    // move to the background
     svg.back()
 
-    // put it into position
-    const x = this.isHorizontal
-      ? this.node.getFinalX() + w / 2 + this.translateX / 2 + spacing
-      : this.node.getFinalX()
-    const y = this.isHorizontal
-      ? this.node.getFinalY()
-      : this.node.getFinalY() + h / 2 + this.translateY / 2 + spacing
+    // remove the previously created SVG helper objects
+    vHelperLine.remove()
+    hHelperLine.remove()
 
 
+    // collect position
+    const finalX = svg.bbox().cx
+    const finalY = svg.bbox().cy
     const coords = this.node.coords[this.node.coords.length - 2] || this.node.coords[0]
-    const cx = this.isReRender ? coords[0] : this.node.currentX
-    const cy = this.isReRender ? coords[1] : this.node.currentY
+    const startX = this.isReRender ? coords[0] : this.node.getCurrentX()
+    const startY = this.isReRender ? coords[1] : this.node.getCurrentY()
 
+    // animate into position
     svg
       .attr({ opacity: 0 })
-      .center(cx, cy)
+      .center(startX, startY)
       .animate({ duration: this.config.animationSpeed })
-      .transform({ position: [x, y] })
+      .transform({ position: [finalX, finalY] })
       .attr({ opacity: 1 })
-    this.finalX = svg.cx()
-    this.finalY = svg.cy()
 
+    // save values for transformation later
+    this.finalX = finalX
+    this.finalY = finalY
 
-    // remove helper line
-    edgesStartingLine.remove()
+    // calculate absolute leaf position
+    this.distanceToNode = calculateDistance(finalX, finalY, tx, ty)
 
-    svg.id(`treeLeaf#${this.node.id}`)
     this.svg = svg
   }
 
@@ -161,17 +159,16 @@ class TreeLeaf {
    * @param {Number} [X=this.node.finalX] The parent's final X render position.
    * @param {Number} [Y=this.node.finalY] The parent's final Y render position.
    */
-  transformToFinalPosition(X = this.node.finalX, Y = this.node.finalY) {
-    const w = this.node.nodeSize === "min" ? this.node.config.minWidth : this.node.config.maxWidth
-    const h = this.node.nodeSize === "min" ? this.node.config.minHeight : this.node.config.maxHeight
+  transformToFinalPosition({ X = this.node.finalX, Y = this.node.finalY }) {
 
-    const x = this.isHorizontal ? X + w / 2 + this.translateX / 2 + this.node.config.offset : X
-    const y = this.isHorizontal ? Y : Y + this.translateY / 2 + this.node.config.offset + h / 2
+    // determins the type of the currently rendered tree
+    const isHorizontal = this.config.orientation === "horizontal"
 
     this
       .svg
       .animate({ duration: this.config.animationSpeed })
-      .transform({ position: [x, y] })
+      .transform({ position: [isHorizontal ? X + this.distanceToNode : X, isHorizontal ? Y : this.finalY] })
+
   }
 
   /**
@@ -191,6 +188,10 @@ class TreeLeaf {
    */
   isRendered() {
     return this.svg !== null
+  }
+
+  setLayoutId(layoutId) {
+    this.layoutId = layoutId
   }
 
   getId() {

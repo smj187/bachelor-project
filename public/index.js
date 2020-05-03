@@ -206,7 +206,7 @@ const contextualLayout = () => {
   visualization.render(graph6, contextual1)
 }
 
-const radialLayout = () => {
+const radialLayout = async () => {
   // create the underlying graph structure which holds references to our data
   const graph = visualization.createInitialGraph()
 
@@ -220,15 +220,27 @@ const radialLayout = () => {
   graph.includeEdge(112, 110)
   graph.includeEdge(113, 110)
   graph.includeEdge(163, 161)
+  graph.includeEdge(123, 113)
 
   // create a radial layout with a root and a rendering depth
-  const radial = new RadialLayout({ rootId: 110, renderDepth: 1 })
-  // const radial = new RadialLayout({ rootId: 16, renderDepth: 1 })
-  // const radial = new RadialLayout({ rootId: 161, renderDepth: 1 })
-  // const radial = new RadialLayout({ rootId: 137, renderDepth: 2 })
+  const radial1 = new RadialLayout({ rootId: 110, renderDepth: 2 })
+  // const radial2 = new RadialLayout({ rootId: 16, renderDepth: 1 })
+  // const radial3 = new RadialLayout({ rootId: 161, renderDepth: 1 })
+  // const radial4 = new RadialLayout({ rootId: 137, renderDepth: 0 })
 
   // render the layout
-  visualization.render(graph, radial)
+  await visualization.render(graph, radial1)
+  // visualization.render(graph, radial2)
+  // visualization.render(graph, radial3)
+  // await visualization.render(graph, radial4)
+
+
+  // const tree3 = new TreeLayout({ rootId: 110, renderDepth: 1, orientation: "horizontal" })
+  // await visualization.render(graph, tree3)
+
+  // setTimeout(() => {
+  //   visualization.update(radial1, { leafStrokeColor: "#222", renderDepth: 2 })
+  // }, 1000)
 }
 
 const treeLayout = async () => {
@@ -244,6 +256,7 @@ const treeLayout = async () => {
   graph.includeEdge(111, 110)
   graph.includeEdge(112, 110)
   graph.includeEdge(113, 110)
+  graph.includeEdge(119, 110)
   graph.includeEdge(163, 161)
 
   // create a radial layout with a root and a rendering depth
@@ -271,12 +284,13 @@ const treeLayout = async () => {
   const ec = { thinEdge: { type: "solid" } }
   const tree4 = new TreeLayout({ rootId: 16, renderDepth: 2, animationSpeed: 900 })
   // visualization.render(graph, tree4)
-
-  const tree3 = new TreeLayout({ rootId: 137, renderDepth: 1, animationSpeed: 300 })
-  // visualization.render(graph, tree3)
-
-  const tree2 = new TreeLayout({ rootId: 153, renderDepth: 3, animationSpeed: 300 })
+  const tree2 = new TreeLayout({ rootId: 153, renderDepth: 0, animationSpeed: 300, orientation: "vertical" })
   await visualization.render(graph, tree2)
+
+  // const tree3 = new TreeLayout({ rootId: 137, renderDepth: 1, animationSpeed: 300 })
+  const tree3 = new TreeLayout({ rootId: 110, renderDepth: 1, orientation: "vertical" })
+  await visualization.render(graph, tree3)
+
 
 
 
@@ -286,11 +300,11 @@ const treeLayout = async () => {
   // await visualization.render(graph, tree5)
 
   setTimeout(() => {
-    // visualization.update(tree3, { orientation: "horizontal", translateX: 0, translateY: 100, renderDepth: 1 })
+    // visualization.update(tree3, { rootId: 111, renderDepth: 1, visibleNodeLimit: 3 })
     console.log("update now")
     graph.excludeNode(160)
 
-    visualization.update(tree2, graph, { orientation: "horizontal" })
+    // visualization.update(tree2, graph, { orientation: "horizontal" })
   }, 1000)
 }
 

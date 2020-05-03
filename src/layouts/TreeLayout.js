@@ -2,7 +2,7 @@ import BaseLayout from "./BaseLayout"
 import Leaf from "./helpers/TreeLeaf"
 import TreeLayoutConfiguration from "../configuration/TreeLayoutConfiguration"
 import { buildTreeFromNodes } from "../utils/TreeConstruction"
-
+import { calculateDistance } from "../utils/Calculations"
 
 
 
@@ -414,18 +414,12 @@ class TreeLayout extends BaseLayout {
       })
     }
 
-    // add a visual indication that there are more nodes loadable
+    // add a visual indication that there is more data available
     const calculateLeafs = (node) => {
       if (this.config.showLeafIndications === false) {
         return
       }
       const root = node
-      const config = {
-        animationSpeed: this.config.animationSpeed,
-        strokeWidth: this.config.leafStrokeWidth,
-        strokeColor: this.config.leafStrokeColor,
-        marker: this.config.leafMarker,
-      }
 
       const addLeaf = (currentNode) => {
         if (currentNode.hasNoChildren() && (currentNode.hasChildrenIds() || currentNode.getInvisibleChildren().length >= this.config.visibleNodeLimit)) {
@@ -435,11 +429,11 @@ class TreeLayout extends BaseLayout {
           const existing = this.leafs.find((l) => l.id === currentNode.getId())
 
           if (existing === undefined) {
-            const isHorizontal = this.config.orientation === "horizontal"
-            const leaf = new Leaf(this.canvas, currentNode, config, isHorizontal)
+            const leaf = new Leaf(this.canvas, currentNode, this.config)
             const x = x ? x : currentNode.getFinalX()
             const y = y ? y : currentNode.getFinalY()
 
+            leaf.setLayoutId(this.layoutIdentifier)
             leaf.setFinalX(x)
             leaf.setFinalY(y)
             leaf.setInitialX(root.getFinalX())
@@ -463,7 +457,7 @@ class TreeLayout extends BaseLayout {
         })
 
         toRemove.forEach((leaf) => {
-          leaf.removeLeaf()
+          leaf.removeSVG()
         })
         this.leafs = this.leafs.filter((leaf) => !toRemove.map((l) => l.getId()).includes(leaf.getId()))
       }
@@ -511,6 +505,7 @@ class TreeLayout extends BaseLayout {
         edge.setFinalFromY(edge.getFinalFromY() - vAdjustment + this.config.translateY)
       })
 
+
       const x0 = Math.min(...rendered.map((n) => {
         const w = this.config.renderingSize === "max" ? n.getMaxWidth() : n.getMinWidth()
         return n.getFinalX() - w
@@ -529,15 +524,18 @@ class TreeLayout extends BaseLayout {
         return n.getFinalY() + h
       }))
 
-      const calculateDistance = (sx, sy, tx, ty) => {
-        const dx = tx - sx
-        const dy = ty - sy
-        return Math.sqrt(dx * dx + dy * dy)
-      }
 
       // this.canvas.line(x1, y1, x2, y2).stroke({ width: 2, color: "red" })
+      if (this.l1) {
+        this.l1.remove()
+        this.l2.remove()
+      }
+
+      this.l1 = this.canvas.line(x0, y0, x0, 300).stroke({ width: 2, color: "red" })
+      this.l2 = this.canvas.line(x1, y0, x1, 300).stroke({ width: 2, color: "red" })
 
 
+      const oldCx = this.layoutInfo.x
       this.layoutInfo = {
         x: x0,
         y: y0,
@@ -546,6 +544,29 @@ class TreeLayout extends BaseLayout {
         w: calculateDistance(x0, y0, x1, y1),
         h: calculateDistance(x1, y1, x2, y2),
       }
+
+      // shift layout to right if it took space from a left layout
+      const shiftValue = oldCx - this.layoutInfo.x
+      if (shiftValue > 0) {
+        // 
+        this.nodes.forEach(node => {
+          node.setFinalX(node.getFinalX() + shiftValue)
+        })
+        this.edges.forEach(edge => {
+          edge.setFinalToX((edge.getFinalToX() + shiftValue))
+          edge.setFinalFromX((edge.getFinalFromX() + shiftValue))
+        })
+        this.layoutInfo = {
+          ...this.layoutInfo,
+          x: this.layoutInfo.x + shiftValue,
+          cx: this.layoutInfo.cx + shiftValue
+        }
+        this.l2.dx(shiftValue)
+      }
+      if (isReRender === true) {
+        console.log(offset)
+      }
+      // console.log("new", shiftValue, isReRender)
     }
 
     // inform nodes about incoming and outgoing edges
@@ -641,7 +662,8 @@ class TreeLayout extends BaseLayout {
         if (leaf.isRendered() === false) {
           leaf.render(isReRender === true)
         } else if (leaf.isRendered() === true) {
-          leaf.transformToFinalPosition()
+          // console.log("transform leaf", leaf)
+          leaf.transformToFinalPosition({})
         }
       })
     }

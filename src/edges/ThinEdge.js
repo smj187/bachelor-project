@@ -32,7 +32,7 @@ class ThinEdge extends BaseEdge {
   render(X = this.finalFromX, Y = this.finalFromY) {
     const svg = this.canvas.group()
     svg.css("cursor", "default")
-    svg.id(`edge#${this.layoutId}_${this.fromNode.id}_${this.toNode.id}`)
+    svg.id(`thinEdge#${this.layoutId}_${this.fromNode.id}_${this.toNode.id}`)
 
     const line = `M${this.finalFromX},${this.finalFromY} L${this.finalToX},${this.finalToY}`
     const dasharray = this.config.type === "dashed" ? this.config.strokeDasharray : "0"

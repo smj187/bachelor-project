@@ -169,6 +169,7 @@ class BaseLayout {
     }
 
 
+
     // transform children deeper than the current render depth to "invisible" children
     const checkVisibilityRecursive = (node, visibleNodeLimit) => {
       if (isNaN(node)) {
@@ -185,6 +186,9 @@ class BaseLayout {
         }
       }
     }
+
+    // FIXME: cauption while updating a layout, this variable limits the amount of visible nodes
+    //        and if not updated properly, some nodes won't render
     checkVisibilityRecursive(tree, this.config.visibleNodeLimit)
 
 
@@ -357,32 +361,6 @@ class BaseLayout {
   }
 
 
-  /**
-   * Updates all layouts to the right if necessary.
-   */
-  updateLayoutsToTheRight({ isReRender = false }) {
-    const index = this.layoutReferences.indexOf(this)
-    const layouts = this.layoutReferences.slice(0, index)
-    const offset = layouts.map((l) => l.layoutInfo.w).reduce((a, b) => a + b, 0)
-
-    const prevInfo = this.layoutInfo
-    this.calculateLayout(offset, { isReRender: true })
-    const w = this.layoutInfo.w + this.config.translateX
-
-    // update all layouts right side
-    this.layoutReferences.forEach((llayout, i) => {
-      if (i > index) {
-
-        llayout.calculateLayout(llayout.initialOffset + (w - prevInfo.w), {})
-        llayout.renderLayout({})
-      }
-    })
-
-    if (isReRender === true) {
-      this.renderLayout({})
-    }
-  }
-
 
 
 
@@ -460,7 +438,8 @@ class BaseLayout {
         }
       }
     }
-    checkVisibilityRecursive(tree, this.config.visibleNodeLimit)
+    // FIXME: bug when updating form a renderdepth of <0 to 0 (does not work)
+    checkVisibilityRecursive(tree, 100)
 
 
 
@@ -475,6 +454,7 @@ class BaseLayout {
       return edgeList
     }
     const requiredEdges = [...new Set(createEdgeConnections(tree, []))]
+
 
 
     // only fetch edges known to the graph
@@ -614,35 +594,43 @@ class BaseLayout {
     this.renderLayout({ isReRender: true, x, y })
   }
 
-  async updateRadialDataWithConfigAsync(newGraph, newConfiguration) {
-    this.nodeData = newGraph.getNodes()
-    this.edgeData = newGraph.getEdges()
-
-
-    this.removeRepresentation(this.nodes, this.edges)
-
+  async rebuildRadialLayout() {
+    await this.removeLayoutAsync()
     await this.loadInitialRadialDataAsync()
+  }
 
 
+
+
+  /**
+   * Updates all layouts to the right if necessary.
+   */
+  updateLayoutsToTheRight({ isReRender = false }) {
     const index = this.layoutReferences.indexOf(this)
     const layouts = this.layoutReferences.slice(0, index)
     const offset = layouts.map((l) => l.layoutInfo.w).reduce((a, b) => a + b, 0)
 
-    const prevW = this.layoutInfo.w
-    this.calculateLayout(offset)
-
-    const newW = this.layoutInfo.w
+    const prevInfo = this.layoutInfo
+    this.calculateLayout(offset, { isReRender: true })
+    const w = this.layoutInfo.w + this.config.translateX
 
     // update all layouts right side
     this.layoutReferences.forEach((llayout, i) => {
       if (i > index) {
-        llayout.calculateLayout(newW - prevW)
-        llayout.renderLayout()
+
+        llayout.calculateLayout(llayout.initialOffset + (w - prevInfo.w), {})
+        llayout.renderLayout({})
       }
     })
 
-    this.renderLayout()
+    if (isReRender === true) {
+      this.renderLayout({})
+    }
   }
+
+
+
+
 
 
   async removeLayoutAsync() {
