@@ -1,5 +1,16 @@
 import { shape, intersect } from "svg-intersections"
 
+
+/**
+ * Calculates an intersection between an arc and a line.
+ * 
+ * @private
+ * @param {Number} x0 The starting X coordinate.
+ * @param {Number} y0 The starting Y coordinate.
+ * @param {Number} x1 The ending X coordinate.
+ * @param {Number} y1 The ending Y coordinate.
+ * @param {String} path Path coorinates.
+ */
 const calculateArcLineIntersection = (x0, y0, x1, y1, path) => {
   const arc = shape("path", { d: path })
   const line = shape("line", {
@@ -12,6 +23,17 @@ const calculateArcLineIntersection = (x0, y0, x1, y1, path) => {
   return { x: points[0].x, y: points[0].y }
 }
 
+
+/**
+ * Calculates an intersection between an arc and a node.
+ * 
+ * @private
+ * @param {Number} x0 The starting X coordinate.
+ * @param {Number} y0 The starting Y coordinate.
+ * @param {Number} x1 The ending X coordinate.
+ * @param {Number} y1 The ending Y coordinate.
+ * @param {BaseNode} node The intersected node.
+ */
 const calculateNodeLineIntersection = (x0, y0, x1, y1, node) => {
   const w = node.nodeSize === "min" ? node.config.minWidth : node.config.maxWidth
   const h = node.nodeSize === "min" ? node.config.minHeight : node.config.maxHeight
@@ -39,6 +61,15 @@ const calculateNodeLineIntersection = (x0, y0, x1, y1, node) => {
 }
 
 
+/**
+ * Calculates the distance between two points.
+ * 
+ * @private
+ * @param {Number} sx The starting x coordinate.
+ * @param {Number} sy The starting y coordinate.
+ * @param {Number} tx The ending x coordinate.
+ * @param {Number} ty The ending y coordinate.
+ */
 const calculateDistance = (sx, sy, tx, ty) => {
   const dx = tx - sx
   const dy = ty - sy

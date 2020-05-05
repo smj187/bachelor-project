@@ -10,6 +10,7 @@ import { calculateDistance } from "../utils/Calculations"
  * Reingold-Tilford Algorithm. The main calculation process is based on the initial work found in an article, but
  * extended in such a way that it fits the needs for the defined scope of this project.
  *
+ * @category Layouts
  * @param {Object} [customConfig={ }] Overrides default layout configuration properties.
  *                                    Available options: {@link TreeLayoutConfiguration}
  * @param {Object} [customEvents={ }] Overrides event listener configuration properties.

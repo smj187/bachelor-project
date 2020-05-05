@@ -5,6 +5,8 @@ import { calculateNodeLineIntersection } from "../utils/Calculations"
 /**
  * This is the base class for edges.
  *
+ * @category SVG Representations
+ * @subcategory Edges
  * @property {Data} data The loaded data element from a database.
  * @property {Canvas} canvas The nested canvas to render the edge on.
  * @property {BaseNode} fromNode The starting node reference.
@@ -44,10 +46,12 @@ class BaseEdge {
    * @param {Number} [opts.isContextualChild=false] Determines if the current edge is a contextual child edge
    */
   calculateEdge({ isContextualParent = false, isContextualChild = false }) {
+
+    // the coordinates for the from node
     let fx = this.fromNode.getFinalX()
     const fy = this.fromNode.getFinalY()
 
-
+    // the coordinates for the to node
     let tx = this.toNode.getFinalX()
     const ty = this.toNode.getFinalY()
 
@@ -59,16 +63,39 @@ class BaseEdge {
       tx = fx
     }
 
-
+    // calculate intersections
     const fromIntersection = calculateNodeLineIntersection(fx, fy, tx, ty, this.fromNode)
+    const toIntersection = calculateNodeLineIntersection(tx, ty, fx, fy, this.toNode)
+
     this.finalFromX = fromIntersection.x
     this.finalFromY = fromIntersection.y
 
-
-    const toIntersection = calculateNodeLineIntersection(tx, ty, fx, fy, this.toNode)
     this.finalToX = toIntersection.x
     this.finalToY = toIntersection.y
   }
+
+
+  /**
+   * Creates the initial SVG object reference.
+   * @return {SVG} A bare bone SVG object.
+   */
+  createSVGElement(id) {
+    // create the SVG object on the canvas.
+    const svg = this.canvas.group().draggable()
+
+
+    // attach some CSS and an ID
+    svg.css("cursor", "default")
+    svg.id(id)
+
+
+    // move to the back
+    svg.back()
+    return svg
+  }
+
+
+
 
 
   removeEdge(X = 0, Y = 0) { // TODO: remove
@@ -95,12 +122,13 @@ class BaseEdge {
   removeSVG() {
     if (this.isRendered() === false) return
 
+    // find the point where to fade the element out
     const x = (this.finalFromX + this.finalToX) / 2
-    const y = (this.finalFromY + this.finalToY) / 2
+    const y = ((this.finalFromY + this.finalToY) / 2) + 100
     this.svg.back()
     this.svg
       .animate({ duration: this.config.animationSpeed })
-      .transform({ scale: 0.001, position: [x, y + 100] })
+      .transform({ scale: 0.001, position: [x, y] })
       .after(() => {
         try { this.svg.remove() } catch (error) { }
         this.svg = null
@@ -118,11 +146,22 @@ class BaseEdge {
 
 
   /**
-   * Creates a label responsible for holding the edge description.
+   * Creates the edges label using HTML.
+   * @return {SVG} The label in HTML format.
+   * 
+   * @see https://svgjs.com/docs/3.0/shape-elements/#svg-foreignobject
+   * @see https://github.com/xavi160/Clamp.js
    */
   createLabel() {
+
+    // create the foreign object which holds 
     const fobj = this.canvas.foreignObject(0, 0)
 
+    // simply return if there is no label provided
+    if (this.label === "") return fobj
+
+
+    // create the label background
     const background = document.createElement("div")
     background.style.background = this.config.labelBackground
     background.style.padding = `${this.config.offset / 2}px`
@@ -131,6 +170,8 @@ class BaseEdge {
     background.style.wordWrap = "break-word"
     background.setAttribute("id", "label")
 
+
+    // create the actual label text
     const label = document.createElement("p")
     label.innerText = this.label
     label.style.color = this.config.labelColor
@@ -138,12 +179,25 @@ class BaseEdge {
     label.style.fontFamily = this.config.labelFontFamily
     label.style.fontWeight = this.config.labelFontWeight
     label.style.fontStyle = this.config.labelFontStyle
+
+
+    // adjust the the line size
     clamp(label, { clamp: this.config.labelLineClamp })
 
+
+    // add the label to the background element
     background.appendChild(label)
+
+
+    // add the HTML to the SVG
     fobj.add(background)
 
+
+    // disable the user-select css property
     fobj.css("user-select", "none")
+
+
+    // adjust size and position of the creted svg object
     fobj.width(background.clientWidth)
     fobj.height(background.clientHeight)
     fobj.center(this.finalFromX, this.finalFromY)

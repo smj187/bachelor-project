@@ -3,6 +3,8 @@
  * @namespace ContextualLayoutConfiguration
  * @description This object contains default configuration for contextual layout representations.
  *
+ * @category Layouts
+ * @subcategory Customizations
  * @property {Number} layoutWidth=1200                            - The width used by the layout representation.
  * @property {Number} layoutHeight=800                            - The height used by the layout representation.
  * @property {Number} translateX=-50                              - Adds additional X translation for all SVG elements before rendering.

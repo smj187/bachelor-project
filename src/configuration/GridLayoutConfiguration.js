@@ -2,6 +2,8 @@
  * @namespace GridLayoutConfiguration
  * @description This object contains default configuration for grid layout representations.
  *
+ * @category Layouts
+ * @subcategory Customizations
  * @property {Number} limitColumns=3                  - Limits how many columns the layout has.
  * @property {Number} limitNodes=null                 - Limits how many nodes are rendered.
  * @property {Number} translateX=0                    - Adds additional X translation for all SVG elements before rendering.

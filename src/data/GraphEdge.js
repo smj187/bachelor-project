@@ -1,6 +1,8 @@
 
 /**
  * This class represents a graph node.
+ * 
+ * @category Graph
  * @param {Number} fromNode The start node id.
  * @param {Number} toNode The end node id.
  */

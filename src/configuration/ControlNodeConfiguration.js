@@ -2,6 +2,8 @@
  * @namespace ControlNodeConfiguration
  * @description This object contains default configuration for control node representations.
  *
+ * @category SVG Representations
+ * @subcategory Customizations
  * @property {Number} maxWidth=400                  - Sets the detailed node width.
  * @property {Number} maxHeight=190                 - Sets the detailed height.
  * @property {Number} minWidth=150                  - Sets the minimal node width.

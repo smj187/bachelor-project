@@ -4,6 +4,8 @@ import GraphEdge from "./GraphEdge"
 
 /**
  * This class provides basic functionality for managing data.
+ * 
+ * @category Graph
  */
 class Graph {
   constructor() {

@@ -2,6 +2,8 @@
  * @namespace AssetNodeConfiguration
  * @description This object contains default configuration for asset node representations.
  *
+ * @category SVG Representations
+ * @subcategory Customizations
  * @property {Number} maxWidth=350                  - Sets the detailed node width.
  * @property {Number} maxHeight=225                 - Sets the detailed height.
  * @property {Number} minWidth=150                  - Sets the minimal node width.

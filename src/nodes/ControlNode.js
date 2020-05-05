@@ -5,6 +5,9 @@ import ControlNodeConfiguration from "../configuration/ControlNodeConfiguration"
 
 /**
  * This class is responsible for the visual representation of controls.
+ * 
+ * @category SVG Representations
+ * @subcategory Nodes
  * @property {Data} data Loaded data from a database.
  * @property {Canvas} canvas The nested canvas to render the node on.
  * @property {Object} customRepresentation An optional object that contains information to override default representations.

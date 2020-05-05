@@ -2,6 +2,8 @@
  * @namespace CustomNodeConfiguration
  * @description This object contains default configuration for custom node representations.
  *
+ * @category SVG Representations
+ * @subcategory Customizations
  * @property {String} nodeType=rect                 - Determines the form the node is rendered. Available: "path", "rect" or "ellipse".
  * @property {String} svg=null                      - Determines the custom SVG path that is rendered as node but only if nodeType is set to "path".
  *

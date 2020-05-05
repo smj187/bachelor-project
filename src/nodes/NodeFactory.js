@@ -6,6 +6,9 @@ import ControlNode from "./ControlNode"
 
 /**
  * This class makes use of the factory pattern and creates nodes based on a given type.
+ * 
+ * @category SVG Representations
+ * @subcategory Nodes
  */
 class NodeFactory {
   /**

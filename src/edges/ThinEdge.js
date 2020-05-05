@@ -4,6 +4,9 @@ import ThinEdgeConfiguration from "../configuration/ThinEdgeConfiguration"
 
 /**
  * This class is responsible for the visual representation of bold edges.
+ * 
+ * @category SVG Representations
+ * @subcategory Edges
  * @property {Data} data The loaded data element from a database.
  * @property {Canvas} canvas The nested canvas to render the edge on.
  * @property {BaseEdge} fromNode The starting node reference.
@@ -31,12 +34,16 @@ class ThinEdge extends BaseEdge {
   * @param {Number} [opts.FY=this.finalFromY] The final Y render position.
   */
   render({ X = this.finalFromX, Y = this.finalFromY }) {
-    const svg = this.canvas.group()
-    svg.css("cursor", "default")
-    svg.id(`thinEdge#${this.layoutId}_${this.fromNode.id}_${this.toNode.id}`)
 
+    const svg = this.createSVGElement(`thinEdge#${this.layoutId}_${this.fromNode.id}_${this.toNode.id}`)
+
+    // the line that connects two nodes
     const line = `M${this.finalFromX},${this.finalFromY} L${this.finalToX},${this.finalToY}`
+
+    // the lines dash array
     const dasharray = this.config.type === "dashed" ? this.config.strokeDasharray : "0"
+
+    // draw the line
     const path = this.canvas.path(line).stroke({
       width: this.config.strokeWidth,
       color: this.config.strokeColor,
@@ -48,7 +55,7 @@ class ThinEdge extends BaseEdge {
     const defId = `defaultThinMarker#${this.layoutId}`
     const i = [...this.canvas.defs().node.childNodes].findIndex((d) => d.id === defId)
     if (i === -1) {
-      const marker = this.canvas.marker(12, 6, (add) => {
+      const marker = this.canvas.marker(this.config.markerWidth, this.config.markerHeight, (add) => {
         add.path(this.config.marker).fill(this.config.strokeColor).dx(1)
       })
       marker.id(defId)
@@ -61,11 +68,15 @@ class ThinEdge extends BaseEdge {
 
     svg.add(path)
 
+
+    // add label
     if (this.label !== null) {
       const label = this.createLabel()
       svg.add(label)
     }
 
+
+    // animate into position
     svg.center(X, Y)
     svg.back()
 
@@ -74,7 +85,6 @@ class ThinEdge extends BaseEdge {
       .attr({ opacity: 1 })
       .animate({ duration: this.config.animationSpeed })
       .transform({ scale: 1 })
-
 
     svg
       .get(0)
@@ -100,49 +110,34 @@ class ThinEdge extends BaseEdge {
   /**
    * Transforms an edge to its final rendered position.
    */
-  transformToFinalPosition({ isReRender = false }) {
+  transformToFinalPosition() {
     this.svg.back()
 
+    // cancel an ongoing animation
     if (this.animation !== null) {
       this.animation.unschedule()
     }
 
-    if (isReRender === true) {
-      this.animation = this
-        .svg
-        .get(0)
-        .animate({ duration: this.config.animationSpeed })
-        .plot(`M${this.finalFromX},${this.finalFromY} L${this.finalToX},${this.finalToY}`)
-        .after(() => {
-          this.animation = null
-        })
+    // re-render the edge
+    this.animation = this
+      .svg
+      .get(0)
+      .animate({ duration: this.config.animationSpeed })
+      .plot(`M${this.finalFromX},${this.finalFromY} L${this.finalToX},${this.finalToY}`)
+      .after(() => {
+        this.animation = null
+      })
 
-      if (this.label) {
-        const x = (this.finalFromX + this.finalToX) / 2 + this.config.labelTranslateX
-        const y = (this.finalFromY + this.finalToY) / 2 + this.config.labelTranslateY
-        this
-          .svg
-          .get(1)
-          .animate({ duration: this.config.animationSpeed })
-          .center(x, y)
-      }
-    } else {
-      this.animation = this
+    // re-positions the la
+    bel
+    if (this.label) {
+      const x = (this.finalFromX + this.finalToX) / 2 + this.config.labelTranslateX
+      const y = (this.finalFromY + this.finalToY) / 2 + this.config.labelTranslateY
+      this
         .svg
-        .get(0)
+        .get(1)
         .animate({ duration: this.config.animationSpeed })
-        .plot(`M${this.finalFromX},${this.finalFromY} L${this.finalToX},${this.finalToY}`)
-        .after(() => {
-          this.animation = null
-        })
-
-      if (this.label) {
-        this
-          .svg
-          .get(1)
-          .animate({ duration: this.config.animationSpeed })
-          .center((this.finalFromX + this.finalToX) / 2, (this.finalFromY + this.finalToY) / 2)
-      }
+        .center(x, y)
     }
   }
 }

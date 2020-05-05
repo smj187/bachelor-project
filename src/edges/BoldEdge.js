@@ -4,6 +4,9 @@ import BoldEdgeConfiguration from "../configuration/BoldEdgeConfiguration"
 
 /**
  * This class is responsible for the visual representation of bold edges.
+ * 
+ * @category SVG Representations
+ * @subcategory Edges
  * @property {Data} data The loaded data element from a database.
  * @property {Canvas} canvas The nested canvas to render the edge on.
  * @property {BaseEdge} fromNode The starting node reference.
@@ -29,13 +32,14 @@ class BoldEdge extends BaseEdge {
   * @param {Number} [opts.FY=this.finalFromY] The final Y render position.
   */
   render({ X = this.finalFromX, Y = this.finalFromY }) {
-    const svg = this.canvas.group()
-    svg.css("cursor", "default")
-    svg.id(`boldEdge#${this.layoutId}_${this.fromNode.id}_${this.toNode.id}`)
-    svg.back()
 
 
+    const svg = this.createSVGElement(`boldEdge#${this.layoutId}_${this.fromNode.id}_${this.toNode.id}`)
+
+    // the calculate bold arrow
     const plot = this.generateBoldArrow()
+
+    // draw the arrow
     const path = this.canvas.path(plot).stroke({
       color: this.config.strokeColor,
       width: this.config.strokeWidth,
@@ -43,11 +47,15 @@ class BoldEdge extends BaseEdge {
     })
 
 
+    // custom color fill
     if (this.config.color !== null) {
       path.fill(this.config.color)
     } else {
+      // gradient requires a rotation before filling since svgdotjs only offers linear (left->right) gradients
       const theta = Math.atan2(this.finalToY - this.finalFromY, this.finalToX - this.finalFromX)
       path.rotate(-(theta) * (180 / Math.PI))
+
+      // fill based on two provided colors
       let c1 = this.fromNode.config.borderStrokeColor
       let c2 = this.toNode.config.borderStrokeColor
       if ((-(theta) * (180 / Math.PI)) > 90) {
@@ -63,6 +71,8 @@ class BoldEdge extends BaseEdge {
       // svgdotjs bug: if a gradient gets an id, there is no way to create a gradient with a different color pairing
       // gradient.id("defaultBoldGradient")
       path.fill(gradient)
+
+      // reverse rotation
       path.rotate((theta) * (180 / Math.PI))
     }
 
@@ -70,6 +80,7 @@ class BoldEdge extends BaseEdge {
     svg.add(path)
 
 
+    // add label
     if (this.label !== null) {
       const label = this.createLabel()
       label.center(X, Y)
@@ -169,16 +180,6 @@ class BoldEdge extends BaseEdge {
     const x7 = x0 + (lineWidth / 2) * Math.cos(theta + delta * -1)
     const y7 = y0 + (lineWidth / 2) * Math.sin(theta + delta * -1)
 
-
-    // this.canvas.circle(2).fill("#0f0").center(x0, y0)
-    // this.canvas.circle(2).fill("#75f").center(x1, y1)
-    // this.canvas.circle(2).fill("#00f").center(x2, y2)
-    // this.canvas.circle(2).fill("#f00").center(x3, y3)
-    // this.canvas.circle(2).fill("#ccc").center(x4, y4)
-    // this.canvas.circle(2).fill("#222").center(x5, y5)
-    // this.canvas.circle(2).fill("#000").center(x6, y6)
-    // this.canvas.circle(2).fill("#f0f").center(x7, y7)
-    // this.canvas.circle(2).fill("#f0f").center(cx, cy)
 
     const plot = `
       M ${x0},${y0}

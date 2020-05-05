@@ -2,7 +2,9 @@
 
 /**
  * Makes a single HTTP POST request to an endpoint.
+ * 
  * @async
+ * @private
  * @param {String} url The server endpoint URL.
  * @param {Array.<Number>} body An array containing ids.
  */
@@ -18,7 +20,9 @@ const singlePostRequest = async (url, body) => {
 
 /**
  * Makes multiple HTTP POST requests to an endpoint.
+ * 
  * @async
+ * @private
  * @param {Array.<Object>} requests An array of objects of URLs and ids.
  */
 const multiplePostRequests = async (requests) => {

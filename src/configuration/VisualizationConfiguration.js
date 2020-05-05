@@ -2,6 +2,8 @@
  * @namespace VisualizationConfiguration
  * @description This object contains default configuration the main visualization class.
  *
+ * @category Main Visualization
+ * @subcategory Customizations
  * @property {String} canvasId=visualization-canvas             - Determins id for the background canvas DOM attribute.
  * @property {Number} canvasWidth=window.innerWidth-10          - Sets the background canvas width.
  * @property {Number} canvasHeight=window.innerHeight-10        - Sets the background canvas height.

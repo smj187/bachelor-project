@@ -4,6 +4,9 @@ import { calculateNodeLineIntersection } from "../../utils/Calculations"
 
 /**
  * This class calculates and renders an indication if more child nodes may be available within a radial layout.
+ * 
+ * @category Layouts
+ * @subcategory Helpers
  * @property {Canvas} canvas The current canvas to render the element on.
  * @property {BaseNode} node The currently active and real leaf node representaion.
  * @property {BaseNode} root The root node in the layout.

@@ -2,6 +2,8 @@
  * @namespace ThinEdgeConfiguration
  * @description This object contains default configuration for thin edge representations.
  *
+ * @category SVG Representations
+ * @subcategory Customizations
  * @property {Number} offset=8                                  - Sets the spacing used for padding between label and background.
  * @property {Number} animationSpeed=300                        - Determines how fast SVG elements animates inside the current layout.
  * @property {String} type=solid                                - Determines the edge type. Available: "solid" or "dashed".
@@ -10,6 +12,8 @@
  * @property {String} strokeColor=#aaaaaa                       - Determines the edges color.
  * @property {String} strokeDasharray="13 5"                    - Determines the graps in the edge line (dashed edge specific).
  * @property {marker} strokeDasharray="M 0 0 L 6 3 L 0 6 z"     - Determines the shape of the arrow head.
+ * @property {marker} markerWidth=12                            - Determines the arrows heads width.
+ * @property {marker} markerHeight=6                            - Determines the arrows heads height.
  *
  * @property {String} labelWidth=125                            - Determines the text width for the label.
  * @property {String} labelLineClamp=1                          - Determines how many lines are visible for the label.
@@ -32,10 +36,12 @@ const ThinEdgeConfiguration = {
   strokeColor: "#aaaaaa",
   strokeDasharray: "13 5", // (dashed edge specific)
   marker: "M 0 0 L 6 3 L 0 6 z",
+  markerWidth: 12,
+  markerHeight: 6,
 
 
   // text
-  labelWidth: 125, // recommended: min node width - some padding
+  labelWidth: 125,
   labelLineClamp: 1,
   labelTranslateX: 0,
   labelTranslateY: 0,

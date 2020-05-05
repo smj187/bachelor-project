@@ -2,6 +2,8 @@
  * @namespace BoldEdgeConfiguration
  * @description This object contains default configuration for bold edge representations.
  *
+ * @category SVG Representations
+ * @subcategory Customizations
  * @property {Number} offset=8                      - Sets the spacing used for padding between label and background.
  * @property {Number} animationSpeed=300            - Determines how fast SVG elements animates inside the current layout.
  * @property {String} color=null                    - Sets the default edge color. If set to null, it inherent its color.

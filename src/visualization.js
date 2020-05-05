@@ -16,11 +16,11 @@ import VisualizationConfiguration from "./configuration/VisualizationConfigurati
 
 
 
-
 /**
  * Canvas
  * @description The canvas element where all svgs are held.
  * @typedef {Canvas} Canvas
+ * @category Type Definitions
  *
  * @see https://svgjs.com/docs/3.0/container-elements/#svg-svg
  */
@@ -29,6 +29,7 @@ import VisualizationConfiguration from "./configuration/VisualizationConfigurati
  * SVG
  * @description A SVG object provided by svgdotjs
  * @typedef {SVG} SVG
+ * @category Type Definitions
  * 
  * @see https://svgjs.com/docs/3.0/container-elements/
  */
@@ -38,6 +39,7 @@ import VisualizationConfiguration from "./configuration/VisualizationConfigurati
  * @description A foreign object which holds custom HTML.
  *
  * @typedef {ForeignObject} ForeignObject
+ * @category Type Definitions
  *
  * @see https://svgjs.com/docs/3.0/shape-elements/#svg-foreignobject
  */
@@ -46,6 +48,7 @@ import VisualizationConfiguration from "./configuration/VisualizationConfigurati
  * Data
  * @description This object contains data that was loaded from the backend.
  * @typedef {Data} Data
+ * @category Type Definitions
  *
  * @property {Number} id The id of the node.
  * @property {String} label The label of the node. Available: string, null or empty string.
@@ -59,6 +62,7 @@ import VisualizationConfiguration from "./configuration/VisualizationConfigurati
  */
 
 
+
 /**
  * KNOWN ISSUES:
  *    - svgdotjs library while animating sometimes 0.5 1 xy value (.svg.bbox().cx, .svg.bbox().cy) off calculated position
@@ -68,6 +72,7 @@ import VisualizationConfiguration from "./configuration/VisualizationConfigurati
 /**
  * The class is responsible for creating and updating layouts and serves as main entry point.
  *
+ * @category Main Visualization
  * @property {VisualizationConfiguration} config An object containing required and additional configurations.
  */
 class Visualization {

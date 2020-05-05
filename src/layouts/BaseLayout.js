@@ -15,6 +15,8 @@ import EdgeFactory from "../edges/EdgeFactory"
 
 /**
  * This is the base class for layouts.
+ * 
+ * @category Layouts
  * @property {Object} additionalNodeRepresentations An object containing additional node representations.
  * @property {Object} additionalEdgeRepresentations An object containing additional edge representations.
  */

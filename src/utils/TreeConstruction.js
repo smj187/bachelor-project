@@ -2,6 +2,7 @@
 /**
  * Creates a tree node tree based on parent and children references. The required data does not have to be sorted.
  *
+ * @private
  * @param {Array.<Object>} array The array where to construct the tree from.
  * @param {Array.<Obejct>} [parentRef=undefined] Required by the recursive call to pass the new parent ref.
  * @param {Array.<Object>} [rootRef=undefined] Required by the recursive call to pass current children ref.
@@ -29,6 +30,7 @@ const buildTreeFromIds = (array, parentRef = undefined, rootRef = undefined) => 
 /**
  * Creates a node tree based on parent and children ID references. The required data does not have to be sorted.
  *
+ * @private
  * @param {Array.<Object>} array The array where to construct the tree from.
  * @param {Array.<Obejct>} [parentRef=undefined] Required by the recursive call to pass the new parent ref.
  * @param {Array.<Object>} [rootRef=undefined] Required by the recursive call to pass current children ref.

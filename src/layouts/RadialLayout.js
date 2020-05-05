@@ -11,6 +11,7 @@ import { calculateDistance } from "../utils/Calculations"
  * This class represents data within a radial tree layout. The algorithm to achieve this visualization is based on
  * a proposal from Andrew Pavlo.
  *
+ * @category Layouts
  * @param {Object} [customConfig={ }] Overrides default layout configuration properties.
  *                                    Available options: {@link RadialLayoutConfiguration}
  * @param {Object} [customEvents={ }] Overrides event listener configuration properties.

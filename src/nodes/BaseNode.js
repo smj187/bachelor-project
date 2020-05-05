@@ -9,6 +9,9 @@ import FallbackCustomIcon from "../resources/fallbackCustomIcon.svg"
 
 /**
  * This is the base class for nodes.
+ * 
+ * @category SVG Representations
+ * @subcategory Nodes
  * @property {Data} data Loaded data from a database.
  * @property {Canvas} canvas The nested canvas to render the node on.
  *
@@ -123,7 +126,6 @@ class BaseNode {
   createSVGElement() {
 
     // create the SVG object on the canvas.
-
     const svg = this.canvas.group().draggable()
     // const svg = this.canvas.group()
 

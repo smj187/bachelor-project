@@ -2,6 +2,8 @@
  * @namespace RadialLayoutConfiguration
  * @description This object contains default configuration for radial layout representations.
  *
+ * @category Layouts
+ * @subcategory Customizations
  * @property {Number} translateX=0                      - Adds additional X translation for all SVG elements before rendering.
  * @property {Number} translateY=0                      - Adds additional Y translation for all SVG elements before rendering.
  * @property {Number} animationSpeed=300                - Determines how fast SVG elements animates inside the current layout.

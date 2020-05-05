@@ -1,8 +1,10 @@
 /**
  * Class representing the option to collapse or expand a grid layout.
  * 
+ * @category Layouts
+ * @subcategory Helpers
  * @property {Canvas} canvas The current canvas to render the element on.
- * @property {RadialLayoutConfiguration} layoutConfig An object containing visual restrictions.
+ * @property {GridLayoutConfiguration} layoutConfig An object containing visual restrictions.
  */
 class GridExpander {
   constructor(canvas, layoutConfig) {

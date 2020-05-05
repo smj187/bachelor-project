@@ -7,6 +7,7 @@ import { calculateDistance } from "../utils/Calculations"
 /**
  * This class calculates and renders the grid layout and tries to arrange its nodes in a column-row-based format.
  *
+ * @category Layouts
  * @param {Object} [customConfig={ }] Overrides default layout configuration properties.
  *                                    Available options: {@link GridLayoutConfiguration}
  * @param {Object} [customEvents={ }] Overrides event listener configuration properties.

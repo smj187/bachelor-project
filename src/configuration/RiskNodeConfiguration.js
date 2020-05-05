@@ -3,6 +3,8 @@
  * @namespace RiskNodeConfiguration
  * @description This object contains default configuration for risk node representations.
  *
+ * @category SVG Representations
+ * @subcategory Customizations
  * @property {Number} maxWidth=300                  - Sets the detailed node width.
  * @property {Number} maxHeight=150                 - Sets the detailed height.
  * @property {Number} minWidth=150                  - Sets the minimal node width.
