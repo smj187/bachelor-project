@@ -2,7 +2,7 @@
 /**
  * This class represents a graph node.
  * 
- * @category Graph
+ * @category Underlying Data
  * @param {Number} id The given id for this node.
  */
 class GraphNode {

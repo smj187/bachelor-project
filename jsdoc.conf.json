@@ -19,11 +19,20 @@
     ],
     "templates": {
         "better-docs": {
-            "name": "Interactive Visualization for Information Security Analysis: JavaScript Documentation"
+            "name": "Interactive Visualization for Information Security Analysis: JavaScript Documentation",
+            "css": "styles/custom.css",
+            "hideGenerator": true,
+            "navigation": [
+                {
+                    "label": "Gitlab",
+                    "href": "https://git.uibk.ac.at/csat2206/Bachelorarbeit"
+                }
+            ]
         },
         "resources": {
             "svgdotjs": "https://github.com/svgdotjs/svg.js"
-        }
+        },
+        "search": true
     },
     "opts": {
         "destination": "./docs/",
@@ -31,6 +40,7 @@
         "recurse": true,
         "verbose": true,
         "tutorials": "./examples",
+        "readme": "./readme.md",
         "template": "node_modules/better-docs/"
     }
 }

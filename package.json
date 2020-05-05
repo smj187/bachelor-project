@@ -9,7 +9,7 @@
     "@rollup/plugin-node-resolve": "^7.1.1",
     "@svgdotjs/svg.topath.js": "^2.0.3",
     "axios": "^0.19.2",
-    "better-docs": "^1.4.7",
+    "better-docs": "^2.0.1",
     "body-parser": "^1.19.0",
     "clamp-js": "^0.7.0",
     "cors": "^2.8.5",
