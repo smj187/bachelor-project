@@ -8,15 +8,15 @@ import CustomEdgeConfiguration from "../configuration/CustomEdgeConfiguration"
  * @property {Canvas} canvas The nested canvas to render the edge on.
  * @property {BaseEdge} fromNode The starting node reference.
  * @property {BaseEdge} toNode The ending node reference.
- * @property {Object} customBoldEdgeConfig An object containing information to change the default visualization.
- * 
+ * @property {Object} customRepresentation An object containing information to change the default visualization.
+ *
  * @see CustomEdgeConfiguration
  *
  */
 class CustomEdge extends BaseEdge {
-  constructor(data, canvas, fromNode, toNode, customEdgeConfig = {}) {
+  constructor(data, canvas, fromNode, toNode, customRepresentation = {}) {
     super(data, canvas, fromNode, toNode)
-    this.config = { ...CustomEdgeConfiguration, ...this.config, ...customEdgeConfig }
+    this.config = { ...CustomEdgeConfiguration, ...this.config, ...customRepresentation }
 
     this.animation = null
   }
@@ -94,7 +94,6 @@ class CustomEdge extends BaseEdge {
         .attr({ opacity: 1 })
     }
     this.svg = svg
-
   }
 
 
@@ -102,7 +101,6 @@ class CustomEdge extends BaseEdge {
    * Transforms an edge to its final rendered position.
    */
   transformToFinalPosition({ isReRender = false }) {
-
     this.svg.back()
 
     if (this.animation !== null) {
@@ -110,7 +108,6 @@ class CustomEdge extends BaseEdge {
     }
 
     if (isReRender === true) {
-
       this.animation = this
         .svg
         .get(0)
@@ -129,9 +126,7 @@ class CustomEdge extends BaseEdge {
           .animate({ duration: this.config.animationSpeed })
           .center(x, y)
       }
-    }
-    else {
-
+    } else {
       this.animation = this
         .svg
         .get(0)
@@ -150,7 +145,6 @@ class CustomEdge extends BaseEdge {
       }
     }
   }
-
 }
 
 export default CustomEdge

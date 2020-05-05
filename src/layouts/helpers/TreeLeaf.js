@@ -54,8 +54,7 @@ class TreeLeaf {
     const ty = this.node.getFinalY()
 
 
-
-    // calculate the distance on which leafs will have their start positions for vertical and horizontal 
+    // calculate the distance on which leafs will have their start positions for vertical and horizontal
     const vax = this.node.getFinalX() - spreadBreath / 2
     const vay = this.node.getFinalY() + Math.min(w, h)
     const vbx = this.node.getFinalX() + spreadBreath / 2
@@ -76,15 +75,15 @@ class TreeLeaf {
     const interval = isHorizontal ? hHelperLine.length() / nodeSize : vHelperLine.length() / nodeSize
     let intervalSpaceUsed = 0
     for (let i = 0; i < nodeSize; i += 1) {
-
       // calculate the starting point ("from point")
       intervalSpaceUsed += interval / 2
-      const startingPoint = isHorizontal ? hHelperLine.pointAt(intervalSpaceUsed) : vHelperLine.pointAt(intervalSpaceUsed)
+      const startingPoint = isHorizontal
+        ? hHelperLine.pointAt(intervalSpaceUsed)
+        : vHelperLine.pointAt(intervalSpaceUsed)
       intervalSpaceUsed += interval / 2
 
       // calculate the intersection between leaf and node
       const nodeLeafIntersection = calculateNodeLineIntersection(tx, ty, startingPoint.x, startingPoint.y, this.node)
-      // this.canvas.circle(5).center(nodeLeafIntersection.x, nodeLeafIntersection.y).fill("#222")
 
       // calculate the actual position where to start the leaf from
       const fromX = startingPoint.x
@@ -160,7 +159,6 @@ class TreeLeaf {
    * @param {Number} [Y=this.node.finalY] The parent's final Y render position.
    */
   transformToFinalPosition({ X = this.node.finalX, Y = this.node.finalY }) {
-
     // determins the type of the currently rendered tree
     const isHorizontal = this.config.orientation === "horizontal"
 
@@ -168,7 +166,6 @@ class TreeLeaf {
       .svg
       .animate({ duration: this.config.animationSpeed })
       .transform({ position: [isHorizontal ? X + this.distanceToNode : X, isHorizontal ? Y : this.finalY] })
-
   }
 
   /**
@@ -196,26 +193,6 @@ class TreeLeaf {
 
   getId() {
     return this.id
-  }
-
-  setIsReRender(isReRender) {
-    this.isReRender = isReRender
-  }
-
-  setFinalX(finalX) {
-    this.finalX = finalX
-  }
-
-  setFinalY(finalY) {
-    this.finalY = finalY
-  }
-
-  setInitialX(initialX) {
-    this.initialX = initialX
-  }
-
-  setInitialY(initialY) {
-    this.initialY = initialY
   }
 }
 

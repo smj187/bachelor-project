@@ -10,7 +10,7 @@
  * @property {Number} rootId=null                       - Determines the selected root id.
  * @property {Number} renderDepth=0                     - Determines the current render depth.
  * @property {String} renderingSize=min                 - Determines the node render representation. Available: "min" or "max".
- * 
+ *
  * @property {Boolean} showLeafIndications=true         - Determines whether additional indications for possible children are visible.
  * @property {Boolean} leafIndicationLimit=5            - Determines the maximal amount of indications per node.
  * @property {Boolean} leafStrokeWidth=2                - Determines a leafs thickness.

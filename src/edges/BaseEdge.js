@@ -40,7 +40,7 @@ class BaseEdge {
    * Calculates the two points indicating the starting and end point for edges.
    * @param {Object} opts Additional configuration required for calculating certain edges.
    */
-  calculateEdge(opts = { isContextualParent: false, isContextualChild: false }) {
+  calculateEdge({ isContextualParent = false, isContextualChild = false }) {
     let fx = this.fromNode.getFinalX()
     const fy = this.fromNode.getFinalY()
 
@@ -48,14 +48,13 @@ class BaseEdge {
     let tx = this.toNode.getFinalX()
     const ty = this.toNode.getFinalY()
 
-    if (opts.isContextualParent) {
+    if (isContextualParent) {
       fx = tx
     }
 
-    if (opts.isContextualChild) {
+    if (isContextualChild) {
       tx = fx
     }
-
 
 
     const fromIntersection = calculateNodeLineIntersection(fx, fy, tx, ty, this.fromNode)
@@ -63,15 +62,10 @@ class BaseEdge {
     this.finalFromY = fromIntersection.y
 
 
-
     const toIntersection = calculateNodeLineIntersection(tx, ty, fx, fy, this.toNode)
     this.finalToX = toIntersection.x
     this.finalToY = toIntersection.y
-
-
   }
-
-
 
 
   removeEdge(X = 0, Y = 0) { // TODO: remove
@@ -146,6 +140,7 @@ class BaseEdge {
     background.appendChild(label)
     fobj.add(background)
 
+    fobj.css("user-select", "none")
     fobj.width(background.clientWidth)
     fobj.height(background.clientHeight)
     fobj.center(this.finalFromX, this.finalFromY)
@@ -201,6 +196,14 @@ class BaseEdge {
 
   getLayoutId() {
     return this.layoutId
+  }
+
+  getToNode() {
+    return this.toNode
+  }
+
+  getFromNode() {
+    return this.fromNode
   }
 }
 

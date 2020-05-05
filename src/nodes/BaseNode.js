@@ -1,10 +1,10 @@
 import Filter from "@svgdotjs/svg.filter.js"
 import clamp from "clamp-js"
+
 import FallbackControlIcon from "../resources/fallbackControlIcon.svg"
 import FallbackAssetIcon from "../resources/fallbackAssetIcon.svg"
 import FallbackRiskIcon from "../resources/fallbackRiskIcon.svg"
 import FallbackCustomIcon from "../resources/fallbackCustomIcon.svg"
-import colorshift from "../utils/Colorshift"
 
 
 /**
@@ -71,28 +71,6 @@ class BaseNode {
     this.animation = null
   }
 
-
-
-  /**
-   * Removes the rendered SVG object from the canvas.
-   */
-  removeSVG() {
-    if (this.isRendered() === false) return
-
-    const x = (this.finalFromX + this.finalToX) / 2
-    const y = (this.finalFromY + this.finalToY) / 2
-    this.svg.back()
-    this.svg
-      .animate({ duration: this.config.animationSpeed })
-      .transform({ scale: 0.001, position: [x, y + 100] })
-      .after(() => {
-        try { this.svg.remove() } catch (error) { }
-        this.svg = null
-      })
-  }
-
-
-
   removeNode(X = this.initialX, Y = this.initialY, opts = { animation: true, opacity: 1 }, clickedNode) { // TODO: remove
     console.log(clickedNode)
 
@@ -133,36 +111,39 @@ class BaseNode {
   }
 
 
-  /**
-   * Adds an event and a method to the node.
-   * @param {Event} event The provided event.
-   * @param {Method} func The provided method.
-   */
-  addEvent(event, func) {
-    this.events = [...this.events, { event, func }]
-  }
+
 
 
   /**
-   * Creates the initial SVG object reference.
+   * Creates the initial SVG object reference and the drop shadow for mouse hover effects.
+   * @return {SVG} A bare bone SVG object.
+   * 
+   * @see https://github.com/svgdotjs/svg.filter.js
    */
   createSVGElement() {
+
+    // create the SVG object on the canvas.
+
     const svg = this.canvas.group().draggable()
     // const svg = this.canvas.group()
+
+    // attach some CSS and an ID
     svg.css("cursor", "pointer")
     svg.id(`node#${this.id}`)
 
+
+    // register a hover event
     svg.on("mouseover", () => {
       svg.front()
 
       const currentZoomLevel = this.canvas.parent().attr().zoomCurrent
       const currenZoomThreshold = this.canvas.parent().attr().zoomThreshold
 
-      // show tooltip only if text is set, the node is in minimal representation and the 
+      // show tooltip only if text is set, the node is in minimal representation and the
       // current zoom level is smaller then the threshold
       if (this.tooltipText !== null && this.nodeSize === "min" && currentZoomLevel <= currenZoomThreshold) {
+        // add a show tooltip event
         svg.on("mousemove", (ev) => {
-          // show tooltip
           const tooltip = document.getElementById("tooltip")
           tooltip.innerHTML = this.tooltipText
           tooltip.style.display = "block"
@@ -174,7 +155,7 @@ class BaseNode {
       }
 
 
-      // remove border dasharray
+      // remove border dasharray (this improves the visual appearance of a node has a dashed border)
       const node = this.svg.get(0)
       node.stroke({
         width: this.config.borderStrokeWidth,
@@ -182,12 +163,15 @@ class BaseNode {
         dasharray: 0,
       })
 
-      // add hover highlight
+
+      // find a color add a highlight based on that color
       let toDark = this.config.borderStrokeColor.substr(1)
       if (this.type === "requirement") {
         toDark = this.config.backgroundColor.substr(1)
       }
 
+
+      // attach the drop shadow
       node.filterWith((add) => {
         const blur = add.offset(0, 0).in(add.$source).gaussianBlur(3)
         const color = add.composite(add.flood(`#${toDark}`), blur, "in")
@@ -195,8 +179,11 @@ class BaseNode {
       })
     })
 
+
+    // register an event that listens of the cursor leaves the nodes SVG object
     svg.on("mouseout", () => {
-      // reset border stroke
+
+      // reset border stroke to its original value
       const node = this.svg.get(0)
       node.stroke({
         width: this.config.borderStrokeWidth,
@@ -204,6 +191,7 @@ class BaseNode {
         dasharray: this.config.borderStrokeDasharray,
       })
 
+      // remove the tooltip listener event
       svg.off("mousemove", null)
 
       // remove the tooltip
@@ -212,14 +200,9 @@ class BaseNode {
 
       // remove hover highlight
       node.filterer().remove()
-      // const i = [...this.canvas.defs().node.childNodes].findIndex((d) => d.id === "defaultNodeBorderFilter")
-      // const filter = this.canvas.defs().get(i)
-      // node.filterWith(filter)
     })
 
-    this.events.forEach(({ event, func }) => {
-      svg.on(event, func)
-    })
+
 
 
     return svg
@@ -227,12 +210,19 @@ class BaseNode {
 
 
   /**
-   * Creates the nodes SVG shape.
+   * Creates the nodes actual SVG shape.
+   * @return {SVG} The node as SVG representation.
+   * 
+   * @see https://svgjs.com/docs/3.0/shape-elements/#svg-rect
+   * @see https://svgjs.com/docs/3.0/shape-elements/#svg-ellipse
+   * @see https://svgjs.com/docs/3.0/shape-elements/#svg-path
    */
   createNode() {
     let node = null
     const width = 1
     const height = 1
+
+    // create the SVG shape
     if (this.type === "custom") { // custom
       if (this.config.nodeType === "rect") {
         node = this.canvas.rect(width, height)
@@ -247,29 +237,31 @@ class BaseNode {
       node = this.canvas.rect(width, height)
     }
 
+
+    // the the background
     node.fill(this.config.backgroundColor)
+
+    // add some border stroke
     node.stroke({
       width: this.config.borderStrokeWidth,
       color: this.config.borderStrokeColor,
       dasharray: this.config.borderStrokeDasharray,
     })
+
+    // add a radius
     if (this.config.nodeType !== "path") {
       node.radius(this.config.borderRadius)
     }
 
-    // add a re-usable light and color highlight
-    const i = [...this.canvas.defs().node.childNodes].findIndex((d) => d.id === "defaultNodeBorderFilter") || -1
+    // create a re-usable drop shadow
+    const defId = "defaultNodeBorderFilter"
+    const i = [...this.canvas.defs().node.childNodes].findIndex((d) => d.id === defId) || -1
     if (i === -1) {
       const filter = new Filter()
-      filter.id("defaultNodeBorderFilter")
+      filter.id(defId)
       const blur = filter.offset(0, 0).in(filter.$source).gaussianBlur(2)
       const color = filter.composite(filter.flood("#fff"), blur, "in")
       filter.merge(color, filter.$source)
-      // this.canvas.defs().add(filter)
-      // node.filterWith(filter)
-    } else {
-      // const filter = this.canvas.defs().get(i)
-      // node.filterWith(filter)
     }
 
     return node
@@ -278,10 +270,14 @@ class BaseNode {
 
   /**
    * Creates the nodes icon.
+   * @return {SVG} The icon image.
+   * 
+   * @see https://svgjs.com/docs/3.0/shape-elements/#svg-image
    */
   createIcon() {
     let icon = null
 
+    // use a default icon
     if (this.config.iconUrl === null) {
       if (this.type === "control") {
         icon = this.canvas.image(FallbackControlIcon)
@@ -295,34 +291,43 @@ class BaseNode {
       if (this.type === "custom") {
         icon = this.canvas.image(FallbackCustomIcon)
       }
-    } else {
+    } else { // or a provided one
       icon = this.canvas.image(this.config.iconUrl)
     }
 
+
+    // set the starting size (Note: 0 is not accepted by the library)
     icon.size(1, 1)
     return icon
   }
 
 
   /**
-   * Creates the nodes label.
+   * Creates the nodes label using HTML.
+   * @return {SVG} The label in HTML format.
+   * 
+   * @see https://svgjs.com/docs/3.0/shape-elements/#svg-foreignobject
+   * @see https://github.com/xavi160/Clamp.js
    */
-  createLabel(textAlign = "center") {
-    // this.config.minTextHeight is actually not useful for a colored background, therefore its omitted
+  createLabel() {
+    // create the foreign object which holds 
+    // Note: this.config.minTextHeight is actually not useful for a colored background, therefore its omitted
     const fobj = this.canvas.foreignObject(this.config.minTextWidth, 1)
 
+    // simply return if there is no label provided
+    if (this.label === "") return fobj
 
-    if (this.label === "") {
-      return fobj
-    }
 
+    // create the label background
     const background = document.createElement("div")
     background.style.background = this.config.labelBackground
     background.style.padding = `${this.config.offset / 2}px`
-    background.style.textAlign = textAlign
+    background.style.textAlign = "center"
     background.style.width = `${this.config.minTextWidth}px`
     background.setAttribute("id", "label")
 
+
+    // create the actual label text
     const label = document.createElement("div")
     label.innerText = this.label
     label.style.color = this.config.labelColor
@@ -330,16 +335,49 @@ class BaseNode {
     label.style.fontFamily = this.config.labelFontFamily
     label.style.fontWeight = this.config.labelFontWeight
     label.style.fontStyle = this.config.labelFontStyle
+
+
+    // adjust the the line size
     clamp(label, { clamp: this.config.minLabelLineClamp })
 
+    // add the label to the background element
     background.appendChild(label)
+
+
+    // add the HTML to the SVG
     fobj.add(background)
+
+
+    // disable the user-select css property
     fobj.css("user-select", "none")
 
+    // adjust the svg position
     fobj.dmove(this.config.borderStrokeWidth, this.config.borderStrokeWidth)
 
     return fobj
   }
+
+
+  /**
+   * Removes the rendered SVG object from the canvas.
+   */
+  removeSVG() {
+    if (this.isRendered() === false) return
+
+    const x = this.finalX
+    const y = this.finalY
+
+    this.svg.back()
+
+    this.svg
+      .animate({ duration: this.config.animationSpeed })
+      .transform({ scale: 0.001, position: [x, y + 100] })
+      .after(() => {
+        try { this.svg.remove() } catch (error) { }
+        this.svg = null
+      })
+  }
+
 
 
   /**
@@ -357,6 +395,10 @@ class BaseNode {
 
   addOutgoingEdge(outgoingEdge) {
     this.outgoingEdges.push(outgoingEdge)
+  }
+
+  getOutgoingEdges() {
+    return this.outgoingEdges
   }
 
   getSVGBbox() {
@@ -599,6 +641,10 @@ class BaseNode {
     this.parent = parent
   }
 
+  getParentId() {
+    return this.parentId
+  }
+
   setDepth(depth) {
     this.depth = depth
   }
@@ -622,8 +668,6 @@ class BaseNode {
   getId() {
     return this.id
   }
-
-
 }
 
 

@@ -17,7 +17,6 @@ class EdgeFactory {
    * @return {BaseEdge} The base class representing the edge.
    */
   static create(data, canvas, fromNode, toNode, { thinEdge, customEdge, boldEdge }) {
-
     const validTypes = ["dashed", "solid", "bold", "custom"]
     const type = validTypes.includes(data.type) ? data.type : "solid"
 

@@ -40,7 +40,7 @@ The underlying data can be updated by adding or removing nodes and edges from or
 setTimeout(() => {
   graph.excludeNode(160)
 
-  visualization.update(tree2, graph, { orientation: "horizontal" })
+  visualization.update(tree2, graph)
 }, 2000)
 
 
@@ -58,13 +58,16 @@ Updating the layout configuration can be achieved using the "update" method. Ava
 
 ```javascript
  setTimeout(() => {
+
     visualization.update(tree, { orientation: "horizontal", renderingSize: "max", renderDepth: 1 })
   }, 2000)
 ```
 
 ### Change mouse events
 
-There are two ways to override the default mouse event behaviour. First, by passing an array as constructor argument and second, by utilizing the addEventListener method. A method can be triggered by multiple different events.
+There are two ways to override the default mouse event behaviour. First, by passing an array as constructor argument and second, by utilizing the addEventListener method. A method can be triggered by multiple different events. The following events are available:
+
+* "expandOrCollapseEvent" - loads or removes already loaded data from the layout and updates its. <em>More information for [addEventListener](./Visualization.html#addEventListener)</em>.   
 
 ```javascript
 // constructor argument
@@ -88,10 +91,21 @@ visualization.render(graph, tree)
 
 ### Override default node and edge representations
 
-Changing the appearance of nodes can be achieved in three different ways. First by individually filling the nodes or edges "config" attribute in the database entry. Second, by passing an object to the constructure and lastly, by utilizing addCustomNodeRepresentation and addCustomEdgeRepresentation methods.
+Changing the appearance of nodes can be achieved in three different ways. First by individually filling the nodes or edges "config" attribute in the database entry. Second, by passing an object to the constructure and lastly, by utilizing addCustomNodeRepresentation and addCustomEdgeRepresentation methods. The following representation changes are available:
+
+* "asset" - an object that contains configuration that overrides values from the [Asset Node Configuration](./AssetNodeConfiguration.html) object
+* "control" - an object that contains configuration that overrides values from the [Control Node Configuration](./ControlNodeConfiguration.html) object
+* "custom" - an object that contains configuration that overrides values from the [Custom Node Configuration](./CustomNodeConfiguration.html) object
+* "requirement" - an object that contains configuration that overrides values from the [Requirement Node Configuration](./RequirementNodeConfiguration.html) object
+* "risk" - an object that contains configuration that overrides values from the [Risk Node Configuration](./RiskNodeConfiguration.html) object
+
+
+* "boldEdge" - an object that contains configuration that overrides values from the [Bold Edge Configuration](./BoldEdgeConfiguration.html) object
+* "customEdge" - an object that contains configuration that overrides values from the [Custom Edge Configuration](./CustomEdgeConfiguration.html) object
+* "thinEdge" - an object that contains configuration that overrides values from the [Thin Edge Configuration](./ThinEdgeConfiguration.html) object
 
 ```javascript
-// constructor arguments (which no requires something for the event argument)
+// constructor arguments that now requires an event argument or undefined
 const tree = new TreeLayout(
   { rootId: 137, renderDepth: 1, animationSpeed: 300 }, 
   undefined, 

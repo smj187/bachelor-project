@@ -8,16 +8,16 @@ import BoldEdgeConfiguration from "../configuration/BoldEdgeConfiguration"
  * @property {Canvas} canvas The nested canvas to render the edge on.
  * @property {BaseEdge} fromNode The starting node reference.
  * @property {BaseEdge} toNode The ending node reference.
- * @property {Object} customBoldEdgeConfig An object containing information to change the default visualization.
- * 
+ * @property {Object} customRepresentation An object containing information to change the default visualization.
+ *
  * @see BoldEdgeConfiguration
  *
  */
 class BoldEdge extends BaseEdge {
-  constructor(data, canvas, fromNode, toNode, customBoldEdgeConfig = {}) {
+  constructor(data, canvas, fromNode, toNode, customRepresentation = {}) {
     super(data, canvas, fromNode, toNode)
 
-    this.config = { ...BoldEdgeConfiguration, ...customBoldEdgeConfig }
+    this.config = { ...BoldEdgeConfiguration, ...customRepresentation }
   }
 
 
@@ -99,8 +99,6 @@ class BoldEdge extends BaseEdge {
   }
 
 
-
-
   /**
    * Transforms an edge to its final rendered position.
    */
@@ -170,7 +168,6 @@ class BoldEdge extends BaseEdge {
     const y7 = y0 + (lineWidth / 2) * Math.sin(theta + delta * -1)
 
 
-
     // this.canvas.circle(2).fill("#0f0").center(x0, y0)
     // this.canvas.circle(2).fill("#75f").center(x1, y1)
     // this.canvas.circle(2).fill("#00f").center(x2, y2)
@@ -194,7 +191,6 @@ class BoldEdge extends BaseEdge {
     `
     return plot
   }
-
 }
 
 export default BoldEdge

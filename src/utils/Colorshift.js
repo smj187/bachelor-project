@@ -2,10 +2,10 @@
 
 /**
  * Programmatically lightns or darkens a hex color.
- * 
+ *
  * @param {String} col The color to change.
  * @param {String} amt The amout to change it.
- * 
+ *
  * @see https://www.mmbyte.com/article/9269.html
  */
 const colorshift = (col, amt) => {

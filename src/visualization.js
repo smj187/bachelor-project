@@ -14,8 +14,8 @@ import Graph from "./data/Graph"
 import VisualizationConfiguration from "./configuration/VisualizationConfiguration"
 
 
-
 /**
+ * Canvas
  * @description The canvas element where all svgs are held.
  * @typedef {Canvas} Canvas
  *
@@ -23,6 +23,15 @@ import VisualizationConfiguration from "./configuration/VisualizationConfigurati
  */
 
 /**
+ * SVG
+ * @description A SVG object provided by svgdotjs
+ * @type {SVG} SVG
+ * 
+ * @see https://svgjs.com/docs/3.0/container-elements/
+ */
+
+/**
+ * ForeignObject
  * @description A foreign object which holds custom HTML.
  *
  * @typedef {ForeignObject} ForeignObject
@@ -31,6 +40,7 @@ import VisualizationConfiguration from "./configuration/VisualizationConfigurati
  */
 
 /**
+ * Data
  * @description This object contains data that was loaded from the backend.
  * @typedef {Data} Data
  *
@@ -52,8 +62,6 @@ import VisualizationConfiguration from "./configuration/VisualizationConfigurati
  */
 
 
-
-
 /**
  * The class is responsible for creating and updating layouts and serves as main entry point.
  *
@@ -66,7 +74,8 @@ class Visualization {
     if (this.config.databaseUrl === null
       || this.config.nodeEndpoint === null
       || this.config.edgeEndpoint === null
-      || this.config.contextualRelationshipEndpoint === null) {
+      || this.config.contextualRelationshipEndpoint === null
+    ) {
       throw new Error(
         `The following parameters are required:
           - 'databaseUrl' 
@@ -154,6 +163,8 @@ class Visualization {
   }
 
 
+
+
   /**
    * This is the main method to gernate layouts. It calls the required methods for each layout type and
    * passes further information about the new layout.
@@ -176,27 +187,22 @@ class Visualization {
       edgeEndpoint: this.config.edgeEndpoint,
       contextualRelationshipEndpoint: this.config.contextualRelationshipEndpoint,
     })
+
     layout.setNodeData(initialGraphData.getNodes())
     layout.setEdgeData(initialGraphData.getEdges())
+    layout.setLayoutReferences(this.layouts)
+    layout.setGlobalLayoutSpacing(this.config.layoutSpacing)
 
 
     this.layouts.push(layout)
-    layout.setLayoutReferences(this.layouts)
-    layout.setLayoutIdentifier(this.layouts.length - 1)
-
-
-
 
     if (layout instanceof GridLayout) {
-      // const createdLayout = await layout.loadInitialGridDataAsync()
-      // const index = this.layouts.indexOf(layout)
-      // const layouts = this.layouts.slice(0, index)
-      // const offset = layouts.map((l) => l.layoutInfo.w).reduce((a, b) => a + b, 0)
-      // createdLayout.calculateLayout(offset)
-      // createdLayout.renderLayout()
+      layout.setLayoutIdentifier(`grid_${this.generateRandomLayoutId()}`)
+      await layout.loadInitialGridDataAsync()
     }
 
     if (layout instanceof ContextualLayout) {
+      layout.setLayoutIdentifier(`contextual_${this.generateRandomLayoutId()}`)
       // const createdLayout = await layout.loadInitialContextualDataAsync()
       // const layouts = this.layouts.slice(0, this.layouts.indexOf(layout))
       // const offset = layouts.map((l) => l.layoutInfo.w).reduce((a, b) => a + b, 0)
@@ -205,17 +211,22 @@ class Visualization {
     }
 
     if (layout instanceof RadialLayout) {
+      layout.setLayoutIdentifier(`radial_${this.generateRandomLayoutId()}`)
       await layout.loadInitialRadialDataAsync()
-
     }
 
     if (layout instanceof TreeLayout) {
+      layout.setLayoutIdentifier(`tree_${this.generateRandomLayoutId()}`)
       await layout.loadInitialTreeDataAsync()
     }
 
+
+    // calculate the amount of which the layout needs to shift right to avoid overlapping conflicts
     const layouts = this.layouts.slice(0, this.layouts.indexOf(layout))
-    const offset = layouts.map((l) => l.layoutInfo.w).reduce((a, b) => a + b, 0)
-    layout.calculateLayout(offset + (this.config.layoutSpacing * (this.layouts.length - 1)), {})
+    const prevOffset = layouts.map((l) => l.layoutInfo.w).reduce((a, b) => a + b, 0)
+    const offset = prevOffset + (this.config.layoutSpacing * (this.layouts.length - 1))
+
+    layout.calculateLayout({ offset })
     layout.renderLayout({})
 
 
@@ -237,9 +248,7 @@ class Visualization {
    * @see GridLayoutConfiguration
    */
   async update(layout, graphOrConfigData, config) {
-
     if (graphOrConfigData instanceof Graph) {
-
       if (config) {
         layout.setConfig({ ...layout.getConfig(), ...config })
 
@@ -253,9 +262,16 @@ class Visualization {
           layout.setRootId(config.rootId || layout.getRootId())
         }
 
+        if (layout instanceof GridLayout) {
+          // we dont need to to anything here..
+        }
+
+        if (layout instanceof ContextualLayout) {
+          // TODO:
+        }
       }
 
-      await layout.removeLayoutAsync()
+      await layout.removeLayoutAsync({ removeOldData: true })
       layout.setNodeData(graphOrConfigData.getNodes())
       layout.setEdgeData(graphOrConfigData.getEdges())
 
@@ -267,11 +283,21 @@ class Visualization {
         await loadInitialRadialDataAsync()
       }
 
-      const layouts = this.layouts.slice(0, this.layouts.indexOf(layout))
-      const offset = layouts.map((l) => l.layoutInfo.w).reduce((a, b) => a + b, 0)
-      layout.calculateLayout(offset, {})
-      layout.renderLayout({})
+      if (layout instanceof GridLayout) {
+        await layout.loadInitialGridDataAsync()
+      }
 
+      if (layout instanceof ContextualLayout) {
+        // TODO:
+      }
+
+      // const layouts = this.layouts.slice(0, this.layouts.indexOf(layout))
+      // const prevOffset = layouts.map((l) => l.layoutInfo.w).reduce((a, b) => a + b, 0)
+      // const offset = prevOffset + (this.config.layoutSpacing * (this.layouts.length - 1))
+      // layout.calculateLayout({ offset })
+      // layout.renderLayout({})
+
+      layout.updateLayoutsToTheRight({ isReRender: true })
     } else {
       const conf = graphOrConfigData instanceof Graph ? config : graphOrConfigData
 
@@ -292,7 +318,17 @@ class Visualization {
         "hAspect",
         "wAspect",
         "rootId",
-        "renderDepth"
+        "renderDepth",
+
+        // grid
+        "vSpacing",
+        "hSpacing",
+        "expanderTextColor",
+        "expanderFontFamily",
+        "expanderFontSize",
+        "expanderFontWeight",
+        "expanderFontStyle",
+        "expanderTextBackground"
 
       ]
       const requireRebuild = reRenderOperations.filter((r) => Object.keys(conf).includes(r)).length > 0
@@ -303,7 +339,7 @@ class Visualization {
         layout.setRootId(conf.rootId || layout.getRootId())
 
         if (requireRebuild === true) {
-          await layout.rebuildTreeLayout()
+          await layout.rebuildTreeLayoutAsync({ removeOldData: true })
         }
       }
 
@@ -313,15 +349,25 @@ class Visualization {
         layout.setRootId(conf.rootId || layout.getRootId())
 
         if (requireRebuild === true) {
-          await layout.rebuildRadialLayout()
+          await layout.rebuildRadialLayoutAsync({ removeOldData: true })
         }
       }
 
+      if (layout instanceof GridLayout) {
+        layout.setConfig({ ...layout.getConfig(), ...conf })
+
+        if (requireRebuild === true) {
+          await layout.rebuildGridLayoutAsync({ removeOldData: false })
+        }
+
+      }
+
+      if (layout instanceof ContextualLayout) {
+        // TODO:
+      }
+
       layout.updateLayoutsToTheRight({ isReRender: true })
-
     }
-
-
   }
 
 
@@ -339,16 +385,15 @@ class Visualization {
    * @see GridLayout
    */
   addEventListener(layout, event, modifier, func) {
-    layout.registerEventListener(event, modifier, func)
+    layout.registerEventListener({ event, modifier, func })
   }
-
 
 
   /**
    * Adds a custom node representation for all nodes in the layout.
    * @param {BaseLayout} layout The layout where to add additional custom node representations.
    * @param {Object} representation An object containing the custom representation key-value pairs.
-   * 
+   *
    * @see AssetNodeConfiguration
    * @see ControlNodeConfiguration
    * @see CustomNodeConfiguration
@@ -363,7 +408,7 @@ class Visualization {
    * Adds a custom edge representation for all nodes in the layout.
    * @param {BaseLayout} layout The layout where to add additional custom edge representations.
    * @param {Object} representation An object containing the custom representation key-value pairs.
-   * 
+   *
    * @see BoldEdgeConfiguration
    * @see CustomEdgeConfiguration
    * @see ThinEdgeConfiguration
@@ -378,36 +423,52 @@ class Visualization {
    *
    * @async
    * @param {BaseLayout} currentLayout The currently rendered layout.
+   * @param {Graph} existingGraphData The existing graph data structure containing nodes and edges.
    * @param {BaseLayout} newLayout The requested new layout type.
+   * @return {Promise<BaseLayout>} A promise with the newly created and rendered layout.
    *
    * @see TreeLayout
    * @see RadialLayout
    * @see ContextualLayout
    * @see GridLayout
    */
-  async transform(currentLayout, newLayout) {
-    newLayout.setCanvas(this.canvas)
-    newLayout.setConfig({ databaseUrl: this.config.databaseUrl })
+  async transform(currentLayout, existingGraphData, newLayout) {
+
+    // remove the existing layout 
+    await currentLayout.removeLayoutAsync({ removeOldData: true, })
 
 
-    if (newLayout instanceof RadialLayout) {
-      newLayout.createRadialDataAsync(currentLayout.getNodeData(), currentLayout.getEdgeData())
+    // update existing layout references
+    this.layouts = this.layouts.filter(layout => layout !== currentLayout)
+
+    // the amount of which to shift a layout to the left 
+    const shiftToLeft = currentLayout.layoutInfo.w
+
+    this.layouts.forEach(layout => {
+      layout.calculateLayout({ offset: layout.getCurrentOffset() - shiftToLeft - this.config.layoutSpacing })
+      layout.setLayoutReferences(layout.getLayoutReferences().filter(l => l !== currentLayout))
+      layout.renderLayout({ isReRender: true })
+    })
+
+
+    // simply call the render method again
+    return await this.render(existingGraphData, newLayout)
+  }
+
+
+  /**
+   * Helper method that generates a unique layout identifier.
+   * @returns {String} A 5 character unique string.
+   */
+  generateRandomLayoutId() {
+
+    const letters = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    const len = 5
+    let rtn = "";
+    for (let i = 0; i < len; i += 1) {
+      rtn += letters.charAt(Math.floor(Math.random() * letters.length));
     }
-
-    if (newLayout instanceof GridLayout) {
-      newLayout.createGridDataAsync(currentLayout.getNodeData(), currentLayout.getEdgeData())
-    }
-
-    if (newLayout instanceof TreeLayout) {
-      newLayout.createRadialDataAsync(currentLayout.getNodeData(), currentLayout.getEdgeData())
-    }
-
-    if (newLayout instanceof ContextualLayout) {
-      newLayout.createContextualDataAsync(currentLayout.getNodeData(), currentLayout.getEdgeData())
-    }
-
-
-    currentLayout.removeLayout()
+    return rtn;
   }
 }
 

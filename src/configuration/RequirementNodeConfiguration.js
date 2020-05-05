@@ -8,7 +8,10 @@
  * @property {Number} minWidth=150                  - Sets the minimal node width.
  * @property {Number} minHeight=80                  - Sets the minimal node height.
  *
- * @property {Array} states=StateArray              - Determines an array of aviable requirement states.
+ * @property {Array.<DefaultStates>} states=Array   - Determines an array of aviable requirement states.
+ * @property {String} states.state=provided         - Determines an array of aviable requirement states.
+ * @property {String} states.name=provided          - Determines an array of aviable requirement states.
+ * @property {String} states.color=provided         - Determines an array of aviable requirement states.
  *
  * @property {String} iconUrl=null                  - Determines the path to the image icon (if this value is null, the default icon is used).
  * @property {Number} minIconOpacity=0.5            - Determines the basic visibility of the icon in minimal representation.
@@ -23,10 +26,8 @@
  * @property {Number} offset=8                      - Determines the spacing used for padding between label and background.
  * @property {Number} animationSpeed=300            - Determines how fast SVG elements animates inside the current layout.
  * @property {Number} borderRadius=5                - Determines the nodes border radius.
- * @property {Number} borderStrokeWidth=1           - Determines the nodes border stroke width.
- * @property {String} borderStrokeColor=#84a8f2     - Determines the nodes border color.
- * @property {String} borderStrokeDasharray="5"     - Determines the nodes gaps used inside the border.
- * @property {String} backgroundColor=#ffffff       - Determines the nodes background color.
+ * @property {Number} borderStrokeWidth=0           - Determines the nodes border stroke width.
+ * @property {String} borderStrokeDasharray="0"     - Determines the nodes gaps used inside the border.
  *
  * @property {Number} minTextWidth=145              - Determines the text width for the label in minimal representation.
  * @property {Number} minLabelLineClamp=2           - Determines how many lines are visible for the label in minimal representation.
@@ -75,10 +76,8 @@ const RequirementNodeConfiguration = {
   offset: 8,
   animationSpeed: 300,
   borderRadius: 8,
-  borderStrokeWidth: 1,
-  borderStrokeColor: "#666666",
+  borderStrokeWidth: 0,
   borderStrokeDasharray: "0",
-  backgroundColor: "#ffffff",
 
 
   // text

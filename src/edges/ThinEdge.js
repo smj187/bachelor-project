@@ -8,16 +8,16 @@ import ThinEdgeConfiguration from "../configuration/ThinEdgeConfiguration"
  * @property {Canvas} canvas The nested canvas to render the edge on.
  * @property {BaseEdge} fromNode The starting node reference.
  * @property {BaseEdge} toNode The ending node reference.
- * @property {Object} customThinEdgeConfig An object containing information to change the default visualization.
- * 
+ * @property {Object} customRepresentation An object containing information to change the default visualization.
+ *
  * @see ThinEdgeConfiguration
  *
  */
 class ThinEdge extends BaseEdge {
-  constructor(data, canvas, fromNode, toNode, customThinEdgeConfig = {}) {
+  constructor(data, canvas, fromNode, toNode, customRepresentation = {}) {
     super(data, canvas, fromNode, toNode)
 
-    this.config = { ...ThinEdgeConfiguration, ...this.config, ...customThinEdgeConfig }
+    this.config = { ...ThinEdgeConfiguration, ...this.config, ...customRepresentation }
 
 
     this.animation = null
@@ -100,7 +100,6 @@ class ThinEdge extends BaseEdge {
    * Transforms an edge to its final rendered position.
    */
   transformToFinalPosition({ isReRender = false }) {
-
     this.svg.back()
 
     if (this.animation !== null) {
@@ -108,7 +107,6 @@ class ThinEdge extends BaseEdge {
     }
 
     if (isReRender === true) {
-
       this.animation = this
         .svg
         .get(0)
@@ -127,9 +125,7 @@ class ThinEdge extends BaseEdge {
           .animate({ duration: this.config.animationSpeed })
           .center(x, y)
       }
-    }
-    else {
-
+    } else {
       this.animation = this
         .svg
         .get(0)
@@ -148,9 +144,6 @@ class ThinEdge extends BaseEdge {
       }
     }
   }
-
-
-
 }
 
 

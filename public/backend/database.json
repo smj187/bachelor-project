@@ -1075,7 +1075,7 @@
             "type": "control",
             "state": "FULFILLED",
             "attributes": null,
-            "tooltipText": null,
+            "tooltipText": "some tooltip text",
             "parent": 110,
             "children": [
                 127,

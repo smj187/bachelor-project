@@ -7,13 +7,15 @@ import AssetNodeConfiguration from "../configuration/AssetNodeConfiguration"
  * This class is responsible for the visual representation of assets.
  * @property {Data} data The loaded data element from a database.
  * @property {Canvas} canvas The nested canvas to render the node on.
- * @property {Object} overrideRepresentation An optional object that contains information to override default representations.
+ * @property {Object} customRepresentation An optional object that contains information to override default representations.
+ * 
+ * @see AssetNodeConfiguration
  */
 class AssetNode extends BaseNode {
-  constructor(data, canvas, overrideRepresentation = {}) {
+  constructor(data, canvas, customRepresentation = {}) {
     super(data, canvas)
 
-    this.config = { ...AssetNodeConfiguration, ...data.config, ...overrideRepresentation }
+    this.config = { ...AssetNodeConfiguration, ...data.config, ...customRepresentation }
   }
 
 
@@ -120,11 +122,13 @@ class AssetNode extends BaseNode {
 
 
   /**
-   * Transforms the node to its final rendered position.
-   * @param {Number} [X=finalX] The final X position.
-   * @param {Number} [Y=finalY] The final Y position.
-   */
-  transformToFinalPosition(X = this.finalX, Y = this.finalY) {
+  * Transforms the node to its final rendered position.
+  * 
+  * @param {Object} [opts={ }] An object containing additional information.
+  * @param {Number} [opts.FX=this.finalY] The final X render position.
+  * @param {Number} [opts.FY=this.finalY] The final Y render position.
+  */
+  transformToFinalPosition({ X = this.finalX, Y = this.finalY }) {
     if (this.isRendered() === false) {
       return
     }
@@ -147,12 +151,14 @@ class AssetNode extends BaseNode {
 
   /**
   * Renders an asset node in minimal representation.
-  * @param  {Number} [IX=initialX] The initial X render position.
-  * @param  {Number} [IY=initialY] The initial Y render position.
-  * @param  {Number} [FX=finalX] The final X render position.
-  * @param  {Number} [FY=finalY] The final Y render position.
+  * 
+  * @param {Object} [opts={ }] An object containing additional information.
+  * @param {Number} [opts.IX=this.initialX] The initial X render position.
+  * @param {Number} [opts.IY=this.initialY] The initial Y render position.
+  * @param {Number} [opts.FX=this.finalY] The final X render position.
+  * @param {Number} [opts.FY=this.finalY] The final Y render position.
   */
-  renderAsMin(IX = this.initialX, IY = this.initialY, FX = this.finalX, FY = this.finalY) {
+  renderAsMin({ IX = this.initialX, IY = this.initialY, FX = this.finalX, FY = this.finalY }) {
     // create svg elements
     const svg = this.createSVGElement()
     const node = this.createNode()
@@ -206,12 +212,14 @@ class AssetNode extends BaseNode {
 
   /**
   * Renders an asset node in detailed representation.
-  * @param  {Number} [IX=initialX] The initial X render position.
-  * @param  {Number} [IY=initialY] The initial Y render position.
-  * @param  {Number} [FX=finalX] The final X render position.
-  * @param  {Number} [FY=finalY] The final Y render position.
+  * 
+  * @param {Object} [opts={ }] An object containing additional information.
+  * @param {Number} [opts.IX=this.initialX] The initial X render position.
+  * @param {Number} [opts.IY=this.initialY] The initial Y render position.
+  * @param {Number} [opts.FX=this.finalY] The final X render position.
+  * @param {Number} [opts.FY=this.finalY] The final Y render position.
   */
-  renderAsMax(IX = this.initialX, IY = this.initialY, FX = this.finalX, FY = this.finalY) {
+  renderAsMax({ IX = this.initialX, IY = this.initialY, FX = this.finalX, FY = this.finalY }) {
     // create svg elements
     const svg = this.createSVGElement()
     const node = this.createNode()
@@ -264,10 +272,12 @@ class AssetNode extends BaseNode {
 
   /**
   * Transforms a node from minimal version to detailed representation.
-  * @param {Number} [X=finalX] The final X render position.
-  * @param {Number} [Y=finalY] The final Y render position.
+  * 
+  * @param {Object} [opts={ }] An object containing additional information.
+  * @param {Number} [opts.FX=this.finalY] The final X render position.
+  * @param {Number} [opts.FY=this.finalY] The final Y render position.
   */
-  transformToMax(X = this.finalX, Y = this.finalY) {
+  transformToMax({ X = this.finalX, Y = this.finalY }) {
     // update current elements
     this
       .svg
@@ -334,10 +344,12 @@ class AssetNode extends BaseNode {
 
   /**
   * Transforms a node from detailed representation to minimal version.
-  * @param {Number} [X=finalX] The final X render position.
-  * @param {Number} [Y=finalY] The final Y render position.
+  * 
+  * @param {Object} [opts={ }] An object containing additional information.
+  * @param {Number} [opts.FX=this.finalY] The final X render position.
+  * @param {Number} [opts.FY=this.finalY] The final Y render position.
   */
-  transformToMin(X = this.finalX, Y = this.finalY) {
+  transformToMin({ X = this.finalX, Y = this.finalY }) {
     // update current elements
 
     this

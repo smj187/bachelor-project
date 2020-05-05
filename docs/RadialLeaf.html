@@ -3,7 +3,7 @@
 <head>
     
     <meta charset="utf-8">
-    <title>JSDoc: GridLayout</title>
+    <title>JSDoc: RadialLeaf</title>
 
     <script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -52,7 +52,7 @@
                 <div class="content" id="main-content-wrapper">
                     <header class="page-title">
                         <p>Class</p>
-                        <h1>GridLayout</h1>
+                        <h1>RadialLeaf</h1>
                     </header>
                     
                     
@@ -64,9 +64,9 @@
 
 <header>
     
-        <h2><span class="attribs"><span class="type-signature"></span></span>GridLayout<span class="signature">(customConfig<span class="signature-attributes">opt</span>, customEvents<span class="signature-attributes">opt</span>, customNodes<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h2>
+        <h2><span class="attribs"><span class="type-signature"></span></span>RadialLeaf<span class="signature">()</span><span class="type-signature"></span></h2>
         
-            <div class="class-description"><p>This class calculates and renders the grid layout and tries to arrange its nodes in a column-row-based format.</p></div>
+            <div class="class-description"><p>This class calculates and renders an indication if more child nodes may be available within a radial layout.</p></div>
         
     
 </header>
@@ -82,12 +82,12 @@
 
 
     
-    <h4 class="name" id="GridLayout">
-        <a class="href-link" href="#GridLayout">#</a>
+    <h4 class="name" id="RadialLeaf">
+        <a class="href-link" href="#RadialLeaf">#</a>
         
         <span class="code-name">
             
-                new GridLayout<span class="signature">(customConfig<span class="signature-attributes">opt</span>, customEvents<span class="signature-attributes">opt</span>, customNodes<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span>
+                new RadialLeaf<span class="signature">()</span><span class="type-signature"></span>
             
         </span>
     </h4>
@@ -104,10 +104,15 @@
 
 
 
-    <h5>Parameters:</h5>
+
+
+
+
+    <h5 class="subsection-title">Properties:</h5>
+
     
 
-<table class="params">
+<table class="props">
     <thead>
     <tr>
         
@@ -117,11 +122,7 @@
         <th>Type</th>
 
         
-        <th>Attributes</th>
-        
 
-        
-        <th>Default</th>
         
 
         <th class="last">Description</th>
@@ -130,133 +131,100 @@
 
     <tbody>
     
-
         
 <tr class="deep-level-0">
-  
-      <td class="name"><code>customConfig</code></td>
-  
+    
+        <td class="name"><code>canvas</code></td>
+    
 
-  <td class="type">
-  
-      
-<span class="param-type">Object</span>
-
-
-  
-  </td>
-
-  
-      <td class="attributes">
-      
-          &lt;optional><br>
-      
-
-      
-
-      
-      </td>
-  
-
-  
-      <td class="default">
-      
-          { }
-      
-      </td>
-  
-
-  <td class="description last"><p>Overrides default layout configuration properties.
-Available options: <a href="GridLayoutConfiguration.html">GridLayoutConfiguration</a></p></td>
-</tr>
+    <td class="type">
+    
+        
+<span class="param-type"><a href="global.html#Canvas">Canvas</a></span>
 
 
     
-
-        
-<tr class="deep-level-0">
-  
-      <td class="name"><code>customEvents</code></td>
-  
-
-  <td class="type">
-  
-      
-<span class="param-type">Object</span>
-
-
-  
-  </td>
-
-  
-      <td class="attributes">
-      
-          &lt;optional><br>
-      
-
-      
-
-      
-      </td>
-  
-
-  
-      <td class="default">
-      
-          { }
-      
-      </td>
-  
-
-  <td class="description last"><p>Overrides event listener configuration properties.</p></td>
-</tr>
-
+    </td>
 
     
 
-        
-<tr class="deep-level-0">
-  
-      <td class="name"><code>customNodes</code></td>
-  
+    
 
-  <td class="type">
-  
-      
-<span class="param-type">Object</span>
-
-
-  
-  </td>
-
-  
-      <td class="attributes">
-      
-          &lt;optional><br>
-      
-
-      
-
-      
-      </td>
-  
-
-  
-      <td class="default">
-      
-          { }
-      
-      </td>
-  
-
-  <td class="description last"><p>Overrides default node representation properties.</p></td>
+    <td class="description last"><p>The current canvas to render the element on.</p></td>
 </tr>
 
+    
+        
+<tr class="deep-level-0">
+    
+        <td class="name"><code>node</code></td>
+    
+
+    <td class="type">
+    
+        
+<span class="param-type"><a href="BaseNode.html">BaseNode</a></span>
+
+
+    
+    </td>
+
+    
+
+    
+
+    <td class="description last"><p>The currently active and real leaf node representaion.</p></td>
+</tr>
+
+    
+        
+<tr class="deep-level-0">
+    
+        <td class="name"><code>root</code></td>
+    
+
+    <td class="type">
+    
+        
+<span class="param-type"><a href="BaseNode.html">BaseNode</a></span>
+
+
+    
+    </td>
+
+    
+
+    
+
+    <td class="description last"><p>The root node in the layout.</p></td>
+</tr>
+
+    
+        
+<tr class="deep-level-0">
+    
+        <td class="name"><code>config</code></td>
+    
+
+    <td class="type">
+    
+        
+<span class="param-type"><a href="RadialLayoutConfiguration.html">RadialLayoutConfiguration</a></span>
+
+
+    
+    </td>
+
+    
+
+    
+
+    <td class="description last"><p>An object containing visual restrictions.</p></td>
+</tr>
 
     
     </tbody>
 </table>
-
 
 
 
@@ -294,9 +262,9 @@ Available options: <a href="GridLayoutConfiguration.html">GridLayoutConfiguratio
 
     
         <p class="tag-source">
-            <a href="layouts_GridLayout.js.html" class="button">View Source</a>
+            <a href="layouts_helpers_RadialLeaf.js.html" class="button">View Source</a>
             <span>
-                <a href="layouts_GridLayout.js.html">layouts/GridLayout.js</a>, <a href="layouts_GridLayout.js.html#line17">line 17</a>
+                <a href="layouts_helpers_RadialLeaf.js.html">layouts/helpers/RadialLeaf.js</a>, <a href="layouts_helpers_RadialLeaf.js.html#line13">line 13</a>
             </span>
         </p>
     
@@ -352,238 +320,23 @@ Available options: <a href="GridLayoutConfiguration.html">GridLayoutConfiguratio
 
 
     
-    <h4 class="name" id="calculateLayout">
-        <a class="href-link" href="#calculateLayout">#</a>
+    <h4 class="name" id="isRendered">
+        <a class="href-link" href="#isRendered">#</a>
         
         <span class="code-name">
             
-                calculateLayout<span class="signature">(opts<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span>
+                isRendered<span class="signature">()</span><span class="type-signature"></span>
             
         </span>
     </h4>
     
 
     
-    <p class="summary">Calculates the tree layout based on an underlying algorithm.</p>
+    <p class="summary">Determins where the leaf is rendered or not.</p>
     
     
     <div class="description">
-        <p>Calculates the tree layout based on an underlying algorithm.</p>
-    </div>
-    
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-        <th>Attributes</th>
-        
-
-        
-        <th>Default</th>
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        
-<tr class="deep-level-0">
-  
-      <td class="name"><code>opts</code></td>
-  
-
-  <td class="type">
-  
-      
-<span class="param-type">Object</span>
-
-
-  
-  </td>
-
-  
-      <td class="attributes">
-      
-          &lt;optional><br>
-      
-
-      
-
-      
-      </td>
-  
-
-  
-      <td class="default">
-      
-          { }
-      
-      </td>
-  
-
-  <td class="description last"><p>An object containing additional information.</p></td>
-</tr>
-
-  
-  
-    
-<tr class="deep-level-1">
-  
-      <td class="name"><code>offset</code></td>
-  
-
-  <td class="type">
-  
-      
-<span class="param-type">Number</span>
-
-
-  
-  </td>
-
-  
-      <td class="attributes">
-      
-          &lt;optional><br>
-      
-
-      
-
-      
-      </td>
-  
-
-  
-      <td class="default">
-      
-          0
-      
-      </td>
-  
-
-  <td class="description last"><p>Determines the space the layout has to shift in order to avoid overlapping layouts.</p></td>
-</tr>
-
-  
-
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    
-
-    
-
-    
-
-    
-        <p class="tag-source">
-            <a href="layouts_GridLayout.js.html" class="button">View Source</a>
-            <span>
-                <a href="layouts_GridLayout.js.html">layouts/GridLayout.js</a>, <a href="layouts_GridLayout.js.html#line81">line 81</a>
-            </span>
-        </p>
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-</div>
-            
-                <div class="member">
-
-
-    
-    <h4 class="name" id="expandGridLayoutEvent">
-        <a class="href-link" href="#expandGridLayoutEvent">#</a>
-        
-            
-                <span class='tag'>async</span>
-            
-        
-        <span class="code-name">
-            
-                expandGridLayoutEvent<span class="signature">()</span><span class="type-signature"></span>
-            
-        </span>
-    </h4>
-    
-
-    
-    <p class="summary">Event method which either loads more data or removes existing data.</p>
-    
-    
-    <div class="description">
-        <p>Event method which either loads more data or removes existing data.</p>
+        <p>Determins where the leaf is rendered or not.</p>
     </div>
     
 
@@ -632,9 +385,125 @@ Available options: <a href="GridLayoutConfiguration.html">GridLayoutConfiguratio
 
     
         <p class="tag-source">
-            <a href="layouts_GridLayout.js.html" class="button">View Source</a>
+            <a href="layouts_helpers_RadialLeaf.js.html" class="button">View Source</a>
             <span>
-                <a href="layouts_GridLayout.js.html">layouts/GridLayout.js</a>, <a href="layouts_GridLayout.js.html#line47">line 47</a>
+                <a href="layouts_helpers_RadialLeaf.js.html">layouts/helpers/RadialLeaf.js</a>, <a href="layouts_helpers_RadialLeaf.js.html#line220">line 220</a>
+            </span>
+        </p>
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div class='columns method-parameter'>
+        <div class="column is-2"><label>Returns:</label></div>
+        <div class="column is-10">
+            
+                    
+
+<div class="columns">
+    
+    <div class='param-desc column is-7'><p>True, if the SVG is rendered, else false.</p></div>
+    
+    
+</div>
+
+                
+        </div>
+    </div>
+
+
+
+
+</div>
+            
+                <div class="member">
+
+
+    
+    <h4 class="name" id="removeSVG">
+        <a class="href-link" href="#removeSVG">#</a>
+        
+        <span class="code-name">
+            
+                removeSVG<span class="signature">()</span><span class="type-signature"></span>
+            
+        </span>
+    </h4>
+    
+
+    
+    <p class="summary">Removes the leaf node from the canvas and resets clears its SVG representation.</p>
+    
+    
+    <div class="description">
+        <p>Removes the leaf node from the canvas and resets clears its SVG representation.</p>
+    </div>
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    
+
+    
+
+    
+
+    
+        <p class="tag-source">
+            <a href="layouts_helpers_RadialLeaf.js.html" class="button">View Source</a>
+            <span>
+                <a href="layouts_helpers_RadialLeaf.js.html">layouts/helpers/RadialLeaf.js</a>, <a href="layouts_helpers_RadialLeaf.js.html#line208">line 208</a>
             </span>
         </p>
     
@@ -666,23 +535,23 @@ Available options: <a href="GridLayoutConfiguration.html">GridLayoutConfiguratio
 
 
     
-    <h4 class="name" id="renderLayout">
-        <a class="href-link" href="#renderLayout">#</a>
+    <h4 class="name" id="render">
+        <a class="href-link" href="#render">#</a>
         
         <span class="code-name">
             
-                renderLayout<span class="signature">(opts<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span>
+                render<span class="signature">(isReRender)</span><span class="type-signature"></span>
             
         </span>
     </h4>
     
 
     
-    <p class="summary">Renders the grid layout by creating SVG objects representing nodes and an additional expander.</p>
+    <p class="summary">Calculates and renders the leaf representation.</p>
     
     
     <div class="description">
-        <p>Renders the grid layout by creating SVG objects representing nodes and an additional expander.</p>
+        <p>Calculates and renders the leaf representation.</p>
     </div>
     
 
@@ -707,11 +576,7 @@ Available options: <a href="GridLayoutConfiguration.html">GridLayoutConfiguratio
         <th>Type</th>
 
         
-        <th>Attributes</th>
-        
 
-        
-        <th>Default</th>
         
 
         <th class="last">Description</th>
@@ -723,46 +588,6 @@ Available options: <a href="GridLayoutConfiguration.html">GridLayoutConfiguratio
 
         
 <tr class="deep-level-0">
-  
-      <td class="name"><code>opts</code></td>
-  
-
-  <td class="type">
-  
-      
-<span class="param-type">Object</span>
-
-
-  
-  </td>
-
-  
-      <td class="attributes">
-      
-          &lt;optional><br>
-      
-
-      
-
-      
-      </td>
-  
-
-  
-      <td class="default">
-      
-          { }
-      
-      </td>
-  
-
-  <td class="description last"><p>An object containing additional information.</p></td>
-</tr>
-
-  
-  
-    
-<tr class="deep-level-1">
   
       <td class="name"><code>isReRender</code></td>
   
@@ -777,29 +602,11 @@ Available options: <a href="GridLayoutConfiguration.html">GridLayoutConfiguratio
   </td>
 
   
-      <td class="attributes">
-      
-          &lt;optional><br>
-      
-
-      
-
-      
-      </td>
-  
 
   
-      <td class="default">
-      
-          false
-      
-      </td>
-  
 
-  <td class="description last"><p>Determines if the layout is rerenderd.</p></td>
+  <td class="description last"><p>Determines if the render process is triggered by a re-render operation.</p></td>
 </tr>
-
-  
 
 
     
@@ -843,9 +650,158 @@ Available options: <a href="GridLayoutConfiguration.html">GridLayoutConfiguratio
 
     
         <p class="tag-source">
-            <a href="layouts_GridLayout.js.html" class="button">View Source</a>
+            <a href="layouts_helpers_RadialLeaf.js.html" class="button">View Source</a>
             <span>
-                <a href="layouts_GridLayout.js.html">layouts/GridLayout.js</a>, <a href="layouts_GridLayout.js.html#line303">line 303</a>
+                <a href="layouts_helpers_RadialLeaf.js.html">layouts/helpers/RadialLeaf.js</a>, <a href="layouts_helpers_RadialLeaf.js.html#line47">line 47</a>
+            </span>
+        </p>
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</div>
+            
+                <div class="member">
+
+
+    
+    <h4 class="name" id="transformToFinalPosition">
+        <a class="href-link" href="#transformToFinalPosition">#</a>
+        
+        <span class="code-name">
+            
+                transformToFinalPosition<span class="signature">(isReRender)</span><span class="type-signature"></span>
+            
+        </span>
+    </h4>
+    
+
+    
+    <p class="summary">Transforms the leaf into the final position.</p>
+    
+    
+    <div class="description">
+        <p>Transforms the leaf into the final position.</p>
+    </div>
+    
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        
+<tr class="deep-level-0">
+  
+      <td class="name"><code>isReRender</code></td>
+  
+
+  <td class="type">
+  
+      
+<span class="param-type">Boolean</span>
+
+
+  
+  </td>
+
+  
+
+  
+
+  <td class="description last"><p>Determines if the render process is triggered by a re-render operation.</p></td>
+</tr>
+
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    
+
+    
+
+    
+
+    
+        <p class="tag-source">
+            <a href="layouts_helpers_RadialLeaf.js.html" class="button">View Source</a>
+            <span>
+                <a href="layouts_helpers_RadialLeaf.js.html">layouts/helpers/RadialLeaf.js</a>, <a href="layouts_helpers_RadialLeaf.js.html#line199">line 199</a>
             </span>
         </p>
     

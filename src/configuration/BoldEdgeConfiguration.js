@@ -9,7 +9,7 @@
  * @property {String} lineWidth=25                  - Determines the thickness of the SVG element.
  * @property {String} arrowWidth=40                 - Determines how long the arrow head appears.
  * @property {String} arrowHeight=20                - Determines the thickness of the arrow head.
- * 
+ *
  * @property {Number} strokeWidth=0                 - Determines the edges thickness.
  * @property {String} strokeColor=#ffffff           - Determines the edges color.
  * @property {String} strokeDasharray="0"           - Determines the graps in the edge line (dashed edge specific).

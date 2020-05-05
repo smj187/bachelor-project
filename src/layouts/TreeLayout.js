@@ -1,16 +1,17 @@
 import BaseLayout from "./BaseLayout"
-import Leaf from "./helpers/TreeLeaf"
+import TreeLeaf from "./helpers/TreeLeaf"
 import TreeLayoutConfiguration from "../configuration/TreeLayoutConfiguration"
 import { buildTreeFromNodes } from "../utils/TreeConstruction"
 import { calculateDistance } from "../utils/Calculations"
 
 
-
 /**
- * This class depicts given data within a tree layout. The algorithm to achieve this visualization is based on the Reingold-Tilford Algorithm. The main calculation process
- * is based on the initial work found in an article, but extended in such a way that it fits the needs for the defined scope of this project.
+ * This class depicts given data within a tree layout. The algorithm to achieve this visualization is based on the
+ * Reingold-Tilford Algorithm. The main calculation process is based on the initial work found in an article, but
+ * extended in such a way that it fits the needs for the defined scope of this project.
  *
- * @param {Object} [customConfig={ }] Overrides default layout configuration properties. Available options: {@link TreeLayoutConfiguration}
+ * @param {Object} [customConfig={ }] Overrides default layout configuration properties.
+ *                                    Available options: {@link TreeLayoutConfiguration}
  * @param {Object} [customEvents={ }] Overrides event listener configuration properties.
  * @param {Object} [customNodes={ }] Overrides default node representation properties.
  *
@@ -51,6 +52,7 @@ class TreeLayout extends BaseLayout {
   /**
    * Event method which either loads more data or removes existing data.
    * @param {BaseNode} node The node that recieved the event.
+   * @async
    */
   async expandOrCollapseDataAsyncEvent(node) {
     // remove clicked leaf indication
@@ -61,90 +63,88 @@ class TreeLayout extends BaseLayout {
     }
 
     // update the underlying data structure
-    await this.updateTreeDataAsync(node)
+    await this.updateTreeDataAsync({ clickedNode: node })
   }
 
 
-  /**
-   * Registers a new event listener to the layout.
-   * @param {String} event The layout where to add the event listener.
-   * @param {String} modifier The modifier name.
-   * @param {String} func The method name.
-   */
-  registerEventListener(event, modifier, func) {
-    // remove default event listener
-    if (this.events.find((d) => d.defaultEvent === true)) {
-      this.events = this.events.filter((e) => e.defaultEvent !== true)
-    }
-
-    // add new event listener
-    this.events.push({ event, modifier, func })
-  }
 
 
   /**
    * Calculates the tree layout based on an underlying algorithm.
-   * @param {Number} [offset=0] Determines the space the layout has to shift in order to avoid overlapping layouts.
+   *
    * @param {Object} [opts={ }] An object containing additional information.
+   * @param {Number} [opts.offset=0] Determines the space the layout has to shift in order to avoid overlapping layouts.
    * @param {Boolean} [opts.isReRender=false] Determines if the layout is rerenderd.
-   * @param {Number} [opts.x=null] The x coordinate for the clicked node.
-   * @param {Number} [opts.y=null] The y coordinate for the clicked node.
    */
-  calculateLayout(offset = 0, { isReRender = false }) {
+  calculateLayout({
+    offset = 0, isReRender = false
+  }) {
     const isVertical = this.config.orientation === "vertical"
-    this.initialOffset = offset
+    this.currentOffset = offset
 
 
     // initialize the tree with required information
     const initializeNodes = (node, parent = null, prevSibling = null, depth = 0) => {
+      // set required information
       node.setDepth(depth)
       node.setParent(parent)
       node.setPrevSibling(prevSibling)
 
+
+      // set intial X or Y value
       if (isVertical) {
         node.setFinalY(depth + this.config.translateY)
       } else {
         node.setFinalX(depth + this.config.translateX)
       }
 
+
+      // set an empty array of children, if they do not already exist
       if (node.getChildren() === undefined) {
         node.setChildren([])
       }
 
-      node.children.forEach((child, i) => {
-        const prev = i >= 1 ? node.children[i - 1] : null
-        initializeNodes(child, node, prev, depth + 1)
+
+      node.getChildren().forEach((child, i) => {
+        // the previouse node to the left or null
+        const prevNode = i >= 1 ? node.getChildren()[i - 1] : null
+        initializeNodes(child, node, prevNode, depth + 1)
       })
     }
 
-    // calculates the initial X and Y position
+
+    // start calculating the X and Y positions recursively
     const calculateXYPositions = (node) => {
-      node.children.forEach((child) => {
+      node.getChildren().forEach((child) => {
         calculateXYPositions(child)
       })
 
-      let w = this.config.renderingSize === "max" ? node.config.maxWidth : node.config.minWidth
-      let h = this.config.renderingSize === "max" ? node.config.maxHeight : node.config.minHeight
+
+      // get the node sizes based on the current layout rendering size
+      let w = this.config.renderingSize === "max" ? node.getMaxWidth() : node.getMinWidth()
+      let h = this.config.renderingSize === "max" ? node.getMaxHeight() : node.getMinHeight()
       w += this.config.hSpacing
       h += this.config.vSpacing
 
+
+      // calculate the Y position for the vertical tree
       if (isVertical) {
         node.setFinalY(node.getDepth() * h)
 
         // if node has no children
-        if (node.children.length === 0) {
+        if (node.getChildren().length === 0) {
           // set x to prev siblings x, or 0 for first node in row
           if (!node.isLeftMost()) {
             node.setFinalX(node.getPrevSibling().getFinalX() + w)
           } else {
             node.setFinalX(0)
           }
-        } else if (node.children.length === 1) {
+        } else if (node.getChildren().length === 1) {
           if (node.isLeftMost()) {
-            node.setFinalX(node.children[0].getFinalX())
+            node.setFinalX(node.getChildren()[0].getFinalX())
           } else {
             node.setFinalX(node.getPrevSibling().getFinalX() + w)
-            node.setModifier(node.getFinalX() - node.children[0].getFinalX())
+            node.setModifier(node.getFinalX() - node.getChildren()[0].getFinalX())
           }
         } else { // center node on 2+ nodes
           const left = node.getLeftMostChild()
@@ -162,24 +162,25 @@ class TreeLayout extends BaseLayout {
         node.setFinalX(node.getDepth() * w)
 
         // if node has no children
-        if (node.children.length === 0) {
+        if (node.getChildren().length === 0) {
           // set y to prev siblings y, or 0 for first node in col
           if (!node.isLeftMost()) {
             node.setFinalY(node.getPrevSibling().getFinalY() + h)
           } else {
             node.setFinalY(0)
           }
-        } else if (node.children.length === 1) {
+        } else if (node.getChildren().length === 1) {
           if (node.isLeftMost()) {
-            node.setFinalY(node.children[0].getFinalY())
+            node.setFinalY(node.getChildren()[0].getFinalY())
           } else {
             node.setFinalY(node.getPrevSibling().getFinalY() + h)
-            node.setModifier(node.getFinalY() - node.children[0].getFinalY())
+            node.setModifier(node.getFinalY() - node.getChildren()[0].getFinalY())
           }
-        } else { // center node on 2+ nodes
-          const left = node.getLeftMostChild()
-          const right = node.getRightMostChild()
-          const mid = (left.getFinalY() + right.getFinalY()) / 2
+        } else {
+          // center node on 2+ nodes
+          const leftNode = node.getLeftMostChild()
+          const rightNode = node.getRightMostChild()
+          const mid = (leftNode.getFinalY() + rightNode.getFinalY()) / 2
 
           if (node.isLeftMost()) {
             node.setFinalY(mid)
@@ -189,13 +190,10 @@ class TreeLayout extends BaseLayout {
           }
         }
       }
-
-      if (node.children.length === 1) {
-        // fixConflicts(node)
-      }
     }
 
-    // apply shift modifier
+
+    // apply shift modifier recursively
     const calculateModifier = (node, modifier = 0) => {
       if (isVertical) {
         node.setFinalX(node.getFinalX() + modifier)
@@ -203,14 +201,15 @@ class TreeLayout extends BaseLayout {
         node.setFinalY(node.getFinalY() + modifier)
       }
 
-      node.children.forEach((child) => {
-        calculateModifier(child, node.modifier + modifier)
+      node.getChildren().forEach((child) => {
+        calculateModifier(child, node.getModifier() + modifier)
       })
     }
 
-    // fixes any possible node overlapps
+
+    // fixes any possible node overlapps recursively
     const fixConflicts = (node) => {
-      node.children.forEach((child) => {
+      node.getChildren().forEach((child) => {
         fixConflicts(child)
       })
 
@@ -248,7 +247,7 @@ class TreeLayout extends BaseLayout {
         return value
       }
 
-      const shift = (current, value) => {
+      const shiftPosition = (current, value) => {
         const queue = [current]
         while (queue.length !== 0) {
           const deq = queue.shift()
@@ -264,49 +263,53 @@ class TreeLayout extends BaseLayout {
         }
       }
 
+      const w = this.config.renderingSize === "max" ? node.getMaxWidth() : node.getMinWidth()
+      const h = this.config.renderingSize === "max" ? node.getMaxHeight() : node.getMinHeight()
+
+      // the distance to shift a node
       let distance = 0
-      const w = this.config.renderingSize === "max" ? node.config.maxWidth : node.config.minWidth
-      const h = this.config.renderingSize === "max" ? node.config.maxHeight : node.config.minHeight
       if (isVertical) {
         distance = w + this.config.hSpacing
       } else {
         distance = h + this.config.vSpacing
       }
 
-      // fix spacing issues for 2+ child nodes
-      for (let i = 0; i < node.children.length - 1; i += 1) {
-        const c1 = getLeftContour(node.children[i])
-        const c2 = getRightContour(node.children[i + 1])
+      // fix spacing issues for 2+ child nodes only
+      for (let i = 0; i < node.getChildren().length - 1; i += 1) {
+        const c1 = getLeftContour(node.getChildren()[i])
+        const c2 = getRightContour(node.getChildren()[i + 1])
 
         if (c1 >= c2) {
-          shift(node.children[i + 1], c1 - c2 + distance)
+          shiftPosition(node.getChildren()[i + 1], c1 - c2 + distance)
         }
       }
 
+
       // fix spacing issue for 1 child
-      const fixOneChildProblem = (node) => {
+      if (node.getChildren().length === 1) {
+        // ignore this operation on re-rendering and id its the only node in the given depth
         if (isReRender) {
-          const depthNodes = this.nodes.filter(n => n.depth === node.depth + 1)
+          const depthNodes = this.nodes.filter((n) => n.getDepth() === node.getDepth() + 1)
           if (depthNodes.length === 1) {
             return
           }
         }
 
 
-        let nodes = []
-
         // find parent nodes
-        const addParents = (node) => {
-          nodes.push(node)
-          if (node.parent) {
-            addParents(node.parent)
+        let nodes = []
+        const addParents = (n) => {
+          nodes.push(n)
+          if (n.getParent() !== null) {
+            addParents(n.getParent())
           }
         }
 
-        // find children  nodes
-        const addChildren = (node) => {
-          nodes.push(node)
-          node.children.forEach((child) => {
+
+        // find children nodes
+        const addChildren = (n) => {
+          nodes.push(n)
+          n.getChildren().forEach((child) => {
             addChildren(child)
           })
         }
@@ -314,98 +317,101 @@ class TreeLayout extends BaseLayout {
         addParents(node)
         addChildren(node)
 
+
         // remove root and dupplicate
-        // nodes = nodes.filter(n => n.id !== this.rootId)
         nodes = [...new Set(nodes)]
 
-        const sibs = []
+
+        // get all siblings and update them
+        const siblings = []
         let sibling = node.getNextSibling()
         while (sibling) {
-          sibs.push(sibling)
+          siblings.push(sibling)
           sibling = sibling.getNextSibling()
         }
 
         // dont adjust the right most node
-        if (sibs.length === 0) {
+        if (siblings.length === 0) {
           return
         }
 
-        sibs.forEach((sibling) => {
-          if (sibling.children.length === 0) {
-            sibling.setFinalX(sibling.getFinalX() + w / 2 + this.config.hSpacing / 2)
+        siblings.forEach((s) => {
+          if (s.getChildren().length === 0) {
+            s.setFinalX(s.getFinalX() + w / 2 + this.config.hSpacing / 2)
           }
         })
 
 
-        // console.log(sibs)
-        nodes.forEach((node) => {
+        nodes.forEach((n) => {
           if (isVertical) {
-            node.setFinalX(node.getFinalX() + w / 2 + this.config.hSpacing / 2)
+            n.setFinalX(n.getFinalX() + w / 2 + this.config.hSpacing / 2)
           } else {
-            node.setFinalY(node.getFinalY() + h / 2 + this.config.vSpacing / 2)
+            n.setFinalY(n.getFinalY() + h / 2 + this.config.vSpacing / 2)
           }
         })
-      }
-
-      if (node.children.length === 1) {
-        fixOneChildProblem(node)
       }
     }
+
 
     // center node between two nodes if it does not have any children but left and right do
     const fixZeroChildProblem = (node) => {
-      node.children.forEach((child) => {
+      node.getChildren().forEach((child) => {
         fixZeroChildProblem(child)
       })
 
-
-      if (node.children.length > 0 || node.depth >= this.renderDepth) {
+      // return if there are no children the the currents node depth is different to the render depth
+      if (node.getChildren().length > 0 || node.getDepth() >= this.getRenderDepth()) {
         return
       }
 
-      const prev = node.prevSibling
-      // const next = this.nodes.filter(n => n.depth === node.depth && n.prevSibling !== null).find(n => n.prevSibling.id === node.id)
-      const next = node.getNextSibling()
 
-      if (!next || !prev) {
+      // find prev and next sibling
+      const prevNode = node.prevSibling || null
+      const nextNode = node.getNextSibling() || null
+
+      // skip this opteration if one of them is null
+      if (nextNode === null || prevNode === null) {
         return
       }
 
+
+      // update them
       if (isVertical) {
-        node.setFinalX((prev.getFinalX() + next.getFinalX()) / 2)
+        node.setFinalX((prevNode.getFinalX() + nextNode.getFinalX()) / 2)
       } else {
-        node.setFinalY((prev.getFinalY() + next.getFinalY()) / 2)
+        node.setFinalY((prevNode.getFinalY() + nextNode.getFinalY()) / 2)
       }
     }
+
 
     // fix root and move it to the absolute layout center
     const centerRootNode = (node) => {
+      let min = 0
+      let max = 0
+      const queue = [node]
+      while (queue.length) {
+        const currentNode = queue.shift()
+
+        if (isVertical) {
+          min = Math.min(currentNode.getFinalX(), min)
+          max = Math.max(currentNode.getFinalX(), max)
+        } else {
+          min = Math.min(currentNode.getFinalY(), min)
+          max = Math.max(currentNode.getFinalY(), max)
+        }
+
+        currentNode.children.forEach((child) => {
+          queue.push(child)
+        })
+      }
+
       if (isVertical) {
-        let minX = 0
-        let maxX = 0
-        const queue = [node]
-        while (queue.length) {
-          const deq = queue.shift()
-
-          minX = Math.min(deq.getFinalX(), minX)
-          maxX = Math.max(deq.getFinalX(), maxX)
-          deq.children.forEach((child) => queue.push(child))
-        }
-        node.setFinalX((minX + maxX) / 2)
+        node.setFinalX((min + max) / 2)
       } else {
-        let minY = 0
-        let maxY = 0
-        const queue = [node]
-        while (queue.length) {
-          const deq = queue.shift()
-
-          minY = Math.min(deq.getFinalY(), minY)
-          maxY = Math.max(deq.getFinalY(), maxY)
-          deq.children.forEach((child) => queue.push(child))
-        }
-        node.setFinalY((minY + maxY) / 2)
+        node.setFinalY((min + max) / 2)
       }
     }
+
 
     // helper method to tell each edge to calculate its position
     const calculateEdgePositions = (edges) => {
@@ -414,31 +420,52 @@ class TreeLayout extends BaseLayout {
       })
     }
 
+
+    // inform nodes about incoming and outgoing edges
+    const addEdgeReferences = (node) => {
+      node.getChildren().forEach((child) => {
+        const func = (edge) => edge.getFromNode().getId() === child.getId() && edge.getToNode().getId() === node.getId()
+        const e = this.edges.find((edge) => func(edge))
+
+        // add references for incoming edges
+        node.addIncomingEdge(e)
+
+        // add references for outgoing edges
+        child.addOutgoingEdge(e)
+
+        addEdgeReferences(child)
+      })
+    }
+
+
     // add a visual indication that there is more data available
     const calculateLeafs = (node) => {
+      // skip this method if showLeafIndications is set to false
       if (this.config.showLeafIndications === false) {
         return
       }
+
+
       const root = node
 
+
+      // adds leafs to a given node if necessary
       const addLeaf = (currentNode) => {
-        if (currentNode.hasNoChildren() && (currentNode.hasChildrenIds() || currentNode.getInvisibleChildren().length >= this.config.visibleNodeLimit)) {
+        const hasNoChildren = currentNode.hasNoChildren()
+        const hasInvisibleChildren = currentNode.getInvisibleChildren().length >= this.config.visibleNodeLimit
+        const hasChildIds = currentNode.hasChildrenIds()
+        if (hasNoChildren && (hasChildIds || hasInvisibleChildren)) {
           if (currentNode.getInvisibleChildren().length > 0) {
             currentNode.setChildrenIds(currentNode.getInvisibleChildren())
           }
+
+          // find existing leaf
           const existing = this.leafs.find((l) => l.id === currentNode.getId())
 
+          // only create a leaf once per node
           if (existing === undefined) {
-            const leaf = new Leaf(this.canvas, currentNode, this.config)
-            const x = x ? x : currentNode.getFinalX()
-            const y = y ? y : currentNode.getFinalY()
-
+            const leaf = new TreeLeaf(this.canvas, currentNode, this.config)
             leaf.setLayoutId(this.layoutIdentifier)
-            leaf.setFinalX(x)
-            leaf.setFinalY(y)
-            leaf.setInitialX(root.getFinalX())
-            leaf.setInitialY(root.getFinalY())
-            leaf.setIsReRender(isReRender || false)
             this.leafs.push(leaf)
           }
         }
@@ -447,6 +474,8 @@ class TreeLayout extends BaseLayout {
         })
       }
 
+
+      // remove existing leafs that aren't used anymore
       const removeLeaf = () => {
         const toRemove = []
         const existingNodeIds = this.nodes.map((n) => n.getId())
@@ -462,17 +491,18 @@ class TreeLayout extends BaseLayout {
         this.leafs = this.leafs.filter((leaf) => !toRemove.map((l) => l.getId()).includes(leaf.getId()))
       }
 
-      // add new leafs
-      addLeaf(node)
 
-      // remove existing leafs which are not used anymore
+      addLeaf(node)
       removeLeaf(node)
     }
+
 
     // calculate the layout dimensions and move off screen objects into the screen
     const calculateLayoutInfo = (tree) => {
       const toRender = [tree]
       const rendered = []
+
+      // de-flatten the current tree
       while (toRender.length) {
         const current = toRender.shift()
         const node = this.nodes.find((n) => n.id === current.id)
@@ -483,21 +513,28 @@ class TreeLayout extends BaseLayout {
         })
       }
 
+      // calculate the vertical adjustment
       const hAdjustment = Math.min(...rendered.map((node) => {
         const w = this.config.renderingSize === "max" ? node.getMaxWidth() : node.getMinWidth()
         return node.getFinalX() - w
       }))
+
+      // calculate the horizontal adjustment
       const vAdjustment = Math.min(...rendered.map((node) => {
         const h = this.config.renderingSize === "max" ? node.getMaxHeight() : node.getMinHeight()
         return node.getFinalY() - h
       }))
 
+
+      // update nodes
       rendered.forEach((node) => {
         const x = ((node.getFinalX() - hAdjustment) + offset) + this.config.translateX
         const y = (node.getFinalY() - vAdjustment) + this.config.translateY
         node.setFinalX(x)
         node.setFinalY(y)
       })
+
+      // update edges
       this.edges.forEach((edge) => {
         edge.setFinalToX((edge.getFinalToX() - hAdjustment) + offset + this.config.translateX)
         edge.setFinalToY(edge.getFinalToY() - vAdjustment + this.config.translateY)
@@ -505,7 +542,7 @@ class TreeLayout extends BaseLayout {
         edge.setFinalFromY(edge.getFinalFromY() - vAdjustment + this.config.translateY)
       })
 
-
+      // calculate the layout info by gathering information about three points
       const x0 = Math.min(...rendered.map((n) => {
         const w = this.config.renderingSize === "max" ? n.getMaxWidth() : n.getMinWidth()
         return n.getFinalX() - w
@@ -525,17 +562,7 @@ class TreeLayout extends BaseLayout {
       }))
 
 
-      // this.canvas.line(x1, y1, x2, y2).stroke({ width: 2, color: "red" })
-      if (this.l1) {
-        this.l1.remove()
-        this.l2.remove()
-      }
-
-      this.l1 = this.canvas.line(x0, y0, x0, 300).stroke({ width: 2, color: "red" })
-      this.l2 = this.canvas.line(x1, y0, x1, 300).stroke({ width: 2, color: "red" })
-
-
-      const oldCx = this.layoutInfo.x
+      // create the layout info object
       this.layoutInfo = {
         x: x0,
         y: y0,
@@ -545,55 +572,30 @@ class TreeLayout extends BaseLayout {
         h: calculateDistance(x1, y1, x2, y2),
       }
 
-      // shift layout to right if it took space from a left layout
-      const shiftValue = oldCx - this.layoutInfo.x
-      if (shiftValue > 0) {
-        // 
-        this.nodes.forEach(node => {
-          node.setFinalX(node.getFinalX() + shiftValue)
-        })
-        this.edges.forEach(edge => {
-          edge.setFinalToX((edge.getFinalToX() + shiftValue))
-          edge.setFinalFromX((edge.getFinalFromX() + shiftValue))
-        })
-        this.layoutInfo = {
-          ...this.layoutInfo,
-          x: this.layoutInfo.x + shiftValue,
-          cx: this.layoutInfo.cx + shiftValue
-        }
-        this.l2.dx(shiftValue)
-      }
-      if (isReRender === true) {
-        console.log(offset)
-      }
-      // console.log("new", shiftValue, isReRender)
+
     }
 
-    // inform nodes about incoming and outgoing edges
-    const addEdgeReferences = (node) => {
-      node.children.forEach((child) => {
-        const func = (edge) => edge.fromNode.getId() === child.getId() && edge.toNode.getId() === node.getId()
-        const e = this.edges.find((edge) => func(edge))
-        node.addIncomingEdge(e)
-        child.addOutgoingEdge(e)
 
-        addEdgeReferences(child)
-      })
-    }
-
+    // initial calculations
     const tree = buildTreeFromNodes(this.nodes)[0]
     initializeNodes(tree)
     calculateXYPositions(tree)
     calculateModifier(tree)
 
+    // visual improvements
     fixConflicts(tree)
     fixZeroChildProblem(tree)
     centerRootNode(tree)
 
+    // edges
     calculateEdgePositions(this.edges)
-    calculateLeafs(tree)
-    calculateLayoutInfo(tree)
     addEdgeReferences(tree)
+
+    // leafs
+    calculateLeafs(tree)
+
+    // layout info
+    calculateLayoutInfo(tree)
 
 
     return this.layoutInfo
@@ -608,8 +610,10 @@ class TreeLayout extends BaseLayout {
    * @param {Number} [opts.y=null] The y coordinate for the clicked node.
    */
   renderLayout({ isReRender = false, x = null, y = null }) {
-    const X = x ? x : this.nodes.find((n) => n.id === this.rootId).getFinalX()
-    const Y = y ? y : this.nodes.find((n) => n.id === this.rootId).getFinalY()
+    // get the position where to start rendering the nodes from
+    const X = x || this.nodes.find((n) => n.id === this.rootId).getFinalX()
+    const Y = y || this.nodes.find((n) => n.id === this.rootId).getFinalY()
+
 
 
     // render nodes and edges
@@ -622,7 +626,8 @@ class TreeLayout extends BaseLayout {
 
           // find provided events
           const eventStr = [...new Set(this.events.map((e) => e.event))].toString().split(",")
-          // console.log(eventStr, this.events)
+
+          // attach events to SVG object
           node.svg.on(eventStr, (e) => {
             const { type } = e
             let modifier
@@ -633,7 +638,7 @@ class TreeLayout extends BaseLayout {
             } else if (e.shiftKey === true) {
               modifier = "shiftKey"
             }
-            // add all provided event
+            // add provided events
             this.events.forEach((myevent) => {
               if (myevent.event === type && myevent.modifier === modifier) {
                 this.expandOrCollapseDataAsyncEvent(node)
@@ -643,10 +648,8 @@ class TreeLayout extends BaseLayout {
 
 
           // render edge references
-          node.outgoingEdges.forEach((edge) => {
-            if (edge.isRendered() === false) {
-              edge.render(X, Y)
-            }
+          node.getOutgoingEdges().forEach((edge) => {
+            if (edge.isRendered() === false) edge.render(X, Y)
           })
 
           // or transform nodes into position
@@ -656,24 +659,24 @@ class TreeLayout extends BaseLayout {
       })
     }
 
+
     // render possible leafs
     const renderLeafs = () => {
       this.leafs.forEach((leaf) => {
-        if (leaf.isRendered() === false) {
-          leaf.render(isReRender === true)
-        } else if (leaf.isRendered() === true) {
-          // console.log("transform leaf", leaf)
-          leaf.transformToFinalPosition({})
-        }
+        // only render leaf one time
+        if (leaf.isRendered() === false) leaf.render(isReRender === true)
+
+        // else, if its already rendered, transform the leaf to its final position
+        else if (leaf.isRendered() === true) leaf.transformToFinalPosition({})
       })
     }
+
 
     // update edges
     const renderEdges = () => {
       this.edges.forEach((edge) => {
-        if (edge.isRendered() === true) {
-          edge.transformToFinalPosition({ isReRender: isReRender || false })
-        }
+        // if edge is rendered, transform it to its final position
+        if (edge.isRendered() === true) edge.transformToFinalPosition({ isReRender })
       })
     }
 

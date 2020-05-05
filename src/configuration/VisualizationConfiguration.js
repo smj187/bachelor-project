@@ -10,12 +10,14 @@
  * @property {Number} zoomY=0                                   - Determins the specified Y point for zoom.
  * @property {Number} zoomMin=0.25                              - Determins the minimal zoom level.
  * @property {Number} zoomMax=10                                - Determins the maximal zoom level.
- * @property {Number} zoomStep=0.25                             - Determins the zoom step in which to increase or decrease the current zoom level.
+ * @property {Number} zoomStep=0.25                             - Determins the zoom step in which to increase or
+ *                                                                decrease the current zoom level.
  * @property {Number} zoomLabelThreshold=0.65                   - Determins at which zoom level all labels go invisible.
  * @property {String} databaseUrl=null                          - Determins the required database URL.
  * @property {String} nodeEndpoint=null                         - Determins the required node endpoint name.
  * @property {String} edgeEndpoint=null                         - Determins the required node endpoint name.
- * @property {String} contextualRelationshipEndpoint=null       - Determins the required contextual relationship endpoint name.
+ * @property {String} contextualRelationshipEndpoint=null       - Determins the required contextual relationship
+ *                                                                endpoint name.
  * @property {Number} layoutSpacing=150                         - Determins the spacing between multiple layouts.
  *
  *
@@ -43,7 +45,7 @@ const VisualizationConfiguration = {
   contextualRelationshipEndpoint: null,
 
   // global layout settings
-  layoutSpacing: 100
+  layoutSpacing: 100,
 }
 
 export default VisualizationConfiguration

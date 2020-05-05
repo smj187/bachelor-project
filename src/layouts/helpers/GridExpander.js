@@ -1,136 +1,130 @@
-const GridExpanderConfiguration = {
-  animationSpeed: 300,
-  expanderWidth: 105,
-  expanderHeight: 40,
-  expanderTextColor: "#222",
-  expanderPadding: 8,
-  expanderFontFamily: "Montserrat",
-  expanderFontSize: 12,
-  expanderFontWeight: 700,
-  expanderFontStyle: "normal",
-  expanderBackground: "#fff",
-}
-
-
 /**
- * Class representing the option to collapse or expand the grid layout.
- *
- * @param {Canvas} canvas The canvas to render this expander on.
- * @param {String} type The type the expander is.
+ * Class representing the option to collapse or expand a grid layout.
+ * 
+ * @property {Canvas} canvas The current canvas to render the element on.
+ * @property {RadialLayoutConfiguration} layoutConfig An object containing visual restrictions.
  */
 class GridExpander {
-  constructor(canvas, type) {
+  constructor(canvas, layoutConfig) {
     this.svg = null
-    this.type = type
     this.canvas = canvas
-    this.config = { ...GridExpanderConfiguration }
+    this.config = layoutConfig
 
-    // the re-render function reference
-    this.reRenderFunc = null
+
+    // position
+    this.finalX = 0
+    this.finalY = 0
+
+    // general info
+    this.layoutId = null
+    this.isLayoutExpended = false
   }
 
 
   /**
-  * Renders the expander.
-  * @param  {Number} IX=finalX The initial X render position.
-  * @param  {Number} IY=finalY The initial Y render position.
+  * Calculates and renders the expander.
+  * @param {Object} [opts={ }] An object containing additional information.
+  * @param {Number} [opts.cx=0] The layouts center X position.
+  * @param {Number} [opts.cy=0] The layouts center Y position.
+  * @param {Number} [opts.X=this.finalX] The expanders calculated final X position.
+  * @param {Number} [opts.Y=this.finalY] The expanders calculated final Y position.
   */
-  render(X = this.finalX + this.config.expanderWidth / 2, Y = this.finalY) {
+  render({ cx = 0, cy = 0, X = this.finalX, Y = this.finalY }) {
     const svg = this.canvas.group()
     svg.css("cursor", "pointer")
-    svg.id("gridExpander")
+    svg.id(`gridExpander#${this.layoutId}`)
+
+    // text representing the expand operation
+    const expandText = "Load_more_data"
+
+    // text representing the collapse operation
+    const collapseText = "Show_less_data"
 
 
-    const w = this.config.expanderWidth
-    const h = this.config.expanderHeight
-
+    // helper method that creates the expanders text
     const createText = (innerText) => {
-      const fobj = this.canvas.foreignObject(w, h)
+      const fobj = this.canvas.foreignObject(1, 1)
 
       const background = document.createElement("div")
-      background.style.background = this.config.expanderBackground
-      background.style.padding = `${this.config.expanderPadding / 2}px`
-      background.style.textAlign = "left"
+      background.style.background = this.config.expanderTextBackground
+      background.style.padding = `${this.config.expanderFontSize / 2}px`
+      background.style.textAlign = "center"
 
       const label = document.createElement("div")
       label.innerText = innerText
+
       label.style.color = this.config.expanderTextColor
       label.style.fontSize = `${this.config.expanderFontSize}px`
       label.style.fontFamily = this.config.expanderFontFamily
       label.style.fontWeight = this.config.expanderFontWeight
       label.style.fontStyle = this.config.expanderFontStyle
+      label.style.width = "fit-content"
+      label.setAttribute("id", "label")
 
       background.appendChild(label)
       fobj.add(background)
       fobj.css("user-select", "none")
       fobj.height(background.clientHeight)
 
+      const labelWidth = label.clientWidth + this.config.expanderFontSize
+      label.innerText = innerText.replace(/_/g, " ")
+      fobj.width(labelWidth)
+
+
       return fobj
     }
 
-    // create new elements
-    const showMore = createText("Load more data")
-    const showLess = createText("Show less data")
-
-    svg.add(showMore)
-    svg.add(showLess)
+    const expand = createText(expandText)
+    const collapse = createText(collapseText)
 
 
-    // animate new elements into position
-    svg
-      .center(X, Y)
-
-    showMore
-      .scale(0.001)
-      .center(X, Y)
-      .animate({ duration: this.config.animationSpeed })
-      .transform({ scale: 1, position: [X, Y] })
-
-    showLess
-      .attr({ opacity: 0 })
-      .scale(0.001)
-      .center(X, Y)
-      .animate({ duration: this.config.animationSpeed })
-      .transform({ scale: 1, position: [X, Y] })
-
-
-    // add tooltip
-    svg.on("mouseover", (ev) => {
-      // const tooltip = document.getElementById("tooltip")
-      // tooltip.innerHTML = this.isExpanded ? "Collapse layout" : "Expand layout"
-      // tooltip.style.display = "block"
-
-      // tooltip.style.left = `${ev.clientX - tooltip.clientWidth / 2}px`
-      // tooltip.style.top = `${ev.clientY - tooltip.clientHeight - 20}px`
-
-      showLess.transform({ scale: 1.05, position: [X, Y] })
-      showMore.transform({ scale: 1.05, position: [X, Y] })
-    })
-
-    // remove tooltip
-    svg.on("mouseout", () => {
-      // const tooltip = document.getElementById("tooltip")
-      // tooltip.style.display = "none"
-
-      showLess.transform({ scale: 0.95, position: [X, Y] })
-      showMore.transform({ scale: 0.95, position: [X, Y] })
-    })
-
-
-    if (this.reRenderFunc) {
-      svg.on("click", this.reRenderFunc)
-      // svg.on("click", () => svg.fire('myevent'))
-      // svg.on("dblclick", this.reRenderFunc)
+    // only one text representation is active at once
+    if (this.isLayoutExpended === false) {
+      expand.attr({ opacity: 1 })
+      collapse.attr({ opacity: 0 })
+    } else {
+      expand.attr({ opacity: 0 })
+      collapse.attr({ opacity: 1 })
     }
 
 
-    this.isExpanded = false
+    svg.add(expand)
+    svg.add(collapse)
+
+
+
+    // animate expander into position
+    svg
+      .center(cx, cy)
+      .scale(0.001)
+      .attr({ opacity: 0 })
+      .animate({ duration: this.config.animationSpeed })
+      .transform({ scale: 1, position: [X + svg.bbox().w / 2, Y], })
+      .attr({ opacity: 1 })
+
+
+    // add hover focus
+    svg.on("mouseover", () => {
+      collapse.transform({ scale: 1.025, })
+      expand.transform({ scale: 1.025, })
+    })
+
+
+    // remove hover focus
+    svg.on("mouseout", () => {
+      collapse.transform({ scale: 0.975, })
+      expand.transform({ scale: 0.975, })
+    })
+
+
+
     this.svg = svg
   }
 
 
+
   /**
-   * Changes the expanders label.
+   * Changes the expanders text to collapse.
    */
   changeToShowMoreText() {
     this
@@ -144,12 +138,12 @@ class GridExpander {
       .attr({ opacity: 1 })
 
 
-    this.isExpanded = true
   }
 
 
+
   /**
-   * Changes the expanders label.
+   * Changes the expanders text to expand.
    */
   changeToHideMoreText() {
     this
@@ -162,19 +156,23 @@ class GridExpander {
       .get(1)
       .attr({ opacity: 0 })
 
-
-    this.isExpanded = false
   }
+
 
 
   /**
    * Transforms the expander from its final position to its initial rendered position.
+   * @param {Object} [opts={ }] An object containing additional information. 
+   * @param {Number} [opts.X=this.finalX] The expanders calculated final X position.
+   * @param {Number} [opts.X=this.finalY] The expanders calculated final X position.
    */
-  transformToFinalPosition() {
+  transformToFinalPosition({ X = this.finalX, Y = this.finalY }) {
+
+
     this
       .svg
       .animate({ duration: this.config.animationSpeed })
-      .transform({ position: [this.finalX + this.config.expanderWidth / 2, this.finalY] })
+      .transform({ position: [X + this.svg.bbox().w / 2, Y] })
   }
 
 
@@ -190,19 +188,23 @@ class GridExpander {
   /**
    * Removes the rendered SVG expander from the canvas.
    */
-  removeNode() {
-    if (this.svg !== null) {
+  removeSVG() {
+    if (this.isRendered()) {
       this.svg.remove()
       this.svg = null
     }
   }
 
-  setReRenderFunc(reRenderFunc) {
-    this.reRenderFunc = reRenderFunc
+
+
+
+
+  setIsLayoutExpended(isLayoutExpended) {
+    this.isLayoutExpended = isLayoutExpended
   }
 
-  updateConfig(newConfig) {
-    this.config = { ...this.config, ...newConfig }
+  setLayoutId(layoutId) {
+    this.layoutId = layoutId
   }
 
   getIsExpanded() {

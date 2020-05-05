@@ -7,10 +7,11 @@
  * @property {Number} animationSpeed=300                - Determines how fast SVG elements animates inside the current layout.
  * @property {Number} orientation=vertical              - Determines how tree orientation. Available: "vertical" or "horizontal"
  * @property {Number} vSpacing=100                      - Determines the vertical spacing between nodes.
+ * @property {Number} hSpacing=25                       - Determines the horizontal spacing between nodes.
  * @property {Number} rootId=null                       - Determines the selected root id.
  * @property {Number} renderDepth=0                     - Determines the current render depth.
  * @property {String} renderingSize=min                 - Determines the node render representation. Available: "min" or "max".
- * 
+ *
  * @property {Boolean} showLeafIndications=true         - Determines whether additional indications for possible children are visible.
  * @property {Boolean} visibleNodeLimit=5               - Determines at how many child nodes an indication is shown.
  * @property {Boolean} leafIndicationLimit=5            - Determines the maximal amount of indications per node.
