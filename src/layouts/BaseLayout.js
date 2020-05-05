@@ -7,8 +7,8 @@ import ControlNode from "../nodes/ControlNode"
 import ThinEdge from "../edges/ThinEdge"
 import BoldEdge from "../edges/BoldEdge"
 
-import { Request, RequestMultiple } from "../utils/HttpRequests"
-import { constructTree } from "../utils/TreeConstruction"
+import { singlePostRequest, multiplePostRequests } from "../utils/HttpRequests"
+import { buildTreeFromIds } from "../utils/TreeConstruction"
 import NodeFactory from "../nodes/NodeFactory"
 import EdgeFactory from "../edges/EdgeFactory"
 
@@ -106,7 +106,7 @@ class BaseLayout {
 
 
     if (ids.length) {
-      const nodes = await Request(`${this.config.databaseUrl}/${this.config.nodeEndpoint}`, ids)
+      const nodes = await singlePostRequest(`${this.config.databaseUrl}/${this.config.nodeEndpoint}`, ids)
       this.createRepresentations({ nodes })
     }
 
@@ -123,7 +123,7 @@ class BaseLayout {
     const difference = arr1.filter((x) => !arr2.includes(x))
 
     if (difference.length) {
-      const nodes = await Request(`${this.config.databaseUrl}/${this.config.nodeEndpoint}`, difference)
+      const nodes = await singlePostRequest(`${this.config.databaseUrl}/${this.config.nodeEndpoint}`, difference)
       this.createRepresentations({ nodes })
     }
 
@@ -163,7 +163,7 @@ class BaseLayout {
    */
   async loadInitialTreeDataAsync() {
     // first, load the root node
-    const response1 = await Request(`${this.config.databaseUrl}/${this.config.nodeEndpoint}`, [this.rootId])
+    const response1 = await singlePostRequest(`${this.config.databaseUrl}/${this.config.nodeEndpoint}`, [this.rootId])
     const root = response1[0] || null
     if (root === null) {
       throw new Error(`Failed to load root id ${this.rootId}.`)
@@ -174,7 +174,7 @@ class BaseLayout {
     let nodes = [root]
     let childNodeIds = root.children
     for (let i = 0; i < this.renderDepth && childNodeIds.length > 0; i += 1) {
-      const response = await Request(`${this.config.databaseUrl}/${this.config.nodeEndpoint}`, childNodeIds)
+      const response = await singlePostRequest(`${this.config.databaseUrl}/${this.config.nodeEndpoint}`, childNodeIds)
       const children = response
       childNodeIds = children.map((c) => c.children).flat()
       nodes.push(children)
@@ -186,7 +186,7 @@ class BaseLayout {
 
 
     // construct a tree data structure to generate edges and calculate node positions
-    const trees = constructTree(nodes)
+    const trees = buildTreeFromIds(nodes)
 
 
     // search for the root tree node
@@ -246,7 +246,7 @@ class BaseLayout {
     // only fetch edges known to the graph
     const edgesToFetch = requiredEdges.filter((edge) => this.edgeData.find((e) => e.fromNode === edge.fromNode && e.toNode === e.toNode))
 
-    const edges = await Request(`${this.config.databaseUrl}/${this.config.edgeEndpoint}`, edgesToFetch)
+    const edges = await singlePostRequest(`${this.config.databaseUrl}/${this.config.edgeEndpoint}`, edgesToFetch)
 
 
     // create node and edge visualizations
@@ -332,7 +332,7 @@ class BaseLayout {
       if (clickedNode.childrenIds.length === 0) return
 
       const requestedNodes = clickedNode.childrenIds.map((n) => (isNaN(n) ? n.id : n))
-      const nodes = await Request(`${this.config.databaseUrl}/${this.config.nodeEndpoint}`, requestedNodes)
+      const nodes = await singlePostRequest(`${this.config.databaseUrl}/${this.config.nodeEndpoint}`, requestedNodes)
 
       // find edges between new children and clicked node
       const requiredEdges = []
@@ -340,7 +340,7 @@ class BaseLayout {
 
       // only fetch edges known to the graph
       const edgesToFetch = requiredEdges.filter((edge) => this.edgeData.find((e) => e.fromNode === edge.fromNode && e.toNode === e.toNode))
-      const edges = await Request(`${this.config.databaseUrl}/${this.config.edgeEndpoint}`, edgesToFetch)
+      const edges = await singlePostRequest(`${this.config.databaseUrl}/${this.config.edgeEndpoint}`, edgesToFetch)
 
       // create node and edge visualizations
       this.createRepresentations({ nodes, edges })
@@ -407,7 +407,7 @@ class BaseLayout {
    */
   async loadInitialRadialDataAsync() {
     // first, load the root node
-    const response1 = await Request(`${this.config.databaseUrl}/${this.config.nodeEndpoint}`, [this.rootId])
+    const response1 = await singlePostRequest(`${this.config.databaseUrl}/${this.config.nodeEndpoint}`, [this.rootId])
     const root = response1[0] || null
     if (root === null) {
       throw new Error(`Failed to load root id ${this.rootId}.`)
@@ -418,7 +418,7 @@ class BaseLayout {
     let nodes = [root]
     let childNodeIds = root.children
     for (let i = 0; i < this.renderDepth && childNodeIds.length > 0; i += 1) {
-      const response = await Request(`${this.config.databaseUrl}/${this.config.nodeEndpoint}`, childNodeIds)
+      const response = await singlePostRequest(`${this.config.databaseUrl}/${this.config.nodeEndpoint}`, childNodeIds)
       const children = response
       childNodeIds = children.map((c) => c.children).flat()
       nodes.push(children)
@@ -430,7 +430,7 @@ class BaseLayout {
 
 
     // construct a tree data structure to generate edges and calculate node positions
-    const trees = constructTree(nodes)
+    const trees = buildTreeFromIds(nodes)
 
 
     // search for the root tree node
@@ -488,7 +488,7 @@ class BaseLayout {
     // only fetch edges known to the graph
     const edgesToFetch = requiredEdges.filter((edge) => this.edgeData.find((e) => e.fromNode === edge.fromNode && e.toNode === e.toNode))
 
-    const edges = await Request(`${this.config.databaseUrl}/${this.config.edgeEndpoint}`, edgesToFetch)
+    const edges = await singlePostRequest(`${this.config.databaseUrl}/${this.config.edgeEndpoint}`, edgesToFetch)
 
 
     // create node and edge visualizations
@@ -574,7 +574,7 @@ class BaseLayout {
       if (clickedNode.childrenIds.length === 0) return
 
       const requestedNodes = clickedNode.childrenIds.map((n) => (isNaN(n) ? n.id : n))
-      const nodes = await Request(`${this.config.databaseUrl}/${this.config.nodeEndpoint}`, requestedNodes)
+      const nodes = await singlePostRequest(`${this.config.databaseUrl}/${this.config.nodeEndpoint}`, requestedNodes)
 
       // find edges between new children and clicked node
       const requiredEdges = []
@@ -582,7 +582,7 @@ class BaseLayout {
 
       // only fetch edges known to the graph
       const edgesToFetch = requiredEdges.filter((edge) => this.edgeData.find((e) => e.fromNode === edge.fromNode && e.toNode === e.toNode))
-      const edges = await Request(`${this.config.databaseUrl}/${this.config.edgeEndpoint}`, edgesToFetch)
+      const edges = await singlePostRequest(`${this.config.databaseUrl}/${this.config.edgeEndpoint}`, edgesToFetch)
 
       // create node and edge visualizations
       this.createRepresentations({ nodes, edges })
@@ -791,7 +791,7 @@ class BaseLayout {
         body: [this.focus.id],
       },
     ]
-    const response1 = await RequestMultiple(request1)
+    const response1 = await multiplePostRequests(request1)
 
     const assignedInfo = response1[0].data
 
@@ -824,7 +824,7 @@ class BaseLayout {
       },
     ]
 
-    const response2 = await RequestMultiple(request2)
+    const response2 = await multiplePostRequests(request2)
     const nodeData = response2[0].data
     const edgeData = response2[1].data
 
@@ -899,7 +899,7 @@ class BaseLayout {
       },
     ]
 
-    const response1 = await RequestMultiple(request1)
+    const response1 = await multiplePostRequests(request1)
     const focus = response1[0].data[0]
 
     const assignedInfo = response1[1].data
@@ -928,7 +928,7 @@ class BaseLayout {
       },
     ]
 
-    const response2 = await RequestMultiple(request2)
+    const response2 = await multiplePostRequests(request2)
     const nodeData = response2[0].data
     const edgeData = response2[1].data
 

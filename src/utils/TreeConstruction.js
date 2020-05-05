@@ -8,7 +8,7 @@
  *
  * @see https://stackoverflow.com/a/22072374
  */
-const constructTree = (array, parentRef = undefined, rootRef = undefined) => {
+const buildTreeFromIds = (array, parentRef = undefined, rootRef = undefined) => {
   let root = rootRef !== undefined ? rootRef : []
   const parent = parentRef !== undefined ? parentRef : { id: null }
   const children = array.filter((child) => child.parent === parent.id)
@@ -20,7 +20,7 @@ const constructTree = (array, parentRef = undefined, rootRef = undefined) => {
     }
 
     children.forEach((child) => {
-      constructTree(array, child)
+      buildTreeFromIds(array, child)
     })
   }
   return root
@@ -54,4 +54,4 @@ const buildTreeFromNodes = (array, parentRef, rootRef) => {
 }
 
 
-export { constructTree, buildTreeFromNodes }
+export { buildTreeFromIds, buildTreeFromNodes }

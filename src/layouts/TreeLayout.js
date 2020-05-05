@@ -416,7 +416,7 @@ class TreeLayout extends BaseLayout {
     // helper method to tell each edge to calculate its position
     const calculateEdgePositions = (edges) => {
       edges.forEach((edge) => {
-        edge.calculateEdge()
+        edge.calculateEdge({})
       })
     }
 
@@ -621,8 +621,8 @@ class TreeLayout extends BaseLayout {
       this.nodes.forEach((node) => {
         // render nodes
         if (node.isRendered() === false) {
-          if (this.config.renderingSize === "max") node.renderAsMax(X, Y)
-          if (this.config.renderingSize === "min") node.renderAsMin(X, Y)
+          if (this.config.renderingSize === "max") node.renderAsMax({ IX: X, IY: Y })
+          if (this.config.renderingSize === "min") node.renderAsMin({ IX: X, IY: Y })
 
           // find provided events
           const eventStr = [...new Set(this.events.map((e) => e.event))].toString().split(",")
@@ -649,12 +649,12 @@ class TreeLayout extends BaseLayout {
 
           // render edge references
           node.getOutgoingEdges().forEach((edge) => {
-            if (edge.isRendered() === false) edge.render(X, Y)
+            if (edge.isRendered() === false) edge.render({ X, Y })
           })
 
           // or transform nodes into position
         } else if (node.isRendered() === true) {
-          node.transformToFinalPosition()
+          node.transformToFinalPosition({})
         }
       })
     }

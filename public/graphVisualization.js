@@ -661,8 +661,8 @@ var arrayIteration = {
 
 var engineUserAgent = getBuiltIn('navigator', 'userAgent') || '';
 
-var process$1 = global_1.process;
-var versions = process$1 && process$1.versions;
+var process = global_1.process;
+var versions = process && process.versions;
 var v8 = versions && versions.v8;
 var match, version;
 
@@ -2611,8 +2611,8 @@ var wellKnownSymbol$1 = function (name) {
 
 var userAgent = getBuiltIn$1('navigator', 'userAgent') || '';
 
-var process$2 = global_1$1.process;
-var versions$1 = process$2 && process$2.versions;
+var process$1 = global_1$1.process;
+var versions$1 = process$1 && process$1.versions;
 var v8$1 = versions$1 && versions$1.v8;
 var match$1, version$1;
 
@@ -15008,7 +15008,7 @@ var engineIsIos = /(iphone|ipod|ipad).*applewebkit/i.test(engineUserAgent);
 var location = global_1.location;
 var set$2 = global_1.setImmediate;
 var clear$1 = global_1.clearImmediate;
-var process$3 = global_1.process;
+var process$2 = global_1.process;
 var MessageChannel = global_1.MessageChannel;
 var Dispatch = global_1.Dispatch;
 var counter = 0;
@@ -15057,9 +15057,9 @@ if (!set$2 || !clear$1) {
     delete queue[id];
   };
   // Node.js 0.8-
-  if (classofRaw(process$3) == 'process') {
+  if (classofRaw(process$2) == 'process') {
     defer = function (id) {
-      process$3.nextTick(runner(id));
+      process$2.nextTick(runner(id));
     };
   // Sphere (JS game engine) Dispatch API
   } else if (Dispatch && Dispatch.now) {
@@ -15105,9 +15105,9 @@ var macrotask = task.set;
 
 
 var MutationObserver = global_1.MutationObserver || global_1.WebKitMutationObserver;
-var process$4 = global_1.process;
+var process$3 = global_1.process;
 var Promise$1 = global_1.Promise;
-var IS_NODE = classofRaw(process$4) == 'process';
+var IS_NODE = classofRaw(process$3) == 'process';
 // Node.js 11 shows ExperimentalWarning on getting `queueMicrotask`
 var queueMicrotaskDescriptor = getOwnPropertyDescriptor$4(global_1, 'queueMicrotask');
 var queueMicrotask = queueMicrotaskDescriptor && queueMicrotaskDescriptor.value;
@@ -15118,7 +15118,7 @@ var flush, head, last, notify, toggle, node, promise, then;
 if (!queueMicrotask) {
   flush = function () {
     var parent, fn;
-    if (IS_NODE && (parent = process$4.domain)) parent.exit();
+    if (IS_NODE && (parent = process$3.domain)) parent.exit();
     while (head) {
       fn = head.fn;
       head = head.next;
@@ -15136,7 +15136,7 @@ if (!queueMicrotask) {
   // Node.js
   if (IS_NODE) {
     notify = function () {
-      process$4.nextTick(flush);
+      process$3.nextTick(flush);
     };
   // browsers with MutationObserver, except iOS - https://github.com/zloirock/core-js/issues/339
   } else if (MutationObserver && !engineIsIos) {
@@ -15240,11 +15240,11 @@ var getInternalPromiseState = internalState.getterFor(PROMISE);
 var PromiseConstructor = nativePromiseConstructor;
 var TypeError$1 = global_1.TypeError;
 var document$2 = global_1.document;
-var process$5 = global_1.process;
+var process$4 = global_1.process;
 var $fetch = getBuiltIn('fetch');
 var newPromiseCapability$1 = newPromiseCapability.f;
 var newGenericPromiseCapability = newPromiseCapability$1;
-var IS_NODE$1 = classofRaw(process$5) == 'process';
+var IS_NODE$1 = classofRaw(process$4) == 'process';
 var DISPATCH_EVENT = !!(document$2 && document$2.createEvent && global_1.dispatchEvent);
 var UNHANDLED_REJECTION = 'unhandledrejection';
 var REJECTION_HANDLED = 'rejectionhandled';
@@ -15358,7 +15358,7 @@ var onUnhandled = function (promise, state) {
     if (IS_UNHANDLED) {
       result = perform(function () {
         if (IS_NODE$1) {
-          process$5.emit('unhandledRejection', value, promise);
+          process$4.emit('unhandledRejection', value, promise);
         } else dispatchEvent(UNHANDLED_REJECTION, promise, value);
       });
       // Browsers should not trigger `rejectionHandled` event if it was handled here, NodeJS - should
@@ -15375,7 +15375,7 @@ var isUnhandled = function (state) {
 var onHandleUnhandled = function (promise, state) {
   task$1.call(global_1, function () {
     if (IS_NODE$1) {
-      process$5.emit('rejectionHandled', promise);
+      process$4.emit('rejectionHandled', promise);
     } else dispatchEvent(REJECTION_HANDLED, promise, state.value);
   });
 };
@@ -15459,7 +15459,7 @@ if (FORCED$6) {
       var reaction = newPromiseCapability$1(speciesConstructor$1(this, PromiseConstructor));
       reaction.ok = typeof onFulfilled == 'function' ? onFulfilled : true;
       reaction.fail = typeof onRejected == 'function' && onRejected;
-      reaction.domain = IS_NODE$1 ? process$5.domain : undefined;
+      reaction.domain = IS_NODE$1 ? process$4.domain : undefined;
       state.parent = true;
       state.reactions.push(reaction);
       if (state.state != PENDING) notify$1(this, state, false);
@@ -17536,6 +17536,8 @@ var RiskNodeConfiguration = {
 
 /**
  * This class is responsible for the visual representation of risks.
+ * 
+ * @category Nodes
  * @property {Data} data Loaded data from a database.
  * @property {Canvas} canvas The nested canvas to render the node on.
  * @property {Object} customRepresentation An optional object that contains information to override default representations.
@@ -24194,7 +24196,10 @@ var BaseEdge = /*#__PURE__*/function () {
   }
   /**
    * Calculates the two points indicating the starting and end point for edges.
-   * @param {Object} opts Additional configuration required for calculating certain edges.
+   * 
+   * @param {Object} [opts={ }] An object containing additional information.
+   * @param {Number} [opts.isContextualParent=false] Determines if the current edge is a contextual parent edge.
+   * @param {Number} [opts.isContextualChild=false] Determines if the current edge is a contextual child edge
    */
 
 
@@ -24454,7 +24459,6 @@ var ThinEdgeConfiguration = {
  * @property {Object} customRepresentation An object containing information to change the default visualization.
  *
  * @see ThinEdgeConfiguration
- *
  */
 
 var ThinEdge = /*#__PURE__*/function (_BaseEdge) {
@@ -24475,19 +24479,23 @@ var ThinEdge = /*#__PURE__*/function (_BaseEdge) {
     return _this;
   }
   /**
-   * Calculates and renders a bold edge between two given nodes.
-   * @param {Number} [X=finalFromX] The final X position.
-   * @param {Number} [Y=finalFromY] The final Y position.
-   */
+  * Calculates and renders a thin edge between two given nodes.
+  * 
+  * @param {Object} [opts={ }] An object containing additional information.
+  * @param {Number} [opts.FX=this.finalFromX] The final X render position.
+  * @param {Number} [opts.FY=this.finalFromY] The final Y render position.
+  */
 
 
   _createClass(ThinEdge, [{
     key: "render",
-    value: function render() {
+    value: function render(_ref) {
       var _this2 = this;
 
-      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.finalFromX;
-      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.finalFromY;
+      var _ref$X = _ref.X,
+          X = _ref$X === void 0 ? this.finalFromX : _ref$X,
+          _ref$Y = _ref.Y,
+          Y = _ref$Y === void 0 ? this.finalFromY : _ref$Y;
       var svg = this.canvas.group();
       svg.css("cursor", "default");
       svg.id("thinEdge#".concat(this.layoutId, "_").concat(this.fromNode.id, "_").concat(this.toNode.id));
@@ -24562,11 +24570,11 @@ var ThinEdge = /*#__PURE__*/function (_BaseEdge) {
 
   }, {
     key: "transformToFinalPosition",
-    value: function transformToFinalPosition(_ref) {
+    value: function transformToFinalPosition(_ref2) {
       var _this3 = this;
 
-      var _ref$isReRender = _ref.isReRender,
-          isReRender = _ref$isReRender === void 0 ? false : _ref$isReRender;
+      var _ref2$isReRender = _ref2.isReRender,
+          isReRender = _ref2$isReRender === void 0 ? false : _ref2$isReRender;
       this.svg.back();
 
       if (this.animation !== null) {
@@ -24686,17 +24694,21 @@ var BoldEdge = /*#__PURE__*/function (_BaseEdge) {
     return _this;
   }
   /**
-   * Calculates and renders a bold edge between two given nodes.
-   * @param {Number} [X=finalFromX] The final X position.
-   * @param {Number} [Y=finalFromY] The final Y position.
-   */
+  * Calculates and renders a bold edge between two given nodes.
+  * 
+  * @param {Object} [opts={ }] An object containing additional information.
+  * @param {Number} [opts.FX=this.finalFromX] The final X render position.
+  * @param {Number} [opts.FY=this.finalFromY] The final Y render position.
+  */
 
 
   _createClass(BoldEdge, [{
     key: "render",
-    value: function render() {
-      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.finalFromX;
-      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.finalFromY;
+    value: function render(_ref) {
+      var _ref$X = _ref.X,
+          X = _ref$X === void 0 ? this.finalFromX : _ref$X,
+          _ref$Y = _ref.Y,
+          Y = _ref$Y === void 0 ? this.finalFromY : _ref$Y;
       var svg = this.canvas.group();
       svg.css("cursor", "default");
       svg.id("boldEdge#".concat(this.layoutId, "_").concat(this.fromNode.id, "_").concat(this.toNode.id));
@@ -24834,1438 +24846,13 @@ var BoldEdge = /*#__PURE__*/function (_BaseEdge) {
   return BoldEdge;
 }(BaseEdge);
 
-var bind$1 = function bind(fn, thisArg) {
-  return function wrap() {
-    var args = new Array(arguments.length);
-    for (var i = 0; i < args.length; i++) {
-      args[i] = arguments[i];
-    }
-    return fn.apply(thisArg, args);
-  };
-};
-
-/*global toString:true*/
-
-// utils is a library of generic helper functions non-specific to axios
-
-var toString$3 = Object.prototype.toString;
-
-/**
- * Determine if a value is an Array
- *
- * @param {Object} val The value to test
- * @returns {boolean} True if value is an Array, otherwise false
- */
-function isArray$2(val) {
-  return toString$3.call(val) === '[object Array]';
-}
-
-/**
- * Determine if a value is undefined
- *
- * @param {Object} val The value to test
- * @returns {boolean} True if the value is undefined, otherwise false
- */
-function isUndefined(val) {
-  return typeof val === 'undefined';
-}
-
-/**
- * Determine if a value is a Buffer
- *
- * @param {Object} val The value to test
- * @returns {boolean} True if value is a Buffer, otherwise false
- */
-function isBuffer(val) {
-  return val !== null && !isUndefined(val) && val.constructor !== null && !isUndefined(val.constructor)
-    && typeof val.constructor.isBuffer === 'function' && val.constructor.isBuffer(val);
-}
-
-/**
- * Determine if a value is an ArrayBuffer
- *
- * @param {Object} val The value to test
- * @returns {boolean} True if value is an ArrayBuffer, otherwise false
- */
-function isArrayBuffer(val) {
-  return toString$3.call(val) === '[object ArrayBuffer]';
-}
-
-/**
- * Determine if a value is a FormData
- *
- * @param {Object} val The value to test
- * @returns {boolean} True if value is an FormData, otherwise false
- */
-function isFormData(val) {
-  return (typeof FormData !== 'undefined') && (val instanceof FormData);
-}
-
-/**
- * Determine if a value is a view on an ArrayBuffer
- *
- * @param {Object} val The value to test
- * @returns {boolean} True if value is a view on an ArrayBuffer, otherwise false
- */
-function isArrayBufferView(val) {
-  var result;
-  if ((typeof ArrayBuffer !== 'undefined') && (ArrayBuffer.isView)) {
-    result = ArrayBuffer.isView(val);
-  } else {
-    result = (val) && (val.buffer) && (val.buffer instanceof ArrayBuffer);
-  }
-  return result;
-}
-
-/**
- * Determine if a value is a String
- *
- * @param {Object} val The value to test
- * @returns {boolean} True if value is a String, otherwise false
- */
-function isString(val) {
-  return typeof val === 'string';
-}
-
-/**
- * Determine if a value is a Number
- *
- * @param {Object} val The value to test
- * @returns {boolean} True if value is a Number, otherwise false
- */
-function isNumber$1(val) {
-  return typeof val === 'number';
-}
-
-/**
- * Determine if a value is an Object
- *
- * @param {Object} val The value to test
- * @returns {boolean} True if value is an Object, otherwise false
- */
-function isObject$2(val) {
-  return val !== null && typeof val === 'object';
-}
-
-/**
- * Determine if a value is a Date
- *
- * @param {Object} val The value to test
- * @returns {boolean} True if value is a Date, otherwise false
- */
-function isDate(val) {
-  return toString$3.call(val) === '[object Date]';
-}
-
-/**
- * Determine if a value is a File
- *
- * @param {Object} val The value to test
- * @returns {boolean} True if value is a File, otherwise false
- */
-function isFile(val) {
-  return toString$3.call(val) === '[object File]';
-}
-
-/**
- * Determine if a value is a Blob
- *
- * @param {Object} val The value to test
- * @returns {boolean} True if value is a Blob, otherwise false
- */
-function isBlob(val) {
-  return toString$3.call(val) === '[object Blob]';
-}
-
-/**
- * Determine if a value is a Function
- *
- * @param {Object} val The value to test
- * @returns {boolean} True if value is a Function, otherwise false
- */
-function isFunction(val) {
-  return toString$3.call(val) === '[object Function]';
-}
-
-/**
- * Determine if a value is a Stream
- *
- * @param {Object} val The value to test
- * @returns {boolean} True if value is a Stream, otherwise false
- */
-function isStream(val) {
-  return isObject$2(val) && isFunction(val.pipe);
-}
-
-/**
- * Determine if a value is a URLSearchParams object
- *
- * @param {Object} val The value to test
- * @returns {boolean} True if value is a URLSearchParams object, otherwise false
- */
-function isURLSearchParams(val) {
-  return typeof URLSearchParams !== 'undefined' && val instanceof URLSearchParams;
-}
-
-/**
- * Trim excess whitespace off the beginning and end of a string
- *
- * @param {String} str The String to trim
- * @returns {String} The String freed of excess whitespace
- */
-function trim$4(str) {
-  return str.replace(/^\s*/, '').replace(/\s*$/, '');
-}
-
-/**
- * Determine if we're running in a standard browser environment
- *
- * This allows axios to run in a web worker, and react-native.
- * Both environments support XMLHttpRequest, but not fully standard globals.
- *
- * web workers:
- *  typeof window -> undefined
- *  typeof document -> undefined
- *
- * react-native:
- *  navigator.product -> 'ReactNative'
- * nativescript
- *  navigator.product -> 'NativeScript' or 'NS'
- */
-function isStandardBrowserEnv() {
-  if (typeof navigator !== 'undefined' && (navigator.product === 'ReactNative' ||
-                                           navigator.product === 'NativeScript' ||
-                                           navigator.product === 'NS')) {
-    return false;
-  }
-  return (
-    typeof window !== 'undefined' &&
-    typeof document !== 'undefined'
-  );
-}
-
-/**
- * Iterate over an Array or an Object invoking a function for each item.
- *
- * If `obj` is an Array callback will be called passing
- * the value, index, and complete array for each item.
- *
- * If 'obj' is an Object callback will be called passing
- * the value, key, and complete object for each property.
- *
- * @param {Object|Array} obj The object to iterate
- * @param {Function} fn The callback to invoke for each item
- */
-function forEach(obj, fn) {
-  // Don't bother if no value provided
-  if (obj === null || typeof obj === 'undefined') {
-    return;
-  }
-
-  // Force an array if not already something iterable
-  if (typeof obj !== 'object') {
-    /*eslint no-param-reassign:0*/
-    obj = [obj];
-  }
-
-  if (isArray$2(obj)) {
-    // Iterate over array values
-    for (var i = 0, l = obj.length; i < l; i++) {
-      fn.call(null, obj[i], i, obj);
-    }
-  } else {
-    // Iterate over object keys
-    for (var key in obj) {
-      if (Object.prototype.hasOwnProperty.call(obj, key)) {
-        fn.call(null, obj[key], key, obj);
-      }
-    }
-  }
-}
-
-/**
- * Accepts varargs expecting each argument to be an object, then
- * immutably merges the properties of each object and returns result.
- *
- * When multiple objects contain the same key the later object in
- * the arguments list will take precedence.
- *
- * Example:
- *
- * ```js
- * var result = merge({foo: 123}, {foo: 456});
- * console.log(result.foo); // outputs 456
- * ```
- *
- * @param {Object} obj1 Object to merge
- * @returns {Object} Result of all merge properties
- */
-function merge(/* obj1, obj2, obj3, ... */) {
-  var result = {};
-  function assignValue(val, key) {
-    if (typeof result[key] === 'object' && typeof val === 'object') {
-      result[key] = merge(result[key], val);
-    } else {
-      result[key] = val;
-    }
-  }
-
-  for (var i = 0, l = arguments.length; i < l; i++) {
-    forEach(arguments[i], assignValue);
-  }
-  return result;
-}
-
-/**
- * Function equal to merge with the difference being that no reference
- * to original objects is kept.
- *
- * @see merge
- * @param {Object} obj1 Object to merge
- * @returns {Object} Result of all merge properties
- */
-function deepMerge(/* obj1, obj2, obj3, ... */) {
-  var result = {};
-  function assignValue(val, key) {
-    if (typeof result[key] === 'object' && typeof val === 'object') {
-      result[key] = deepMerge(result[key], val);
-    } else if (typeof val === 'object') {
-      result[key] = deepMerge({}, val);
-    } else {
-      result[key] = val;
-    }
-  }
-
-  for (var i = 0, l = arguments.length; i < l; i++) {
-    forEach(arguments[i], assignValue);
-  }
-  return result;
-}
-
-/**
- * Extends object a by mutably adding to it the properties of object b.
- *
- * @param {Object} a The object to be extended
- * @param {Object} b The object to copy properties from
- * @param {Object} thisArg The object to bind function to
- * @return {Object} The resulting value of object a
- */
-function extend$1(a, b, thisArg) {
-  forEach(b, function assignValue(val, key) {
-    if (thisArg && typeof val === 'function') {
-      a[key] = bind$1(val, thisArg);
-    } else {
-      a[key] = val;
-    }
-  });
-  return a;
-}
-
-var utils$1 = {
-  isArray: isArray$2,
-  isArrayBuffer: isArrayBuffer,
-  isBuffer: isBuffer,
-  isFormData: isFormData,
-  isArrayBufferView: isArrayBufferView,
-  isString: isString,
-  isNumber: isNumber$1,
-  isObject: isObject$2,
-  isUndefined: isUndefined,
-  isDate: isDate,
-  isFile: isFile,
-  isBlob: isBlob,
-  isFunction: isFunction,
-  isStream: isStream,
-  isURLSearchParams: isURLSearchParams,
-  isStandardBrowserEnv: isStandardBrowserEnv,
-  forEach: forEach,
-  merge: merge,
-  deepMerge: deepMerge,
-  extend: extend$1,
-  trim: trim$4
-};
-
-function encode(val) {
-  return encodeURIComponent(val).
-    replace(/%40/gi, '@').
-    replace(/%3A/gi, ':').
-    replace(/%24/g, '$').
-    replace(/%2C/gi, ',').
-    replace(/%20/g, '+').
-    replace(/%5B/gi, '[').
-    replace(/%5D/gi, ']');
-}
-
-/**
- * Build a URL by appending params to the end
- *
- * @param {string} url The base of the url (e.g., http://www.google.com)
- * @param {object} [params] The params to be appended
- * @returns {string} The formatted url
- */
-var buildURL = function buildURL(url, params, paramsSerializer) {
-  /*eslint no-param-reassign:0*/
-  if (!params) {
-    return url;
-  }
-
-  var serializedParams;
-  if (paramsSerializer) {
-    serializedParams = paramsSerializer(params);
-  } else if (utils$1.isURLSearchParams(params)) {
-    serializedParams = params.toString();
-  } else {
-    var parts = [];
-
-    utils$1.forEach(params, function serialize(val, key) {
-      if (val === null || typeof val === 'undefined') {
-        return;
-      }
-
-      if (utils$1.isArray(val)) {
-        key = key + '[]';
-      } else {
-        val = [val];
-      }
-
-      utils$1.forEach(val, function parseValue(v) {
-        if (utils$1.isDate(v)) {
-          v = v.toISOString();
-        } else if (utils$1.isObject(v)) {
-          v = JSON.stringify(v);
-        }
-        parts.push(encode(key) + '=' + encode(v));
-      });
-    });
-
-    serializedParams = parts.join('&');
-  }
-
-  if (serializedParams) {
-    var hashmarkIndex = url.indexOf('#');
-    if (hashmarkIndex !== -1) {
-      url = url.slice(0, hashmarkIndex);
-    }
-
-    url += (url.indexOf('?') === -1 ? '?' : '&') + serializedParams;
-  }
-
-  return url;
-};
-
-function InterceptorManager() {
-  this.handlers = [];
-}
-
-/**
- * Add a new interceptor to the stack
- *
- * @param {Function} fulfilled The function to handle `then` for a `Promise`
- * @param {Function} rejected The function to handle `reject` for a `Promise`
- *
- * @return {Number} An ID used to remove interceptor later
- */
-InterceptorManager.prototype.use = function use(fulfilled, rejected) {
-  this.handlers.push({
-    fulfilled: fulfilled,
-    rejected: rejected
-  });
-  return this.handlers.length - 1;
-};
-
-/**
- * Remove an interceptor from the stack
- *
- * @param {Number} id The ID that was returned by `use`
- */
-InterceptorManager.prototype.eject = function eject(id) {
-  if (this.handlers[id]) {
-    this.handlers[id] = null;
-  }
-};
-
-/**
- * Iterate over all the registered interceptors
- *
- * This method is particularly useful for skipping over any
- * interceptors that may have become `null` calling `eject`.
- *
- * @param {Function} fn The function to call for each interceptor
- */
-InterceptorManager.prototype.forEach = function forEach(fn) {
-  utils$1.forEach(this.handlers, function forEachHandler(h) {
-    if (h !== null) {
-      fn(h);
-    }
-  });
-};
-
-var InterceptorManager_1 = InterceptorManager;
-
-/**
- * Transform the data for a request or a response
- *
- * @param {Object|String} data The data to be transformed
- * @param {Array} headers The headers for the request or response
- * @param {Array|Function} fns A single function or Array of functions
- * @returns {*} The resulting transformed data
- */
-var transformData = function transformData(data, headers, fns) {
-  /*eslint no-param-reassign:0*/
-  utils$1.forEach(fns, function transform(fn) {
-    data = fn(data, headers);
-  });
-
-  return data;
-};
-
-var isCancel = function isCancel(value) {
-  return !!(value && value.__CANCEL__);
-};
-
-var normalizeHeaderName = function normalizeHeaderName(headers, normalizedName) {
-  utils$1.forEach(headers, function processHeader(value, name) {
-    if (name !== normalizedName && name.toUpperCase() === normalizedName.toUpperCase()) {
-      headers[normalizedName] = value;
-      delete headers[name];
-    }
-  });
-};
-
-/**
- * Update an Error with the specified config, error code, and response.
- *
- * @param {Error} error The error to update.
- * @param {Object} config The config.
- * @param {string} [code] The error code (for example, 'ECONNABORTED').
- * @param {Object} [request] The request.
- * @param {Object} [response] The response.
- * @returns {Error} The error.
- */
-var enhanceError = function enhanceError(error, config, code, request, response) {
-  error.config = config;
-  if (code) {
-    error.code = code;
-  }
-
-  error.request = request;
-  error.response = response;
-  error.isAxiosError = true;
-
-  error.toJSON = function() {
-    return {
-      // Standard
-      message: this.message,
-      name: this.name,
-      // Microsoft
-      description: this.description,
-      number: this.number,
-      // Mozilla
-      fileName: this.fileName,
-      lineNumber: this.lineNumber,
-      columnNumber: this.columnNumber,
-      stack: this.stack,
-      // Axios
-      config: this.config,
-      code: this.code
-    };
-  };
-  return error;
-};
-
-/**
- * Create an Error with the specified message, config, error code, request and response.
- *
- * @param {string} message The error message.
- * @param {Object} config The config.
- * @param {string} [code] The error code (for example, 'ECONNABORTED').
- * @param {Object} [request] The request.
- * @param {Object} [response] The response.
- * @returns {Error} The created error.
- */
-var createError = function createError(message, config, code, request, response) {
-  var error = new Error(message);
-  return enhanceError(error, config, code, request, response);
-};
-
-/**
- * Resolve or reject a Promise based on response status.
- *
- * @param {Function} resolve A function that resolves the promise.
- * @param {Function} reject A function that rejects the promise.
- * @param {object} response The response.
- */
-var settle = function settle(resolve, reject, response) {
-  var validateStatus = response.config.validateStatus;
-  if (!validateStatus || validateStatus(response.status)) {
-    resolve(response);
-  } else {
-    reject(createError(
-      'Request failed with status code ' + response.status,
-      response.config,
-      null,
-      response.request,
-      response
-    ));
-  }
-};
-
-/**
- * Determines whether the specified URL is absolute
- *
- * @param {string} url The URL to test
- * @returns {boolean} True if the specified URL is absolute, otherwise false
- */
-var isAbsoluteURL = function isAbsoluteURL(url) {
-  // A URL is considered absolute if it begins with "<scheme>://" or "//" (protocol-relative URL).
-  // RFC 3986 defines scheme name as a sequence of characters beginning with a letter and followed
-  // by any combination of letters, digits, plus, period, or hyphen.
-  return /^([a-z][a-z\d\+\-\.]*:)?\/\//i.test(url);
-};
-
-/**
- * Creates a new URL by combining the specified URLs
- *
- * @param {string} baseURL The base URL
- * @param {string} relativeURL The relative URL
- * @returns {string} The combined URL
- */
-var combineURLs = function combineURLs(baseURL, relativeURL) {
-  return relativeURL
-    ? baseURL.replace(/\/+$/, '') + '/' + relativeURL.replace(/^\/+/, '')
-    : baseURL;
-};
-
-/**
- * Creates a new URL by combining the baseURL with the requestedURL,
- * only when the requestedURL is not already an absolute URL.
- * If the requestURL is absolute, this function returns the requestedURL untouched.
- *
- * @param {string} baseURL The base URL
- * @param {string} requestedURL Absolute or relative URL to combine
- * @returns {string} The combined full path
- */
-var buildFullPath = function buildFullPath(baseURL, requestedURL) {
-  if (baseURL && !isAbsoluteURL(requestedURL)) {
-    return combineURLs(baseURL, requestedURL);
-  }
-  return requestedURL;
-};
-
-// Headers whose duplicates are ignored by node
-// c.f. https://nodejs.org/api/http.html#http_message_headers
-var ignoreDuplicateOf = [
-  'age', 'authorization', 'content-length', 'content-type', 'etag',
-  'expires', 'from', 'host', 'if-modified-since', 'if-unmodified-since',
-  'last-modified', 'location', 'max-forwards', 'proxy-authorization',
-  'referer', 'retry-after', 'user-agent'
-];
-
-/**
- * Parse headers into an object
- *
- * ```
- * Date: Wed, 27 Aug 2014 08:58:49 GMT
- * Content-Type: application/json
- * Connection: keep-alive
- * Transfer-Encoding: chunked
- * ```
- *
- * @param {String} headers Headers needing to be parsed
- * @returns {Object} Headers parsed into an object
- */
-var parseHeaders = function parseHeaders(headers) {
-  var parsed = {};
-  var key;
-  var val;
-  var i;
-
-  if (!headers) { return parsed; }
-
-  utils$1.forEach(headers.split('\n'), function parser(line) {
-    i = line.indexOf(':');
-    key = utils$1.trim(line.substr(0, i)).toLowerCase();
-    val = utils$1.trim(line.substr(i + 1));
-
-    if (key) {
-      if (parsed[key] && ignoreDuplicateOf.indexOf(key) >= 0) {
-        return;
-      }
-      if (key === 'set-cookie') {
-        parsed[key] = (parsed[key] ? parsed[key] : []).concat([val]);
-      } else {
-        parsed[key] = parsed[key] ? parsed[key] + ', ' + val : val;
-      }
-    }
-  });
-
-  return parsed;
-};
-
-var isURLSameOrigin = (
-  utils$1.isStandardBrowserEnv() ?
-
-  // Standard browser envs have full support of the APIs needed to test
-  // whether the request URL is of the same origin as current location.
-    (function standardBrowserEnv() {
-      var msie = /(msie|trident)/i.test(navigator.userAgent);
-      var urlParsingNode = document.createElement('a');
-      var originURL;
-
-      /**
-    * Parse a URL to discover it's components
-    *
-    * @param {String} url The URL to be parsed
-    * @returns {Object}
-    */
-      function resolveURL(url) {
-        var href = url;
-
-        if (msie) {
-        // IE needs attribute set twice to normalize properties
-          urlParsingNode.setAttribute('href', href);
-          href = urlParsingNode.href;
-        }
-
-        urlParsingNode.setAttribute('href', href);
-
-        // urlParsingNode provides the UrlUtils interface - http://url.spec.whatwg.org/#urlutils
-        return {
-          href: urlParsingNode.href,
-          protocol: urlParsingNode.protocol ? urlParsingNode.protocol.replace(/:$/, '') : '',
-          host: urlParsingNode.host,
-          search: urlParsingNode.search ? urlParsingNode.search.replace(/^\?/, '') : '',
-          hash: urlParsingNode.hash ? urlParsingNode.hash.replace(/^#/, '') : '',
-          hostname: urlParsingNode.hostname,
-          port: urlParsingNode.port,
-          pathname: (urlParsingNode.pathname.charAt(0) === '/') ?
-            urlParsingNode.pathname :
-            '/' + urlParsingNode.pathname
-        };
-      }
-
-      originURL = resolveURL(window.location.href);
-
-      /**
-    * Determine if a URL shares the same origin as the current location
-    *
-    * @param {String} requestURL The URL to test
-    * @returns {boolean} True if URL shares the same origin, otherwise false
-    */
-      return function isURLSameOrigin(requestURL) {
-        var parsed = (utils$1.isString(requestURL)) ? resolveURL(requestURL) : requestURL;
-        return (parsed.protocol === originURL.protocol &&
-            parsed.host === originURL.host);
-      };
-    })() :
-
-  // Non standard browser envs (web workers, react-native) lack needed support.
-    (function nonStandardBrowserEnv() {
-      return function isURLSameOrigin() {
-        return true;
-      };
-    })()
-);
-
-var cookies = (
-  utils$1.isStandardBrowserEnv() ?
-
-  // Standard browser envs support document.cookie
-    (function standardBrowserEnv() {
-      return {
-        write: function write(name, value, expires, path, domain, secure) {
-          var cookie = [];
-          cookie.push(name + '=' + encodeURIComponent(value));
-
-          if (utils$1.isNumber(expires)) {
-            cookie.push('expires=' + new Date(expires).toGMTString());
-          }
-
-          if (utils$1.isString(path)) {
-            cookie.push('path=' + path);
-          }
-
-          if (utils$1.isString(domain)) {
-            cookie.push('domain=' + domain);
-          }
-
-          if (secure === true) {
-            cookie.push('secure');
-          }
-
-          document.cookie = cookie.join('; ');
-        },
-
-        read: function read(name) {
-          var match = document.cookie.match(new RegExp('(^|;\\s*)(' + name + ')=([^;]*)'));
-          return (match ? decodeURIComponent(match[3]) : null);
-        },
-
-        remove: function remove(name) {
-          this.write(name, '', Date.now() - 86400000);
-        }
-      };
-    })() :
-
-  // Non standard browser env (web workers, react-native) lack needed support.
-    (function nonStandardBrowserEnv() {
-      return {
-        write: function write() {},
-        read: function read() { return null; },
-        remove: function remove() {}
-      };
-    })()
-);
-
-var xhr = function xhrAdapter(config) {
-  return new Promise(function dispatchXhrRequest(resolve, reject) {
-    var requestData = config.data;
-    var requestHeaders = config.headers;
-
-    if (utils$1.isFormData(requestData)) {
-      delete requestHeaders['Content-Type']; // Let the browser set it
-    }
-
-    var request = new XMLHttpRequest();
-
-    // HTTP basic authentication
-    if (config.auth) {
-      var username = config.auth.username || '';
-      var password = config.auth.password || '';
-      requestHeaders.Authorization = 'Basic ' + btoa(username + ':' + password);
-    }
-
-    var fullPath = buildFullPath(config.baseURL, config.url);
-    request.open(config.method.toUpperCase(), buildURL(fullPath, config.params, config.paramsSerializer), true);
-
-    // Set the request timeout in MS
-    request.timeout = config.timeout;
-
-    // Listen for ready state
-    request.onreadystatechange = function handleLoad() {
-      if (!request || request.readyState !== 4) {
-        return;
-      }
-
-      // The request errored out and we didn't get a response, this will be
-      // handled by onerror instead
-      // With one exception: request that using file: protocol, most browsers
-      // will return status as 0 even though it's a successful request
-      if (request.status === 0 && !(request.responseURL && request.responseURL.indexOf('file:') === 0)) {
-        return;
-      }
-
-      // Prepare the response
-      var responseHeaders = 'getAllResponseHeaders' in request ? parseHeaders(request.getAllResponseHeaders()) : null;
-      var responseData = !config.responseType || config.responseType === 'text' ? request.responseText : request.response;
-      var response = {
-        data: responseData,
-        status: request.status,
-        statusText: request.statusText,
-        headers: responseHeaders,
-        config: config,
-        request: request
-      };
-
-      settle(resolve, reject, response);
-
-      // Clean up request
-      request = null;
-    };
-
-    // Handle browser request cancellation (as opposed to a manual cancellation)
-    request.onabort = function handleAbort() {
-      if (!request) {
-        return;
-      }
-
-      reject(createError('Request aborted', config, 'ECONNABORTED', request));
-
-      // Clean up request
-      request = null;
-    };
-
-    // Handle low level network errors
-    request.onerror = function handleError() {
-      // Real errors are hidden from us by the browser
-      // onerror should only fire if it's a network error
-      reject(createError('Network Error', config, null, request));
-
-      // Clean up request
-      request = null;
-    };
-
-    // Handle timeout
-    request.ontimeout = function handleTimeout() {
-      var timeoutErrorMessage = 'timeout of ' + config.timeout + 'ms exceeded';
-      if (config.timeoutErrorMessage) {
-        timeoutErrorMessage = config.timeoutErrorMessage;
-      }
-      reject(createError(timeoutErrorMessage, config, 'ECONNABORTED',
-        request));
-
-      // Clean up request
-      request = null;
-    };
-
-    // Add xsrf header
-    // This is only done if running in a standard browser environment.
-    // Specifically not if we're in a web worker, or react-native.
-    if (utils$1.isStandardBrowserEnv()) {
-      var cookies$1 = cookies;
-
-      // Add xsrf header
-      var xsrfValue = (config.withCredentials || isURLSameOrigin(fullPath)) && config.xsrfCookieName ?
-        cookies$1.read(config.xsrfCookieName) :
-        undefined;
-
-      if (xsrfValue) {
-        requestHeaders[config.xsrfHeaderName] = xsrfValue;
-      }
-    }
-
-    // Add headers to the request
-    if ('setRequestHeader' in request) {
-      utils$1.forEach(requestHeaders, function setRequestHeader(val, key) {
-        if (typeof requestData === 'undefined' && key.toLowerCase() === 'content-type') {
-          // Remove Content-Type if data is undefined
-          delete requestHeaders[key];
-        } else {
-          // Otherwise add header to the request
-          request.setRequestHeader(key, val);
-        }
-      });
-    }
-
-    // Add withCredentials to request if needed
-    if (!utils$1.isUndefined(config.withCredentials)) {
-      request.withCredentials = !!config.withCredentials;
-    }
-
-    // Add responseType to request if needed
-    if (config.responseType) {
-      try {
-        request.responseType = config.responseType;
-      } catch (e) {
-        // Expected DOMException thrown by browsers not compatible XMLHttpRequest Level 2.
-        // But, this can be suppressed for 'json' type as it can be parsed by default 'transformResponse' function.
-        if (config.responseType !== 'json') {
-          throw e;
-        }
-      }
-    }
-
-    // Handle progress if needed
-    if (typeof config.onDownloadProgress === 'function') {
-      request.addEventListener('progress', config.onDownloadProgress);
-    }
-
-    // Not all browsers support upload events
-    if (typeof config.onUploadProgress === 'function' && request.upload) {
-      request.upload.addEventListener('progress', config.onUploadProgress);
-    }
-
-    if (config.cancelToken) {
-      // Handle cancellation
-      config.cancelToken.promise.then(function onCanceled(cancel) {
-        if (!request) {
-          return;
-        }
-
-        request.abort();
-        reject(cancel);
-        // Clean up request
-        request = null;
-      });
-    }
-
-    if (requestData === undefined) {
-      requestData = null;
-    }
-
-    // Send the request
-    request.send(requestData);
-  });
-};
-
-var DEFAULT_CONTENT_TYPE = {
-  'Content-Type': 'application/x-www-form-urlencoded'
-};
-
-function setContentTypeIfUnset(headers, value) {
-  if (!utils$1.isUndefined(headers) && utils$1.isUndefined(headers['Content-Type'])) {
-    headers['Content-Type'] = value;
-  }
-}
-
-function getDefaultAdapter() {
-  var adapter;
-  if (typeof XMLHttpRequest !== 'undefined') {
-    // For browsers use XHR adapter
-    adapter = xhr;
-  } else if (typeof process !== 'undefined' && Object.prototype.toString.call(process) === '[object process]') {
-    // For node use HTTP adapter
-    adapter = xhr;
-  }
-  return adapter;
-}
-
-var defaults = {
-  adapter: getDefaultAdapter(),
-
-  transformRequest: [function transformRequest(data, headers) {
-    normalizeHeaderName(headers, 'Accept');
-    normalizeHeaderName(headers, 'Content-Type');
-    if (utils$1.isFormData(data) ||
-      utils$1.isArrayBuffer(data) ||
-      utils$1.isBuffer(data) ||
-      utils$1.isStream(data) ||
-      utils$1.isFile(data) ||
-      utils$1.isBlob(data)
-    ) {
-      return data;
-    }
-    if (utils$1.isArrayBufferView(data)) {
-      return data.buffer;
-    }
-    if (utils$1.isURLSearchParams(data)) {
-      setContentTypeIfUnset(headers, 'application/x-www-form-urlencoded;charset=utf-8');
-      return data.toString();
-    }
-    if (utils$1.isObject(data)) {
-      setContentTypeIfUnset(headers, 'application/json;charset=utf-8');
-      return JSON.stringify(data);
-    }
-    return data;
-  }],
-
-  transformResponse: [function transformResponse(data) {
-    /*eslint no-param-reassign:0*/
-    if (typeof data === 'string') {
-      try {
-        data = JSON.parse(data);
-      } catch (e) { /* Ignore */ }
-    }
-    return data;
-  }],
-
-  /**
-   * A timeout in milliseconds to abort a request. If set to 0 (default) a
-   * timeout is not created.
-   */
-  timeout: 0,
-
-  xsrfCookieName: 'XSRF-TOKEN',
-  xsrfHeaderName: 'X-XSRF-TOKEN',
-
-  maxContentLength: -1,
-
-  validateStatus: function validateStatus(status) {
-    return status >= 200 && status < 300;
-  }
-};
-
-defaults.headers = {
-  common: {
-    'Accept': 'application/json, text/plain, */*'
-  }
-};
-
-utils$1.forEach(['delete', 'get', 'head'], function forEachMethodNoData(method) {
-  defaults.headers[method] = {};
-});
-
-utils$1.forEach(['post', 'put', 'patch'], function forEachMethodWithData(method) {
-  defaults.headers[method] = utils$1.merge(DEFAULT_CONTENT_TYPE);
-});
-
-var defaults_1 = defaults;
-
-/**
- * Throws a `Cancel` if cancellation has been requested.
- */
-function throwIfCancellationRequested(config) {
-  if (config.cancelToken) {
-    config.cancelToken.throwIfRequested();
-  }
-}
-
-/**
- * Dispatch a request to the server using the configured adapter.
- *
- * @param {object} config The config that is to be used for the request
- * @returns {Promise} The Promise to be fulfilled
- */
-var dispatchRequest = function dispatchRequest(config) {
-  throwIfCancellationRequested(config);
-
-  // Ensure headers exist
-  config.headers = config.headers || {};
-
-  // Transform request data
-  config.data = transformData(
-    config.data,
-    config.headers,
-    config.transformRequest
-  );
-
-  // Flatten headers
-  config.headers = utils$1.merge(
-    config.headers.common || {},
-    config.headers[config.method] || {},
-    config.headers
-  );
-
-  utils$1.forEach(
-    ['delete', 'get', 'head', 'post', 'put', 'patch', 'common'],
-    function cleanHeaderConfig(method) {
-      delete config.headers[method];
-    }
-  );
-
-  var adapter = config.adapter || defaults_1.adapter;
-
-  return adapter(config).then(function onAdapterResolution(response) {
-    throwIfCancellationRequested(config);
-
-    // Transform response data
-    response.data = transformData(
-      response.data,
-      response.headers,
-      config.transformResponse
-    );
-
-    return response;
-  }, function onAdapterRejection(reason) {
-    if (!isCancel(reason)) {
-      throwIfCancellationRequested(config);
-
-      // Transform response data
-      if (reason && reason.response) {
-        reason.response.data = transformData(
-          reason.response.data,
-          reason.response.headers,
-          config.transformResponse
-        );
-      }
-    }
-
-    return Promise.reject(reason);
-  });
-};
-
-/**
- * Config-specific merge-function which creates a new config-object
- * by merging two configuration objects together.
- *
- * @param {Object} config1
- * @param {Object} config2
- * @returns {Object} New object resulting from merging config2 to config1
- */
-var mergeConfig = function mergeConfig(config1, config2) {
-  // eslint-disable-next-line no-param-reassign
-  config2 = config2 || {};
-  var config = {};
-
-  var valueFromConfig2Keys = ['url', 'method', 'params', 'data'];
-  var mergeDeepPropertiesKeys = ['headers', 'auth', 'proxy'];
-  var defaultToConfig2Keys = [
-    'baseURL', 'url', 'transformRequest', 'transformResponse', 'paramsSerializer',
-    'timeout', 'withCredentials', 'adapter', 'responseType', 'xsrfCookieName',
-    'xsrfHeaderName', 'onUploadProgress', 'onDownloadProgress',
-    'maxContentLength', 'validateStatus', 'maxRedirects', 'httpAgent',
-    'httpsAgent', 'cancelToken', 'socketPath'
-  ];
-
-  utils$1.forEach(valueFromConfig2Keys, function valueFromConfig2(prop) {
-    if (typeof config2[prop] !== 'undefined') {
-      config[prop] = config2[prop];
-    }
-  });
-
-  utils$1.forEach(mergeDeepPropertiesKeys, function mergeDeepProperties(prop) {
-    if (utils$1.isObject(config2[prop])) {
-      config[prop] = utils$1.deepMerge(config1[prop], config2[prop]);
-    } else if (typeof config2[prop] !== 'undefined') {
-      config[prop] = config2[prop];
-    } else if (utils$1.isObject(config1[prop])) {
-      config[prop] = utils$1.deepMerge(config1[prop]);
-    } else if (typeof config1[prop] !== 'undefined') {
-      config[prop] = config1[prop];
-    }
-  });
-
-  utils$1.forEach(defaultToConfig2Keys, function defaultToConfig2(prop) {
-    if (typeof config2[prop] !== 'undefined') {
-      config[prop] = config2[prop];
-    } else if (typeof config1[prop] !== 'undefined') {
-      config[prop] = config1[prop];
-    }
-  });
-
-  var axiosKeys = valueFromConfig2Keys
-    .concat(mergeDeepPropertiesKeys)
-    .concat(defaultToConfig2Keys);
-
-  var otherKeys = Object
-    .keys(config2)
-    .filter(function filterAxiosKeys(key) {
-      return axiosKeys.indexOf(key) === -1;
-    });
-
-  utils$1.forEach(otherKeys, function otherKeysDefaultToConfig2(prop) {
-    if (typeof config2[prop] !== 'undefined') {
-      config[prop] = config2[prop];
-    } else if (typeof config1[prop] !== 'undefined') {
-      config[prop] = config1[prop];
-    }
-  });
-
-  return config;
-};
-
-/**
- * Create a new instance of Axios
- *
- * @param {Object} instanceConfig The default config for the instance
- */
-function Axios(instanceConfig) {
-  this.defaults = instanceConfig;
-  this.interceptors = {
-    request: new InterceptorManager_1(),
-    response: new InterceptorManager_1()
-  };
-}
-
-/**
- * Dispatch a request
- *
- * @param {Object} config The config specific for this request (merged with this.defaults)
- */
-Axios.prototype.request = function request(config) {
-  /*eslint no-param-reassign:0*/
-  // Allow for axios('example/url'[, config]) a la fetch API
-  if (typeof config === 'string') {
-    config = arguments[1] || {};
-    config.url = arguments[0];
-  } else {
-    config = config || {};
-  }
-
-  config = mergeConfig(this.defaults, config);
-
-  // Set config.method
-  if (config.method) {
-    config.method = config.method.toLowerCase();
-  } else if (this.defaults.method) {
-    config.method = this.defaults.method.toLowerCase();
-  } else {
-    config.method = 'get';
-  }
-
-  // Hook up interceptors middleware
-  var chain = [dispatchRequest, undefined];
-  var promise = Promise.resolve(config);
-
-  this.interceptors.request.forEach(function unshiftRequestInterceptors(interceptor) {
-    chain.unshift(interceptor.fulfilled, interceptor.rejected);
-  });
-
-  this.interceptors.response.forEach(function pushResponseInterceptors(interceptor) {
-    chain.push(interceptor.fulfilled, interceptor.rejected);
-  });
-
-  while (chain.length) {
-    promise = promise.then(chain.shift(), chain.shift());
-  }
-
-  return promise;
-};
-
-Axios.prototype.getUri = function getUri(config) {
-  config = mergeConfig(this.defaults, config);
-  return buildURL(config.url, config.params, config.paramsSerializer).replace(/^\?/, '');
-};
-
-// Provide aliases for supported request methods
-utils$1.forEach(['delete', 'get', 'head', 'options'], function forEachMethodNoData(method) {
-  /*eslint func-names:0*/
-  Axios.prototype[method] = function(url, config) {
-    return this.request(utils$1.merge(config || {}, {
-      method: method,
-      url: url
-    }));
-  };
-});
-
-utils$1.forEach(['post', 'put', 'patch'], function forEachMethodWithData(method) {
-  /*eslint func-names:0*/
-  Axios.prototype[method] = function(url, data, config) {
-    return this.request(utils$1.merge(config || {}, {
-      method: method,
-      url: url,
-      data: data
-    }));
-  };
-});
-
-var Axios_1 = Axios;
-
-/**
- * A `Cancel` is an object that is thrown when an operation is canceled.
- *
- * @class
- * @param {string=} message The message.
- */
-function Cancel(message) {
-  this.message = message;
-}
-
-Cancel.prototype.toString = function toString() {
-  return 'Cancel' + (this.message ? ': ' + this.message : '');
-};
-
-Cancel.prototype.__CANCEL__ = true;
-
-var Cancel_1 = Cancel;
-
-/**
- * A `CancelToken` is an object that can be used to request cancellation of an operation.
- *
- * @class
- * @param {Function} executor The executor function.
- */
-function CancelToken(executor) {
-  if (typeof executor !== 'function') {
-    throw new TypeError('executor must be a function.');
-  }
-
-  var resolvePromise;
-  this.promise = new Promise(function promiseExecutor(resolve) {
-    resolvePromise = resolve;
-  });
-
-  var token = this;
-  executor(function cancel(message) {
-    if (token.reason) {
-      // Cancellation has already been requested
-      return;
-    }
-
-    token.reason = new Cancel_1(message);
-    resolvePromise(token.reason);
-  });
-}
-
-/**
- * Throws a `Cancel` if cancellation has been requested.
- */
-CancelToken.prototype.throwIfRequested = function throwIfRequested() {
-  if (this.reason) {
-    throw this.reason;
-  }
-};
-
-/**
- * Returns an object that contains a new `CancelToken` and a function that, when called,
- * cancels the `CancelToken`.
- */
-CancelToken.source = function source() {
-  var cancel;
-  var token = new CancelToken(function executor(c) {
-    cancel = c;
-  });
-  return {
-    token: token,
-    cancel: cancel
-  };
-};
-
-var CancelToken_1 = CancelToken;
-
-/**
- * Syntactic sugar for invoking a function and expanding an array for arguments.
- *
- * Common use case would be to use `Function.prototype.apply`.
- *
- *  ```js
- *  function f(x, y, z) {}
- *  var args = [1, 2, 3];
- *  f.apply(null, args);
- *  ```
- *
- * With `spread` this example can be re-written.
- *
- *  ```js
- *  spread(function(x, y, z) {})([1, 2, 3]);
- *  ```
- *
- * @param {Function} callback
- * @returns {Function}
- */
-var spread = function spread(callback) {
-  return function wrap(arr) {
-    return callback.apply(null, arr);
-  };
-};
-
-/**
- * Create an instance of Axios
- *
- * @param {Object} defaultConfig The default config for the instance
- * @return {Axios} A new instance of Axios
- */
-function createInstance(defaultConfig) {
-  var context = new Axios_1(defaultConfig);
-  var instance = bind$1(Axios_1.prototype.request, context);
-
-  // Copy axios.prototype to instance
-  utils$1.extend(instance, Axios_1.prototype, context);
-
-  // Copy context to instance
-  utils$1.extend(instance, context);
-
-  return instance;
-}
-
-// Create the default instance to be exported
-var axios = createInstance(defaults_1);
-
-// Expose Axios class to allow class inheritance
-axios.Axios = Axios_1;
-
-// Factory for creating new instances
-axios.create = function create(instanceConfig) {
-  return createInstance(mergeConfig(axios.defaults, instanceConfig));
-};
-
-// Expose Cancel & CancelToken
-axios.Cancel = Cancel_1;
-axios.CancelToken = CancelToken_1;
-axios.isCancel = isCancel;
-
-// Expose all/spread
-axios.all = function all(promises) {
-  return Promise.all(promises);
-};
-axios.spread = spread;
-
-var axios_1 = axios;
-
-// Allow use of default import syntax in TypeScript
-var default_1 = axios;
-axios_1.default = default_1;
-
-var axios$1 = axios_1;
-
 /**
  * Makes a single HTTP POST request to an endpoint.
  * @async
  * @param {String} url The server endpoint URL.
  * @param {Array.<Number>} body An array containing ids.
  */
-
-var Request = /*#__PURE__*/function () {
+var singlePostRequest = /*#__PURE__*/function () {
   var _ref = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee(url, body) {
     return regeneratorRuntime.wrap(function _callee$(_context) {
       while (1) {
@@ -26295,24 +24882,55 @@ var Request = /*#__PURE__*/function () {
     }, _callee);
   }));
 
-  return function Request(_x, _x2) {
+  return function singlePostRequest(_x, _x2) {
     return _ref.apply(this, arguments);
   };
 }();
+/**
+ * Makes multiple HTTP POST requests to an endpoint.
+ * @async
+ * @param {Array.<Object>} requests An array of objects of URLs and ids.
+ */
 
-var RequestMultiple = function RequestMultiple(requests) {
-  axios$1.defaults.headers.post["Content-Type"] = "application/json;charset=utf-8";
-  var reqs = requests.map(function (r) {
-    return axios$1.post(r.url, JSON.stringify(r.body));
-  });
-  return axios$1.all(reqs).then(axios$1.spread(function () {
-    var res1 = arguments.length <= 0 ? undefined : arguments[0];
-    var res2 = arguments.length <= 1 ? undefined : arguments[1];
-    return [res1, res2];
-  })).catch(function (error) {
-    return Promise.reject(error);
-  });
-};
+
+var multiplePostRequests = /*#__PURE__*/function () {
+  var _ref2 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee2(requests) {
+    return regeneratorRuntime.wrap(function _callee2$(_context2) {
+      while (1) {
+        switch (_context2.prev = _context2.next) {
+          case 0:
+            _context2.next = 2;
+            return Promise.all(requests.map(function (_ref3) {
+              var url = _ref3.url,
+                  body = _ref3.body;
+              return fetch(url, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json;charset=utf-8"
+                },
+                body: JSON.stringify(body)
+              }).then(function (response) {
+                return Promise.resolve(response.json());
+              }).catch(function (error) {
+                return Promise.reject(error);
+              });
+            }));
+
+          case 2:
+            return _context2.abrupt("return", _context2.sent);
+
+          case 3:
+          case "end":
+            return _context2.stop();
+        }
+      }
+    }, _callee2);
+  }));
+
+  return function multiplePostRequests(_x3) {
+    return _ref2.apply(this, arguments);
+  };
+}();
 
 /**
  * Creates a tree node tree based on parent and children references. The required data does not have to be sorted.
@@ -26323,7 +24941,7 @@ var RequestMultiple = function RequestMultiple(requests) {
  *
  * @see https://stackoverflow.com/a/22072374
  */
-var constructTree = function constructTree(array) {
+var buildTreeFromIds = function buildTreeFromIds(array) {
   var parentRef = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : undefined;
   var rootRef = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : undefined;
   var root = rootRef !== undefined ? rootRef : [];
@@ -26342,7 +24960,7 @@ var constructTree = function constructTree(array) {
     }
 
     children.forEach(function (child) {
-      constructTree(array, child);
+      buildTreeFromIds(array, child);
     });
   }
 
@@ -26497,19 +25115,23 @@ var CustomEdge = /*#__PURE__*/function (_BaseEdge) {
     return _this;
   }
   /**
-   * Calculates and renders a bold edge between two given nodes.
-   * @param {Number} [X=finalFromX] The final X position.
-   * @param {Number} [Y=finalFromY] The final Y position.
-   */
+  * Calculates and renders a custom edge between two given nodes.
+  * 
+  * @param {Object} [opts={ }] An object containing additional information.
+  * @param {Number} [opts.FX=this.finalFromX] The final X render position.
+  * @param {Number} [opts.FY=this.finalFromY] The final Y render position.
+  */
 
 
   _createClass(CustomEdge, [{
     key: "render",
-    value: function render() {
+    value: function render(_ref) {
       var _this2 = this;
 
-      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.finalFromX;
-      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.finalFromY;
+      var _ref$X = _ref.X,
+          X = _ref$X === void 0 ? this.finalFromX : _ref$X,
+          _ref$Y = _ref.Y,
+          Y = _ref$Y === void 0 ? this.finalFromY : _ref$Y;
       var svg = this.canvas.group();
       svg.css("cursor", "default");
       svg.id("customEdge#".concat(this.layoutId, "_").concat(this.fromNode.id, "_").concat(this.toNode.id));
@@ -26584,11 +25206,11 @@ var CustomEdge = /*#__PURE__*/function (_BaseEdge) {
 
   }, {
     key: "transformToFinalPosition",
-    value: function transformToFinalPosition(_ref) {
+    value: function transformToFinalPosition(_ref2) {
       var _this3 = this;
 
-      var _ref$isReRender = _ref.isReRender,
-          isReRender = _ref$isReRender === void 0 ? false : _ref$isReRender;
+      var _ref2$isReRender = _ref2.isReRender,
+          isReRender = _ref2$isReRender === void 0 ? false : _ref2$isReRender;
       this.svg.back();
 
       if (this.animation !== null) {
@@ -26808,7 +25430,7 @@ var BaseLayout = /*#__PURE__*/function () {
                 }
 
                 _context.next = 5;
-                return Request("".concat(this.config.databaseUrl, "/").concat(this.config.nodeEndpoint), ids);
+                return singlePostRequest("".concat(this.config.databaseUrl, "/").concat(this.config.nodeEndpoint), ids);
 
               case 5:
                 nodes = _context.sent;
@@ -26862,7 +25484,7 @@ var BaseLayout = /*#__PURE__*/function () {
                 }
 
                 _context2.next = 6;
-                return Request("".concat(this.config.databaseUrl, "/").concat(this.config.nodeEndpoint), difference);
+                return singlePostRequest("".concat(this.config.databaseUrl, "/").concat(this.config.nodeEndpoint), difference);
 
               case 6:
                 nodes = _context2.sent;
@@ -26949,7 +25571,7 @@ var BaseLayout = /*#__PURE__*/function () {
             switch (_context4.prev = _context4.next) {
               case 0:
                 _context4.next = 2;
-                return Request("".concat(this.config.databaseUrl, "/").concat(this.config.nodeEndpoint), [this.rootId]);
+                return singlePostRequest("".concat(this.config.databaseUrl, "/").concat(this.config.nodeEndpoint), [this.rootId]);
 
               case 2:
                 response1 = _context4.sent;
@@ -26975,7 +25597,7 @@ var BaseLayout = /*#__PURE__*/function () {
                 }
 
                 _context4.next = 12;
-                return Request("".concat(this.config.databaseUrl, "/").concat(this.config.nodeEndpoint), childNodeIds);
+                return singlePostRequest("".concat(this.config.databaseUrl, "/").concat(this.config.nodeEndpoint), childNodeIds);
 
               case 12:
                 response = _context4.sent;
@@ -26997,7 +25619,7 @@ var BaseLayout = /*#__PURE__*/function () {
                   return n.id === _this.rootId;
                 }).parent = null; // construct a tree data structure to generate edges and calculate node positions
 
-                trees = constructTree(nodes); // search for the root tree node
+                trees = buildTreeFromIds(nodes); // search for the root tree node
 
                 tree = null;
 
@@ -27072,7 +25694,7 @@ var BaseLayout = /*#__PURE__*/function () {
                   });
                 });
                 _context4.next = 34;
-                return Request("".concat(this.config.databaseUrl, "/").concat(this.config.edgeEndpoint), edgesToFetch);
+                return singlePostRequest("".concat(this.config.databaseUrl, "/").concat(this.config.edgeEndpoint), edgesToFetch);
 
               case 34:
                 edges = _context4.sent;
@@ -27217,7 +25839,7 @@ var BaseLayout = /*#__PURE__*/function () {
                   return isNaN(n) ? n.id : n;
                 });
                 _context5.next = 9;
-                return Request("".concat(this.config.databaseUrl, "/").concat(this.config.nodeEndpoint), requestedNodes);
+                return singlePostRequest("".concat(this.config.databaseUrl, "/").concat(this.config.nodeEndpoint), requestedNodes);
 
               case 9:
                 _nodes = _context5.sent;
@@ -27238,7 +25860,7 @@ var BaseLayout = /*#__PURE__*/function () {
                   });
                 });
                 _context5.next = 15;
-                return Request("".concat(this.config.databaseUrl, "/").concat(this.config.edgeEndpoint), edgesToFetch);
+                return singlePostRequest("".concat(this.config.databaseUrl, "/").concat(this.config.edgeEndpoint), edgesToFetch);
 
               case 15:
                 edges = _context5.sent;
@@ -27361,7 +25983,7 @@ var BaseLayout = /*#__PURE__*/function () {
             switch (_context7.prev = _context7.next) {
               case 0:
                 _context7.next = 2;
-                return Request("".concat(this.config.databaseUrl, "/").concat(this.config.nodeEndpoint), [this.rootId]);
+                return singlePostRequest("".concat(this.config.databaseUrl, "/").concat(this.config.nodeEndpoint), [this.rootId]);
 
               case 2:
                 response1 = _context7.sent;
@@ -27387,7 +26009,7 @@ var BaseLayout = /*#__PURE__*/function () {
                 }
 
                 _context7.next = 12;
-                return Request("".concat(this.config.databaseUrl, "/").concat(this.config.nodeEndpoint), childNodeIds);
+                return singlePostRequest("".concat(this.config.databaseUrl, "/").concat(this.config.nodeEndpoint), childNodeIds);
 
               case 12:
                 response = _context7.sent;
@@ -27409,7 +26031,7 @@ var BaseLayout = /*#__PURE__*/function () {
                   return n.id === _this3.rootId;
                 }).parent = null; // construct a tree data structure to generate edges and calculate node positions
 
-                trees = constructTree(nodes); // search for the root tree node
+                trees = buildTreeFromIds(nodes); // search for the root tree node
 
                 tree = null;
 
@@ -27483,7 +26105,7 @@ var BaseLayout = /*#__PURE__*/function () {
                   });
                 });
                 _context7.next = 34;
-                return Request("".concat(this.config.databaseUrl, "/").concat(this.config.edgeEndpoint), edgesToFetch);
+                return singlePostRequest("".concat(this.config.databaseUrl, "/").concat(this.config.edgeEndpoint), edgesToFetch);
 
               case 34:
                 edges = _context7.sent;
@@ -27628,7 +26250,7 @@ var BaseLayout = /*#__PURE__*/function () {
                   return isNaN(n) ? n.id : n;
                 });
                 _context8.next = 9;
-                return Request("".concat(this.config.databaseUrl, "/").concat(this.config.nodeEndpoint), requestedNodes);
+                return singlePostRequest("".concat(this.config.databaseUrl, "/").concat(this.config.nodeEndpoint), requestedNodes);
 
               case 9:
                 _nodes2 = _context8.sent;
@@ -27649,7 +26271,7 @@ var BaseLayout = /*#__PURE__*/function () {
                   });
                 });
                 _context8.next = 15;
-                return Request("".concat(this.config.databaseUrl, "/").concat(this.config.edgeEndpoint), edgesToFetch);
+                return singlePostRequest("".concat(this.config.databaseUrl, "/").concat(this.config.edgeEndpoint), edgesToFetch);
 
               case 15:
                 edges = _context8.sent;
@@ -28001,7 +26623,7 @@ var BaseLayout = /*#__PURE__*/function () {
                   body: [this.focus.id]
                 }];
                 _context13.next = 3;
-                return RequestMultiple(request1);
+                return multiplePostRequests(request1);
 
               case 3:
                 response1 = _context13.sent;
@@ -28032,7 +26654,7 @@ var BaseLayout = /*#__PURE__*/function () {
                   body: [].concat(_toConsumableArray(parentEdgeIds), _toConsumableArray(childEdgeIds))
                 }];
                 _context13.next = 14;
-                return RequestMultiple(request2);
+                return multiplePostRequests(request2);
 
               case 14:
                 response2 = _context13.sent;
@@ -28172,7 +26794,7 @@ var BaseLayout = /*#__PURE__*/function () {
                   body: [this.focusId]
                 }];
                 _context14.next = 3;
-                return RequestMultiple(request1);
+                return multiplePostRequests(request1);
 
               case 3:
                 response1 = _context14.sent;
@@ -28203,7 +26825,7 @@ var BaseLayout = /*#__PURE__*/function () {
                   body: [].concat(_toConsumableArray(parentEdgeIds), _toConsumableArray(childEdgeIds))
                 }];
                 _context14.next = 15;
-                return RequestMultiple(request2);
+                return multiplePostRequests(request2);
 
               case 15:
                 response2 = _context14.sent;
@@ -29622,13 +28244,19 @@ var GridLayout = /*#__PURE__*/function (_BaseLayout) {
         _this4.nodes.forEach(function (node, i) {
           // create non-existing nodes only until the maximal node limit is reached
           if (i <= limit && node.isRendered() === false) {
-            if (_this4.config.renderingSize === "max") node.renderAsMax(X, Y);
-            if (_this4.config.renderingSize === "min") node.renderAsMin(X, Y); // move newly created nodes in a re-render operation behind others for visual improvements
+            if (_this4.config.renderingSize === "max") node.renderAsMax({
+              IX: X,
+              IY: Y
+            });
+            if (_this4.config.renderingSize === "min") node.renderAsMin({
+              IX: X,
+              IY: Y
+            }); // move newly created nodes in a re-render operation behind others for visual improvements
 
             if (isReRender) node.moveToBack(); // or transform the existing node into position
           } else if (node.isRendered() === true) {
             // console.log("trf", node)
-            node.transformToFinalPosition();
+            node.transformToFinalPosition({});
           }
         });
       };
@@ -30330,7 +28958,10 @@ var RadialLayout = /*#__PURE__*/function (_BaseLayout) {
             }); // render edge references
 
             node.getOutgoingEdges().forEach(function (edge) {
-              if (edge.isRendered() === false) edge.render(X, Y);
+              if (edge.isRendered() === false) edge.render({
+                X: X,
+                Y: Y
+              });
             }); // or transform nodes into position
           } else if (node.isRendered() === true) {
             node.transformToFinalPosition({});
@@ -31067,7 +29698,7 @@ var TreeLayout = /*#__PURE__*/function (_BaseLayout) {
 
       var calculateEdgePositions = function calculateEdgePositions(edges) {
         edges.forEach(function (edge) {
-          edge.calculateEdge();
+          edge.calculateEdge({});
         });
       }; // inform nodes about incoming and outgoing edges
 
@@ -31281,8 +29912,14 @@ var TreeLayout = /*#__PURE__*/function (_BaseLayout) {
         _this3.nodes.forEach(function (node) {
           // render nodes
           if (node.isRendered() === false) {
-            if (_this3.config.renderingSize === "max") node.renderAsMax(X, Y);
-            if (_this3.config.renderingSize === "min") node.renderAsMin(X, Y); // find provided events
+            if (_this3.config.renderingSize === "max") node.renderAsMax({
+              IX: X,
+              IY: Y
+            });
+            if (_this3.config.renderingSize === "min") node.renderAsMin({
+              IX: X,
+              IY: Y
+            }); // find provided events
 
             var eventStr = _toConsumableArray(new Set(_this3.events.map(function (e) {
               return e.event;
@@ -31310,10 +29947,13 @@ var TreeLayout = /*#__PURE__*/function (_BaseLayout) {
             }); // render edge references
 
             node.getOutgoingEdges().forEach(function (edge) {
-              if (edge.isRendered() === false) edge.render(X, Y);
+              if (edge.isRendered() === false) edge.render({
+                X: X,
+                Y: Y
+              });
             }); // or transform nodes into position
           } else if (node.isRendered() === true) {
-            node.transformToFinalPosition();
+            node.transformToFinalPosition({});
           }
         });
       }; // render possible leafs
@@ -31818,28 +30458,10 @@ var ContextualLayoutConfiguration = {
   parentContainerBackgroundColor: "#fff"
 };
 
-/* eslint-disable no-bitwise */
-
-/**
- * Programmatically lightns or darkens a hex color.
- *
- * @param {String} col The color to change.
- * @param {String} amt The amout to change it.
- *
- * @see https://www.mmbyte.com/article/9269.html
- */
-var colorshift = function colorshift(col, amt) {
-  var num = parseInt(col, 16);
-  var r = (num >> 16) + amt;
-  var b = (num >> 8 & 0x00FF) + amt;
-  var g = (num & 0x0000FF) + amt;
-  var newColor = g | b << 8 | r << 16;
-  return newColor.toString(16);
-};
-
 /**
  * This class calculates and renders the contextual layout.
  */
+
 
 var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
   _inherits(ContextualLayout, _BaseLayout);
@@ -32070,7 +30692,7 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
 
             x0 += _this2.config.spacing;
             y0 -= _this2.config.spacing * 1.5;
-            var expanderTextColor = "#".concat(colorshift(_this2.config.childContainerBorderStrokeColor.substr(1), -50));
+            var expanderTextColor = "#".concat(Colorshift(_this2.config.childContainerBorderStrokeColor.substr(1), -50));
             newExpander.updateConfig({
               expanderTextColor: expanderTextColor
             });
@@ -32268,7 +30890,7 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
 
             x3 += _this2.config.spacing;
             y3 += _this2.config.spacing * 1.5;
-            var expanderTextColor = "#".concat(colorshift(_this2.config.parentContainerBorderStrokeColor.substr(1), -50));
+            var expanderTextColor = "#".concat(Colorshift(_this2.config.parentContainerBorderStrokeColor.substr(1), -50));
             newExpander.updateConfig({
               expanderTextColor: expanderTextColor
             });
@@ -32468,7 +31090,7 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
 
             x0 += _this2.config.spacing;
             y0 -= _this2.config.spacing * 1;
-            var expanderTextColor = "#".concat(colorshift(_this2.config.riskContainerBorderStrokeColor.substr(1), -50));
+            var expanderTextColor = "#".concat(Colorshift(_this2.config.riskContainerBorderStrokeColor.substr(1), -50));
             newExpander.updateConfig({
               expanderTextColor: expanderTextColor
             });
@@ -33142,6 +31764,16 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
   return ContextualLayout;
 }(BaseLayout);
 
+// /**
+//  * Creates a CSS based tooltip.
+//  * 
+//  * @param {DOM} element The DOM element to which the tooltip is attached to.
+//  */
+
+/**
+ * Class description
+ * @category Helpers
+ */
 var createTooltip = function createTooltip(element) {
   var tooltip = document.createElement("div");
   tooltip.setAttribute("id", "tooltip");
@@ -33477,7 +32109,7 @@ var VisualizationConfiguration = {
 /**
  * SVG
  * @description A SVG object provided by svgdotjs
- * @type {SVG} SVG
+ * @typedef {SVG} SVG
  * 
  * @see https://svgjs.com/docs/3.0/container-elements/
  */

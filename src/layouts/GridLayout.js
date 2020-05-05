@@ -362,8 +362,8 @@ class GridLayout extends BaseLayout {
       this.nodes.forEach((node, i) => {
         // create non-existing nodes only until the maximal node limit is reached
         if (i <= limit && node.isRendered() === false) {
-          if (this.config.renderingSize === "max") node.renderAsMax(X, Y)
-          if (this.config.renderingSize === "min") node.renderAsMin(X, Y)
+          if (this.config.renderingSize === "max") node.renderAsMax({ IX: X, IY: Y })
+          if (this.config.renderingSize === "min") node.renderAsMin({ IX: X, IY: Y })
 
           // move newly created nodes in a re-render operation behind others for visual improvements
           if (isReRender) node.moveToBack()
@@ -371,7 +371,7 @@ class GridLayout extends BaseLayout {
           // or transform the existing node into position
         } else if (node.isRendered() === true) {
           // console.log("trf", node)
-          node.transformToFinalPosition()
+          node.transformToFinalPosition({})
         }
       })
     }

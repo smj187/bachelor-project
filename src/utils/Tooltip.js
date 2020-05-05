@@ -1,3 +1,14 @@
+
+// /**
+//  * Creates a CSS based tooltip.
+//  * 
+//  * @param {DOM} element The DOM element to which the tooltip is attached to.
+//  */
+
+/**
+ * Class description
+ * @category Helpers
+ */
 const createTooltip = (element) => {
   const tooltip = document.createElement("div")
   tooltip.setAttribute("id", "tooltip")

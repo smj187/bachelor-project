@@ -5,7 +5,7 @@
 <head>
     
     <meta charset="utf-8">
-    <title>JSDoc: nodes/NodeFactory.js</title>
+    <title>JSDoc: utils/Tooltip.js</title>
 
     <script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -54,7 +54,7 @@
                 <div class="content" id="main-content-wrapper">
                     <header class="page-title">
                         <p>Source</p>
-                        <h1>nodes/NodeFactory.js</h1>
+                        <h1>utils/Tooltip.js</h1>
                     </header>
                     
                     
@@ -64,40 +64,34 @@
     
     <section>
         <article>
-            <pre class="prettyprint source linenums"><code>import RiskNode from "./RiskNode"
-import AssetNode from "./AssetNode"
-import RequirementNode from "./RequirementNode"
-import CustomNode from "./CustomNode"
-import ControlNode from "./ControlNode"
+            <pre class="prettyprint source linenums"><code>
+// /**
+//  * Creates a CSS based tooltip.
+//  * 
+//  * @param {DOM} element The DOM element to which the tooltip is attached to.
+//  */
 
 /**
- * This class makes use of the factory pattern and creates nodes based on a given type.
+ * Class description
+ * @category Helpers
  */
-class NodeFactory {
-  /**
-   * Creates a new node class.
-   * @param {Data} data The loaded data element from a database.
-   * @param {Canvas} canvas The canvas to draw the node on.
-   * @param {Object} additionalNodeRepresentations Some additional configuration to override default behaviour.
-   *
-   * @return {BaseNode} The base class representing the node.
-   */
-  static create(data, canvas, {
-    risk, asset, custom, requirement, control,
-  }) {
-    let node
-    if (data.type === "risk") node = new RiskNode(data, canvas, risk)
-    if (data.type === "asset") node = new AssetNode(data, canvas, asset)
-    if (data.type === "custom") node = new CustomNode(data, canvas, custom)
-    if (data.type === "requirement") node = new RequirementNode(data, canvas, requirement)
-    if (data.type === "control") node = new ControlNode(data, canvas, control)
-
-
-    return node
-  }
+const createTooltip = (element) => {
+  const tooltip = document.createElement("div")
+  tooltip.setAttribute("id", "tooltip")
+  tooltip.style.display = "none"
+  tooltip.style.position = "absolute"
+  tooltip.style.background = "#333"
+  tooltip.style.border = "0px"
+  tooltip.style.boxShadow = "0 5px 15px -5px rgba(0, 0, 0, .65)"
+  tooltip.style.color = "#eee"
+  tooltip.style.padding = "0.4rem 0.6rem"
+  tooltip.style.fontSize = "0.85rem"
+  tooltip.style.fontWeight = "400"
+  tooltip.style.fontStyle = "normal"
+  element.appendChild(tooltip)
 }
 
-export default NodeFactory
+export { createTooltip }
 </code></pre>
         </article>
     </section>

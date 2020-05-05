@@ -23,11 +23,13 @@ class CustomEdge extends BaseEdge {
 
 
   /**
-   * Calculates and renders a bold edge between two given nodes.
-   * @param {Number} [X=finalFromX] The final X position.
-   * @param {Number} [Y=finalFromY] The final Y position.
-   */
-  render(X = this.finalFromX, Y = this.finalFromY) {
+  * Calculates and renders a custom edge between two given nodes.
+  * 
+  * @param {Object} [opts={ }] An object containing additional information.
+  * @param {Number} [opts.FX=this.finalFromX] The final X render position.
+  * @param {Number} [opts.FY=this.finalFromY] The final Y render position.
+  */
+  render({ X = this.finalFromX, Y = this.finalFromY }) {
     const svg = this.canvas.group()
     svg.css("cursor", "default")
     svg.id(`customEdge#${this.layoutId}_${this.fromNode.id}_${this.toNode.id}`)

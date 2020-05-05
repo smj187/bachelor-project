@@ -1,11 +1,9 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     
     <meta charset="utf-8">
-    <title>JSDoc: utils/Colorshift.js</title>
+    <title>JSDoc: colorshift</title>
 
     <script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -53,45 +51,136 @@
             <div class="column is-9-desktop">
                 <div class="content" id="main-content-wrapper">
                     <header class="page-title">
-                        <p>Source</p>
-                        <h1>utils/Colorshift.js</h1>
+                        <p>Module</p>
+                        <h1>colorshift</h1>
                     </header>
                     
                     
 
 
 
+
+<section>
+
+<header>
     
-    <section>
-        <article>
-            <pre class="prettyprint source linenums"><code>/* eslint-disable no-bitwise */
+        
+            
+        
+    
+</header>
 
-// /**
-//  * Programmatically brighten or darkens a hex color.
-//  *
-//  * @param {String} col The color to change.
-//  * @param {String} amt The amout to change it.
-//  *
-//  * @see https://www.mmbyte.com/article/9269.html
-//  */
+<article>
+    <div class="container-overview">
+    
+        
+            <div class="description"><p>Programmatically brighten or darkens a hex color.</p></div>
+        
 
-/**
- * @module colorshift
- * @description Programmatically brighten or darkens a hex color.
-*/
-const colorshift = (col, amt) => {
-  const num = parseInt(col, 16)
-  const r = (num >> 16) + amt
-  const b = ((num >> 8) &amp; 0x00FF) + amt
-  const g = (num &amp; 0x0000FF) + amt
-  const newColor = g | (b &lt;&lt; 8) | (r &lt;&lt; 16)
-  return newColor.toString(16)
-}
+        
+            
 
-export default colorshift
-</code></pre>
-        </article>
-    </section>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    
+
+    
+
+    
+
+    
+        <p class="tag-source">
+            <a href="utils_Colorshift.js.html" class="button">View Source</a>
+            <span>
+                <a href="utils_Colorshift.js.html">utils/Colorshift.js</a>, <a href="utils_Colorshift.js.html#line12">line 12</a>
+            </span>
+        </p>
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+    
+    </div>
+    
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</article>
+
+</section>
 
 
 

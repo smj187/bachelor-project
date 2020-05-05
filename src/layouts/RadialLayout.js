@@ -379,7 +379,7 @@ class RadialLayout extends BaseLayout {
 
           // render edge references
           node.getOutgoingEdges().forEach((edge) => {
-            if (edge.isRendered() === false) edge.render(X, Y)
+            if (edge.isRendered() === false) edge.render({ X, Y })
           })
 
           // or transform nodes into position

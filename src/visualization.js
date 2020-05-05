@@ -14,6 +14,9 @@ import Graph from "./data/Graph"
 import VisualizationConfiguration from "./configuration/VisualizationConfiguration"
 
 
+
+
+
 /**
  * Canvas
  * @description The canvas element where all svgs are held.
@@ -25,7 +28,7 @@ import VisualizationConfiguration from "./configuration/VisualizationConfigurati
 /**
  * SVG
  * @description A SVG object provided by svgdotjs
- * @type {SVG} SVG
+ * @typedef {SVG} SVG
  * 
  * @see https://svgjs.com/docs/3.0/container-elements/
  */

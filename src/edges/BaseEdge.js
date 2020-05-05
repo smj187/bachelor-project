@@ -38,7 +38,10 @@ class BaseEdge {
 
   /**
    * Calculates the two points indicating the starting and end point for edges.
-   * @param {Object} opts Additional configuration required for calculating certain edges.
+   * 
+   * @param {Object} [opts={ }] An object containing additional information.
+   * @param {Number} [opts.isContextualParent=false] Determines if the current edge is a contextual parent edge.
+   * @param {Number} [opts.isContextualChild=false] Determines if the current edge is a contextual child edge
    */
   calculateEdge({ isContextualParent = false, isContextualChild = false }) {
     let fx = this.fromNode.getFinalX()

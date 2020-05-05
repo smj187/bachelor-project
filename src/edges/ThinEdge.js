@@ -11,7 +11,6 @@ import ThinEdgeConfiguration from "../configuration/ThinEdgeConfiguration"
  * @property {Object} customRepresentation An object containing information to change the default visualization.
  *
  * @see ThinEdgeConfiguration
- *
  */
 class ThinEdge extends BaseEdge {
   constructor(data, canvas, fromNode, toNode, customRepresentation = {}) {
@@ -25,11 +24,13 @@ class ThinEdge extends BaseEdge {
 
 
   /**
-   * Calculates and renders a bold edge between two given nodes.
-   * @param {Number} [X=finalFromX] The final X position.
-   * @param {Number} [Y=finalFromY] The final Y position.
-   */
-  render(X = this.finalFromX, Y = this.finalFromY) {
+  * Calculates and renders a thin edge between two given nodes.
+  * 
+  * @param {Object} [opts={ }] An object containing additional information.
+  * @param {Number} [opts.FX=this.finalFromX] The final X render position.
+  * @param {Number} [opts.FY=this.finalFromY] The final Y render position.
+  */
+  render({ X = this.finalFromX, Y = this.finalFromY }) {
     const svg = this.canvas.group()
     svg.css("cursor", "default")
     svg.id(`thinEdge#${this.layoutId}_${this.fromNode.id}_${this.toNode.id}`)
