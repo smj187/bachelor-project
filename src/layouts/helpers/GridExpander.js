@@ -48,32 +48,53 @@ class GridExpander {
 
     // helper method that creates the expanders text
     const createText = (innerText) => {
+      // create a foreign object which holds the label
       const fobj = this.canvas.foreignObject(1, 1)
 
+
+      // create the label background
       const background = document.createElement("div")
       background.style.background = this.config.expanderTextBackground
       background.style.padding = `${this.config.expanderFontSize / 2}px`
       background.style.textAlign = "center"
+      background.style.width = "fit-content"
+      background.style.wordWrap = "break-word"
 
+
+      // create the actual label text
       const label = document.createElement("div")
       label.innerText = innerText
-
       label.style.color = this.config.expanderTextColor
       label.style.fontSize = `${this.config.expanderFontSize}px`
       label.style.fontFamily = this.config.expanderFontFamily
       label.style.fontWeight = this.config.expanderFontWeight
       label.style.fontStyle = this.config.expanderFontStyle
-      label.style.width = "fit-content"
+      label.style.width = "max-content"
+      label.style.wordWrap = "break-word"
       label.setAttribute("id", "label")
 
+
+      // add the label to the background element
       background.appendChild(label)
+
+
+      // add the HTML to the SVG
       fobj.add(background)
+
+
+      // disable the user-select css property
       fobj.css("user-select", "none")
       fobj.height(background.clientHeight)
 
+
+      // set the labels with
       const labelWidth = label.clientWidth + this.config.expanderFontSize
       label.innerText = innerText.replace(/_/g, " ")
       fobj.width(labelWidth)
+
+
+      // // move the label into position
+      // fobj.center(cx, cy - 25 / 1.05 - riskConnectionLineWidth / 2)
 
 
       return fobj
@@ -172,15 +193,6 @@ class GridExpander {
 
 
   /**
-   * Determins where the expander is rendered or not.
-   * @returns True, if the SVG is rendered, else false.
-   */
-  isRendered() {
-    return this.svg !== null
-  }
-
-
-  /**
    * Removes the rendered SVG expander from the canvas.
    */
   removeSVG() {
@@ -190,6 +202,16 @@ class GridExpander {
     }
   }
 
+
+  /**
+   * Determins if the SVG object is rendered.
+   * @returns True, if the SVG is rendered, else false.
+   */
+  isRendered() {
+    return this.svg !== null
+  }
+
+
   setType(type) {
     this.type = type
   }
@@ -197,7 +219,6 @@ class GridExpander {
   getType() {
     return this.type
   }
-
 
   setIsLayoutExpended(isLayoutExpended) {
     this.isLayoutExpended = isLayoutExpended

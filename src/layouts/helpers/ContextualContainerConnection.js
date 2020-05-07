@@ -1,6 +1,16 @@
 import { calculateDistance } from "../../utils/Calculations"
 
-
+/**
+ * This class calculates and renders a connection between a container and the focus node.
+ *
+ * @category Layouts
+ * @subcategory Helpers
+ * @property {Canvas} canvas The current canvas to render the element on.
+ * @property {BaseNode} focusNode The currently active focus node.
+ * @property {ContextualContainer} container The container which to connect to.
+ * @property {Array.<BaseNode>} containerNodes An array of nodes within the container.
+ * @property {ContextualLayoutConfiguration} config An object containing visual restrictions.
+ */
 class ContextualContainerConnection {
   constructor(canvas, focusNode, container, containerNodes, config) {
     this.svg = null
@@ -19,11 +29,17 @@ class ContextualContainerConnection {
   }
 
 
-  render({ isParentOperation = false }) {
+  /**
+   * Calculats and renders the container connection.
+   */
+  render() {
     const svg = this.canvas.group()
     svg.id(`contextualContainerConnection#${this.layoutId}`)
 
+    const { containerInfo } = this.container
 
+
+    // line between container and focus node
     let x0
     let y0
     let x1
@@ -33,13 +49,13 @@ class ContextualContainerConnection {
       x0 = this.focusNode.getFinalX()
       y0 = this.focusNode.getFinalY() - this.focusNode.getMaxHeight() / 2 - this.focusNode.config.offset / 2
 
-      x1 = this.container.containerInfo.maxcx
-      y1 = this.container.containerInfo.maxcy + this.container.containerInfo.maxHeight / 2 + this.focusNode.config.offset / 2
+      x1 = containerInfo.maxcx
+      y1 = containerInfo.maxcy + containerInfo.maxHeight / 2 + this.focusNode.config.offset / 2
     }
 
     if (this.type === "child") {
-      x0 = this.container.containerInfo.maxcx
-      y0 = this.container.containerInfo.maxcy - this.container.containerInfo.maxHeight / 2 - this.focusNode.config.offset / 2
+      x0 = containerInfo.maxcx
+      y0 = containerInfo.maxcy - containerInfo.maxHeight / 2 - this.focusNode.config.offset / 2
 
       x1 = this.focusNode.getFinalX()
       y1 = this.focusNode.getFinalY() + this.focusNode.getMaxHeight() / 2 + this.focusNode.config.offset / 2
@@ -49,6 +65,7 @@ class ContextualContainerConnection {
     const dist1 = calculateDistance(x1, y1, x0, y0)
 
 
+    // calculate points forming the connection
     const a0 = (x0 + x1) / 2
     const b0 = (y0 + y1) / 2
 
@@ -77,6 +94,7 @@ class ContextualContainerConnection {
     const b8 = b0 - this.config.containerConnectionLineWidth / 2
 
 
+    // the actual connection as path argument
     const plot = `
       M ${a2},${b2}
       L ${a3},${b3}
@@ -89,7 +107,7 @@ class ContextualContainerConnection {
     `
 
 
-    // draw the arrow
+    // create the SVG connection
     const strokeColor = this.config.containerConnectionStrokeColor === "inherit"
       ? "#ffffff"
       : this.config.containerConnectionStrokeColor
@@ -104,10 +122,7 @@ class ContextualContainerConnection {
     })
 
 
-    /*
-      // TODO: implementation for finding a color for the attached container nodes
-    */
-
+    // color the connection
     if (this.config.containerConnectionColor === "inherit") {
       if (this.type === "parent") {
         const toColor = this.config.parentContainerBorderStrokeColor
@@ -135,21 +150,21 @@ class ContextualContainerConnection {
     }
 
 
+    // moves the connection into position
     path.center((x0 + x1) / 2, (y0 + y1) / 2)
     path.rotate(-90)
-
-
-    /*
-      // TODO: implementation for finding a color for the attached container nodes
-    */
-
-
     svg.add(path)
+    svg.back()
 
+
+    // calculate the final position
     const finalX = svg.bbox().cx
     const finalY = svg.bbox().cy
+    this.finalX = finalX
+    this.finalY = finalY
 
-    svg.back()
+
+    // animate into final position
     svg
       .attr({ opacity: 0 })
       .center(this.focusNode.getFinalX(), this.focusNode.getFinalY())
@@ -157,14 +172,18 @@ class ContextualContainerConnection {
       .center(finalX, finalY)
       .attr({ opacity: 1 })
 
-    this.finalX = finalX
-    this.finalY = finalY
-
 
     this.svg = svg
   }
 
 
+  /**
+   * Transforms the container connection into its final position.
+   * @param {Object} [opts={ }] An object containing additional information.
+   * @param {Number} [opts.isParentOperation=false] An indication whether a parent or child node was elected new focus.
+   * @param {Number} [opts.X=this.finalX] The calculated final X position.
+   * @param {Number} [opts.X=this.finalY] The calculated final X position.
+   */
   transformToFinalPosition({ isParentOperation = false, X = this.node.finalX, Y = this.node.finalY }) {
     if (isParentOperation) {
       this.svg
@@ -177,14 +196,24 @@ class ContextualContainerConnection {
     }
   }
 
+
   /**
-   * Removes the leaf node from the canvas and resets clears its SVG representation.
+   * Removes the container connection.
    */
   removeSVG() {
     if (this.isRendered()) {
       this.svg.remove()
       this.svg = null
     }
+  }
+
+
+  /**
+   * Determins if the SVG object is rendered.
+   * @returns True, if the SVG is rendered, else false.
+   */
+  isRendered() {
+    return this.svg !== null
   }
 
   setType(type) {
@@ -195,17 +224,16 @@ class ContextualContainerConnection {
     return this.type
   }
 
-
-  /**
-   * Determins where the leaf is rendered or not.
-   * @returns True, if the SVG is rendered, else false.
-   */
-  isRendered() {
-    return this.svg !== null
-  }
-
   setLayoutId(layoutId) {
     this.layoutId = layoutId
+  }
+
+  getFinalX() {
+    return this.finalX
+  }
+
+  getFinalY() {
+    return this.finalY
   }
 }
 

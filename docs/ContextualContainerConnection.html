@@ -5,7 +5,7 @@
   
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title> BoldEdgeConfiguration</title>
+  <title> ContextualContainerConnection</title>
 
   <script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -113,8 +113,8 @@
         <div class="core" id="main-content-wrapper">
             <div class="content">
                 <header class="page-title">
-                    <p>Namespace</p>
-                    <h1>BoldEdgeConfiguration</h1>
+                    <p>Class</p>
+                    <h1>ContextualContainerConnection</h1>
                 </header>
                 
 
@@ -125,7 +125,9 @@
 
 <header>
     
-        <h2>BoldEdgeConfiguration</h2>
+        <h2><span class="attribs"><span class="type-signature"></span></span>ContextualContainerConnection<span class="signature">()</span><span class="type-signature"></span></h2>
+        
+            <div class="class-description"><p>This class calculates and renders a connection between a container and the focus node.</p></div>
         
     
 </header>
@@ -134,10 +136,40 @@
     <div class="container-overview">
     
         
-            <div class="description"><p>This object contains default configuration for bold edge representations.</p></div>
-        
+            <div class='vertical-section'>
+                <div class="members">
+                    <div class="member">
+                        <div class=name>
+                            <span class="tag">Constructor</span>
+                        </div>
+                        
 
+
+    
+    <h4 class="name" id="ContextualContainerConnection">
+        <a class="href-link" href="#ContextualContainerConnection">#</a>
         
+        <span class="code-name">
+            
+                new ContextualContainerConnection<span class="signature">()</span><span class="type-signature"></span>
+            
+        </span>
+    </h4>
+    
+
+    
+    
+
+
+
+
+
+
+
+
+
+
+
 
 
     <h5 class="subsection-title">Properties:</h5>
@@ -156,8 +188,6 @@
             
 
             
-            <th>Default</th>
-            
 
             <th class="last">Description</th>
         </tr>
@@ -168,13 +198,13 @@
             
 <tr class="deep-level-0">
     
-        <td class="name"><code>offset</code></td>
+        <td class="name"><code>canvas</code></td>
     
 
     <td class="type">
     
         
-<span class="param-type">Number</span>
+<span class="param-type"><a href="global.html#Canvas">Canvas</a></span>
 
 
     
@@ -183,27 +213,21 @@
     
 
     
-        <td class="default">
-        
-            8
-        
-        </td>
-    
 
-    <td class="description last"><p>Sets the spacing used for padding between label and background.</p></td>
+    <td class="description last"><p>The current canvas to render the element on.</p></td>
 </tr>
 
         
             
 <tr class="deep-level-0">
     
-        <td class="name"><code>animationSpeed</code></td>
+        <td class="name"><code>focusNode</code></td>
     
 
     <td class="type">
     
         
-<span class="param-type">Number</span>
+<span class="param-type"><a href="BaseNode.html">BaseNode</a></span>
 
 
     
@@ -212,27 +236,21 @@
     
 
     
-        <td class="default">
-        
-            300
-        
-        </td>
-    
 
-    <td class="description last"><p>Determines how fast SVG elements animates inside the current layout.</p></td>
+    <td class="description last"><p>The currently active focus node.</p></td>
 </tr>
 
         
             
 <tr class="deep-level-0">
     
-        <td class="name"><code>color</code></td>
+        <td class="name"><code>container</code></td>
     
 
     <td class="type">
     
         
-<span class="param-type">String</span>
+<span class="param-type">ContextualContainer</span>
 
 
     
@@ -241,27 +259,21 @@
     
 
     
-        <td class="default">
-        
-            null
-        
-        </td>
-    
 
-    <td class="description last"><p>Sets the default edge color. Available: &quot;inherit&quot; or hex value as String.</p></td>
+    <td class="description last"><p>The container which to connect to.</p></td>
 </tr>
 
         
             
 <tr class="deep-level-0">
     
-        <td class="name"><code>lineWidth</code></td>
+        <td class="name"><code>containerNodes</code></td>
     
 
     <td class="type">
     
         
-<span class="param-type">String</span>
+<span class="param-type">Array.&lt;<a href="BaseNode.html">BaseNode</a>></span>
 
 
     
@@ -270,27 +282,21 @@
     
 
     
-        <td class="default">
-        
-            25
-        
-        </td>
-    
 
-    <td class="description last"><p>Determines the thickness of the SVG element.</p></td>
+    <td class="description last"><p>An array of nodes within the container.</p></td>
 </tr>
 
         
             
 <tr class="deep-level-0">
     
-        <td class="name"><code>arrowWidth</code></td>
+        <td class="name"><code>config</code></td>
     
 
     <td class="type">
     
         
-<span class="param-type">String</span>
+<span class="param-type"><a href="ContextualLayoutConfiguration.html">ContextualLayoutConfiguration</a></span>
 
 
     
@@ -299,420 +305,8 @@
     
 
     
-        <td class="default">
-        
-            40
-        
-        </td>
-    
 
-    <td class="description last"><p>Determines how long the arrow head appears.</p></td>
-</tr>
-
-        
-            
-<tr class="deep-level-0">
-    
-        <td class="name"><code>arrowHeight</code></td>
-    
-
-    <td class="type">
-    
-        
-<span class="param-type">String</span>
-
-
-    
-    </td>
-
-    
-
-    
-        <td class="default">
-        
-            20
-        
-        </td>
-    
-
-    <td class="description last"><p>Determines the thickness of the arrow head.</p></td>
-</tr>
-
-        
-            
-<tr class="deep-level-0">
-    
-        <td class="name"><code>strokeWidth</code></td>
-    
-
-    <td class="type">
-    
-        
-<span class="param-type">Number</span>
-
-
-    
-    </td>
-
-    
-
-    
-        <td class="default">
-        
-            0
-        
-        </td>
-    
-
-    <td class="description last"><p>Determines the edges thickness.</p></td>
-</tr>
-
-        
-            
-<tr class="deep-level-0">
-    
-        <td class="name"><code>strokeColor</code></td>
-    
-
-    <td class="type">
-    
-        
-<span class="param-type">String</span>
-
-
-    
-    </td>
-
-    
-
-    
-        <td class="default">
-        
-            #ffffff
-        
-        </td>
-    
-
-    <td class="description last"><p>Determines the edges color.</p></td>
-</tr>
-
-        
-            
-<tr class="deep-level-0">
-    
-        <td class="name"><code>strokeDasharray</code></td>
-    
-
-    <td class="type">
-    
-        
-<span class="param-type">String</span>
-
-
-    
-    </td>
-
-    
-
-    
-        <td class="default">
-        
-            "0"
-        
-        </td>
-    
-
-    <td class="description last"><p>Determines the graps in the edge line (dashed edge specific).</p></td>
-</tr>
-
-        
-            
-<tr class="deep-level-0">
-    
-        <td class="name"><code>labelWidth</code></td>
-    
-
-    <td class="type">
-    
-        
-<span class="param-type">String</span>
-
-
-    
-    </td>
-
-    
-
-    
-        <td class="default">
-        
-            150
-        
-        </td>
-    
-
-    <td class="description last"><p>Determines the text width for the label.</p></td>
-</tr>
-
-        
-            
-<tr class="deep-level-0">
-    
-        <td class="name"><code>labelLineClamp</code></td>
-    
-
-    <td class="type">
-    
-        
-<span class="param-type">String</span>
-
-
-    
-    </td>
-
-    
-
-    
-        <td class="default">
-        
-            1
-        
-        </td>
-    
-
-    <td class="description last"><p>Determines how many lines are visible for the label.</p></td>
-</tr>
-
-        
-            
-<tr class="deep-level-0">
-    
-        <td class="name"><code>labelTranslateX</code></td>
-    
-
-    <td class="type">
-    
-        
-<span class="param-type">String</span>
-
-
-    
-    </td>
-
-    
-
-    
-        <td class="default">
-        
-            0
-        
-        </td>
-    
-
-    <td class="description last"><p>Determines the horizontal adjustment for the label.</p></td>
-</tr>
-
-        
-            
-<tr class="deep-level-0">
-    
-        <td class="name"><code>labelTranslateY</code></td>
-    
-
-    <td class="type">
-    
-        
-<span class="param-type">String</span>
-
-
-    
-    </td>
-
-    
-
-    
-        <td class="default">
-        
-            0
-        
-        </td>
-    
-
-    <td class="description last"><p>Determines the vertical adjustment for the label.</p></td>
-</tr>
-
-        
-            
-<tr class="deep-level-0">
-    
-        <td class="name"><code>labelColor</code></td>
-    
-
-    <td class="type">
-    
-        
-<span class="param-type">String</span>
-
-
-    
-    </td>
-
-    
-
-    
-        <td class="default">
-        
-            #222222
-        
-        </td>
-    
-
-    <td class="description last"><p>Determines the color for the label.</p></td>
-</tr>
-
-        
-            
-<tr class="deep-level-0">
-    
-        <td class="name"><code>labelFontFamily</code></td>
-    
-
-    <td class="type">
-    
-        
-<span class="param-type">String</span>
-
-
-    
-    </td>
-
-    
-
-    
-        <td class="default">
-        
-            Montserrat
-        
-        </td>
-    
-
-    <td class="description last"><p>Determines the font family for the label.</p></td>
-</tr>
-
-        
-            
-<tr class="deep-level-0">
-    
-        <td class="name"><code>labelFontSize</code></td>
-    
-
-    <td class="type">
-    
-        
-<span class="param-type">Number</span>
-
-
-    
-    </td>
-
-    
-
-    
-        <td class="default">
-        
-            16
-        
-        </td>
-    
-
-    <td class="description last"><p>Determines the font size for the label.</p></td>
-</tr>
-
-        
-            
-<tr class="deep-level-0">
-    
-        <td class="name"><code>labelFontWeight</code></td>
-    
-
-    <td class="type">
-    
-        
-<span class="param-type">Number</span>
-
-
-    
-    </td>
-
-    
-
-    
-        <td class="default">
-        
-            600
-        
-        </td>
-    
-
-    <td class="description last"><p>Determines the font weight for the label.</p></td>
-</tr>
-
-        
-            
-<tr class="deep-level-0">
-    
-        <td class="name"><code>labelFontStyle</code></td>
-    
-
-    <td class="type">
-    
-        
-<span class="param-type">String</span>
-
-
-    
-    </td>
-
-    
-
-    
-        <td class="default">
-        
-            normal
-        
-        </td>
-    
-
-    <td class="description last"><p>Determines the font style for the label.</p></td>
-</tr>
-
-        
-            
-<tr class="deep-level-0">
-    
-        <td class="name"><code>labelBackground</code></td>
-    
-
-    <td class="type">
-    
-        
-<span class="param-type">String</span>
-
-
-    
-    </td>
-
-    
-
-    
-        <td class="default">
-        
-            #ffffffcc
-        
-        </td>
-    
-
-    <td class="description last"><p>Determines the background color for the label.</p></td>
+    <td class="description last"><p>An object containing visual restrictions.</p></td>
 </tr>
 
         
@@ -755,15 +349,38 @@
 
     
         <p class="tag-source">
-            <a href="configuration_BoldEdgeConfiguration.js.html" class="button">View Source</a>
+            <a href="layouts_helpers_ContextualContainerConnection.js.html" class="button">View Source</a>
             <span>
-                <a href="configuration_BoldEdgeConfiguration.js.html">configuration/BoldEdgeConfiguration.js</a>, <a href="configuration_BoldEdgeConfiguration.js.html#line1">line 1</a>
+                <a href="layouts_helpers_ContextualContainerConnection.js.html">layouts/helpers/ContextualContainerConnection.js</a>, <a href="layouts_helpers_ContextualContainerConnection.js.html#line15">line 15</a>
             </span>
         </p>
     
 </dl>
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                    </div>
+                </div>
+            </div>
         
     
     </div>
@@ -782,6 +399,609 @@
 
     
 
+    
+        <div class='vertical-section'>
+            <h1>Methods</h1>
+            <div class="members">
+            
+                <div class="member">
+
+
+    
+    <h4 class="name" id="isRendered">
+        <a class="href-link" href="#isRendered">#</a>
+        
+        <span class="code-name">
+            
+                isRendered<span class="signature">()</span><span class="type-signature"></span>
+            
+        </span>
+    </h4>
+    
+
+    
+    
+    <div class="description">
+        <p>Determins if the SVG object is rendered.</p>
+    </div>
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    
+
+    
+
+    
+
+    
+        <p class="tag-source">
+            <a href="layouts_helpers_ContextualContainerConnection.js.html" class="button">View Source</a>
+            <span>
+                <a href="layouts_helpers_ContextualContainerConnection.js.html">layouts/helpers/ContextualContainerConnection.js</a>, <a href="layouts_helpers_ContextualContainerConnection.js.html#line215">line 215</a>
+            </span>
+        </p>
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div class='columns method-parameter'>
+        <div class="column is-2"><label>Returns:</label></div>
+        <div class="column is-10">
+            
+                    
+
+<div class="columns">
+    
+    <div class='param-desc column is-7'><p>True, if the SVG is rendered, else false.</p></div>
+    
+    
+</div>
+
+                
+        </div>
+    </div>
+
+
+
+
+</div>
+            
+                <div class="member">
+
+
+    
+    <h4 class="name" id="removeSVG">
+        <a class="href-link" href="#removeSVG">#</a>
+        
+        <span class="code-name">
+            
+                removeSVG<span class="signature">()</span><span class="type-signature"></span>
+            
+        </span>
+    </h4>
+    
+
+    
+    
+    <div class="description">
+        <p>Removes the container connection.</p>
+    </div>
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    
+
+    
+
+    
+
+    
+        <p class="tag-source">
+            <a href="layouts_helpers_ContextualContainerConnection.js.html" class="button">View Source</a>
+            <span>
+                <a href="layouts_helpers_ContextualContainerConnection.js.html">layouts/helpers/ContextualContainerConnection.js</a>, <a href="layouts_helpers_ContextualContainerConnection.js.html#line203">line 203</a>
+            </span>
+        </p>
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</div>
+            
+                <div class="member">
+
+
+    
+    <h4 class="name" id="render">
+        <a class="href-link" href="#render">#</a>
+        
+        <span class="code-name">
+            
+                render<span class="signature">()</span><span class="type-signature"></span>
+            
+        </span>
+    </h4>
+    
+
+    
+    
+    <div class="description">
+        <p>Calculats and renders the container connection.</p>
+    </div>
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    
+
+    
+
+    
+
+    
+        <p class="tag-source">
+            <a href="layouts_helpers_ContextualContainerConnection.js.html" class="button">View Source</a>
+            <span>
+                <a href="layouts_helpers_ContextualContainerConnection.js.html">layouts/helpers/ContextualContainerConnection.js</a>, <a href="layouts_helpers_ContextualContainerConnection.js.html#line35">line 35</a>
+            </span>
+        </p>
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</div>
+            
+                <div class="member">
+
+
+    
+    <h4 class="name" id="transformToFinalPosition">
+        <a class="href-link" href="#transformToFinalPosition">#</a>
+        
+        <span class="code-name">
+            
+                transformToFinalPosition<span class="signature">(opts<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span>
+            
+        </span>
+    </h4>
+    
+
+    
+    
+    <div class="description">
+        <p>Transforms the container connection into its final position.</p>
+    </div>
+    
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+<div class="table-container">
+    <table class="params table">
+        <thead>
+        <tr>
+            
+            <th>Name</th>
+            
+
+            <th>Type</th>
+
+            
+            <th>Attributes</th>
+            
+
+            
+            <th>Default</th>
+            
+
+            <th class="last">Description</th>
+        </tr>
+        </thead>
+
+        <tbody>
+        
+
+            
+<tr class="deep-level-0">
+  
+      <td class="name"><code>opts</code></td>
+  
+
+  <td class="type">
+  
+      
+<span class="param-type">Object</span>
+
+
+  
+  </td>
+
+  
+      <td class="attributes">
+      
+          &lt;optional><br>
+      
+
+      
+
+      
+      </td>
+  
+
+  
+      <td class="default">
+      
+          { }
+      
+      </td>
+  
+
+  <td class="description last"><p>An object containing additional information.</p></td>
+</tr>
+
+  
+  
+    
+<tr class="deep-level-1">
+  
+      <td class="name"><code>isParentOperation</code></td>
+  
+
+  <td class="type">
+  
+      
+<span class="param-type">Number</span>
+
+
+  
+  </td>
+
+  
+      <td class="attributes">
+      
+          &lt;optional><br>
+      
+
+      
+
+      
+      </td>
+  
+
+  
+      <td class="default">
+      
+          false
+      
+      </td>
+  
+
+  <td class="description last"><p>An indication whether a parent or child node was elected new focus.</p></td>
+</tr>
+
+  
+    
+<tr class="deep-level-1">
+  
+      <td class="name"><code>X</code></td>
+  
+
+  <td class="type">
+  
+      
+<span class="param-type">Number</span>
+
+
+  
+  </td>
+
+  
+      <td class="attributes">
+      
+          &lt;optional><br>
+      
+
+      
+
+      
+      </td>
+  
+
+  
+      <td class="default">
+      
+          this.finalX
+      
+      </td>
+  
+
+  <td class="description last"><p>The calculated final X position.</p></td>
+</tr>
+
+  
+    
+<tr class="deep-level-1">
+  
+      <td class="name"><code>X</code></td>
+  
+
+  <td class="type">
+  
+      
+<span class="param-type">Number</span>
+
+
+  
+  </td>
+
+  
+      <td class="attributes">
+      
+          &lt;optional><br>
+      
+
+      
+
+      
+      </td>
+  
+
+  
+      <td class="default">
+      
+          this.finalY
+      
+      </td>
+  
+
+  <td class="description last"><p>The calculated final X position.</p></td>
+</tr>
+
+  
+
+
+        
+        </tbody>
+    </table>
+</div>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    
+
+    
+
+    
+
+    
+        <p class="tag-source">
+            <a href="layouts_helpers_ContextualContainerConnection.js.html" class="button">View Source</a>
+            <span>
+                <a href="layouts_helpers_ContextualContainerConnection.js.html">layouts/helpers/ContextualContainerConnection.js</a>, <a href="layouts_helpers_ContextualContainerConnection.js.html#line187">line 187</a>
+            </span>
+        </p>
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</div>
+            
+            </div>
+        </div>
     
 
     

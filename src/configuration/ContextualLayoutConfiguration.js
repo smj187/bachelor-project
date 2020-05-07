@@ -5,42 +5,90 @@
  *
  * @category Layouts
  * @subcategory Customizations
- * @property {Number} layoutWidth=1200                            - The width used by the layout representation.
- * @property {Number} layoutHeight=800                            - The height used by the layout representation.
- * @property {Number} translateX=-50                              - Adds additional X translation for all SVG elements before rendering.
- * @property {Number} translateY=0                                - Adds additional Y translation for all SVG elements before rendering.
- * @property {Number} animationSpeed=300                          - Determines how fast SVG elements animates inside the current layout.
- * @property {Boolean} hideOtherLayouts=false                     - If set to true, other layouts are not visible.
- * @property {Number} spacing=32                                  - Determines the minimal spacing between nodes.
- * @property {String} renderingSize=min                           - Determines the node render representation. Available: "min" or "max".
- * @property {Number} assignedFocusDistance=800                   - Determines the distance between the assigned and focus node.
- * @property {Number} riskFocusDistance=500                       - Determines the distance between all risk nodes and focus node.
- * @property {Number} parentFocusDistance=80                      - Determines the distance between all parent nodes and focus node.
- * @property {Number} riskContainerNodeLimit=3                    - Limits how many nodes the risk container renderes.
- * @property {Number} riskContainerColumns=2                      - Limits how many columns the risk container has.
- * @property {Number} riskContainderBorderRadius=2                - Determines the containers border radius.
- * @property {String} riskContainerBorderStrokeColor=#888888cc    - Determines the containers border color.
- * @property {Number} riskContainerBorderStrokeWidth=1.85         - Determines the containers border width.
- * @property {String} riskContainerBackgroundColor=#ff8e9e05      - Determines the containers background color.
+ * @property {Number} layoutWidth=1500                            - The width used by the layout representation.
+ * @property {Number} layoutHeight=900                            - The height used by the layout representation.
+ *
+ * @property {Number} riskConnectionLineWidth=20                  - Determines the thickness of the arrow.
+ * @property {Number} riskConnectionArrowWidth=30                 - Determines how long the arrow head appears.
+ * @property {Number} riskConnectionarrowHeight=25                - Determines the thickness of the arrow head.
+ * @property {Number} riskConnectionOffset=16                     - Determines the offset between the nodes the arrow connections.
+ * @property {String} riskConnectionStrokeColor=#ff8e9e           - Determines the arrows color.
+ * @property {Number} riskConnectionStrokeWidth=1                 - Determines the arrows stroke width.
+ * @property {Number} riskConnectionStrokeDasharray=0             - Determines the arrows dash array.
+ * @property {String} riskConnectionColor=#dd415bcc               - Determines the default arrow fill color.
+ * @property {Number} riskConnectionLabelTranslateX=0             - Determines the horizontal adjustment for the label.
+ * @property {Number} riskConnectionLabelTranslateY=0             - Determines the vertical adjustment for the label.
+ * @property {String} riskConnectionLabelText=Attached_Risks      - Determines the text. Note: the label must be seperated with _ to avoid new line creation.
+ * @property {String} riskConnectionLabelColor=#ff8e9e            - Determines the color for the label.
+ * @property {String} riskConnectionLabelFontFamily=Montserrat    - Determines the font family for the label.
+ * @property {Number} riskConnectionLabelFontSize=16              - Determines the font size for the label.
+ * @property {Number} riskConnectionLabelFontWeight=600           - Determines the font weight for the label.
+ * @property {String} riskConnectionLabelFontStyle=normal         - Determines the font style for the label.
+ * @property {String} riskConnectionLabelBackground=#ffffffcc     - Determines the background color for the label.
+ *
  * @property {Number} childContainerNodeLimit=6                   - Limits how many nodes the child container renderes.
  * @property {Number} childContainerColumns=3                     - Limits how many columns the child container has.
  * @property {Number} childContainderBorderRadius=5               - Determines the containers border radius.
  * @property {String} childContainerBorderStrokeColor=#888888cc   - Determines the containers border color.
- * @property {Number} childContainerBorderStrokeWidth=1.85        - Determines the containers border width.
- * @property {String} childContainerBackgroundColor=#fff          - Determines the containers background color.
- * @property {Number} parentContainerNodeLimit=6                  - Limits how many nodes the child container renderes.
- * @property {Number} parentContainerColumns=3                    - Limits how many columns the child container has.
+ * @property {Number} childContainerBorderStrokeWidth=1.25        - Determines the containers border width.
+ * @property {String} childContainerBackgroundColor=#ffffff       - Determines the containers background color.
+ *
+ * @property {Number} parentContainerNodeLimit=6                  - Limits how many nodes the parent container renderes.
+ * @property {Number} parentContainerColumns=3                    - Limits how many columns the parent container has.
  * @property {Number} parentContainderBorderRadius=5              - Determines the containers border radius.
  * @property {String} parentContainerBorderStrokeColor=#888888cc  - Determines the containers border color.
- * @property {Number} parentContainerBorderStrokeWidth=1.85       - Determines the containers border width.
- * @property {String} parentContainerBackgroundColor=#fff         - Determines the containers background color.
+ * @property {Number} parentContainerBorderStrokeWidth=1.25       - Determines the containers border width.
+ * @property {String} parentContainerBackgroundColor=#ffffff      - Determines the containers background color.
+ *
+ * @property {Number} riskContainerNodeLimit=4                    - Limits how many nodes the risk container renderes.
+ * @property {Number} riskContainerColumns=2                      - Limits how many columns the risk container has.
+ * @property {Number} riskContainderBorderRadius=5                - Determines the containers border radius.
+ * @property {String} riskContainerBorderStrokeColor=#dd415bcc    - Determines the containers border color.
+ * @property {Number} riskContainerBorderStrokeWidth=1.25         - Determines the containers border width.
+ * @property {String} riskContainerBackgroundColor=#ff8e9e05      - Determines the containers background color.
+ * @property {Number} riskNodeConnectionStrokeWidth=2             - Determines the stroke width of the connection between risks and the assigned connection.
+ * @property {String} riskNodeConnectionStrokeColor=#dd415bcc     - Determines the stroke color of the connection between risks and the assigned connection.
+ * @property {String} riskNodeConnectionStrokeDasharray="5"       - Determines the dash array of the connection between risks and the assigned connection.
+ *
+ * @property {Number} containerConnectionLineWidth=25             - Determines the thickness of the container connection.
+ * @property {Number} containerConnectionArrowWidth=25            - Determines the arrow width of the container connection.
+ * @property {Number} containerConnectionarrowHeight=25           - Determines the arrow height of the container connection.
+ * @property {String} containerConnectionStrokeColor=inherit      - Determines the default arrow fill color. Available: "inherit" or hex value as String.
+ * @property {Number} containerConnectionStrokeWidth=1            - Determines the stroke width of the container connection.
+ * @property {String} containerConnectionStrokeDasharray="0"      - Determines the dash arrow of the container connection.
+ * @property {String} containerConnectionColor=inherit            - Determines the default arrow fill color. Available: "inherit" or hex value as String.
+ *
+ * @property {Number} focusXShift=-200                            - Determines how much the focus node is shifted on the X axis.
+ * @property {Number} riskFocusDistance=617.5                     - Determines the distance between risks nodes and focus node.
+ * @property {Number} riskConnectionDistance=617.5                - Determines the distance between risk nodes and the assigned connection.
+ * @property {Number} childrenFocusDistance=80                    - Determines the distance between child nodes and focus node.
+ * @property {Number} parentFocusDistance=80                      - Determines the distance between parent nodes and focus node.
+ *
+ * @property {String} expanderTextColor=#222                      - Determines the color for the text.
+ * @property {String} expanderFontFamily=Montserrat               - Determines the font family for the text.
+ * @property {String} expanderFontSize=12                         - Determines the font size for the text.
+ * @property {String} expanderFontWeight=600                      - Determines the font weight for the text.
+ * @property {String} expanderFontStyle=normal                    - Determines the font style for the text.
+ * @property {String} expanderTextBackground=#ccc                 - Determines the background color for the text.
+ * @property {String} showParentExpander=true                     - Determines if the parent container has a visible expander.
+ * @property {String} showChildExpander=true                      - Determines if the child container has a visible expander.
+ * @property {String} showRiskExpander=true                       - Determines if the risk container has a visible expander.
+ *
+ * @property {Number} translateX=-50                              - Adds additional X translation for all SVG elements before rendering.
+ * @property {Number} translateY=0                                - Adds additional Y translation for all SVG elements before rendering.
+ * @property {Number} animationSpeed=300                          - Determines how fast SVG elements animates inside the current layout.
+ * @property {Number} spacing=16                                  - Determines the minimal spacing between nodes.
+ *
+ *
+ *
+ *
  */
 const ContextualLayoutConfiguration = {
 
   layoutWidth: 1500,
   layoutHeight: 900,
 
-  // assigned connection
+  // assigned node connection
 
   riskConnectionLineWidth: 20,
   riskConnectionArrowWidth: 30,
@@ -50,6 +98,8 @@ const ContextualLayoutConfiguration = {
   riskConnectionStrokeWidth: 1,
   riskConnectionStrokeDasharray: 0,
   riskConnectionColor: "#dd415bcc",
+  riskConnectionLabelTranslateX: 0,
+  riskConnectionLabelTranslateY: 0,
   riskConnectionLabelText: "Attached_Risks", // / must be seperated with _ to avoid new line creation
   riskConnectionLabelColor: "#ff8e9e",
   riskConnectionLabelFontFamily: "Montserrat",
@@ -64,9 +114,9 @@ const ContextualLayoutConfiguration = {
   childContainerNodeLimit: 6,
   childContainerColumns: 3,
   childContainerBorderRadius: 5,
-  childContainerBorderStrokeColor: "#75f",
+  childContainerBorderStrokeColor: "#888888cc",
   childContainerBorderStrokeWidth: 1.25,
-  childContainerBackgroundColor: "#fff",
+  childContainerBackgroundColor: "#ffffff",
 
 
   // parent container
@@ -74,9 +124,9 @@ const ContextualLayoutConfiguration = {
   parentContainerNodeLimit: 6,
   parentContainerColumns: 3,
   parentContainerBorderRadius: 5,
-  parentContainerBorderStrokeColor: "#f75",
+  parentContainerBorderStrokeColor: "#888888cc",
   parentContainerBorderStrokeWidth: 1.25,
-  parentContainerBackgroundColor: "#fff",
+  parentContainerBackgroundColor: "#ffffff",
 
 
   // risk container
@@ -92,13 +142,14 @@ const ContextualLayoutConfiguration = {
   riskNodeConnectionStrokeColor: "#dd415bcc",
   riskNodeConnectionStrokeDasharray: "10 5",
 
+
   // generall container
   containerConnectionLineWidth: 25,
   containerConnectionArrowWidth: 25,
   containerConnectionarrowHeight: 25,
   containerConnectionStrokeColor: "inherit", // #cccccc, inherit
   containerConnectionStrokeWidth: 1,
-  containerConnectionStrokeDasharray: 0,
+  containerConnectionStrokeDasharray: "0",
   containerConnectionColor: "inherit", // #cccccc
 
 
@@ -122,13 +173,10 @@ const ContextualLayoutConfiguration = {
   showRiskExpander: true,
 
 
-  // maxLayoutWidth: 1200,
-  // maxLayoutHeight: 800,
   translateX: -50,
   translateY: 0,
-  animationSpeed: 1300,
+  animationSpeed: 300,
   spacing: 16,
-  renderingSize: "min",
 
 
 }

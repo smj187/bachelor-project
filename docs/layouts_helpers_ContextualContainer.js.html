@@ -7,7 +7,7 @@
   
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title> configuration/RiskNodeConfiguration.js</title>
+  <title> layouts/helpers/ContextualContainer.js</title>
 
   <script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -116,7 +116,7 @@
             <div class="content">
                 <header class="page-title">
                     <p>Source</p>
-                    <h1>configuration/RiskNodeConfiguration.js</h1>
+                    <h1>layouts/helpers/ContextualContainer.js</h1>
                 </header>
                 
 
@@ -127,114 +127,225 @@
         <article>
             <pre class="prettyprint source linenums"><code>
 /**
- * @namespace RiskNodeConfiguration
- * @description This object contains default configuration for risk node representations.
+ * This class calculates and renders a background container that collects multiple nodes.
  *
- * @category SVG Representations
- * @subcategory Customizations
- * @property {Number} maxWidth=300                  - Sets the detailed node width.
- * @property {Number} maxHeight=150                 - Sets the detailed height.
- * @property {Number} minWidth=150                  - Sets the minimal node width.
- * @property {Number} minHeight=50                  - Sets the minimal node height.
- *
- * @property {String} iconUrl=null                  - Determines the path to the image icon (if this value is null, the default icon is used).
- * @property {Number} minIconOpacity=0.5            - Determines the basic visibility of the icon in minimal representation.
- * @property {Number} minIconSize=35                - Determines the width and height for the image icon in minimal representation.
- * @property {Number} minIconTranslateX=-45         - Determines the horizontal adjustment for the icon in minimal representation.
- * @property {Number} minIconTranslateY=0           - Determines the vertical adjustment for the icon in minimal representation.
- * @property {Number} maxIconOpacity=0.75           - Determines the basic visibility of the icon in detailed representation.
- * @property {Number} maxIconSize=30                - Determines the width and height for the image icon in detailed representation.
- * @property {Number} maxIconTranslateX=-120        - Determines the horizontal adjustment for the icon in detailed representation.
- * @property {Number} maxIconTranslateY=-55         - Determines the vertical adjustment for the icon in detailed representation.
- *
- * @property {Number} offset=8                      - Determines the spacing used for padding between label and background.
- * @property {Number} animationSpeed=300            - Determines how fast SVG elements animates inside the current layout.
- * @property {Number} borderRadius=4                - Determines the nodes border radius.
- * @property {Number} borderStrokeWidth=1           - Determines the nodes border stroke width.
- * @property {String} borderStrokeColor=#F26A7C     - Determines the nodes border color.
- * @property {String} borderStrokeDasharray="5 10"  - Determines the nodes gaps used inside the border.
- * @property {String} backgroundColor=#ffffff       - Determines the nodes background color.
- *
- * @property {Number} minTextWidth=90               - Determines the text width for the label in minimal representation.
- * @property {Number} minLabelLineClamp=1           - Determines how many lines are visible for the label in minimal representation.
- * @property {Number} minTextTranslateX=22.5        - Determines the horizontal adjustment for the label in minimal representation.
- * @property {Number} minTextTranslateY=0           - Determines the vertical adjustment for the label in minimal representation.
- * @property {Number} maxTextWidth=295              - Determines the text width for the label in detailed representation.
- * @property {Number} maxTextHeight=145             - Determines the text height for the label in detailed representation.
- * @property {Number} maxLabelLineClamp=2           - Determines how many lines are visible for the label in detailed representation.
- * @property {Number} maxTextTranslateX=0           - Determines the horizontal adjustment for the label in detailed representation.
- * @property {Number} maxTextTranslateY=0           - Determines the vertical adjustment for the label in detailed representation.
- * @property {String} labelColor=#ff8e9e            - Determines the color for the label.
- * @property {String} labelFontFamily=Montserrat    - Determines the font family for the label.
- * @property {Number} labelFontSize=14              - Determines the font size for the label.
- * @property {Number} labelFontWeight=600           - Determines the font weight for the label.
- * @property {String} labelFontStyle=normal         - Determines the font style for the label.
- * @property {String} labelBackground=#ffffff       - Determines the background color for the label.
- * @property {String} detailsColor=#ff8e9e          - Determines the color for the details description.
- * @property {String} detailsFontFamily=Montserrat  - Determines the font family for the details description.
- * @property {Number} detailsFontSize=12            - Determines the font size for the details description.
- * @property {Number} detailsFontWeight=600         - Determines the font weight for the details description.
- * @property {String} detailsFontStyle=normal       - Determines the font style for the details description.
- * @property {String} detailsBackground=#ffffff     - Determines the background color for the details description.
+ * @category Layouts
+ * @subcategory Helpers
+ * @property {Canvas} canvas The current canvas to render the element on.
+ * @property {BaseNode} focusNode The currently active focus node.
+ * @property {Object} containerInfo An object containing information about where to render the container.
+ * @property {ContextualLayoutConfiguration} config An object containing visual restrictions.
  */
-const RiskNodeConfiguration = {
-  // large node
-  maxWidth: 300,
-  maxHeight: 150,
+class ContextualConainer {
+  constructor(canvas, focusNode, containerInfo, config) {
+    this.canvas = canvas
+    this.svg = null
+    this.focusNode = focusNode
+    this.containerInfo = containerInfo
+    this.config = config
 
 
-  // small node
-  minWidth: 150,
-  minHeight: 50,
+    // layout
+    this.layoutId = 0
+    this.animation = null
+  }
 
 
-  // icon
-  iconUrl: null,
-  minIconOpacity: 0.5,
-  minIconSize: 35,
-  minIconTranslateX: -45,
-  minIconTranslateY: 0,
-  maxIconOpacity: 0.75,
-  maxIconSize: 30,
-  maxIconTranslateX: -120,
-  maxIconTranslateY: -55,
+  /**
+   * Calculates and renders the container.
+   */
+  render() {
+    const svg = this.canvas.group()
+    svg.id(`contextualContainer#${this.layoutId}`)
+
+    const {
+      type, minHeight, width, mincx, mincy,
+    } = this.containerInfo
 
 
-  // node
-  offset: 8,
-  animationSpeed: 300,
-  borderRadius: 4,
-  borderStrokeWidth: 1,
-  borderStrokeColor: "#F26A7C",
-  borderStrokeDasharray: "5 10",
-  backgroundColor: "#ffffff",
+    // create the SVG container
+    const container = this.canvas.rect(0, 0).center(mincx, mincy)
+
+    if (type === "child") {
+      container.radius(this.config.childContainerBorderRadius)
+      container.fill(this.config.childContainerBackgroundColor)
+      container.stroke({ width: this.config.childContainerBorderStrokeWidth })
+      container.stroke({ color: this.config.childContainerBorderStrokeColor })
+    }
+
+    if (type === "parent") {
+      container.radius(this.config.parentContainerBorderRadius)
+      container.fill(this.config.parentContainerBackgroundColor)
+      container.stroke({ width: this.config.parentContainerBorderStrokeWidth })
+      container.stroke({ color: this.config.parentContainerBorderStrokeColor })
+    }
+
+    if (type === "risk") {
+      container.radius(this.config.riskContainerBorderRadius)
+      container.fill(this.config.riskContainerBackgroundColor)
+      container.stroke({ width: this.config.riskContainerBorderStrokeWidth })
+      container.stroke({ color: this.config.riskContainerBorderStrokeColor })
+    }
+
+    svg.add(container)
 
 
-  // text
-  minTextWidth: 90, // recommended: min node width - some padding
-  minLabelLineClamp: 1,
-  minTextTranslateX: 22.5,
-  minTextTranslateY: 0,
-  maxTextWidth: 295,
-  maxTextHeight: 145,
-  maxLabelLineClamp: 2,
-  maxTextTranslateX: 0,
-  maxTextTranslateY: 0,
-  labelColor: "#ff8e9e",
-  labelFontFamily: "Montserrat",
-  labelFontSize: 14,
-  labelFontWeight: 600,
-  labelFontStyle: "normal",
-  labelBackground: "#ffffff",
-  detailsColor: "#ff8e9e",
-  detailsFontFamily: "Montserrat",
-  detailsFontSize: 12,
-  detailsFontWeight: 600,
-  detailsFontStyle: "normal",
-  detailsBackground: "transparent",
+    // moves the container into position
+    svg
+      .get(0)
+      .center(this.focusNode.getFinalX(), this.focusNode.getFinalY())
+      .animate({ duration: this.config.animationSpeed })
+      .center(mincx, mincy)
+      .width(width)
+      .height(minHeight)
+
+    this.svg = svg
+  }
+
+
+  /**
+   * Updates a currently rendered container.
+   * @param {Object} [opts={ }] An object containing additional information.
+   * @param {Number} [opts.areChildrenExpended=false] Determines if the child container is expended.
+   * @param {Number} [opts.areParentsExpended=false] Determines if the parent container is expended.
+   * @param {Number} [opts.areRisksExpended=false] Determines if the risk container is expended.
+   */
+  update({ areChildrenExpended = false, areParentsExpended = false, areRisksExpended = false }) {
+    const {
+      minHeight, maxHeight, mincx, mincy, maxcx, maxcy,
+    } = this.containerInfo
+
+    // cancel an ongoing animation
+    if (this.animation !== null) {
+      this.animation.unschedule()
+    }
+
+    // updates the child container
+    if (this.type === "child") {
+      if (areChildrenExpended === true) {
+        this.animation = this
+          .svg
+          .get(0)
+          .animate({ duration: this.config.animationSpeed })
+          .height(maxHeight)
+          .after(() => { this.animation = null })
+      } else {
+        this.animation = this
+          .svg
+          .get(0)
+          .animate({ duration: this.config.animationSpeed })
+          .height(minHeight)
+          .after(() => { this.animation = null })
+      }
+    }
+
+
+    // updates the risk container
+    if (this.type === "risk") {
+      if (areRisksExpended === true) {
+        this.animation = this
+          .svg
+          .get(0)
+          .animate({ duration: this.config.animationSpeed })
+          .height(maxHeight)
+          .after(() => { this.animation = null })
+      } else {
+        this.animation = this
+          .svg
+          .get(0)
+          .animate({ duration: this.config.animationSpeed })
+          .height(minHeight)
+          .after(() => { this.animation = null })
+      }
+    }
+
+
+    // updates the parent container
+    if (this.type === "parent") {
+      if (areParentsExpended === true) {
+        this.animation = this
+          .svg
+          .get(0)
+          .animate({ duration: this.config.animationSpeed })
+          .height(maxHeight)
+          .dy((mincy - maxcx) / 2)
+          .center(maxcx, maxcy)
+          .after(() => { this.animation = null })
+      } else {
+        this.animation = this
+          .svg
+          .get(0)
+          .animate({ duration: this.config.animationSpeed })
+          .height(minHeight)
+          .dy((maxcx - mincy) / 2)
+          .center(mincx, mincy)
+          .after(() => { this.animation = null })
+      }
+    }
+  }
+
+
+  /**
+   * Transforms the container into its final position.
+   * @param {Object} [opts={ }] An object containing additional information.
+   * @param {Number} [opts.isParentOperation=false] An indication whether a parent or child node was elected new focus.
+   * @param {Number} [opts.X=this.finalX] The calculated final X position.
+   * @param {Number} [opts.X=this.finalY] The calculated final X position.
+   */
+  transformToFinalPosition({ X = this.finalX, Y = this.finalY }) {
+    this
+      .svg
+      .back()
+
+    this
+      .svg
+      .animate({ duration: this.config.animationSpeed })
+      .size(this.w, this.h)
+      .center(X, Y)
+  }
+
+
+  /**
+   * Removes the container.
+   */
+  removeSVG() {
+    if (this.isRendered()) {
+      this.svg.remove()
+      this.svg = null
+    }
+  }
+
+
+  /**
+   * Determins if the SVG object is rendered.
+   * @returns True, if the SVG is rendered, else false.
+   */
+  isRendered() {
+    return this.svg !== null
+  }
+
+  setType(type) {
+    this.type = type
+  }
+
+  getType() {
+    return this.type
+  }
+
+  setLayoutId(layoutId) {
+    this.layoutId = layoutId
+  }
+
+  getFinalX() {
+    return this.finalX
+  }
+
+  getFinalY() {
+    return this.finalY
+  }
 }
 
-export default RiskNodeConfiguration
+export default ContextualConainer
 </code></pre>
         </article>
     </section>

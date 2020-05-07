@@ -6,7 +6,7 @@
  * @subcategory Customizations
  * @property {Number} offset=8                      - Sets the spacing used for padding between label and background.
  * @property {Number} animationSpeed=300            - Determines how fast SVG elements animates inside the current layout.
- * @property {String} color=null                    - Sets the default edge color. If set to null, it inherent its color.
+ * @property {String} color=null                    - Sets the default edge color. Available: "inherit" or hex value as String.
  *
  * @property {String} lineWidth=25                  - Determines the thickness of the SVG element.
  * @property {String} arrowWidth=40                 - Determines how long the arrow head appears.

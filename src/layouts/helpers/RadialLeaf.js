@@ -215,7 +215,7 @@ class RadialLeaf {
 
 
   /**
-   * Determins where the leaf is rendered or not.
+   * Determins if the SVG object is rendered.
    * @returns True, if the SVG is rendered, else false.
    */
   isRendered() {

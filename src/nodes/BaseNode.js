@@ -74,45 +74,6 @@ class BaseNode {
     this.animation = null
   }
 
-  removeNode(X = this.initialX, Y = this.initialY, opts = { animation: true, opacity: 1 }, clickedNode) { // TODO: remove
-    console.log(clickedNode)
-
-    if (opts.animation === true) {
-      if (this.svg !== null) {
-        this.svg.back()
-
-        this
-          .svg
-          .animate({ duration: this.config.animationSpeed })
-          .transform({ scale: 0.001, position: [X, Y] })
-          .during(() => {
-            console.log(clickedNode.finalX)
-          })
-          .after(() => {
-            this.svg.remove()
-            this.svg = null
-          })
-      }
-    } else if (opts.opacity === 0) {
-      if (this.svg !== null) {
-        this.svg.back()
-        this
-          .svg
-          .attr({ opacity: 1 })
-          .animate({ duration: this.config.animationSpeed })
-          .transform({ position: [X, Y] })
-          .attr({ opacity: 0 })
-          .after(() => {
-            this.svg.remove()
-            this.svg = null
-          })
-      }
-    } else {
-      this.svg.remove()
-      this.svg = null
-    }
-  }
-
 
   /**
    * Creates the initial SVG object reference and the drop shadow for mouse hover effects.
@@ -393,7 +354,7 @@ class BaseNode {
 
 
   /**
-   * Determins where the node is rendered or not.
+   * Determins if the SVG object is rendered.
    * @returns True, if the SVG is rendered, else false.
    */
   isRendered() {

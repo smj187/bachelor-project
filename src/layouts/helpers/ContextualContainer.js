@@ -1,4 +1,14 @@
 
+/**
+ * This class calculates and renders a background container that collects multiple nodes.
+ *
+ * @category Layouts
+ * @subcategory Helpers
+ * @property {Canvas} canvas The current canvas to render the element on.
+ * @property {BaseNode} focusNode The currently active focus node.
+ * @property {Object} containerInfo An object containing information about where to render the container.
+ * @property {ContextualLayoutConfiguration} config An object containing visual restrictions.
+ */
 class ContextualConainer {
   constructor(canvas, focusNode, containerInfo, config) {
     this.canvas = canvas
@@ -13,7 +23,11 @@ class ContextualConainer {
     this.animation = null
   }
 
-  render({ isParentOperation = false }) {
+
+  /**
+   * Calculates and renders the container.
+   */
+  render() {
     const svg = this.canvas.group()
     svg.id(`contextualContainer#${this.layoutId}`)
 
@@ -21,6 +35,8 @@ class ContextualConainer {
       type, minHeight, width, mincx, mincy,
     } = this.containerInfo
 
+
+    // create the SVG container
     const container = this.canvas.rect(0, 0).center(mincx, mincy)
 
     if (type === "child") {
@@ -47,6 +63,7 @@ class ContextualConainer {
     svg.add(container)
 
 
+    // moves the container into position
     svg
       .get(0)
       .center(this.focusNode.getFinalX(), this.focusNode.getFinalY())
@@ -58,9 +75,17 @@ class ContextualConainer {
     this.svg = svg
   }
 
+
+  /**
+   * Updates a currently rendered container.
+   * @param {Object} [opts={ }] An object containing additional information.
+   * @param {Number} [opts.areChildrenExpended=false] Determines if the child container is expended.
+   * @param {Number} [opts.areParentsExpended=false] Determines if the parent container is expended.
+   * @param {Number} [opts.areRisksExpended=false] Determines if the risk container is expended.
+   */
   update({ areChildrenExpended = false, areParentsExpended = false, areRisksExpended = false }) {
     const {
-      type, minHeight, maxHeight, width, mincx, mincy, maxcx, maxcy,
+      minHeight, maxHeight, mincx, mincy, maxcx, maxcy,
     } = this.containerInfo
 
     // cancel an ongoing animation
@@ -68,6 +93,7 @@ class ContextualConainer {
       this.animation.unschedule()
     }
 
+    // updates the child container
     if (this.type === "child") {
       if (areChildrenExpended === true) {
         this.animation = this
@@ -87,6 +113,7 @@ class ContextualConainer {
     }
 
 
+    // updates the risk container
     if (this.type === "risk") {
       if (areRisksExpended === true) {
         this.animation = this
@@ -106,6 +133,7 @@ class ContextualConainer {
     }
 
 
+    // updates the parent container
     if (this.type === "parent") {
       if (areParentsExpended === true) {
         this.animation = this
@@ -130,7 +158,14 @@ class ContextualConainer {
   }
 
 
-  transformToFinalPosition(X = this.finalX, Y = this.finalY) {
+  /**
+   * Transforms the container into its final position.
+   * @param {Object} [opts={ }] An object containing additional information.
+   * @param {Number} [opts.isParentOperation=false] An indication whether a parent or child node was elected new focus.
+   * @param {Number} [opts.X=this.finalX] The calculated final X position.
+   * @param {Number} [opts.X=this.finalY] The calculated final X position.
+   */
+  transformToFinalPosition({ X = this.finalX, Y = this.finalY }) {
     this
       .svg
       .back()
@@ -143,19 +178,23 @@ class ContextualConainer {
   }
 
 
-  removeContainer(X, Y) {
-    if (this.svg !== null) {
-      this
-        .svg
-        .attr({ opacity: 1 })
-        .animate({ duration: this.config.animationSpeed })
-        .transform({ position: [X, Y] })
-        .attr({ opacity: 0 })
-        .after(() => {
-          this.svg.remove()
-          this.svg = null
-        })
+  /**
+   * Removes the container.
+   */
+  removeSVG() {
+    if (this.isRendered()) {
+      this.svg.remove()
+      this.svg = null
     }
+  }
+
+
+  /**
+   * Determins if the SVG object is rendered.
+   * @returns True, if the SVG is rendered, else false.
+   */
+  isRendered() {
+    return this.svg !== null
   }
 
   setType(type) {
@@ -170,14 +209,9 @@ class ContextualConainer {
     this.layoutId = layoutId
   }
 
-  isRendered() {
-    return this.svg !== null
-  }
-
   getFinalX() {
     return this.finalX
   }
-
 
   getFinalY() {
     return this.finalY

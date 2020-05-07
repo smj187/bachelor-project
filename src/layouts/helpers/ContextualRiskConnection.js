@@ -1,13 +1,25 @@
 import { calculateArcLineIntersection } from "../../utils/Calculations"
 
 
+/**
+ * This class represents a solution which connects risk to the assigned connection.
+ *
+ * @category Layouts
+ * @subcategory Helpers
+ * @property {Canvas} canvas The current canvas to render the element on.
+ * @property {Array.<BaseNode>} riskContainer An array of nodes within the risk container.
+ * @property {BaseNode} focusNode The currently active focus node.
+ * @property {BaseNode} assignedNode The currently active assigned node.
+ * @property {ContextualAssginedConnection} assignedNodeConnection The connection between the focus and assigned node.
+ * @property {ContextualLayoutConfiguration} config An object containing visual restrictions.
+ */
 class ContextualRiskConnection {
-  constructor(canvas, riskNodes, riskContainer, focusNode, assginedNode, assignedNodeConnection, config) {
+  constructor(canvas, riskNodes, riskContainer, focusNode, assignedNode, assignedNodeConnection, config) {
     this.canvas = canvas
     this.riskNodes = riskNodes || []
     this.riskContainer = riskContainer || null
     this.focusNode = focusNode
-    this.assginedNode = assginedNode
+    this.assignedNode = assignedNode
     this.assignedNodeConnection = assignedNodeConnection || null
     this.config = config
 
@@ -18,24 +30,28 @@ class ContextualRiskConnection {
   }
 
 
+  /**
+   * Calculates and renders the connection.
+   * @param {Object} [opts={ }] An object containing additional information.
+   * @param {Number} [opts.isParentOperation=false] An indication whether a parent or child node was elected new focus.
+   */
   render({ isParentOperation = false }) {
     const svg = this.canvas.group()
     svg.id(`contextualRiskConnection#${this.layoutId}`)
 
     const nodes = this.riskNodes
 
-    // calculate connections between start point and connection center
 
+    // calculate connections between start point and connection center
     // connection center
     const x0 = this.assignedNodeConnection.finalX
     const y0 = this.assignedNodeConnection.finalY - 50 / 2
 
-
     const x1 = this.focusNode.getFinalX()
     const y1 = this.focusNode.getFinalY() + this.config.riskConnectionLineWidth / 2
 
-    const x2 = this.assginedNode.getFinalX()
-    const y2 = this.assginedNode.getFinalY() + this.config.riskConnectionLineWidth / 2
+    const x2 = this.assignedNode.getFinalX()
+    const y2 = this.assignedNode.getFinalY() + this.config.riskConnectionLineWidth / 2
 
     const initialConnections = []
     const finalConnections = []
@@ -78,11 +94,12 @@ class ContextualRiskConnection {
 
       const lineIntersection = calculateArcLineIntersection(x0, y0, x3, y3, `M${x1},${y1} L${x2},${y2}`)
 
-
+      const x4 = this.focusNode.getFinalX()
+      const y4 = this.focusNode.getFinalY()
       if (isParentOperation) {
-        initialConnections.push(`M${this.focusNode.getFinalX()},${this.focusNode.getFinalY()} L${lineIntersection.x},${lineIntersection.y - 50}`)
+        initialConnections.push(`M${x4},${y4} L${lineIntersection.x},${lineIntersection.y - 50}`)
       } else {
-        initialConnections.push(`M${this.focusNode.getFinalX()},${this.focusNode.getFinalY()} L${lineIntersection.x},${lineIntersection.y + 50}`)
+        initialConnections.push(`M${x4},${y4} L${lineIntersection.x},${lineIntersection.y + 50}`)
       }
       finalConnections.push(`M${x3},${y3 - offset} L${lineIntersection.x},${lineIntersection.y}`)
     }
@@ -94,8 +111,20 @@ class ContextualRiskConnection {
     const dasharray = this.config.riskNodeConnectionStrokeDasharray
 
     for (let i = 0; i < initialConnections.length; i += 1) {
-      const line = this.canvas.path(initialConnections[i]).stroke({ width, color, dasharray }).back().attr({ opacity: 0 })
-      line.animate({ duration: this.config.animationSpeed }).plot(finalConnections[i]).attr({ opacity: 1 })
+      // plot the initial path
+      const line = this
+        .canvas
+        .path(initialConnections[i])
+        .stroke({ width, color, dasharray })
+        .back()
+        .attr({ opacity: 0 })
+
+      // animate into the final path
+      line
+        .animate({ duration: this.config.animationSpeed })
+        .plot(finalConnections[i])
+        .attr({ opacity: 1 })
+
       svg.add(line)
     }
 
@@ -104,6 +133,13 @@ class ContextualRiskConnection {
   }
 
 
+  /**
+   * Transforms the risk connection into its final position.
+   * @param {Object} [opts={ }] An object containing additional information.
+   * @param {Number} [opts.isParentOperation=false] An indication whether a parent or child node was elected new focus.
+   * @param {Number} [opts.X=this.finalX] The calculated final X position.
+   * @param {Number} [opts.X=this.finalY] The calculated final X position.
+   */
   transformToFinalPosition({ isParentOperation = false, X = this.node.finalX, Y = this.node.finalY }) {
     if (isParentOperation) {
       this.svg
@@ -116,8 +152,9 @@ class ContextualRiskConnection {
     }
   }
 
+
   /**
-   * Removes the leaf node from the canvas and resets clears its SVG representation.
+   * Removes the risk connection.
    */
   removeSVG() {
     if (this.isRendered()) {
@@ -128,7 +165,7 @@ class ContextualRiskConnection {
 
 
   /**
-   * Determins where the leaf is rendered or not.
+   * Determins if the SVG object is rendered.
    * @returns True, if the SVG is rendered, else false.
    */
   isRendered() {
@@ -137,6 +174,14 @@ class ContextualRiskConnection {
 
   setLayoutId(layoutId) {
     this.layoutId = layoutId
+  }
+
+  getFinalX() {
+    return this.finalX
+  }
+
+  getFinalY() {
+    return this.finalY
   }
 }
 

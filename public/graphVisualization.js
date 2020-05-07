@@ -209,7 +209,7 @@ var shared = createCommonjsModule(function (module) {
 (module.exports = function (key, value) {
   return sharedStore[key] || (sharedStore[key] = value !== undefined ? value : {});
 })('versions', []).push({
-  version: '3.6.4',
+  version: '3.6.5',
   mode:  'global',
   copyright: '© 2020 Denis Pushkarev (zloirock.ru)'
 });
@@ -3550,7 +3550,13 @@ if (!set$1 || !clear) {
     defer = functionBindContext(port.postMessage, port, 1);
   // Browsers with postMessage, skip WebWorkers
   // IE8 has postMessage, but it's sync & typeof its postMessage is 'object'
-  } else if (global_1.addEventListener && typeof postMessage == 'function' && !global_1.importScripts && !fails(post)) {
+  } else if (
+    global_1.addEventListener &&
+    typeof postMessage == 'function' &&
+    !global_1.importScripts &&
+    !fails(post) &&
+    location.protocol !== 'file:'
+  ) {
     defer = post;
     global_1.addEventListener('message', listener, false);
   // IE8-
@@ -16289,71 +16295,18 @@ var BaseNode = /*#__PURE__*/function () {
     this.incomingEdges = [];
     this.animation = null;
   }
+  /**
+   * Creates the initial SVG object reference and the drop shadow for mouse hover effects.
+   * @return {SVG} A bare bone SVG object.
+   *
+   * @see https://github.com/svgdotjs/svg.filter.js
+   */
+
 
   _createClass(BaseNode, [{
-    key: "removeNode",
-    value: function removeNode() {
-      var _this = this;
-
-      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.initialX;
-      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.initialY;
-      var opts = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {
-        animation: true,
-        opacity: 1
-      };
-      var clickedNode = arguments.length > 3 ? arguments[3] : undefined;
-      // TODO: remove
-      console.log(clickedNode);
-
-      if (opts.animation === true) {
-        if (this.svg !== null) {
-          this.svg.back();
-          this.svg.animate({
-            duration: this.config.animationSpeed
-          }).transform({
-            scale: 0.001,
-            position: [X, Y]
-          }).during(function () {
-            console.log(clickedNode.finalX);
-          }).after(function () {
-            _this.svg.remove();
-
-            _this.svg = null;
-          });
-        }
-      } else if (opts.opacity === 0) {
-        if (this.svg !== null) {
-          this.svg.back();
-          this.svg.attr({
-            opacity: 1
-          }).animate({
-            duration: this.config.animationSpeed
-          }).transform({
-            position: [X, Y]
-          }).attr({
-            opacity: 0
-          }).after(function () {
-            _this.svg.remove();
-
-            _this.svg = null;
-          });
-        }
-      } else {
-        this.svg.remove();
-        this.svg = null;
-      }
-    }
-    /**
-     * Creates the initial SVG object reference and the drop shadow for mouse hover effects.
-     * @return {SVG} A bare bone SVG object.
-     *
-     * @see https://github.com/svgdotjs/svg.filter.js
-     */
-
-  }, {
     key: "createSVGElement",
     value: function createSVGElement() {
-      var _this2 = this;
+      var _this = this;
 
       // create the SVG object on the canvas.
       var svg = this.canvas.group().draggable(); // const svg = this.canvas.group()
@@ -16365,37 +16318,37 @@ var BaseNode = /*#__PURE__*/function () {
       svg.on("mouseover", function () {
         svg.front();
 
-        var currentZoomLevel = _this2.canvas.parent().attr().zoomCurrent;
+        var currentZoomLevel = _this.canvas.parent().attr().zoomCurrent;
 
-        var currenZoomThreshold = _this2.canvas.parent().attr().zoomThreshold; // show tooltip only if text is set, the node is in minimal representation and the
+        var currenZoomThreshold = _this.canvas.parent().attr().zoomThreshold; // show tooltip only if text is set, the node is in minimal representation and the
         // current zoom level is smaller then the threshold
 
 
-        if (_this2.tooltipText !== null && _this2.nodeSize === "min" && currentZoomLevel <= currenZoomThreshold) {
+        if (_this.tooltipText !== null && _this.nodeSize === "min" && currentZoomLevel <= currenZoomThreshold) {
           // add a show tooltip event
           svg.on("mousemove", function (ev) {
             var tooltip = document.getElementById("tooltip");
-            tooltip.innerHTML = _this2.tooltipText;
+            tooltip.innerHTML = _this.tooltipText;
             tooltip.style.display = "block";
-            tooltip.style.fontFamily = _this2.config.labelFontFamily;
+            tooltip.style.fontFamily = _this.config.labelFontFamily;
             tooltip.style.left = "".concat(ev.clientX - tooltip.clientWidth / 2, "px");
             tooltip.style.top = "".concat(ev.clientY - tooltip.clientHeight - 15, "px");
           });
         } // remove border dasharray (this improves the visual appearance of a node has a dashed border)
 
 
-        var node = _this2.svg.get(0);
+        var node = _this.svg.get(0);
 
         node.stroke({
-          width: _this2.config.borderStrokeWidth,
-          color: _this2.config.borderStrokeColor,
+          width: _this.config.borderStrokeWidth,
+          color: _this.config.borderStrokeColor,
           dasharray: 0
         }); // find a color add a highlight based on that color
 
-        var toDark = _this2.config.borderStrokeColor.substr(1);
+        var toDark = _this.config.borderStrokeColor.substr(1);
 
-        if (_this2.type === "requirement") {
-          toDark = _this2.config.backgroundColor.substr(1);
+        if (_this.type === "requirement") {
+          toDark = _this.config.backgroundColor.substr(1);
         } // attach the drop shadow
 
 
@@ -16408,12 +16361,12 @@ var BaseNode = /*#__PURE__*/function () {
 
       svg.on("mouseout", function () {
         // reset border stroke to its original value
-        var node = _this2.svg.get(0);
+        var node = _this.svg.get(0);
 
         node.stroke({
-          width: _this2.config.borderStrokeWidth,
-          color: _this2.config.borderStrokeColor,
-          dasharray: _this2.config.borderStrokeDasharray
+          width: _this.config.borderStrokeWidth,
+          color: _this.config.borderStrokeColor,
+          dasharray: _this.config.borderStrokeDasharray
         }); // remove the tooltip listener event
 
         svg.off("mousemove", null); // remove the tooltip
@@ -16575,7 +16528,7 @@ var BaseNode = /*#__PURE__*/function () {
   }, {
     key: "removeSVG",
     value: function removeSVG(_ref) {
-      var _this3 = this;
+      var _this2 = this;
 
       var _ref$isContextualNode = _ref.isContextualNode,
           isContextualNode = _ref$isContextualNode === void 0 ? false : _ref$isContextualNode,
@@ -16607,15 +16560,15 @@ var BaseNode = /*#__PURE__*/function () {
           position: [x, y + 100]
         }).after(function () {
           try {
-            _this3.svg.remove();
+            _this2.svg.remove();
           } catch (error) {}
 
-          _this3.svg = null;
+          _this2.svg = null;
         });
       }
     }
     /**
-     * Determins where the node is rendered or not.
+     * Determins if the SVG object is rendered.
      * @returns True, if the SVG is rendered, else false.
      */
 
@@ -23940,7 +23893,7 @@ var BaseEdge = /*#__PURE__*/function () {
       });
     }
     /**
-     * Determins where the edge is rendered or not.
+     * Determins if the SVG object is rendered.
      * @returns True, if the SVG is rendered, else false.
      */
 
@@ -24286,7 +24239,7 @@ var ThinEdge = /*#__PURE__*/function (_BaseEdge) {
  * @subcategory Customizations
  * @property {Number} offset=8                      - Sets the spacing used for padding between label and background.
  * @property {Number} animationSpeed=300            - Determines how fast SVG elements animates inside the current layout.
- * @property {String} color=null                    - Sets the default edge color. If set to null, it inherent its color.
+ * @property {String} color=null                    - Sets the default edge color. Available: "inherit" or hex value as String.
  *
  * @property {String} lineWidth=25                  - Determines the thickness of the SVG element.
  * @property {String} arrowWidth=40                 - Determines how long the arrow head appears.
@@ -24383,61 +24336,18 @@ var BoldEdge = /*#__PURE__*/function (_BaseEdge) {
           _ref$isContextualBold = _ref.isContextualBoldEdge,
           isContextualBoldEdge = _ref$isContextualBold === void 0 ? false : _ref$isContextualBold;
       var svg = this.createSVGElement("boldEdge#".concat(this.layoutId, "_").concat(this.fromNode.id, "_").concat(this.toNode.id));
-      var lineWidth = this.config.lineWidth;
-      var arrowWidth = this.config.arrowWidth;
-      var arrowHeight = this.config.arrowHeight;
       var x0 = this.finalToX;
       var y0 = this.finalToY;
       var x1 = this.finalFromX;
-      var y1 = this.finalFromY;
-      var dist1 = calculateDistance(x1, y1, x0, y0);
-      var a0 = (x0 + x1) / 2;
-      var b0 = (y0 + y1) / 2;
-      var a1 = a0 + dist1;
-      var b1 = b0;
-      var a2 = a0;
-      var b2 = b0 + lineWidth / 2;
-      var a3 = a2 + (dist1 - arrowHeight);
-      var b3 = b2;
-      var a4 = a3;
-      var b4 = b2 + -lineWidth / 2 + arrowWidth / 2;
-      var a5 = a1;
-      var b5 = b1;
-      var a6 = a3;
-      var b6 = b4 - arrowWidth;
-      var a7 = a3;
-      var b7 = b0 - lineWidth / 2;
-      var a8 = a0;
-      var b8 = b0 - lineWidth / 2; // this.canvas.circle(6).fill("#000").center(a0, b0)
-      // this.canvas.circle(6).fill("#000").center(a1, b1)
-      // this.canvas.rect(4, 4).fill("#f75").center(a2, b2)
-      // this.canvas.rect(4, 4).fill("#222").center(a3, b3)
-      // this.canvas.rect(4, 4).fill("#f0f").center(a4, b4)
-      // this.canvas.rect(4, 4).fill("#75f").center(a5, b5)
-      // this.canvas.rect(4, 4).fill("#00f").center(a6, b6)
-      // this.canvas.rect(4, 4).fill("#f00").center(a7, b7)
-      // this.canvas.rect(4, 4).fill("#75f").center(a8, b8)
+      var y1 = this.finalFromY; // the calculate bold arrow
 
-      var plot1 = "\n      M ".concat(a2, ",").concat(b2, "\n      L ").concat(a3, ",").concat(b3, "\n      L ").concat(a4, ",").concat(b4, "\n      L ").concat(a5, ",").concat(b5, "\n      L ").concat(a6, ",").concat(b6, "\n      L ").concat(a7, ",").concat(b7, "\n      L ").concat(a8, ",").concat(b8, "\n      L ").concat(a2, ",").concat(b2, "\n    "); // let plot
-      // the calculate bold arrow
-
-      var plot;
-
-      if (isContextualBoldEdge === true) {
-        plot = plot1;
-      } else {
-        plot = this.generateBoldArrow();
-      } // draw the arrow
-
+      var plot = isContextualBoldEdge === true ? this.generateContextualArrow() : this.generateBoldArrow(); // create the SVG edge
 
       var path = this.canvas.path(plot).stroke({
         color: this.config.strokeColor,
         width: this.config.strokeWidth,
         dasharray: this.config.strokeDasharray
-      });
-      /*
-        // TODO: implementation for finding a color for the attached container nodes
-      */
+      }); // color the edge
 
       if (this.config.color === "inherit") {
         var toColor = this.toNode.config.borderStrokeColor;
@@ -24451,14 +24361,11 @@ var BoldEdge = /*#__PURE__*/function (_BaseEdge) {
         path.fill(gradient);
       } else {
         path.fill(this.config.color);
-      }
+      } // move the edge into its initial position
+
 
       path.center((x0 + x1) / 2, (y0 + y1) / 2);
-      path.rotate(-90);
-      /*
-        // TODO: implementation for finding a color for the attached container nodes
-      */
-      // // custom color fill
+      path.rotate(-90); // // custom color fill
       // if (this.config.color !== null) {
       //   path.fill(this.config.color)
       // } else {
@@ -24638,7 +24545,7 @@ var BoldEdge = /*#__PURE__*/function (_BaseEdge) {
       this.svg = svg;
     }
     /**
-     * Transforms an edge to its final rendered position.
+     * Transforms the edge to its final rendered position.
      */
 
   }, {
@@ -24659,6 +24566,45 @@ var BoldEdge = /*#__PURE__*/function (_BaseEdge) {
       }
     }
     /**
+    * Helper method to create a bold contextual edge.
+    * @return {String} The path in string format
+    */
+
+  }, {
+    key: "generateContextualArrow",
+    value: function generateContextualArrow() {
+      var lineWidth = this.config.lineWidth;
+      var arrowWidth = this.config.arrowWidth;
+      var arrowHeight = this.config.arrowHeight;
+      var x0 = this.finalToX;
+      var y0 = this.finalToY;
+      var x1 = this.finalFromX;
+      var y1 = this.finalFromY;
+      var dist1 = calculateDistance(x1, y1, x0, y0); // calculate points forming the connection
+
+      var a0 = (x0 + x1) / 2;
+      var b0 = (y0 + y1) / 2;
+      var a1 = a0 + dist1;
+      var b1 = b0;
+      var a2 = a0;
+      var b2 = b0 + lineWidth / 2;
+      var a3 = a2 + (dist1 - arrowHeight);
+      var b3 = b2;
+      var a4 = a3;
+      var b4 = b2 + -lineWidth / 2 + arrowWidth / 2;
+      var a5 = a1;
+      var b5 = b1;
+      var a6 = a3;
+      var b6 = b4 - arrowWidth;
+      var a7 = a3;
+      var b7 = b0 - lineWidth / 2;
+      var a8 = a0;
+      var b8 = b0 - lineWidth / 2; // the actual connection as path argument
+
+      var plot = "\n      M ".concat(a2, ",").concat(b2, "\n      L ").concat(a3, ",").concat(b3, "\n      L ").concat(a4, ",").concat(b4, "\n      L ").concat(a5, ",").concat(b5, "\n      L ").concat(a6, ",").concat(b6, "\n      L ").concat(a7, ",").concat(b7, "\n      L ").concat(a8, ",").concat(b8, "\n      L ").concat(a2, ",").concat(b2, "\n    ");
+      return plot;
+    }
+    /**
     * Helper method to create a bold arrow based on the SVG path.
     * @return {String} The path in string format
     */
@@ -24673,7 +24619,8 @@ var BoldEdge = /*#__PURE__*/function (_BaseEdge) {
       var dy = this.finalToY - this.finalFromY;
       var length = Math.sqrt(dx * dx + dy * dy);
       var delta = Math.PI / 180 * 90;
-      var theta = Math.atan2(this.finalToY - this.finalFromY, this.finalToX - this.finalFromX);
+      var theta = Math.atan2(this.finalToY - this.finalFromY, this.finalToX - this.finalFromX); // calculate points forming the connection
+
       var x0 = this.finalFromX;
       var y0 = this.finalFromY;
       var x1 = x0 + lineWidth / 2 * Math.cos(theta + delta);
@@ -24689,7 +24636,8 @@ var BoldEdge = /*#__PURE__*/function (_BaseEdge) {
       var x6 = x5 + (arrowWidth - lineWidth) / 2 * Math.cos(theta + delta);
       var y6 = y5 + (arrowWidth - lineWidth) / 2 * Math.sin(theta + delta);
       var x7 = x0 + lineWidth / 2 * Math.cos(theta + delta * -1);
-      var y7 = y0 + lineWidth / 2 * Math.sin(theta + delta * -1);
+      var y7 = y0 + lineWidth / 2 * Math.sin(theta + delta * -1); // the actual connection as path argument
+
       var plot = "\n      M ".concat(x0, ",").concat(y0, "\n      L ").concat(x1, ",").concat(y1, "\n      L ").concat(x2, ",").concat(y2, "\n      L ").concat(x3, ",").concat(y3, "\n      L ").concat(x4, ",").concat(y4, "\n      L ").concat(x5, ",").concat(y5, "\n      L ").concat(x6, ",").concat(y6, "\n      L ").concat(x7, ",").concat(y7, "\n      L ").concat(x0, ",").concat(y0, "\n    ");
       return plot;
     }
@@ -27333,12 +27281,17 @@ var GridExpander = /*#__PURE__*/function () {
       var collapseText = "Show_less_data"; // helper method that creates the expanders text
 
       var createText = function createText(innerText) {
-        var fobj = _this.canvas.foreignObject(1, 1);
+        // create a foreign object which holds the label
+        var fobj = _this.canvas.foreignObject(1, 1); // create the label background
+
 
         var background = document.createElement("div");
         background.style.background = _this.config.expanderTextBackground;
         background.style.padding = "".concat(_this.config.expanderFontSize / 2, "px");
         background.style.textAlign = "center";
+        background.style.width = "fit-content";
+        background.style.wordWrap = "break-word"; // create the actual label text
+
         var label = document.createElement("div");
         label.innerText = innerText;
         label.style.color = _this.config.expanderTextColor;
@@ -27346,15 +27299,22 @@ var GridExpander = /*#__PURE__*/function () {
         label.style.fontFamily = _this.config.expanderFontFamily;
         label.style.fontWeight = _this.config.expanderFontWeight;
         label.style.fontStyle = _this.config.expanderFontStyle;
-        label.style.width = "fit-content";
-        label.setAttribute("id", "label");
-        background.appendChild(label);
-        fobj.add(background);
+        label.style.width = "max-content";
+        label.style.wordWrap = "break-word";
+        label.setAttribute("id", "label"); // add the label to the background element
+
+        background.appendChild(label); // add the HTML to the SVG
+
+        fobj.add(background); // disable the user-select css property
+
         fobj.css("user-select", "none");
-        fobj.height(background.clientHeight);
+        fobj.height(background.clientHeight); // set the labels with
+
         var labelWidth = label.clientWidth + _this.config.expanderFontSize;
         label.innerText = innerText.replace(/_/g, " ");
-        fobj.width(labelWidth);
+        fobj.width(labelWidth); // // move the label into position
+        // fobj.center(cx, cy - 25 / 1.05 - riskConnectionLineWidth / 2)
+
         return fobj;
       };
 
@@ -27459,16 +27419,6 @@ var GridExpander = /*#__PURE__*/function () {
       });
     }
     /**
-     * Determins where the expander is rendered or not.
-     * @returns True, if the SVG is rendered, else false.
-     */
-
-  }, {
-    key: "isRendered",
-    value: function isRendered() {
-      return this.svg !== null;
-    }
-    /**
      * Removes the rendered SVG expander from the canvas.
      */
 
@@ -27479,6 +27429,16 @@ var GridExpander = /*#__PURE__*/function () {
         this.svg.remove();
         this.svg = null;
       }
+    }
+    /**
+     * Determins if the SVG object is rendered.
+     * @returns True, if the SVG is rendered, else false.
+     */
+
+  }, {
+    key: "isRendered",
+    value: function isRendered() {
+      return this.svg !== null;
     }
   }, {
     key: "setType",
@@ -28183,7 +28143,7 @@ var RadialLeaf = /*#__PURE__*/function () {
       }
     }
     /**
-     * Determins where the leaf is rendered or not.
+     * Determins if the SVG object is rendered.
      * @returns True, if the SVG is rendered, else false.
      */
 
@@ -28914,7 +28874,7 @@ var TreeLeaf = /*#__PURE__*/function () {
       }
     }
     /**
-     * Determins where the leaf is rendered or not.
+     * Determins if the SVG object is rendered.
      * @returns True, if the SVG is rendered, else false.
      */
 
@@ -29713,6 +29673,16 @@ var TreeLayout = /*#__PURE__*/function (_BaseLayout) {
   return TreeLayout;
 }(BaseLayout);
 
+/**
+ * This class calculates and renders a background container that collects multiple nodes.
+ *
+ * @category Layouts
+ * @subcategory Helpers
+ * @property {Canvas} canvas The current canvas to render the element on.
+ * @property {BaseNode} focusNode The currently active focus node.
+ * @property {Object} containerInfo An object containing information about where to render the container.
+ * @property {ContextualLayoutConfiguration} config An object containing visual restrictions.
+ */
 var ContextualConainer = /*#__PURE__*/function () {
   function ContextualConainer(canvas, focusNode, containerInfo, config) {
     _classCallCheck(this, ContextualConainer);
@@ -29726,11 +29696,14 @@ var ContextualConainer = /*#__PURE__*/function () {
     this.layoutId = 0;
     this.animation = null;
   }
+  /**
+   * Calculates and renders the container.
+   */
+
 
   _createClass(ContextualConainer, [{
     key: "render",
-    value: function render(_ref) {
-      var _ref$isParentOperatio = _ref.isParentOperation;
+    value: function render() {
       var svg = this.canvas.group();
       svg.id("contextualContainer#".concat(this.layoutId));
       var _this$containerInfo = this.containerInfo,
@@ -29738,7 +29711,8 @@ var ContextualConainer = /*#__PURE__*/function () {
           minHeight = _this$containerInfo.minHeight,
           width = _this$containerInfo.width,
           mincx = _this$containerInfo.mincx,
-          mincy = _this$containerInfo.mincy;
+          mincy = _this$containerInfo.mincy; // create the SVG container
+
       var container = this.canvas.rect(0, 0).center(mincx, mincy);
 
       if (type === "child") {
@@ -29774,28 +29748,35 @@ var ContextualConainer = /*#__PURE__*/function () {
         });
       }
 
-      svg.add(container);
+      svg.add(container); // moves the container into position
+
       svg.get(0).center(this.focusNode.getFinalX(), this.focusNode.getFinalY()).animate({
         duration: this.config.animationSpeed
       }).center(mincx, mincy).width(width).height(minHeight);
       this.svg = svg;
     }
+    /**
+     * Updates a currently rendered container.
+     * @param {Object} [opts={ }] An object containing additional information.
+     * @param {Number} [opts.areChildrenExpended=false] Determines if the child container is expended.
+     * @param {Number} [opts.areParentsExpended=false] Determines if the parent container is expended.
+     * @param {Number} [opts.areRisksExpended=false] Determines if the risk container is expended.
+     */
+
   }, {
     key: "update",
-    value: function update(_ref2) {
+    value: function update(_ref) {
       var _this = this;
 
-      var _ref2$areChildrenExpe = _ref2.areChildrenExpended,
-          areChildrenExpended = _ref2$areChildrenExpe === void 0 ? false : _ref2$areChildrenExpe,
-          _ref2$areParentsExpen = _ref2.areParentsExpended,
-          areParentsExpended = _ref2$areParentsExpen === void 0 ? false : _ref2$areParentsExpen,
-          _ref2$areRisksExpende = _ref2.areRisksExpended,
-          areRisksExpended = _ref2$areRisksExpende === void 0 ? false : _ref2$areRisksExpende;
+      var _ref$areChildrenExpen = _ref.areChildrenExpended,
+          areChildrenExpended = _ref$areChildrenExpen === void 0 ? false : _ref$areChildrenExpen,
+          _ref$areParentsExpend = _ref.areParentsExpended,
+          areParentsExpended = _ref$areParentsExpend === void 0 ? false : _ref$areParentsExpend,
+          _ref$areRisksExpended = _ref.areRisksExpended,
+          areRisksExpended = _ref$areRisksExpended === void 0 ? false : _ref$areRisksExpended;
       var _this$containerInfo2 = this.containerInfo,
-          type = _this$containerInfo2.type,
           minHeight = _this$containerInfo2.minHeight,
           maxHeight = _this$containerInfo2.maxHeight,
-          width = _this$containerInfo2.width,
           mincx = _this$containerInfo2.mincx,
           mincy = _this$containerInfo2.mincy,
           maxcx = _this$containerInfo2.maxcx,
@@ -29803,7 +29784,8 @@ var ContextualConainer = /*#__PURE__*/function () {
 
       if (this.animation !== null) {
         this.animation.unschedule();
-      }
+      } // updates the child container
+
 
       if (this.type === "child") {
         if (areChildrenExpended === true) {
@@ -29819,7 +29801,8 @@ var ContextualConainer = /*#__PURE__*/function () {
             _this.animation = null;
           });
         }
-      }
+      } // updates the risk container
+
 
       if (this.type === "risk") {
         if (areRisksExpended === true) {
@@ -29835,7 +29818,8 @@ var ContextualConainer = /*#__PURE__*/function () {
             _this.animation = null;
           });
         }
-      }
+      } // updates the parent container
+
 
       if (this.type === "parent") {
         if (areParentsExpended === true) {
@@ -29853,36 +29837,47 @@ var ContextualConainer = /*#__PURE__*/function () {
         }
       }
     }
+    /**
+     * Transforms the container into its final position.
+     * @param {Object} [opts={ }] An object containing additional information.
+     * @param {Number} [opts.isParentOperation=false] An indication whether a parent or child node was elected new focus.
+     * @param {Number} [opts.X=this.finalX] The calculated final X position.
+     * @param {Number} [opts.X=this.finalY] The calculated final X position.
+     */
+
   }, {
     key: "transformToFinalPosition",
-    value: function transformToFinalPosition() {
-      var X = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.finalX;
-      var Y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.finalY;
+    value: function transformToFinalPosition(_ref2) {
+      var _ref2$X = _ref2.X,
+          X = _ref2$X === void 0 ? this.finalX : _ref2$X,
+          _ref2$Y = _ref2.Y,
+          Y = _ref2$Y === void 0 ? this.finalY : _ref2$Y;
       this.svg.back();
       this.svg.animate({
         duration: this.config.animationSpeed
       }).size(this.w, this.h).center(X, Y);
     }
+    /**
+     * Removes the container.
+     */
+
   }, {
-    key: "removeContainer",
-    value: function removeContainer(X, Y) {
-      var _this2 = this;
-
-      if (this.svg !== null) {
-        this.svg.attr({
-          opacity: 1
-        }).animate({
-          duration: this.config.animationSpeed
-        }).transform({
-          position: [X, Y]
-        }).attr({
-          opacity: 0
-        }).after(function () {
-          _this2.svg.remove();
-
-          _this2.svg = null;
-        });
+    key: "removeSVG",
+    value: function removeSVG() {
+      if (this.isRendered()) {
+        this.svg.remove();
+        this.svg = null;
       }
+    }
+    /**
+     * Determins if the SVG object is rendered.
+     * @returns True, if the SVG is rendered, else false.
+     */
+
+  }, {
+    key: "isRendered",
+    value: function isRendered() {
+      return this.svg !== null;
     }
   }, {
     key: "setType",
@@ -29900,11 +29895,6 @@ var ContextualConainer = /*#__PURE__*/function () {
       this.layoutId = layoutId;
     }
   }, {
-    key: "isRendered",
-    value: function isRendered() {
-      return this.svg !== null;
-    }
-  }, {
     key: "getFinalX",
     value: function getFinalX() {
       return this.finalX;
@@ -29919,15 +29909,28 @@ var ContextualConainer = /*#__PURE__*/function () {
   return ContextualConainer;
 }();
 
+/**
+ * This class represents a solution which connects risk to the assigned connection.
+ *
+ * @category Layouts
+ * @subcategory Helpers
+ * @property {Canvas} canvas The current canvas to render the element on.
+ * @property {Array.<BaseNode>} riskContainer An array of nodes within the risk container.
+ * @property {BaseNode} focusNode The currently active focus node.
+ * @property {BaseNode} assignedNode The currently active assigned node.
+ * @property {ContextualAssginedConnection} assignedNodeConnection The connection between the focus and assigned node.
+ * @property {ContextualLayoutConfiguration} config An object containing visual restrictions.
+ */
+
 var ContextualRiskConnection = /*#__PURE__*/function () {
-  function ContextualRiskConnection(canvas, riskNodes, riskContainer, focusNode, assginedNode, assignedNodeConnection, config) {
+  function ContextualRiskConnection(canvas, riskNodes, riskContainer, focusNode, assignedNode, assignedNodeConnection, config) {
     _classCallCheck(this, ContextualRiskConnection);
 
     this.canvas = canvas;
     this.riskNodes = riskNodes || [];
     this.riskContainer = riskContainer || null;
     this.focusNode = focusNode;
-    this.assginedNode = assginedNode;
+    this.assignedNode = assignedNode;
     this.assignedNodeConnection = assignedNodeConnection || null;
     this.config = config; // layout info
 
@@ -29935,6 +29938,12 @@ var ContextualRiskConnection = /*#__PURE__*/function () {
     this.finalX = 0;
     this.finalY = 0;
   }
+  /**
+   * Calculates and renders the connection.
+   * @param {Object} [opts={ }] An object containing additional information.
+   * @param {Number} [opts.isParentOperation=false] An indication whether a parent or child node was elected new focus.
+   */
+
 
   _createClass(ContextualRiskConnection, [{
     key: "render",
@@ -29950,8 +29959,8 @@ var ContextualRiskConnection = /*#__PURE__*/function () {
       var y0 = this.assignedNodeConnection.finalY - 50 / 2;
       var x1 = this.focusNode.getFinalX();
       var y1 = this.focusNode.getFinalY() + this.config.riskConnectionLineWidth / 2;
-      var x2 = this.assginedNode.getFinalX();
-      var y2 = this.assginedNode.getFinalY() + this.config.riskConnectionLineWidth / 2;
+      var x2 = this.assignedNode.getFinalX();
+      var y2 = this.assignedNode.getFinalY() + this.config.riskConnectionLineWidth / 2;
       var initialConnections = [];
       var finalConnections = []; // we only want the top elements to have a connection
 
@@ -29984,11 +29993,13 @@ var ContextualRiskConnection = /*#__PURE__*/function () {
 
         var offset = nodes[0].config.offset;
         var lineIntersection = calculateArcLineIntersection(x0, y0, x3, y3, "M".concat(x1, ",").concat(y1, " L").concat(x2, ",").concat(y2));
+        var x4 = this.focusNode.getFinalX();
+        var y4 = this.focusNode.getFinalY();
 
         if (isParentOperation) {
-          initialConnections.push("M".concat(this.focusNode.getFinalX(), ",").concat(this.focusNode.getFinalY(), " L").concat(lineIntersection.x, ",").concat(lineIntersection.y - 50));
+          initialConnections.push("M".concat(x4, ",").concat(y4, " L").concat(lineIntersection.x, ",").concat(lineIntersection.y - 50));
         } else {
-          initialConnections.push("M".concat(this.focusNode.getFinalX(), ",").concat(this.focusNode.getFinalY(), " L").concat(lineIntersection.x, ",").concat(lineIntersection.y + 50));
+          initialConnections.push("M".concat(x4, ",").concat(y4, " L").concat(lineIntersection.x, ",").concat(lineIntersection.y + 50));
         }
 
         finalConnections.push("M".concat(x3, ",").concat(y3 - offset, " L").concat(lineIntersection.x, ",").concat(lineIntersection.y));
@@ -30000,13 +30011,15 @@ var ContextualRiskConnection = /*#__PURE__*/function () {
       var dasharray = this.config.riskNodeConnectionStrokeDasharray;
 
       for (var i = 0; i < initialConnections.length; i += 1) {
+        // plot the initial path
         var line = this.canvas.path(initialConnections[i]).stroke({
           width: width,
           color: color,
           dasharray: dasharray
         }).back().attr({
           opacity: 0
-        });
+        }); // animate into the final path
+
         line.animate({
           duration: this.config.animationSpeed
         }).plot(finalConnections[i]).attr({
@@ -30017,6 +30030,14 @@ var ContextualRiskConnection = /*#__PURE__*/function () {
 
       this.svg = svg;
     }
+    /**
+     * Transforms the risk connection into its final position.
+     * @param {Object} [opts={ }] An object containing additional information.
+     * @param {Number} [opts.isParentOperation=false] An indication whether a parent or child node was elected new focus.
+     * @param {Number} [opts.X=this.finalX] The calculated final X position.
+     * @param {Number} [opts.X=this.finalY] The calculated final X position.
+     */
+
   }, {
     key: "transformToFinalPosition",
     value: function transformToFinalPosition(_ref2) {
@@ -30038,7 +30059,7 @@ var ContextualRiskConnection = /*#__PURE__*/function () {
       }
     }
     /**
-     * Removes the leaf node from the canvas and resets clears its SVG representation.
+     * Removes the risk connection.
      */
 
   }, {
@@ -30050,7 +30071,7 @@ var ContextualRiskConnection = /*#__PURE__*/function () {
       }
     }
     /**
-     * Determins where the leaf is rendered or not.
+     * Determins if the SVG object is rendered.
      * @returns True, if the SVG is rendered, else false.
      */
 
@@ -30064,10 +30085,32 @@ var ContextualRiskConnection = /*#__PURE__*/function () {
     value: function setLayoutId(layoutId) {
       this.layoutId = layoutId;
     }
+  }, {
+    key: "getFinalX",
+    value: function getFinalX() {
+      return this.finalX;
+    }
+  }, {
+    key: "getFinalY",
+    value: function getFinalY() {
+      return this.finalY;
+    }
   }]);
 
   return ContextualRiskConnection;
 }();
+
+/**
+ * This class calculates and renders a connection between a container and the focus node.
+ *
+ * @category Layouts
+ * @subcategory Helpers
+ * @property {Canvas} canvas The current canvas to render the element on.
+ * @property {BaseNode} focusNode The currently active focus node.
+ * @property {ContextualContainer} container The container which to connect to.
+ * @property {Array.<BaseNode>} containerNodes An array of nodes within the container.
+ * @property {ContextualLayoutConfiguration} config An object containing visual restrictions.
+ */
 
 var ContextualContainerConnection = /*#__PURE__*/function () {
   function ContextualContainerConnection(canvas, focusNode, container, containerNodes, config) {
@@ -30085,13 +30128,18 @@ var ContextualContainerConnection = /*#__PURE__*/function () {
     this.finalX = 0;
     this.finalY = 0;
   }
+  /**
+   * Calculats and renders the container connection.
+   */
+
 
   _createClass(ContextualContainerConnection, [{
     key: "render",
-    value: function render(_ref) {
-      var _ref$isParentOperatio = _ref.isParentOperation;
+    value: function render() {
       var svg = this.canvas.group();
       svg.id("contextualContainerConnection#".concat(this.layoutId));
+      var containerInfo = this.container.containerInfo; // line between container and focus node
+
       var x0;
       var y0;
       var x1;
@@ -30100,18 +30148,19 @@ var ContextualContainerConnection = /*#__PURE__*/function () {
       if (this.type === "parent") {
         x0 = this.focusNode.getFinalX();
         y0 = this.focusNode.getFinalY() - this.focusNode.getMaxHeight() / 2 - this.focusNode.config.offset / 2;
-        x1 = this.container.containerInfo.maxcx;
-        y1 = this.container.containerInfo.maxcy + this.container.containerInfo.maxHeight / 2 + this.focusNode.config.offset / 2;
+        x1 = containerInfo.maxcx;
+        y1 = containerInfo.maxcy + containerInfo.maxHeight / 2 + this.focusNode.config.offset / 2;
       }
 
       if (this.type === "child") {
-        x0 = this.container.containerInfo.maxcx;
-        y0 = this.container.containerInfo.maxcy - this.container.containerInfo.maxHeight / 2 - this.focusNode.config.offset / 2;
+        x0 = containerInfo.maxcx;
+        y0 = containerInfo.maxcy - containerInfo.maxHeight / 2 - this.focusNode.config.offset / 2;
         x1 = this.focusNode.getFinalX();
         y1 = this.focusNode.getFinalY() + this.focusNode.getMaxHeight() / 2 + this.focusNode.config.offset / 2;
       }
 
-      var dist1 = calculateDistance(x1, y1, x0, y0);
+      var dist1 = calculateDistance(x1, y1, x0, y0); // calculate points forming the connection
+
       var a0 = (x0 + x1) / 2;
       var b0 = (y0 + y1) / 2;
       var a1 = a0 + dist1;
@@ -30129,8 +30178,9 @@ var ContextualContainerConnection = /*#__PURE__*/function () {
       var a7 = a3;
       var b7 = b0 - this.config.containerConnectionLineWidth / 2;
       var a8 = a0;
-      var b8 = b0 - this.config.containerConnectionLineWidth / 2;
-      var plot = "\n      M ".concat(a2, ",").concat(b2, "\n      L ").concat(a3, ",").concat(b3, "\n      L ").concat(a4, ",").concat(b4, "\n      L ").concat(a5, ",").concat(b5, "\n      L ").concat(a6, ",").concat(b6, "\n      L ").concat(a7, ",").concat(b7, "\n      L ").concat(a8, ",").concat(b8, "\n      L ").concat(a2, ",").concat(b2, "\n    "); // draw the arrow
+      var b8 = b0 - this.config.containerConnectionLineWidth / 2; // the actual connection as path argument
+
+      var plot = "\n      M ".concat(a2, ",").concat(b2, "\n      L ").concat(a3, ",").concat(b3, "\n      L ").concat(a4, ",").concat(b4, "\n      L ").concat(a5, ",").concat(b5, "\n      L ").concat(a6, ",").concat(b6, "\n      L ").concat(a7, ",").concat(b7, "\n      L ").concat(a8, ",").concat(b8, "\n      L ").concat(a2, ",").concat(b2, "\n    "); // create the SVG connection
 
       var strokeColor = this.config.containerConnectionStrokeColor === "inherit" ? "#ffffff" : this.config.containerConnectionStrokeColor;
       var strokeWidth = this.config.containerConnectionStrokeColor === "inherit" ? 0 : this.config.containerConnectionStrokeWidth;
@@ -30138,10 +30188,7 @@ var ContextualContainerConnection = /*#__PURE__*/function () {
         color: strokeColor,
         width: strokeWidth,
         dasharray: this.config.containerConnectionStrokeDasharray
-      });
-      /*
-        // TODO: implementation for finding a color for the attached container nodes
-      */
+      }); // color the connection
 
       if (this.config.containerConnectionColor === "inherit") {
         if (this.type === "parent") {
@@ -30167,18 +30214,19 @@ var ContextualContainerConnection = /*#__PURE__*/function () {
         }
       } else {
         path.fill(this.config.containerConnectionColor);
-      }
+      } // moves the connection into position
+
 
       path.center((x0 + x1) / 2, (y0 + y1) / 2);
       path.rotate(-90);
-      /*
-        // TODO: implementation for finding a color for the attached container nodes
-      */
-
       svg.add(path);
+      svg.back(); // calculate the final position
+
       var finalX = svg.bbox().cx;
       var finalY = svg.bbox().cy;
-      svg.back();
+      this.finalX = finalX;
+      this.finalY = finalY; // animate into final position
+
       svg.attr({
         opacity: 0
       }).center(this.focusNode.getFinalX(), this.focusNode.getFinalY()).animate({
@@ -30186,19 +30234,25 @@ var ContextualContainerConnection = /*#__PURE__*/function () {
       }).center(finalX, finalY).attr({
         opacity: 1
       });
-      this.finalX = finalX;
-      this.finalY = finalY;
       this.svg = svg;
     }
+    /**
+     * Transforms the container connection into its final position.
+     * @param {Object} [opts={ }] An object containing additional information.
+     * @param {Number} [opts.isParentOperation=false] An indication whether a parent or child node was elected new focus.
+     * @param {Number} [opts.X=this.finalX] The calculated final X position.
+     * @param {Number} [opts.X=this.finalY] The calculated final X position.
+     */
+
   }, {
     key: "transformToFinalPosition",
-    value: function transformToFinalPosition(_ref2) {
-      var _ref2$isParentOperati = _ref2.isParentOperation,
-          isParentOperation = _ref2$isParentOperati === void 0 ? false : _ref2$isParentOperati,
-          _ref2$X = _ref2.X,
-          X = _ref2$X === void 0 ? this.node.finalX : _ref2$X,
-          _ref2$Y = _ref2.Y,
-          Y = _ref2$Y === void 0 ? this.node.finalY : _ref2$Y;
+    value: function transformToFinalPosition(_ref) {
+      var _ref$isParentOperatio = _ref.isParentOperation,
+          isParentOperation = _ref$isParentOperatio === void 0 ? false : _ref$isParentOperatio,
+          _ref$X = _ref.X,
+          X = _ref$X === void 0 ? this.node.finalX : _ref$X,
+          _ref$Y = _ref.Y,
+          Y = _ref$Y === void 0 ? this.node.finalY : _ref$Y;
 
       if (isParentOperation) {
         this.svg.animate({
@@ -30211,7 +30265,7 @@ var ContextualContainerConnection = /*#__PURE__*/function () {
       }
     }
     /**
-     * Removes the leaf node from the canvas and resets clears its SVG representation.
+     * Removes the container connection.
      */
 
   }, {
@@ -30221,6 +30275,16 @@ var ContextualContainerConnection = /*#__PURE__*/function () {
         this.svg.remove();
         this.svg = null;
       }
+    }
+    /**
+     * Determins if the SVG object is rendered.
+     * @returns True, if the SVG is rendered, else false.
+     */
+
+  }, {
+    key: "isRendered",
+    value: function isRendered() {
+      return this.svg !== null;
     }
   }, {
     key: "setType",
@@ -30232,20 +30296,20 @@ var ContextualContainerConnection = /*#__PURE__*/function () {
     value: function getType() {
       return this.type;
     }
-    /**
-     * Determins where the leaf is rendered or not.
-     * @returns True, if the SVG is rendered, else false.
-     */
-
-  }, {
-    key: "isRendered",
-    value: function isRendered() {
-      return this.svg !== null;
-    }
   }, {
     key: "setLayoutId",
     value: function setLayoutId(layoutId) {
       this.layoutId = layoutId;
+    }
+  }, {
+    key: "getFinalX",
+    value: function getFinalX() {
+      return this.finalX;
+    }
+  }, {
+    key: "getFinalY",
+    value: function getFinalY() {
+      return this.finalY;
     }
   }]);
 
@@ -30258,40 +30322,88 @@ var ContextualContainerConnection = /*#__PURE__*/function () {
  *
  * @category Layouts
  * @subcategory Customizations
- * @property {Number} layoutWidth=1200                            - The width used by the layout representation.
- * @property {Number} layoutHeight=800                            - The height used by the layout representation.
- * @property {Number} translateX=-50                              - Adds additional X translation for all SVG elements before rendering.
- * @property {Number} translateY=0                                - Adds additional Y translation for all SVG elements before rendering.
- * @property {Number} animationSpeed=300                          - Determines how fast SVG elements animates inside the current layout.
- * @property {Boolean} hideOtherLayouts=false                     - If set to true, other layouts are not visible.
- * @property {Number} spacing=32                                  - Determines the minimal spacing between nodes.
- * @property {String} renderingSize=min                           - Determines the node render representation. Available: "min" or "max".
- * @property {Number} assignedFocusDistance=800                   - Determines the distance between the assigned and focus node.
- * @property {Number} riskFocusDistance=500                       - Determines the distance between all risk nodes and focus node.
- * @property {Number} parentFocusDistance=80                      - Determines the distance between all parent nodes and focus node.
- * @property {Number} riskContainerNodeLimit=3                    - Limits how many nodes the risk container renderes.
- * @property {Number} riskContainerColumns=2                      - Limits how many columns the risk container has.
- * @property {Number} riskContainderBorderRadius=2                - Determines the containers border radius.
- * @property {String} riskContainerBorderStrokeColor=#888888cc    - Determines the containers border color.
- * @property {Number} riskContainerBorderStrokeWidth=1.85         - Determines the containers border width.
- * @property {String} riskContainerBackgroundColor=#ff8e9e05      - Determines the containers background color.
+ * @property {Number} layoutWidth=1500                            - The width used by the layout representation.
+ * @property {Number} layoutHeight=900                            - The height used by the layout representation.
+ *
+ * @property {Number} riskConnectionLineWidth=20                  - Determines the thickness of the arrow.
+ * @property {Number} riskConnectionArrowWidth=30                 - Determines how long the arrow head appears.
+ * @property {Number} riskConnectionarrowHeight=25                - Determines the thickness of the arrow head.
+ * @property {Number} riskConnectionOffset=16                     - Determines the offset between the nodes the arrow connections.
+ * @property {String} riskConnectionStrokeColor=#ff8e9e           - Determines the arrows color.
+ * @property {Number} riskConnectionStrokeWidth=1                 - Determines the arrows stroke width.
+ * @property {Number} riskConnectionStrokeDasharray=0             - Determines the arrows dash array.
+ * @property {String} riskConnectionColor=#dd415bcc               - Determines the default arrow fill color.
+ * @property {Number} riskConnectionLabelTranslateX=0             - Determines the horizontal adjustment for the label.
+ * @property {Number} riskConnectionLabelTranslateY=0             - Determines the vertical adjustment for the label.
+ * @property {String} riskConnectionLabelText=Attached_Risks      - Determines the text. Note: the label must be seperated with _ to avoid new line creation.
+ * @property {String} riskConnectionLabelColor=#ff8e9e            - Determines the color for the label.
+ * @property {String} riskConnectionLabelFontFamily=Montserrat    - Determines the font family for the label.
+ * @property {Number} riskConnectionLabelFontSize=16              - Determines the font size for the label.
+ * @property {Number} riskConnectionLabelFontWeight=600           - Determines the font weight for the label.
+ * @property {String} riskConnectionLabelFontStyle=normal         - Determines the font style for the label.
+ * @property {String} riskConnectionLabelBackground=#ffffffcc     - Determines the background color for the label.
+ *
  * @property {Number} childContainerNodeLimit=6                   - Limits how many nodes the child container renderes.
  * @property {Number} childContainerColumns=3                     - Limits how many columns the child container has.
  * @property {Number} childContainderBorderRadius=5               - Determines the containers border radius.
  * @property {String} childContainerBorderStrokeColor=#888888cc   - Determines the containers border color.
- * @property {Number} childContainerBorderStrokeWidth=1.85        - Determines the containers border width.
- * @property {String} childContainerBackgroundColor=#fff          - Determines the containers background color.
- * @property {Number} parentContainerNodeLimit=6                  - Limits how many nodes the child container renderes.
- * @property {Number} parentContainerColumns=3                    - Limits how many columns the child container has.
+ * @property {Number} childContainerBorderStrokeWidth=1.25        - Determines the containers border width.
+ * @property {String} childContainerBackgroundColor=#ffffff       - Determines the containers background color.
+ *
+ * @property {Number} parentContainerNodeLimit=6                  - Limits how many nodes the parent container renderes.
+ * @property {Number} parentContainerColumns=3                    - Limits how many columns the parent container has.
  * @property {Number} parentContainderBorderRadius=5              - Determines the containers border radius.
  * @property {String} parentContainerBorderStrokeColor=#888888cc  - Determines the containers border color.
- * @property {Number} parentContainerBorderStrokeWidth=1.85       - Determines the containers border width.
- * @property {String} parentContainerBackgroundColor=#fff         - Determines the containers background color.
+ * @property {Number} parentContainerBorderStrokeWidth=1.25       - Determines the containers border width.
+ * @property {String} parentContainerBackgroundColor=#ffffff      - Determines the containers background color.
+ *
+ * @property {Number} riskContainerNodeLimit=4                    - Limits how many nodes the risk container renderes.
+ * @property {Number} riskContainerColumns=2                      - Limits how many columns the risk container has.
+ * @property {Number} riskContainderBorderRadius=5                - Determines the containers border radius.
+ * @property {String} riskContainerBorderStrokeColor=#dd415bcc    - Determines the containers border color.
+ * @property {Number} riskContainerBorderStrokeWidth=1.25         - Determines the containers border width.
+ * @property {String} riskContainerBackgroundColor=#ff8e9e05      - Determines the containers background color.
+ * @property {Number} riskNodeConnectionStrokeWidth=2             - Determines the stroke width of the connection between risks and the assigned connection.
+ * @property {String} riskNodeConnectionStrokeColor=#dd415bcc     - Determines the stroke color of the connection between risks and the assigned connection.
+ * @property {String} riskNodeConnectionStrokeDasharray="5"       - Determines the dash array of the connection between risks and the assigned connection.
+ *
+ * @property {Number} containerConnectionLineWidth=25             - Determines the thickness of the container connection.
+ * @property {Number} containerConnectionArrowWidth=25            - Determines the arrow width of the container connection.
+ * @property {Number} containerConnectionarrowHeight=25           - Determines the arrow height of the container connection.
+ * @property {String} containerConnectionStrokeColor=inherit      - Determines the default arrow fill color. Available: "inherit" or hex value as String.
+ * @property {Number} containerConnectionStrokeWidth=1            - Determines the stroke width of the container connection.
+ * @property {String} containerConnectionStrokeDasharray="0"      - Determines the dash arrow of the container connection.
+ * @property {String} containerConnectionColor=inherit            - Determines the default arrow fill color. Available: "inherit" or hex value as String.
+ *
+ * @property {Number} focusXShift=-200                            - Determines how much the focus node is shifted on the X axis.
+ * @property {Number} riskFocusDistance=617.5                     - Determines the distance between risks nodes and focus node.
+ * @property {Number} riskConnectionDistance=617.5                - Determines the distance between risk nodes and the assigned connection.
+ * @property {Number} childrenFocusDistance=80                    - Determines the distance between child nodes and focus node.
+ * @property {Number} parentFocusDistance=80                      - Determines the distance between parent nodes and focus node.
+ *
+ * @property {String} expanderTextColor=#222                      - Determines the color for the text.
+ * @property {String} expanderFontFamily=Montserrat               - Determines the font family for the text.
+ * @property {String} expanderFontSize=12                         - Determines the font size for the text.
+ * @property {String} expanderFontWeight=600                      - Determines the font weight for the text.
+ * @property {String} expanderFontStyle=normal                    - Determines the font style for the text.
+ * @property {String} expanderTextBackground=#ccc                 - Determines the background color for the text.
+ * @property {String} showParentExpander=true                     - Determines if the parent container has a visible expander.
+ * @property {String} showChildExpander=true                      - Determines if the child container has a visible expander.
+ * @property {String} showRiskExpander=true                       - Determines if the risk container has a visible expander.
+ *
+ * @property {Number} translateX=-50                              - Adds additional X translation for all SVG elements before rendering.
+ * @property {Number} translateY=0                                - Adds additional Y translation for all SVG elements before rendering.
+ * @property {Number} animationSpeed=300                          - Determines how fast SVG elements animates inside the current layout.
+ * @property {Number} spacing=16                                  - Determines the minimal spacing between nodes.
+ *
+ *
+ *
+ *
  */
 var ContextualLayoutConfiguration = {
   layoutWidth: 1500,
   layoutHeight: 900,
-  // assigned connection
+  // assigned node connection
   riskConnectionLineWidth: 20,
   riskConnectionArrowWidth: 30,
   riskConnectionarrowHeight: 25,
@@ -30300,6 +30412,8 @@ var ContextualLayoutConfiguration = {
   riskConnectionStrokeWidth: 1,
   riskConnectionStrokeDasharray: 0,
   riskConnectionColor: "#dd415bcc",
+  riskConnectionLabelTranslateX: 0,
+  riskConnectionLabelTranslateY: 0,
   riskConnectionLabelText: "Attached_Risks",
   // / must be seperated with _ to avoid new line creation
   riskConnectionLabelColor: "#ff8e9e",
@@ -30312,16 +30426,16 @@ var ContextualLayoutConfiguration = {
   childContainerNodeLimit: 6,
   childContainerColumns: 3,
   childContainerBorderRadius: 5,
-  childContainerBorderStrokeColor: "#75f",
+  childContainerBorderStrokeColor: "#888888cc",
   childContainerBorderStrokeWidth: 1.25,
-  childContainerBackgroundColor: "#fff",
+  childContainerBackgroundColor: "#ffffff",
   // parent container
   parentContainerNodeLimit: 6,
   parentContainerColumns: 3,
   parentContainerBorderRadius: 5,
-  parentContainerBorderStrokeColor: "#f75",
+  parentContainerBorderStrokeColor: "#888888cc",
   parentContainerBorderStrokeWidth: 1.25,
-  parentContainerBackgroundColor: "#fff",
+  parentContainerBackgroundColor: "#ffffff",
   // risk container
   riskContainerNodeLimit: 4,
   riskContainerColumns: 2,
@@ -30339,7 +30453,7 @@ var ContextualLayoutConfiguration = {
   containerConnectionStrokeColor: "inherit",
   // #cccccc, inherit
   containerConnectionStrokeWidth: 1,
-  containerConnectionStrokeDasharray: 0,
+  containerConnectionStrokeDasharray: "0",
   containerConnectionColor: "inherit",
   // #cccccc
   // distances between nodes
@@ -30358,15 +30472,22 @@ var ContextualLayoutConfiguration = {
   showParentExpander: true,
   showChildExpander: true,
   showRiskExpander: true,
-  // maxLayoutWidth: 1200,
-  // maxLayoutHeight: 800,
   translateX: -50,
   translateY: 0,
-  animationSpeed: 1300,
-  spacing: 16,
-  renderingSize: "min"
+  animationSpeed: 300,
+  spacing: 16
 };
 
+/**
+ * This class calculates and constructs a visible connection between the focus node and the assigned node.
+ *
+ * @category Layouts
+ * @subcategory Helpers
+ * @property {Canvas} canvas The current canvas to render the element on.
+ * @property {BaseNode} focusNode The currently active focus node.
+ * @property {BaseNode} assignedNode The currently active assigned node.
+ * @property {ContextualLayoutConfiguration} config An object containing visual restrictions.
+ */
 var ContextualAssginedConnection = /*#__PURE__*/function () {
   function ContextualAssginedConnection(canvas, focusNode, assignedNode, config) {
     _classCallCheck(this, ContextualAssginedConnection);
@@ -30380,6 +30501,12 @@ var ContextualAssginedConnection = /*#__PURE__*/function () {
     this.finalX = 0;
     this.finalY = 0;
   }
+  /**
+   * Calculates and renders the connection.
+   * @param {Object} [opts={ }] An object containing additional information.
+   * @param {Number} [opts.isParentOperation=false] An indication whether a parent or child node was elected new focus.
+   */
+
 
   _createClass(ContextualAssginedConnection, [{
     key: "render",
@@ -30387,27 +30514,33 @@ var ContextualAssginedConnection = /*#__PURE__*/function () {
       var _ref$isParentOperatio = _ref.isParentOperation,
           isParentOperation = _ref$isParentOperatio === void 0 ? false : _ref$isParentOperatio;
       var svg = this.canvas.group();
-      svg.id("contextualAssginedConnection#".concat(this.focusNode.id, "_").concat(this.assignedNode.id)); // calculate the connection
-
+      svg.id("contextualAssginedConnection#".concat(this.focusNode.id, "_").concat(this.assignedNode.id));
+      var _this$config = this.config,
+          riskConnectionOffset = _this$config.riskConnectionOffset,
+          riskConnectionLineWidth = _this$config.riskConnectionLineWidth,
+          riskConnectionarrowHeight = _this$config.riskConnectionarrowHeight,
+          riskConnectionArrowWidth = _this$config.riskConnectionArrowWidth;
       var fw = this.focusNode.getMaxWidth();
-      var aw = this.assignedNode.getMinWidth();
-      var x0 = this.focusNode.getFinalX() + fw / 2 + this.config.riskConnectionOffset;
-      var y0 = this.focusNode.getFinalY() + this.config.riskConnectionLineWidth / 2;
-      var x1 = this.assignedNode.getFinalX() - aw / 2 - this.config.riskConnectionOffset - this.config.riskConnectionarrowHeight;
+      var aw = this.assignedNode.getMinWidth(); // calculate points forming the connection
+
+      var x0 = this.focusNode.getFinalX() + fw / 2 + riskConnectionOffset;
+      var y0 = this.focusNode.getFinalY() + riskConnectionLineWidth / 2;
+      var x1 = this.assignedNode.getFinalX() - aw / 2 - riskConnectionOffset - riskConnectionarrowHeight;
       var y1 = y0;
       var x2 = x1;
-      var y2 = this.assignedNode.getFinalY() + (this.config.riskConnectionArrowWidth - this.config.riskConnectionLineWidth / 2);
-      var x3 = this.assignedNode.getFinalX() - aw / 2 - this.config.riskConnectionOffset;
+      var y2 = this.assignedNode.getFinalY() + (riskConnectionArrowWidth - riskConnectionLineWidth / 2);
+      var x3 = this.assignedNode.getFinalX() - aw / 2 - riskConnectionOffset;
       var y3 = this.assignedNode.getFinalY();
       var x4 = x1;
-      var y4 = this.assignedNode.getFinalY() - (this.config.riskConnectionArrowWidth - this.config.riskConnectionLineWidth / 2);
+      var y4 = this.assignedNode.getFinalY() - (riskConnectionArrowWidth - riskConnectionLineWidth / 2);
       var x5 = x1;
-      var y5 = this.assignedNode.getFinalY() - this.config.riskConnectionLineWidth / 2;
+      var y5 = this.assignedNode.getFinalY() - riskConnectionLineWidth / 2;
       var x6 = x0;
-      var y6 = this.focusNode.getFinalY() - this.config.riskConnectionLineWidth / 2;
+      var y6 = this.focusNode.getFinalY() - riskConnectionLineWidth / 2;
       var cx = (x6 + x3) / 2;
-      var cy = y3;
-      var plot = "\n      M ".concat(x0, ",").concat(y0, "\n      L ").concat(x1, ",").concat(y1, "\n      L ").concat(x2, ",").concat(y2, "\n      L ").concat(x3, ",").concat(y3, "\n      L ").concat(x4, ",").concat(y4, "\n      L ").concat(x5, ",").concat(y5, "\n      L ").concat(x6, ",").concat(y6, "\n      L ").concat(x0, ",").concat(y0, "\n    "); // draw the arrow
+      var cy = y3; // the actual connection as path argument
+
+      var plot = "\n      M ".concat(x0, ",").concat(y0, "\n      L ").concat(x1, ",").concat(y1, "\n      L ").concat(x2, ",").concat(y2, "\n      L ").concat(x3, ",").concat(y3, "\n      L ").concat(x4, ",").concat(y4, "\n      L ").concat(x5, ",").concat(y5, "\n      L ").concat(x6, ",").concat(y6, "\n      L ").concat(x0, ",").concat(y0, "\n    "); // create the SVG connection
 
       var path = this.canvas.path(plot).stroke({
         color: this.config.riskConnectionStrokeColor,
@@ -30415,13 +30548,13 @@ var ContextualAssginedConnection = /*#__PURE__*/function () {
         dasharray: this.config.riskConnectionStrokeDasharray
       });
       path.fill(this.config.riskConnectionColor);
-      svg.add(path); // create the foreign object which holds
+      svg.add(path); // create a foreign object which holds the "attached risks" label
 
-      var fobj = this.canvas.foreignObject(1, this.config.riskConnectionLabelFontSize + this.config.riskConnectionOffset); // create the label background
+      var fobj = this.canvas.foreignObject(1, this.config.riskConnectionLabelFontSize + riskConnectionOffset); // create the label background
 
       var background = document.createElement("div");
       background.style.background = this.config.riskConnectionLabelBackground;
-      background.style.padding = "".concat(this.config.riskConnectionOffset / 2, "px");
+      background.style.padding = "".concat(riskConnectionOffset / 2, "px");
       background.style.textAlign = "center";
       background.style.width = "fit-content";
       background.style.wordWrap = "break-word";
@@ -30434,36 +30567,64 @@ var ContextualAssginedConnection = /*#__PURE__*/function () {
       label.style.fontFamily = this.config.riskConnectionLabelFontFamily;
       label.style.fontWeight = this.config.riskConnectionLabelFontWeight;
       label.style.fontStyle = this.config.riskConnectionLabelFontStyle;
-      background.appendChild(label);
+      label.style.width = "max-content";
+      label.style.wordWrap = "break-word"; // add the label to the background element
+
+      background.appendChild(label); // add the HTML to the SVG
+
       fobj.add(background); // disable the user-select css property
 
-      fobj.css("user-select", "none");
+      fobj.css("user-select", "none"); // set the labels with
+
       var labelWidth = label.clientWidth + this.config.riskConnectionLabelFontSize;
       label.innerText = this.config.riskConnectionLabelText.replace(/_/g, " ");
-      fobj.width(labelWidth);
-      fobj.center(cx, cy - 25 / 1.05 - this.config.riskConnectionLineWidth / 2);
-      svg.add(fobj);
-      svg.back(); // center connection
+      fobj.width(labelWidth); // move the label into initial position
 
-      svg.get(0).dy(isParentOperation ? -50 : 50).animate({
+      fobj.center(cx, cy - 25 / 1.05 - riskConnectionLineWidth / 2); // add fobj to svg
+
+      svg.add(fobj);
+      svg.back(); // put svg into position
+      // move to initial position (- -> bottom; + -> top)
+
+      var dy1 = isParentOperation ? -50 : 50;
+      var dy2 = isParentOperation ? 50 : -50;
+      svg.get(0).dy(dy1).animate({
         duration: this.config.animationSpeed
-      }).dy(isParentOperation ? 50 : -50);
-      var y = cy - 25 / 1.5 - this.config.riskConnectionLineWidth / 2;
-      this.finalX = cx;
+      }).dy(dy2); // set the final position
 
       if (isParentOperation) {
-        y -= 50;
-        this.finalY = y;
+        this.finalX = cx;
+        this.finalY = cy - 25 / 1.5 - riskConnectionLineWidth / 2 - 50;
       } else {
-        y += 50;
-        this.finalY = y;
+        this.finalX = cx;
+        this.finalY = cy - 25 / 1.5 - riskConnectionLineWidth / 2 + 50;
+      } // move to label into final position
+
+
+      var translateX = this.config.riskConnectionLabelTranslateX;
+      var translateY = this.config.riskConnectionLabelTranslateY;
+
+      if (isParentOperation === true) {
+        console.log("TODO:");
+        svg.get(1).center(cx, cy - 25 - riskConnectionLineWidth / 2).animate({
+          duration: this.config.animationSpeed
+        }).center(cx + translateX, cy - 25 / 1.5 - riskConnectionLineWidth / 2 + translateY);
+      } else {
+        svg.get(1).center(cx, cy + 25 - riskConnectionLineWidth / 2).animate({
+          duration: this.config.animationSpeed
+        }).center(cx + translateX, cy - 25 / 1.5 - riskConnectionLineWidth / 2 + translateY);
       }
 
-      svg.get(1).center(cx, y).animate({
-        duration: this.config.animationSpeed
-      }).center(cx, cy - 25 / 1.5 - this.config.riskConnectionLineWidth / 2);
       this.svg = svg;
     }
+    /**
+     * Transforms the assigned connection into its final position.
+     * @param {Object} [opts={ }] An object containing additional information.
+     * @param {Number} [opts.isParentOperation=false] An indication whether a parent or child node was elected new focus.
+     * @param {Number} [opts.X=this.finalX] The calculated final X position.
+     * @param {Number} [opts.X=this.finalY] The calculated final X position.
+     */
+
   }, {
     key: "transformToFinalPosition",
     value: function transformToFinalPosition(_ref2) {
@@ -30475,17 +30636,19 @@ var ContextualAssginedConnection = /*#__PURE__*/function () {
           Y = _ref2$Y === void 0 ? this.finalY : _ref2$Y;
 
       if (isParentOperation) {
+        // come from top
         this.svg.animate({
           duration: this.config.animationSpeed
         }).center(X, Y - 50);
       } else {
+        // come from bottom
         this.svg.animate({
           duration: this.config.animationSpeed
         }).center(X, Y + 50);
       }
     }
     /**
-     * Removes the leaf node from the canvas and resets clears its SVG representation.
+     * Removes the connection.
      */
 
   }, {
@@ -30496,6 +30659,11 @@ var ContextualAssginedConnection = /*#__PURE__*/function () {
         this.svg = null;
       }
     }
+    /**
+     * Determins if the SVG object is rendered.
+     * @returns True, if the SVG is rendered, else false.
+     */
+
   }, {
     key: "isRendered",
     value: function isRendered() {
@@ -30505,6 +30673,16 @@ var ContextualAssginedConnection = /*#__PURE__*/function () {
     key: "setLayoutId",
     value: function setLayoutId(layoutId) {
       this.layoutId = layoutId;
+    }
+  }, {
+    key: "getFinalX",
+    value: function getFinalX() {
+      return this.finalX;
+    }
+  }, {
+    key: "getFinalY",
+    value: function getFinalY() {
+      return this.finalY;
     }
   }]);
 

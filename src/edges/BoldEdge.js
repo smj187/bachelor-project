@@ -35,79 +35,17 @@ class BoldEdge extends BaseEdge {
   render({ X = this.finalFromX, Y = this.finalFromY, isContextualBoldEdge = false }) {
     const svg = this.createSVGElement(`boldEdge#${this.layoutId}_${this.fromNode.id}_${this.toNode.id}`)
 
-
-    const { lineWidth } = this.config
-    const { arrowWidth } = this.config
-    const { arrowHeight } = this.config
-
     const x0 = this.finalToX
     const y0 = this.finalToY
     const x1 = this.finalFromX
     const y1 = this.finalFromY
 
-    const dist1 = calculateDistance(x1, y1, x0, y0)
 
-
-    const a0 = (x0 + x1) / 2
-    const b0 = (y0 + y1) / 2
-
-    const a1 = a0 + dist1
-    const b1 = b0
-
-    const a2 = a0
-    const b2 = b0 + lineWidth / 2
-
-    const a3 = a2 + (dist1 - arrowHeight)
-    const b3 = b2
-
-    const a4 = a3
-    const b4 = b2 + (-lineWidth / 2) + arrowWidth / 2
-
-    const a5 = a1
-    const b5 = b1
-
-    const a6 = a3
-    const b6 = b4 - arrowWidth
-
-    const a7 = a3
-    const b7 = b0 - lineWidth / 2
-
-    const a8 = a0
-    const b8 = b0 - lineWidth / 2
-
-
-    // this.canvas.circle(6).fill("#000").center(a0, b0)
-    // this.canvas.circle(6).fill("#000").center(a1, b1)
-
-    // this.canvas.rect(4, 4).fill("#f75").center(a2, b2)
-    // this.canvas.rect(4, 4).fill("#222").center(a3, b3)
-    // this.canvas.rect(4, 4).fill("#f0f").center(a4, b4)
-    // this.canvas.rect(4, 4).fill("#75f").center(a5, b5)
-    // this.canvas.rect(4, 4).fill("#00f").center(a6, b6)
-    // this.canvas.rect(4, 4).fill("#f00").center(a7, b7)
-    // this.canvas.rect(4, 4).fill("#75f").center(a8, b8)
-
-    const plot1 = `
-      M ${a2},${b2}
-      L ${a3},${b3}
-      L ${a4},${b4}
-      L ${a5},${b5}
-      L ${a6},${b6}
-      L ${a7},${b7}
-      L ${a8},${b8}
-      L ${a2},${b2}
-    `
-
-    // let plot
     // the calculate bold arrow
-    let plot
-    if (isContextualBoldEdge === true) {
-      plot = plot1
-    } else {
-      plot = this.generateBoldArrow()
-    }
+    const plot = isContextualBoldEdge === true ? this.generateContextualArrow() : this.generateBoldArrow()
 
-    // draw the arrow
+
+    // create the SVG edge
     const path = this.canvas.path(plot).stroke({
       color: this.config.strokeColor,
       width: this.config.strokeWidth,
@@ -115,10 +53,7 @@ class BoldEdge extends BaseEdge {
     })
 
 
-    /*
-      // TODO: implementation for finding a color for the attached container nodes
-    */
-
+    // color the edge
     if (this.config.color === "inherit") {
       const toColor = this.toNode.config.borderStrokeColor
       const fromColor = this.fromNode.config.borderStrokeColor
@@ -128,7 +63,6 @@ class BoldEdge extends BaseEdge {
         add.stop(1, toColor)
       })
 
-
       // svgdotjs bug: if a gradient gets an id, there is no way to create a gradient with a different color pairing
       // gradient.id("defaultBoldGradient")
       path.fill(gradient)
@@ -137,13 +71,9 @@ class BoldEdge extends BaseEdge {
     }
 
 
+    // move the edge into its initial position
     path.center((x0 + x1) / 2, (y0 + y1) / 2)
     path.rotate(-90)
-
-
-    /*
-      // TODO: implementation for finding a color for the attached container nodes
-    */
 
 
     // // custom color fill
@@ -332,7 +262,7 @@ class BoldEdge extends BaseEdge {
 
 
   /**
-   * Transforms an edge to its final rendered position.
+   * Transforms the edge to its final rendered position.
    */
   transformToFinalPosition() {
     this.svg.back()
@@ -358,6 +288,66 @@ class BoldEdge extends BaseEdge {
 
 
   /**
+  * Helper method to create a bold contextual edge.
+  * @return {String} The path in string format
+  */
+  generateContextualArrow() {
+    const { lineWidth } = this.config
+    const { arrowWidth } = this.config
+    const { arrowHeight } = this.config
+
+    const x0 = this.finalToX
+    const y0 = this.finalToY
+    const x1 = this.finalFromX
+    const y1 = this.finalFromY
+
+    const dist1 = calculateDistance(x1, y1, x0, y0)
+
+
+    // calculate points forming the connection
+    const a0 = (x0 + x1) / 2
+    const b0 = (y0 + y1) / 2
+
+    const a1 = a0 + dist1
+    const b1 = b0
+
+    const a2 = a0
+    const b2 = b0 + lineWidth / 2
+
+    const a3 = a2 + (dist1 - arrowHeight)
+    const b3 = b2
+
+    const a4 = a3
+    const b4 = b2 + (-lineWidth / 2) + arrowWidth / 2
+
+    const a5 = a1
+    const b5 = b1
+
+    const a6 = a3
+    const b6 = b4 - arrowWidth
+
+    const a7 = a3
+    const b7 = b0 - lineWidth / 2
+
+    const a8 = a0
+    const b8 = b0 - lineWidth / 2
+
+    // the actual connection as path argument
+    const plot = `
+      M ${a2},${b2}
+      L ${a3},${b3}
+      L ${a4},${b4}
+      L ${a5},${b5}
+      L ${a6},${b6}
+      L ${a7},${b7}
+      L ${a8},${b8}
+      L ${a2},${b2}
+    `
+    return plot
+  }
+
+
+  /**
   * Helper method to create a bold arrow based on the SVG path.
   * @return {String} The path in string format
   */
@@ -375,6 +365,7 @@ class BoldEdge extends BaseEdge {
     const theta = Math.atan2(this.finalToY - this.finalFromY, this.finalToX - this.finalFromX)
 
 
+    // calculate points forming the connection
     const x0 = this.finalFromX
     const y0 = this.finalFromY
 
@@ -399,7 +390,7 @@ class BoldEdge extends BaseEdge {
     const x7 = x0 + (lineWidth / 2) * Math.cos(theta + delta * -1)
     const y7 = y0 + (lineWidth / 2) * Math.sin(theta + delta * -1)
 
-
+    // the actual connection as path argument
     const plot = `
       M ${x0},${y0}
       L ${x1},${y1}

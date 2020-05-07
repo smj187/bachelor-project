@@ -7,7 +7,7 @@
   
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title> configuration/RiskNodeConfiguration.js</title>
+  <title> layouts/helpers/ContextualAssginedConnection.js</title>
 
   <script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -116,7 +116,7 @@
             <div class="content">
                 <header class="page-title">
                     <p>Source</p>
-                    <h1>configuration/RiskNodeConfiguration.js</h1>
+                    <h1>layouts/helpers/ContextualAssginedConnection.js</h1>
                 </header>
                 
 
@@ -127,114 +127,242 @@
         <article>
             <pre class="prettyprint source linenums"><code>
 /**
- * @namespace RiskNodeConfiguration
- * @description This object contains default configuration for risk node representations.
+ * This class calculates and constructs a visible connection between the focus node and the assigned node.
  *
- * @category SVG Representations
- * @subcategory Customizations
- * @property {Number} maxWidth=300                  - Sets the detailed node width.
- * @property {Number} maxHeight=150                 - Sets the detailed height.
- * @property {Number} minWidth=150                  - Sets the minimal node width.
- * @property {Number} minHeight=50                  - Sets the minimal node height.
- *
- * @property {String} iconUrl=null                  - Determines the path to the image icon (if this value is null, the default icon is used).
- * @property {Number} minIconOpacity=0.5            - Determines the basic visibility of the icon in minimal representation.
- * @property {Number} minIconSize=35                - Determines the width and height for the image icon in minimal representation.
- * @property {Number} minIconTranslateX=-45         - Determines the horizontal adjustment for the icon in minimal representation.
- * @property {Number} minIconTranslateY=0           - Determines the vertical adjustment for the icon in minimal representation.
- * @property {Number} maxIconOpacity=0.75           - Determines the basic visibility of the icon in detailed representation.
- * @property {Number} maxIconSize=30                - Determines the width and height for the image icon in detailed representation.
- * @property {Number} maxIconTranslateX=-120        - Determines the horizontal adjustment for the icon in detailed representation.
- * @property {Number} maxIconTranslateY=-55         - Determines the vertical adjustment for the icon in detailed representation.
- *
- * @property {Number} offset=8                      - Determines the spacing used for padding between label and background.
- * @property {Number} animationSpeed=300            - Determines how fast SVG elements animates inside the current layout.
- * @property {Number} borderRadius=4                - Determines the nodes border radius.
- * @property {Number} borderStrokeWidth=1           - Determines the nodes border stroke width.
- * @property {String} borderStrokeColor=#F26A7C     - Determines the nodes border color.
- * @property {String} borderStrokeDasharray="5 10"  - Determines the nodes gaps used inside the border.
- * @property {String} backgroundColor=#ffffff       - Determines the nodes background color.
- *
- * @property {Number} minTextWidth=90               - Determines the text width for the label in minimal representation.
- * @property {Number} minLabelLineClamp=1           - Determines how many lines are visible for the label in minimal representation.
- * @property {Number} minTextTranslateX=22.5        - Determines the horizontal adjustment for the label in minimal representation.
- * @property {Number} minTextTranslateY=0           - Determines the vertical adjustment for the label in minimal representation.
- * @property {Number} maxTextWidth=295              - Determines the text width for the label in detailed representation.
- * @property {Number} maxTextHeight=145             - Determines the text height for the label in detailed representation.
- * @property {Number} maxLabelLineClamp=2           - Determines how many lines are visible for the label in detailed representation.
- * @property {Number} maxTextTranslateX=0           - Determines the horizontal adjustment for the label in detailed representation.
- * @property {Number} maxTextTranslateY=0           - Determines the vertical adjustment for the label in detailed representation.
- * @property {String} labelColor=#ff8e9e            - Determines the color for the label.
- * @property {String} labelFontFamily=Montserrat    - Determines the font family for the label.
- * @property {Number} labelFontSize=14              - Determines the font size for the label.
- * @property {Number} labelFontWeight=600           - Determines the font weight for the label.
- * @property {String} labelFontStyle=normal         - Determines the font style for the label.
- * @property {String} labelBackground=#ffffff       - Determines the background color for the label.
- * @property {String} detailsColor=#ff8e9e          - Determines the color for the details description.
- * @property {String} detailsFontFamily=Montserrat  - Determines the font family for the details description.
- * @property {Number} detailsFontSize=12            - Determines the font size for the details description.
- * @property {Number} detailsFontWeight=600         - Determines the font weight for the details description.
- * @property {String} detailsFontStyle=normal       - Determines the font style for the details description.
- * @property {String} detailsBackground=#ffffff     - Determines the background color for the details description.
+ * @category Layouts
+ * @subcategory Helpers
+ * @property {Canvas} canvas The current canvas to render the element on.
+ * @property {BaseNode} focusNode The currently active focus node.
+ * @property {BaseNode} assignedNode The currently active assigned node.
+ * @property {ContextualLayoutConfiguration} config An object containing visual restrictions.
  */
-const RiskNodeConfiguration = {
-  // large node
-  maxWidth: 300,
-  maxHeight: 150,
+class ContextualAssginedConnection {
+  constructor(canvas, focusNode, assignedNode, config) {
+    this.canvas = canvas
+    this.focusNode = focusNode
+    this.assignedNode = assignedNode
+    this.config = config
+
+    // layout info
+    this.layoutId = 0
+    this.finalX = 0
+    this.finalY = 0
+  }
 
 
-  // small node
-  minWidth: 150,
-  minHeight: 50,
+  /**
+   * Calculates and renders the connection.
+   * @param {Object} [opts={ }] An object containing additional information.
+   * @param {Number} [opts.isParentOperation=false] An indication whether a parent or child node was elected new focus.
+   */
+  render({ isParentOperation = false }) {
+    const svg = this.canvas.group()
+    svg.id(`contextualAssginedConnection#${this.focusNode.id}_${this.assignedNode.id}`)
+
+    const {
+      riskConnectionOffset, riskConnectionLineWidth, riskConnectionarrowHeight, riskConnectionArrowWidth,
+    } = this.config
 
 
-  // icon
-  iconUrl: null,
-  minIconOpacity: 0.5,
-  minIconSize: 35,
-  minIconTranslateX: -45,
-  minIconTranslateY: 0,
-  maxIconOpacity: 0.75,
-  maxIconSize: 30,
-  maxIconTranslateX: -120,
-  maxIconTranslateY: -55,
+    const fw = this.focusNode.getMaxWidth()
+    const aw = this.assignedNode.getMinWidth()
+
+    // calculate points forming the connection
+    const x0 = this.focusNode.getFinalX() + fw / 2 + riskConnectionOffset
+    const y0 = this.focusNode.getFinalY() + riskConnectionLineWidth / 2
+
+    const x1 = this.assignedNode.getFinalX() - aw / 2 - riskConnectionOffset - riskConnectionarrowHeight
+    const y1 = y0
+
+    const x2 = x1
+    const y2 = this.assignedNode.getFinalY() + (riskConnectionArrowWidth - (riskConnectionLineWidth) / 2)
+
+    const x3 = this.assignedNode.getFinalX() - aw / 2 - riskConnectionOffset
+    const y3 = this.assignedNode.getFinalY()
+
+    const x4 = x1
+    const y4 = this.assignedNode.getFinalY() - (riskConnectionArrowWidth - (riskConnectionLineWidth) / 2)
+
+    const x5 = x1
+    const y5 = this.assignedNode.getFinalY() - riskConnectionLineWidth / 2
+
+    const x6 = x0
+    const y6 = this.focusNode.getFinalY() - riskConnectionLineWidth / 2
+
+    const cx = (x6 + x3) / 2
+    const cy = y3
 
 
-  // node
-  offset: 8,
-  animationSpeed: 300,
-  borderRadius: 4,
-  borderStrokeWidth: 1,
-  borderStrokeColor: "#F26A7C",
-  borderStrokeDasharray: "5 10",
-  backgroundColor: "#ffffff",
+    // the actual connection as path argument
+    const plot = `
+      M ${x0},${y0}
+      L ${x1},${y1}
+      L ${x2},${y2}
+      L ${x3},${y3}
+      L ${x4},${y4}
+      L ${x5},${y5}
+      L ${x6},${y6}
+      L ${x0},${y0}
+    `
 
 
-  // text
-  minTextWidth: 90, // recommended: min node width - some padding
-  minLabelLineClamp: 1,
-  minTextTranslateX: 22.5,
-  minTextTranslateY: 0,
-  maxTextWidth: 295,
-  maxTextHeight: 145,
-  maxLabelLineClamp: 2,
-  maxTextTranslateX: 0,
-  maxTextTranslateY: 0,
-  labelColor: "#ff8e9e",
-  labelFontFamily: "Montserrat",
-  labelFontSize: 14,
-  labelFontWeight: 600,
-  labelFontStyle: "normal",
-  labelBackground: "#ffffff",
-  detailsColor: "#ff8e9e",
-  detailsFontFamily: "Montserrat",
-  detailsFontSize: 12,
-  detailsFontWeight: 600,
-  detailsFontStyle: "normal",
-  detailsBackground: "transparent",
+    // create the SVG connection
+    const path = this.canvas.path(plot).stroke({
+      color: this.config.riskConnectionStrokeColor,
+      width: this.config.riskConnectionStrokeWidth,
+      dasharray: this.config.riskConnectionStrokeDasharray,
+    })
+    path.fill(this.config.riskConnectionColor)
+    svg.add(path)
+
+
+    // create a foreign object which holds the "attached risks" label
+    const fobj = this.canvas.foreignObject(1, this.config.riskConnectionLabelFontSize + riskConnectionOffset)
+
+
+    // create the label background
+    const background = document.createElement("div")
+    background.style.background = this.config.riskConnectionLabelBackground
+    background.style.padding = `${riskConnectionOffset / 2}px`
+    background.style.textAlign = "center"
+    background.style.width = "fit-content"
+    background.style.wordWrap = "break-word"
+    background.setAttribute("id", "label")
+
+
+    // create the actual label text
+    const label = document.createElement("p")
+    label.innerText = this.config.riskConnectionLabelText
+    label.style.color = this.config.riskConnectionLabelColor
+    label.style.fontSize = `${this.config.riskConnectionLabelFontSize}px`
+    label.style.fontFamily = this.config.riskConnectionLabelFontFamily
+    label.style.fontWeight = this.config.riskConnectionLabelFontWeight
+    label.style.fontStyle = this.config.riskConnectionLabelFontStyle
+    label.style.width = "max-content"
+    label.style.wordWrap = "break-word"
+
+
+    // add the label to the background element
+    background.appendChild(label)
+
+
+    // add the HTML to the SVG
+    fobj.add(background)
+
+
+    // disable the user-select css property
+    fobj.css("user-select", "none")
+
+
+    // set the labels with
+    const labelWidth = label.clientWidth + this.config.riskConnectionLabelFontSize
+    label.innerText = this.config.riskConnectionLabelText.replace(/_/g, " ")
+    fobj.width(labelWidth)
+
+
+    // move the label into initial position
+    fobj.center(cx, cy - 25 / 1.05 - riskConnectionLineWidth / 2)
+
+
+    // add fobj to svg
+    svg.add(fobj)
+    svg.back()
+
+
+    // put svg into position
+    // move to initial position (- -> bottom; + -> top)
+    const dy1 = isParentOperation ? -50 : 50
+    const dy2 = isParentOperation ? 50 : -50
+    svg.get(0).dy(dy1).animate({ duration: this.config.animationSpeed }).dy(dy2)
+
+
+    // set the final position
+    if (isParentOperation) {
+      this.finalX = cx
+      this.finalY = cy - 25 / 1.5 - riskConnectionLineWidth / 2 - 50
+    } else {
+      this.finalX = cx
+      this.finalY = cy - 25 / 1.5 - riskConnectionLineWidth / 2 + 50
+    }
+
+    // move to label into final position
+    const translateX = this.config.riskConnectionLabelTranslateX
+    const translateY = this.config.riskConnectionLabelTranslateY
+    if (isParentOperation === true) {
+      console.log("TODO:")
+      svg
+        .get(1)
+        .center(cx, cy - 25 - riskConnectionLineWidth / 2)
+        .animate({ duration: this.config.animationSpeed })
+        .center(cx + translateX, cy - 25 / 1.5 - riskConnectionLineWidth / 2 + translateY)
+    } else {
+      svg
+        .get(1)
+        .center(cx, cy + 25 - riskConnectionLineWidth / 2)
+        .animate({ duration: this.config.animationSpeed })
+        .center(cx + translateX, cy - 25 / 1.5 - riskConnectionLineWidth / 2 + translateY)
+    }
+
+
+    this.svg = svg
+  }
+
+
+  /**
+   * Transforms the assigned connection into its final position.
+   * @param {Object} [opts={ }] An object containing additional information.
+   * @param {Number} [opts.isParentOperation=false] An indication whether a parent or child node was elected new focus.
+   * @param {Number} [opts.X=this.finalX] The calculated final X position.
+   * @param {Number} [opts.X=this.finalY] The calculated final X position.
+   */
+  transformToFinalPosition({ isParentOperation = false, X = this.finalX, Y = this.finalY }) {
+    if (isParentOperation) {
+      // come from top
+      this.svg
+        .animate({ duration: this.config.animationSpeed })
+        .center(X, Y - 50)
+    } else {
+      // come from bottom
+      this.svg
+        .animate({ duration: this.config.animationSpeed })
+        .center(X, Y + 50)
+    }
+  }
+
+
+  /**
+   * Removes the connection.
+   */
+  removeSVG() {
+    if (this.isRendered()) {
+      this.svg.remove()
+      this.svg = null
+    }
+  }
+
+
+  /**
+   * Determins if the SVG object is rendered.
+   * @returns True, if the SVG is rendered, else false.
+   */
+  isRendered() {
+    return this.svg !== null
+  }
+
+  setLayoutId(layoutId) {
+    this.layoutId = layoutId
+  }
+
+  getFinalX() {
+    return this.finalX
+  }
+
+  getFinalY() {
+    return this.finalY
+  }
 }
 
-export default RiskNodeConfiguration
+export default ContextualAssginedConnection
 </code></pre>
         </article>
     </section>
