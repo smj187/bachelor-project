@@ -94,7 +94,6 @@ class BaseEdge {
   }
 
 
-
   /**
    * Removes the rendered SVG object from the canvas.
    */

@@ -4,7 +4,7 @@ import "../extensions/panzoom"
 
 
 const createRenderCanvas = (config) => {
-  const document = window.document
+  const { document } = window
 
   // create the background element to hold the main canvas
   const element = document.createElement("div")

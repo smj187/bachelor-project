@@ -120,8 +120,6 @@ class BoldEdge extends BaseEdge {
     */
 
     if (this.config.color === "inherit") {
-
-
       const toColor = this.toNode.config.borderStrokeColor
       const fromColor = this.fromNode.config.borderStrokeColor
 
@@ -134,10 +132,6 @@ class BoldEdge extends BaseEdge {
       // svgdotjs bug: if a gradient gets an id, there is no way to create a gradient with a different color pairing
       // gradient.id("defaultBoldGradient")
       path.fill(gradient)
-
-
-
-
     } else {
       path.fill(this.config.color)
     }
@@ -150,9 +144,6 @@ class BoldEdge extends BaseEdge {
     /*
       // TODO: implementation for finding a color for the attached container nodes
     */
-
-
-
 
 
     // // custom color fill
@@ -213,10 +204,8 @@ class BoldEdge extends BaseEdge {
 
 
     if (isContextualBoldEdge === true) {
-
       // parent edge
       if (this.fromNode.getNodeSize() === "max") {
-
         // center (dx=dy and dy=dx since its 90 degree rotated)
         const dx = this.fromNode.getFinalX() - x0
         const dy = (y0 + y1) / 2 - this.fromNode.getFinalY() - 50
@@ -225,11 +214,14 @@ class BoldEdge extends BaseEdge {
         const lx = this.fromNode.getFinalX()
         const ly = this.fromNode.getFinalY()
 
-        svg.get(0).dmove(dy, dx).attr({ opacity: 0 }).animate({ duration }).dmove(-dy, -dx).attr({ opacity: 1 })
+        svg.get(0).dmove(dy, dx).attr({ opacity: 0 }).animate({ duration })
+          .dmove(-dy, -dx)
+          .attr({ opacity: 1 })
         if (this.label !== null) {
-          svg.get(1).center(lx, ly).attr({ opacity: 0 }).animate({ duration }).center(cx, cy).attr({ opacity: 1 })
+          svg.get(1).center(lx, ly).attr({ opacity: 0 }).animate({ duration })
+            .center(cx, cy)
+            .attr({ opacity: 1 })
         }
-
       }
       // child edge
       if (this.toNode.getNodeSize() === "max") {
@@ -241,15 +233,18 @@ class BoldEdge extends BaseEdge {
         const lx = this.toNode.getFinalX()
         const ly = this.toNode.getFinalY()
 
-        svg.get(0).dmove(dy, dx).attr({ opacity: 0 }).animate({ duration }).dmove(-dy, -dx).attr({ opacity: 1 })
+        svg.get(0).dmove(dy, dx).attr({ opacity: 0 }).animate({ duration })
+          .dmove(-dy, -dx)
+          .attr({ opacity: 1 })
         if (this.label !== null) {
-          svg.get(1).center(lx, ly).attr({ opacity: 0 }).animate({ duration }).center(cx, cy).attr({ opacity: 1 })
+          svg.get(1).center(lx, ly).attr({ opacity: 0 }).animate({ duration })
+            .center(cx, cy)
+            .attr({ opacity: 1 })
         }
       }
     } else {
       console.log("todo..")
     }
-
 
 
     // if (isContextualBoldEdge === true) {
@@ -313,8 +308,6 @@ class BoldEdge extends BaseEdge {
     //   }
 
 
-
-
     // } else {
     //   svg
     //     .get(0)
@@ -332,9 +325,6 @@ class BoldEdge extends BaseEdge {
     //       .center(cx + this.config.labelTranslateX, cy + this.config.labelTranslateY)
     //   }
     // }
-
-
-
 
 
     this.svg = svg

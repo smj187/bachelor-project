@@ -145,7 +145,9 @@ class RequirementNode extends BaseNode {
   * @param {Number} [opts.FX=this.finalY] The final X render position.
   * @param {Number} [opts.FY=this.finalY] The final Y render position.
   */
-  renderAsMin({ IX = this.initialX, IY = this.initialY, FX = this.finalX, FY = this.finalY }) {
+  renderAsMin({
+    IX = this.initialX, IY = this.initialY, FX = this.finalX, FY = this.finalY,
+  }) {
     // create svg elements
     const svg = this.createSVGElement()
     const node = this.createNode()
@@ -196,7 +198,9 @@ class RequirementNode extends BaseNode {
   * @param {Number} [opts.FX=this.finalY] The final X render position.
   * @param {Number} [opts.FY=this.finalY] The final Y render position.
   */
-  renderAsMax({ IX = this.initialX, IY = this.initialY, FX = this.finalX, FY = this.finalY }) {
+  renderAsMax({
+    IX = this.initialX, IY = this.initialY, FX = this.finalX, FY = this.finalY,
+  }) {
     // create svg elements
     const svg = this.createSVGElement()
     const node = this.createNode()

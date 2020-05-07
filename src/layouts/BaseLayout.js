@@ -146,13 +146,6 @@ class BaseLayout {
   }
 
 
-
-
-
-
-
-
-
   /**
    * Loads the initial tree layout data.
    * @async
@@ -271,7 +264,6 @@ class BaseLayout {
         }
       }
     })
-
   }
 
 
@@ -387,16 +379,11 @@ class BaseLayout {
   }
 
 
-
-
-
-
-
   async loadInitialContextualDataAsync() {
     // load focus and assigned node
     const response1 = await multiplePostRequests([
       { url: `${this.config.databaseUrl}/${this.config.nodeEndpoint}`, body: [this.focusId] },
-      { url: `${this.config.databaseUrl}/${this.config.contextualRelationshipEndpoint}`, body: [this.focusId] }
+      { url: `${this.config.databaseUrl}/${this.config.contextualRelationshipEndpoint}`, body: [this.focusId] },
     ])
     const focus = response1[0][0] || null
     if (focus === null) {
@@ -424,7 +411,7 @@ class BaseLayout {
     // load edges
     const requiredEdges = [
       ...parentIds.map((id) => ({ fromNode: this.focusId, toNode: id })),
-      ...childrenIds.map((id) => ({ fromNode: id, toNode: this.focusId }))
+      ...childrenIds.map((id) => ({ fromNode: id, toNode: this.focusId })),
     ]
 
     // ..but, only edges known to the graph
@@ -433,7 +420,7 @@ class BaseLayout {
 
     const response2 = await multiplePostRequests([
       { url: `${this.config.databaseUrl}/${this.config.nodeEndpoint}`, body: nodesToFetch },
-      { url: `${this.config.databaseUrl}/${this.config.edgeEndpoint}`, body: edgesToFetch }
+      { url: `${this.config.databaseUrl}/${this.config.edgeEndpoint}`, body: edgesToFetch },
     ])
     const nodes = response2[0]
     const edges = response2[1]
@@ -468,11 +455,9 @@ class BaseLayout {
   }
 
 
-
   async updateContextualDataAsync({ clickedNode = null }) {
-
     // transform clickedNode to focus and focus to child or parent
-    const focusNode = this.nodes.find(n => n.getId() === this.focusId)
+    const focusNode = this.nodes.find((n) => n.getId() === this.focusId)
     // console.log(focusNode, clickedNode)
 
     const oldFocusX = focusNode.getFinalX()
@@ -492,10 +477,6 @@ class BaseLayout {
 
     // create new data
   }
-
-
-
-
 
 
   /**
@@ -613,7 +594,6 @@ class BaseLayout {
         }
       }
     })
-
   }
 
 
@@ -729,11 +709,6 @@ class BaseLayout {
   }
 
 
-
-
-
-
-
   /**
    * Updates all layouts to the right if necessary.
    * @param {Object} [opts={ }] An object containing additional information.
@@ -842,14 +817,6 @@ class BaseLayout {
   }
 
 
-
-
-
-
-
-
-
-
   async updateLayoutConfiguration(newConfiguration) {
     this.config = { ...this.config, ...newConfiguration }
 
@@ -863,11 +830,6 @@ class BaseLayout {
     this.config = { ...this.config, ...newConfiguration }
     console.log("update", this)
   }
-
-
-
-
-
 
 
   removeRepresentation(nodes = [], edges = []) {

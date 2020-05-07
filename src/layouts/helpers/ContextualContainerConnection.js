@@ -20,7 +20,6 @@ class ContextualContainerConnection {
 
 
   render({ isParentOperation = false }) {
-
     const svg = this.canvas.group()
     svg.id(`contextualContainerConnection#${this.layoutId}`)
 
@@ -44,10 +43,7 @@ class ContextualContainerConnection {
 
       x1 = this.focusNode.getFinalX()
       y1 = this.focusNode.getFinalY() + this.focusNode.getMaxHeight() / 2 + this.focusNode.config.offset / 2
-
     }
-
-
 
 
     const dist1 = calculateDistance(x1, y1, x0, y0)
@@ -81,7 +77,6 @@ class ContextualContainerConnection {
     const b8 = b0 - this.config.containerConnectionLineWidth / 2
 
 
-
     const plot = `
       M ${a2},${b2}
       L ${a3},${b3}
@@ -92,7 +87,6 @@ class ContextualContainerConnection {
       L ${a8},${b8}
       L ${a2},${b2}
     `
-
 
 
     // draw the arrow
@@ -110,13 +104,11 @@ class ContextualContainerConnection {
     })
 
 
-
     /*
       // TODO: implementation for finding a color for the attached container nodes
     */
 
     if (this.config.containerConnectionColor === "inherit") {
-
       if (this.type === "parent") {
         const toColor = this.config.parentContainerBorderStrokeColor
         const fromColor = this.focusNode.config.borderStrokeColor
@@ -138,9 +130,6 @@ class ContextualContainerConnection {
         })
         path.fill(gradient)
       }
-
-
-
     } else {
       path.fill(this.config.containerConnectionColor)
     }
@@ -172,7 +161,6 @@ class ContextualContainerConnection {
     this.finalY = finalY
 
 
-
     this.svg = svg
   }
 
@@ -182,8 +170,7 @@ class ContextualContainerConnection {
       this.svg
         .animate({ duration: this.config.animationSpeed })
         .center(X, Y - 50)
-    }
-    else {
+    } else {
       this.svg
         .animate({ duration: this.config.animationSpeed })
         .center(X, Y + 50)

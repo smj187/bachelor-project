@@ -50,7 +50,7 @@ const ContextualLayoutConfiguration = {
   riskConnectionStrokeWidth: 1,
   riskConnectionStrokeDasharray: 0,
   riskConnectionColor: "#dd415bcc",
-  riskConnectionLabelText: "Attached_Risks", /// must be seperated with _ to avoid new line creation
+  riskConnectionLabelText: "Attached_Risks", // / must be seperated with _ to avoid new line creation
   riskConnectionLabelColor: "#ff8e9e",
   riskConnectionLabelFontFamily: "Montserrat",
   riskConnectionLabelFontSize: 16,
@@ -129,14 +129,6 @@ const ContextualLayoutConfiguration = {
   animationSpeed: 1300,
   spacing: 16,
   renderingSize: "min",
-
-
-
-
-
-
-
-
 
 
 }

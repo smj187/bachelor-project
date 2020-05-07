@@ -270,10 +270,7 @@ class BaseNode {
    * @see https://svgjs.com/docs/3.0/shape-elements/#svg-image
    */
   createIcon() {
-
-
     let icon = null
-
 
 
     // use a default icon
@@ -361,7 +358,6 @@ class BaseNode {
    * Removes the rendered SVG object from the canvas.
    */
   removeSVG({ isContextualNode = false, isContextualParentOperation = false }) {
-
     const x = this.finalX
     const y = this.finalY
 
@@ -369,7 +365,6 @@ class BaseNode {
 
 
     if (isContextualNode === true) {
-
       const offset = isContextualParentOperation ? -50 : 50
 
       try { this.svg.remove() } catch (error) { }
@@ -386,7 +381,6 @@ class BaseNode {
       if (this.isRendered() === false) return
 
 
-
       this.svg
         .animate({ duration: this.config.animationSpeed })
         .transform({ scale: 0.001, position: [x, y + 100] })
@@ -395,7 +389,6 @@ class BaseNode {
           this.svg = null
         })
     }
-
   }
 
 

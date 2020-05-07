@@ -8,19 +8,18 @@ class ContextualConainer {
     this.config = config
 
 
-    // layout 
+    // layout
     this.layoutId = 0
     this.animation = null
-
-
   }
 
   render({ isParentOperation = false }) {
-
     const svg = this.canvas.group()
     svg.id(`contextualContainer#${this.layoutId}`)
 
-    const { type, minHeight, width, mincx, mincy } = this.containerInfo
+    const {
+      type, minHeight, width, mincx, mincy,
+    } = this.containerInfo
 
     const container = this.canvas.rect(0, 0).center(mincx, mincy)
 
@@ -48,7 +47,6 @@ class ContextualConainer {
     svg.add(container)
 
 
-
     svg
       .get(0)
       .center(this.focusNode.getFinalX(), this.focusNode.getFinalY())
@@ -61,7 +59,9 @@ class ContextualConainer {
   }
 
   update({ areChildrenExpended = false, areParentsExpended = false, areRisksExpended = false }) {
-    const { type, minHeight, maxHeight, width, mincx, mincy, maxcx, maxcy } = this.containerInfo
+    const {
+      type, minHeight, maxHeight, width, mincx, mincy, maxcx, maxcy,
+    } = this.containerInfo
 
     // cancel an ongoing animation
     if (this.animation !== null) {
@@ -127,7 +127,6 @@ class ContextualConainer {
           .after(() => { this.animation = null })
       }
     }
-
   }
 
 

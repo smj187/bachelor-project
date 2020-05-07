@@ -3,7 +3,7 @@ import { calculateArcLineIntersection } from "../../utils/Calculations"
 
 class ContextualRiskConnection {
   constructor(canvas, riskNodes, riskContainer, focusNode, assginedNode, assignedNodeConnection, config) {
-    this.canvas = canvas;
+    this.canvas = canvas
     this.riskNodes = riskNodes || []
     this.riskContainer = riskContainer || null
     this.focusNode = focusNode
@@ -15,8 +15,6 @@ class ContextualRiskConnection {
     this.layoutId = 0
     this.finalX = 0
     this.finalY = 0
-
-
   }
 
 
@@ -48,8 +46,7 @@ class ContextualRiskConnection {
     // if risks are not within a container, create connections for each node in the grid layout
     if (this.riskContainer === null) {
       // calculate the initial starting connection
-      topElements.forEach(node => {
-
+      topElements.forEach((node) => {
         const x3 = node.getInitialX()
         const y3 = node.getInitialY()
 
@@ -61,15 +58,14 @@ class ContextualRiskConnection {
       })
 
       // calculate the final visible connection
-      topElements.forEach(node => {
-        const offset = node.config.offset
+      topElements.forEach((node) => {
+        const { offset } = node.config
         const x3 = node.getFinalX()
         const y3 = node.getFinalY() - node.getMinHeight() / 2 - offset
 
         const lineIntersection = calculateArcLineIntersection(x0, y0, x3, y3, `M${x1},${y1} L${x2},${y2}`)
         finalConnections.push(`M ${lineIntersection.x} ${lineIntersection.y} L ${x3} ${y3}`)
       })
-
     } else {
       // or simply one big connection
 
@@ -77,7 +73,7 @@ class ContextualRiskConnection {
       const y3 = this.riskContainer.containerInfo.mincy - this.riskContainer.containerInfo.minHeight / 2
 
       // just take the first offset
-      const offset = nodes[0].config.offset
+      const { offset } = nodes[0].config
 
 
       const lineIntersection = calculateArcLineIntersection(x0, y0, x3, y3, `M${x1},${y1} L${x2},${y2}`)
@@ -89,8 +85,6 @@ class ContextualRiskConnection {
         initialConnections.push(`M${this.focusNode.getFinalX()},${this.focusNode.getFinalY()} L${lineIntersection.x},${lineIntersection.y + 50}`)
       }
       finalConnections.push(`M${x3},${y3 - offset} L${lineIntersection.x},${lineIntersection.y}`)
-
-
     }
 
 
@@ -100,7 +94,7 @@ class ContextualRiskConnection {
     const dasharray = this.config.riskNodeConnectionStrokeDasharray
 
     for (let i = 0; i < initialConnections.length; i += 1) {
-      const line = this.canvas.path(initialConnections[i]).stroke({ width, color, dasharray, }).back().attr({ opacity: 0 })
+      const line = this.canvas.path(initialConnections[i]).stroke({ width, color, dasharray }).back().attr({ opacity: 0 })
       line.animate({ duration: this.config.animationSpeed }).plot(finalConnections[i]).attr({ opacity: 1 })
       svg.add(line)
     }
@@ -110,14 +104,12 @@ class ContextualRiskConnection {
   }
 
 
-
   transformToFinalPosition({ isParentOperation = false, X = this.node.finalX, Y = this.node.finalY }) {
     if (isParentOperation) {
       this.svg
         .animate({ duration: this.config.animationSpeed })
         .center(X, Y - 50)
-    }
-    else {
+    } else {
       this.svg
         .animate({ duration: this.config.animationSpeed })
         .center(X, Y + 50)

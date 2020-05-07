@@ -29721,7 +29721,7 @@ var ContextualConainer = /*#__PURE__*/function () {
     this.svg = null;
     this.focusNode = focusNode;
     this.containerInfo = containerInfo;
-    this.config = config; // layout 
+    this.config = config; // layout
 
     this.layoutId = 0;
     this.animation = null;
@@ -30301,7 +30301,7 @@ var ContextualLayoutConfiguration = {
   riskConnectionStrokeDasharray: 0,
   riskConnectionColor: "#dd415bcc",
   riskConnectionLabelText: "Attached_Risks",
-  /// must be seperated with _ to avoid new line creation
+  // / must be seperated with _ to avoid new line creation
   riskConnectionLabelColor: "#ff8e9e",
   riskConnectionLabelFontFamily: "Montserrat",
   riskConnectionLabelFontSize: 16,
@@ -30367,9 +30367,9 @@ var ContextualLayoutConfiguration = {
   renderingSize: "min"
 };
 
-var ContextualConnection = /*#__PURE__*/function () {
-  function ContextualConnection(canvas, focusNode, assignedNode, config) {
-    _classCallCheck(this, ContextualConnection);
+var ContextualAssginedConnection = /*#__PURE__*/function () {
+  function ContextualAssginedConnection(canvas, focusNode, assignedNode, config) {
+    _classCallCheck(this, ContextualAssginedConnection);
 
     this.canvas = canvas;
     this.focusNode = focusNode;
@@ -30381,13 +30381,13 @@ var ContextualConnection = /*#__PURE__*/function () {
     this.finalY = 0;
   }
 
-  _createClass(ContextualConnection, [{
+  _createClass(ContextualAssginedConnection, [{
     key: "render",
     value: function render(_ref) {
       var _ref$isParentOperatio = _ref.isParentOperation,
           isParentOperation = _ref$isParentOperatio === void 0 ? false : _ref$isParentOperatio;
       var svg = this.canvas.group();
-      svg.id("contextualConnection#".concat(this.focusNode.id, "_").concat(this.assignedNode.id)); // calculate the connection
+      svg.id("contextualAssginedConnection#".concat(this.focusNode.id, "_").concat(this.assignedNode.id)); // calculate the connection
 
       var fw = this.focusNode.getMaxWidth();
       var aw = this.assignedNode.getMinWidth();
@@ -30508,7 +30508,7 @@ var ContextualConnection = /*#__PURE__*/function () {
     }
   }]);
 
-  return ContextualConnection;
+  return ContextualAssginedConnection;
 }();
 
 /**
@@ -30516,7 +30516,6 @@ var ContextualConnection = /*#__PURE__*/function () {
  *
  * @category Layouts
  */
-
 
 var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
   _inherits(ContextualLayout, _BaseLayout);
@@ -30792,7 +30791,7 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
           return;
         }
 
-        var assignedConnection = new ContextualConnection(_this3.canvas, focusNode, assginedNode, _this3.config);
+        var assignedConnection = new ContextualAssginedConnection(_this3.canvas, focusNode, assginedNode, _this3.config);
         assignedConnection.setLayoutId(_this3.layoutIdentifier);
         _this3.assignedConnection = assignedConnection;
       };
@@ -32085,7 +32084,8 @@ extend(Svg, {
 });
 
 var createRenderCanvas = function createRenderCanvas(config) {
-  var document = window.document; // create the background element to hold the main canvas
+  var _window = window,
+      document = _window.document; // create the background element to hold the main canvas
 
   var element = document.createElement("div");
   element.setAttribute("id", config.canvasId);

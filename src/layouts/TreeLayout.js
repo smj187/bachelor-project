@@ -75,7 +75,7 @@ class TreeLayout extends BaseLayout {
    * @param {Number} [opts.offset=0] Determines the space the layout has to shift in order to avoid overlapping layouts.
    * @param {Boolean} [opts.isReRender=false] Determines if the layout is rerenderd.
    */
-  calculateLayout({ offset = 0, isReRender = false, }) {
+  calculateLayout({ offset = 0, isReRender = false }) {
     const isVertical = this.config.orientation === "vertical"
     this.currentOffset = offset
 
