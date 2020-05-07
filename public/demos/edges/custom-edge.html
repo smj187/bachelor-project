@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Custom Edge Demo</title>
+
+    <link href="https://fonts.googleapis.com/css?family=Montserrat&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+            box-sizing: border-box;
+        }
+    </style>
+
+</head>
+
+<body>
+    <script type="module">
+        import { Visualization, Risk, CustomEdge } from "../../dist/visualization.esm.min.js"
+
+
+        const { canvas } = new Visualization({
+            databaseUrl: "http://localhost:3001",
+            nodeEndpoint: "node-data",
+            edgeEndpoint: "edge-data",
+            contextualRelationshipEndpoint: "contextual-relationships",
+            zoomLevel: 0.85
+        })
+
+        const nodeData1 = { id: 9, label: "Risk 9", description: "aute irure dolor in reprehenderit in voluptate velit esse sanctus est Lorem ipsum dolor sit amet voluptate expedita dicta neque harum debitis laudantium molestias velit aut", type: "risk", state: "critical", tooltipText: null, parent: null, children: [], config: { offset: 32 } }
+        const nodeData2 = { id: 10, label: "Risk 10", description: "aute irure dolor in reprehenderit in voluptate velit esse sanctus est Lorem ipsum dolor sit amet voluptate expedita dicta neque harum debitis laudantium molestias velit aut", type: "risk", state: "critical", tooltipText: null, parent: null, children: [], config: { offset: 32 } }
+        const edgeData = { id: 31, type: "custom", label: "custom", fromNode: 9, toNode: 10, config: { strokeColor: "#ff8e9e", labelColor: "#F26A7C" } }
+
+        const fromNode = new Risk(nodeData1, visualization.canvas)
+        const toNode = new Risk(nodeData2, visualization.canvas)
+        const customEdge = new CustomEdge(edgeData, visualization.canvas, fromNode, toNode)
+        fromNode.setFinalX(200)
+        fromNode.setFinalY(200)
+        fromNode.setInitialX(100)
+        fromNode.setInitialY(200)
+        fromNode.renderAsMin({})
+
+        toNode.setFinalX(600)
+        toNode.setFinalY(300)
+        toNode.setInitialX(500)
+        toNode.setInitialY(200)
+        toNode.renderAsMin({})
+
+        customEdge.calculateEdge({})
+        customEdge.render({})
+
+
+    </script>
+</body>
+
+</html>

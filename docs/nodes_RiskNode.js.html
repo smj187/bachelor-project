@@ -132,13 +132,13 @@ import RiskNodeConfiguration from "../configuration/RiskNodeConfiguration"
 
 /**
  * This class is responsible for the visual representation of risks.
- * 
+ *
  * @category SVG Representations
  * @subcategory Nodes
  * @property {Data} data Loaded data from a database.
  * @property {Canvas} canvas The nested canvas to render the node on.
  * @property {Object} customRepresentation An optional object that contains information to override default representations.
- * 
+ *
  * @see RiskNodeConfiguration
  */
 class RiskNode extends BaseNode {
@@ -270,7 +270,7 @@ class RiskNode extends BaseNode {
 
   /**
   * Transforms the node to its final rendered position.
-  * 
+  *
   * @param {Object} [opts={ }] An object containing additional information.
   * @param {Number} [opts.FX=this.finalY] The final X render position.
   * @param {Number} [opts.FY=this.finalY] The final Y render position.
@@ -298,7 +298,7 @@ class RiskNode extends BaseNode {
 
   /**
   * Renders a risk node in minimal representation.
-  * 
+  *
   * @param {Object} [opts={ }] An object containing additional information.
   * @param {Number} [opts.IX=this.initialX] The initial X render position.
   * @param {Number} [opts.IY=this.initialY] The initial Y render position.
@@ -359,7 +359,7 @@ class RiskNode extends BaseNode {
 
   /**
   * Renders a risk node in detailed representation.
-  * 
+  *
   * @param {Object} [opts={ }] An object containing additional information.
   * @param {Number} [opts.IX=this.initialX] The initial X render position.
   * @param {Number} [opts.IY=this.initialY] The initial Y render position.
@@ -419,7 +419,7 @@ class RiskNode extends BaseNode {
 
   /**
   * Transforms a node from minimal version to detailed representation.
-  * 
+  *
   * @param {Object} [opts={ }] An object containing additional information.
   * @param {Number} [opts.FX=this.finalY] The final X render position.
   * @param {Number} [opts.FY=this.finalY] The final Y render position.
@@ -491,7 +491,7 @@ class RiskNode extends BaseNode {
 
   /**
   * Transforms a node from detailed representation to minimal version.
-  * 
+  *
   * @param {Object} [opts={ }] An object containing additional information.
   * @param {Number} [opts.FX=this.finalY] The final X render position.
   * @param {Number} [opts.FY=this.finalY] The final Y render position.

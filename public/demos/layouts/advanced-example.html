@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Advanced Layout Demo</title>
+
+    <link href="https://fonts.googleapis.com/css?family=Montserrat&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+            box-sizing: border-box;
+        }
+    </style>
+
+</head>
+
+<body>
+    <script type="module">
+        import { Visualization, GridLayout, RadialLayout, TreeLayout } from "../../dist/visualization.esm.min.js"
+
+
+        const visualization = new Visualization({
+            databaseUrl: "http://localhost:3001",
+            nodeEndpoint: "node-data",
+            edgeEndpoint: "edge-data",
+            contextualRelationshipEndpoint: "contextual-relationships",
+            zoomLevel: 0.85
+        })
+
+
+        const treeData = visualization.createInitialGraph()
+        const gridData = visualization.createInitialGraph()
+
+        for (let i = 0; i <= 163; i += 1) {
+            treeData.includeNode(i)
+        }
+
+        for (let i = 0; i <= 20; i += 1) {
+            gridData.includeNode(i)
+        }
+
+
+        treeData.includeEdge(111, 110)
+        treeData.includeEdge(112, 110)
+        treeData.includeEdge(113, 110)
+        treeData.includeEdge(119, 110)
+        treeData.includeEdge(163, 161)
+
+        const radial = new RadialLayout({ rootId: 137, renderDepth: 1 })
+        const tree = new TreeLayout({ rootId: 110, renderDepth: 1, orientation: "vertical" })
+        const grid = new GridLayout({ limitColumns: 2, limitNodes: 5 })
+
+        const render = async () => {
+            await visualization.render(treeData, radial)
+            await visualization.render(treeData, tree)
+            await visualization.render(gridData, grid)
+        }
+
+        render()
+
+
+        // transform a layout into another layout
+        setTimeout(() => {
+            visualization.transform(radial, treeData, new GridLayout({ limitColumns: 2, limitNodes: 5 }))
+        }, 4000)
+
+        setTimeout(() => {
+            visualization.transform(tree, treeData, new RadialLayout({ rootId: 110, renderDepth: 0 }))
+        }, 5000)
+
+
+    </script>
+</body>
+
+</html>

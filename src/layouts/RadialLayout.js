@@ -66,8 +66,6 @@ class RadialLayout extends BaseLayout {
   }
 
 
-
-
   /**
    * Calculates the radial layout positions for all given nodes and edges.
    *
@@ -190,7 +188,6 @@ class RadialLayout extends BaseLayout {
         const hasChildIds = currentNode.hasChildrenIds()
 
         if (hasNoChildren && (hasChildIds || hasInvisibleChildren)) {
-
           // find existing leaf
           const existing = this.leafs.find((l) => l.getId() === currentNode.getId())
 
@@ -309,8 +306,6 @@ class RadialLayout extends BaseLayout {
         w: calculateDistance(x0, y0, x1, y1),
         h: calculateDistance(x1, y1, x2, y2),
       }
-
-
     }
 
 
@@ -399,7 +394,7 @@ class RadialLayout extends BaseLayout {
     const renderLeafs = () => {
       this.leafs.forEach((leaf) => {
         // only render leaf one time
-        if (leaf.isRendered() === false) leaf.render({ isReRender: false, })
+        if (leaf.isRendered() === false) leaf.render({ isReRender: false })
 
         // else, if its already rendered, transform the leaf to its final position
         else if (leaf.isRendered() === true) leaf.transformToFinalPosition({ isReRender })

@@ -125,7 +125,8 @@
     
     <section>
         <article>
-            <pre class="prettyprint source linenums"><code>/* eslint-disable class-methods-use-this */
+            <pre class="prettyprint source linenums"><code>/* eslint-disable no-param-reassign */
+/* eslint-disable class-methods-use-this */
 import { SVG } from "@svgdotjs/svg.js"
 import "@svgdotjs/svg.draggable.js"
 import "./extensions/panzoom"
@@ -139,8 +140,6 @@ import { createTooltip } from "./utils/Tooltip"
 
 import Graph from "./data/Graph"
 import VisualizationConfiguration from "./configuration/VisualizationConfiguration"
-
-
 
 
 /**
@@ -157,7 +156,7 @@ import VisualizationConfiguration from "./configuration/VisualizationConfigurati
  * @description A SVG object provided by svgdotjs
  * @typedef {SVG} SVG
  * @category Type Definitions
- * 
+ *
  * @see https://svgjs.com/docs/3.0/container-elements/
  */
 
@@ -189,10 +188,9 @@ import VisualizationConfiguration from "./configuration/VisualizationConfigurati
  */
 
 
-
 /**
  * KNOWN ISSUES:
- *    - svgdotjs library while animating sometimes 0.5 1 xy value (.svg.bbox().cx, .svg.bbox().cy) off calculated position
+ * - svgdotjs library while animating sometimes 0.5 1 xy value (.svg.bbox().cx, .svg.bbox().cy) off calculated position
  */
 
 
@@ -298,8 +296,6 @@ class Visualization {
   }
 
 
-
-
   /**
    * This is the main method to gernate layouts. It calls the required methods for each layout type and
    * passes further information about the new layout.
@@ -374,7 +370,8 @@ class Visualization {
    *
    * @async
    * @param {BaseLayout} layout The layout which is about to be updated.
-   * @param {Graph|Object} graphOrConfigData Either an updated graph instance or new layout configuration that alternates the existing one.
+   * @param {Graph|Object} graphOrConfigData Either an updated graph instance or new layout configuration that
+   *                       alternates the existing one.
    * @param {Object} config An optional layout configuration object if the previouse parameter is set.
    *
    * @see TreeLayoutConfiguration
@@ -415,7 +412,7 @@ class Visualization {
       }
 
       if (layout instanceof RadialLayout) {
-        await loadInitialRadialDataAsync()
+        await layout.loadInitialRadialDataAsync()
       }
 
       if (layout instanceof GridLayout) {
@@ -463,7 +460,7 @@ class Visualization {
         "expanderFontSize",
         "expanderFontWeight",
         "expanderFontStyle",
-        "expanderTextBackground"
+        "expanderTextBackground",
 
       ]
       const requireRebuild = reRenderOperations.filter((r) => Object.keys(conf).includes(r)).length > 0
@@ -494,7 +491,6 @@ class Visualization {
         if (requireRebuild === true) {
           await layout.rebuildGridLayoutAsync({ removeOldData: false })
         }
-
       }
 
       if (layout instanceof ContextualLayout) {
@@ -568,26 +564,25 @@ class Visualization {
    * @see GridLayout
    */
   async transform(currentLayout, existingGraphData, newLayout) {
-
-    // remove the existing layout 
-    await currentLayout.removeLayoutAsync({ removeOldData: true, })
+    // remove the existing layout
+    await currentLayout.removeLayoutAsync({ removeOldData: true })
 
 
     // update existing layout references
-    this.layouts = this.layouts.filter(layout => layout !== currentLayout)
+    this.layouts = this.layouts.filter((layout) => layout !== currentLayout)
 
-    // the amount of which to shift a layout to the left 
+    // the amount of which to shift a layout to the left
     const shiftToLeft = currentLayout.layoutInfo.w
 
-    this.layouts.forEach(layout => {
+    this.layouts.forEach((layout) => {
       layout.calculateLayout({ offset: layout.getCurrentOffset() - shiftToLeft - this.config.layoutSpacing })
-      layout.setLayoutReferences(layout.getLayoutReferences().filter(l => l !== currentLayout))
+      layout.setLayoutReferences(layout.getLayoutReferences().filter((l) => l !== currentLayout))
       layout.renderLayout({ isReRender: true })
     })
 
 
     // simply call the render method again
-    return await this.render(existingGraphData, newLayout)
+    return this.render(existingGraphData, newLayout)
   }
 
 
@@ -596,14 +591,13 @@ class Visualization {
    * @returns {String} A 5 character unique string.
    */
   generateRandomLayoutId() {
-
     const letters = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
     const len = 5
-    let rtn = "";
+    let rtn = ""
     for (let i = 0; i &lt; len; i += 1) {
-      rtn += letters.charAt(Math.floor(Math.random() * letters.length));
+      rtn += letters.charAt(Math.floor(Math.random() * letters.length))
     }
-    return rtn;
+    return rtn
   }
 }
 

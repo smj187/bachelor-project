@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Bold Edge Demo</title>
+
+    <link href="https://fonts.googleapis.com/css?family=Montserrat&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+            box-sizing: border-box;
+        }
+    </style>
+
+</head>
+
+<body>
+    <script type="module">
+        import { Visualization, Requirement, BoldEdge } from "../../dist/visualization.esm.min.js"
+
+
+        const { canvas } = new Visualization({
+            databaseUrl: "http://localhost:3001",
+            nodeEndpoint: "node-data",
+            edgeEndpoint: "edge-data",
+            contextualRelationshipEndpoint: "contextual-relationships",
+            zoomLevel: 0.85
+        })
+
+        const nodeData1 = { id: 72, label: "Requirement 72", description: "lorem ipsum", type: "requirement", state: "FULFILLED", attributes: null, tooltipText: null, parent: 36, children: [], config: null }
+        const nodeData2 = { id: 73, label: "Requirement 73", description: "lorem ipsum", type: "requirement", state: "NOT-FULFILLED", attributes: null, tooltipText: null, parent: 37, children: [], config: null }
+        const edgeData = { id: 25, type: "bold", label: "Label", fromNode: 72, toNode: 73, config: { labelBackground: "#cccccccc" } }
+
+        const fromNode = new Requirement(nodeData1, visualization.canvas)
+        const toNode = new Requirement(nodeData2, visualization.canvas)
+        const boldEdge = new BoldEdge(edgeData, visualization.canvas, fromNode, toNode)
+        fromNode.setFinalX(200)
+        fromNode.setFinalY(200)
+        fromNode.setInitialX(100)
+        fromNode.setInitialY(200)
+        fromNode.renderAsMin({})
+
+        toNode.setFinalX(600)
+        toNode.setFinalY(300)
+        toNode.setInitialX(500)
+        toNode.setInitialY(200)
+        toNode.renderAsMin({})
+
+        boldEdge.calculateEdge({})
+        boldEdge.render({})
+
+
+
+    </script>
+</body>
+
+</html>

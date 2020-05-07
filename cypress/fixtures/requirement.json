@@ -1,0 +1,12 @@
+{
+    "id": 0,
+    "label": "Requirement 0",
+    "description": "leo rhoncus cursus etiam habitasse molestie velit blandit phasellus cursus lacinia ut est nulla lectus tristique rhoncus sollicitudin consectetur ligula proin nam eget duis ut imperdiet metus",
+    "type": "requirement",
+    "state": "FULFILLED",
+    "attributes": null,
+    "tooltipText": null,
+    "parent": null,
+    "children": [],
+    "config": null
+}

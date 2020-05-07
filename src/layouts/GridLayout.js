@@ -40,7 +40,6 @@ class GridLayout extends BaseLayout {
   }
 
 
-
   /**
    * Event method which either loads more data or removes existing data.
    * @async
@@ -59,18 +58,15 @@ class GridLayout extends BaseLayout {
       const removedNodes = []
       this.nodes.forEach((node, i) => {
         if (i >= this.config.limitNodes && node.isRendered() === true) {
-          node.removeSVG()
+          node.removeSVG({})
           removedNodes.push(node.getId())
         }
       })
-      this.nodes = this.nodes.filter(node => !removedNodes.includes(node.getId()))
+      this.nodes = this.nodes.filter((node) => !removedNodes.includes(node.getId()))
     }
 
     await this.updateGridDataAsync()
   }
-
-
-
 
 
   /**
@@ -90,11 +86,6 @@ class GridLayout extends BaseLayout {
 
     // calculate the X and Y position for the grid layout
     const calculateFinalPosition = () => {
-
-
-
-
-
       // calculate columns and rows
       const cols = this.config.limitColumns
       let nodeIndex = 0
@@ -191,13 +182,12 @@ class GridLayout extends BaseLayout {
 
       expander.setLayoutId(this.layoutIdentifier)
       expander.setIsLayoutExpended(this.isLayoutExpended)
-      // console.
+
       // get left-most X coordinate
       const minX = Math.min(...this.nodes.map((n) => n.getFinalX()))
       const minNode = this.nodes.find((n) => n.getFinalX() === minX)
       const w = this.config.renderingSize === "max" ? minNode.getMaxWidth() : minNode.getMinWidth()
       const x = minX - w / 2
-
 
 
       // get deepest Y coordinate
@@ -211,16 +201,11 @@ class GridLayout extends BaseLayout {
       expander.setFinalY(y)
 
       this.gridExpander = expander
-
-
-
     }
 
 
     // calculate the layout dimensions
     const calculateLayoutInfo = () => {
-
-
       // calculate the vertical adjustment
       const hAdjustment = Math.min(...this.nodes.map((node) => {
         const w = this.config.renderingSize === "max" ? node.getMaxWidth() : node.getMinWidth()
@@ -245,7 +230,6 @@ class GridLayout extends BaseLayout {
       // update expander
       if (this.gridExpander) {
         this.gridExpander.setFinalX(((this.gridExpander.getFinalX() - hAdjustment) + offset) + this.config.translateX)
-
       }
 
       // calculate the layout info by gathering information about three points
@@ -277,8 +261,6 @@ class GridLayout extends BaseLayout {
         w: calculateDistance(x0, y0, x1, y1),
         h: calculateDistance(x1, y1, x2, y2),
       }
-
-
     }
 
 
@@ -295,14 +277,12 @@ class GridLayout extends BaseLayout {
   }
 
 
-
   /**
    * Renders the grid layout by creating SVG objects representing nodes and an additional expander.
    * @param {Object} [opts={ }] An object containing additional information.
    * @param {Boolean} [opts.isReRender=false] Determines if the layout is rerenderd.
    */
   renderLayout({ isReRender = false }) {
-
     // get the position where to start rendering the nodes from
     const limit = this.config.limitNodes ? this.config.limitNodes : this.nodes.length
     const X = this.layoutInfo.cx
@@ -379,8 +359,6 @@ class GridLayout extends BaseLayout {
 
     renderExpander()
     renderNodes()
-
-
   }
 }
 

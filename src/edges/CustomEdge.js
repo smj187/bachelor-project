@@ -4,7 +4,7 @@ import CustomEdgeConfiguration from "../configuration/CustomEdgeConfiguration"
 
 /**
  * This class is responsible for the visual representation of custom edges.
- * 
+ *
  * @category SVG Representations
  * @subcategory Edges
  * @property {Data} data The loaded data element from a database.
@@ -27,13 +27,12 @@ class CustomEdge extends BaseEdge {
 
   /**
   * Calculates and renders a custom edge between two given nodes.
-  * 
+  *
   * @param {Object} [opts={ }] An object containing additional information.
   * @param {Number} [opts.FX=this.finalFromX] The final X render position.
   * @param {Number} [opts.FY=this.finalFromY] The final Y render position.
   */
   render({ X = this.finalFromX, Y = this.finalFromY }) {
-
     // create the bare bone SVG object
     const svg = this.createSVGElement(`customEdge#${this.layoutId}_${this.fromNode.id}_${this.toNode.id}`)
 
@@ -69,6 +68,7 @@ class CustomEdge extends BaseEdge {
 
 
     // add label
+    console.log(this)
     if (this.label !== null) {
       const label = this.createLabel()
       svg.add(label)

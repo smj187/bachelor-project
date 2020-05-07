@@ -1,7 +1,7 @@
 
 /**
  * Creates a CSS based tooltip.
- * 
+ *
  * @private
  * @param {DOM} element The DOM element to which the tooltip is attached to.
  */

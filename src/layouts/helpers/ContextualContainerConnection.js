@@ -1,145 +1,224 @@
-const ContextualConnectionConfig = {
-  offset: 8,
-  animationSpeed: 300,
-
-  color1: null,
-  color2: null,
-
-  blockarrowLineWidth: 25,
-  blockarrowArrowWidth: 40,
-  blockarrowArrowLength: 20,
-
-
-  labelColor: "#222",
-  labelFontFamily: "Montserrat",
-  labelFontSize: 16,
-  labelFontWeight: 600,
-  labelFontStyle: "normal",
-  labelBackground: "#ffffffcc",
-  labelTranslateX: 0,
-  labelTranslateY: 0,
-}
+import { calculateDistance } from "../../utils/Calculations"
 
 
 class ContextualContainerConnection {
-  constructor(canvas, ix, iy, fx, fy, tx, ty, color1, color2, offset) {
-    this.canvas = canvas
+  constructor(canvas, focusNode, container, containerNodes, config) {
     this.svg = null
+    this.canvas = canvas
+    this.focusNode = focusNode
+    this.container = container
+    this.containerNodes = containerNodes
+    this.config = config
 
-    this.config = { ...ContextualConnectionConfig }
+    this.type = "parent"
 
-
-    this.initialX = ix
-    this.initialY = iy
-    this.fx = fx
-    this.fy = fy
-    this.tx = tx
-    this.ty = ty
-    this.color1 = color1
-    this.color2 = color2
-
-    this.offset = offset
+    // layout info
+    this.layoutId = 0
+    this.finalX = 0
+    this.finalY = 0
   }
 
 
-  render() {
-    // this.canvas.circle(5).fill(this.color).center(this.tx, this.ty)
-    // this.canvas.circle(5).fill(this.color).center(this.fx, this.fy)
+  render({ isParentOperation = false }) {
+
+    const svg = this.canvas.group()
+    svg.id(`contextualContainerConnection#${this.layoutId}`)
 
 
-    const calculateDistance = (sx, sy, tx, ty) => {
-      const dx = tx - sx
-      const dy = ty - sy
-      return Math.sqrt(dx * dx + dy * dy)
+    let x0
+    let y0
+    let x1
+    let y1
+
+    if (this.type === "parent") {
+      x0 = this.focusNode.getFinalX()
+      y0 = this.focusNode.getFinalY() - this.focusNode.getMaxHeight() / 2 - this.focusNode.config.offset / 2
+
+      x1 = this.container.containerInfo.maxcx
+      y1 = this.container.containerInfo.maxcy + this.container.containerInfo.maxHeight / 2 + this.focusNode.config.offset / 2
+    }
+
+    if (this.type === "child") {
+      x0 = this.container.containerInfo.maxcx
+      y0 = this.container.containerInfo.maxcy - this.container.containerInfo.maxHeight / 2 - this.focusNode.config.offset / 2
+
+      x1 = this.focusNode.getFinalX()
+      y1 = this.focusNode.getFinalY() + this.focusNode.getMaxHeight() / 2 + this.focusNode.config.offset / 2
+
     }
 
 
-    this.h = calculateDistance(this.fx, this.fy, this.tx, this.ty)
-
-    const cx = (this.fx + this.tx) / 2
-    const cy = (this.fy + this.ty) / 2
 
 
-    // create new elements
-    const lw = this.config.blockarrowLineWidth
-    const aw = this.config.blockarrowArrowWidth
-    const al = this.config.blockarrowArrowLength
-
-    const dx = this.tx - this.fx
-    const dy = this.ty - this.fy
-    const len = Math.sqrt(dx * dx + dy * dy)
-    const dW = aw - lw
-    const angle = (Math.atan2(dy, dx) * 180) / Math.PI
-    this.angle = angle
-
-    const svgPath = `
-          M 0,${-lw / 2}
-          h ${len - al}
-          v ${-dW / 2}
-          L ${len},0
-          L ${len - al},${aw / 2}
-          v ${-dW / 2}
-          H 0
-          Z
-        `
-
-    const path = this.canvas.path()
-    path.plot(svgPath)
+    const dist1 = calculateDistance(x1, y1, x0, y0)
 
 
-    const gradient = this.canvas.gradient("linear", (add) => {
-      add.stop(0, this.color1)
-      add.stop(1, this.color2)
+    const a0 = (x0 + x1) / 2
+    const b0 = (y0 + y1) / 2
+
+    const a1 = a0 + dist1
+    const b1 = b0
+
+    const a2 = a0
+    const b2 = b0 + this.config.containerConnectionLineWidth / 2
+
+    const a3 = a2 + (dist1 - this.config.containerConnectionarrowHeight)
+    const b3 = b2
+
+    const a4 = a3
+    const b4 = b2 + (this.config.containerConnectionArrowWidth - (this.config.containerConnectionLineWidth / 2))
+
+    const a5 = a1
+    const b5 = b1
+
+    const a6 = a3
+    const b6 = b2 - (this.config.containerConnectionArrowWidth + (this.config.containerConnectionLineWidth / 2))
+
+    const a7 = a3
+    const b7 = b0 - this.config.containerConnectionLineWidth / 2
+
+    const a8 = a0
+    const b8 = b0 - this.config.containerConnectionLineWidth / 2
+
+
+
+    const plot = `
+      M ${a2},${b2}
+      L ${a3},${b3}
+      L ${a4},${b4}
+      L ${a5},${b5}
+      L ${a6},${b6}
+      L ${a7},${b7}
+      L ${a8},${b8}
+      L ${a2},${b2}
+    `
+
+
+
+    // draw the arrow
+    const strokeColor = this.config.containerConnectionStrokeColor === "inherit"
+      ? "#ffffff"
+      : this.config.containerConnectionStrokeColor
+    const strokeWidth = this.config.containerConnectionStrokeColor === "inherit"
+      ? 0
+      : this.config.containerConnectionStrokeWidth
+
+    const path = this.canvas.path(plot).stroke({
+      color: strokeColor,
+      width: strokeWidth,
+      dasharray: this.config.containerConnectionStrokeDasharray,
     })
-    path.fill(gradient)
-    path.center(cx, cy)
-    path.dy(this.offset)
-    path.rotate(angle)
-    path.scale(0.0001)
-    path.attr({ opacity: 0 })
-
-    this.svg = path
-  }
 
 
-  transformToFinalPosition() {
-    this
-      .svg
-      .back()
 
-    this
-      .svg
+    /*
+      // TODO: implementation for finding a color for the attached container nodes
+    */
+
+    if (this.config.containerConnectionColor === "inherit") {
+
+      if (this.type === "parent") {
+        const toColor = this.config.parentContainerBorderStrokeColor
+        const fromColor = this.focusNode.config.borderStrokeColor
+
+        const gradient = this.canvas.gradient("linear", (add) => {
+          add.stop(0, fromColor)
+          add.stop(1, toColor)
+        })
+        path.fill(gradient)
+      }
+
+      if (this.type === "child") {
+        const toColor = this.focusNode.config.borderStrokeColor
+        const fromColor = this.config.childContainerBorderStrokeColor
+
+        const gradient = this.canvas.gradient("linear", (add) => {
+          add.stop(0, fromColor)
+          add.stop(1, toColor)
+        })
+        path.fill(gradient)
+      }
+
+
+
+    } else {
+      path.fill(this.config.containerConnectionColor)
+    }
+
+
+    path.center((x0 + x1) / 2, (y0 + y1) / 2)
+    path.rotate(-90)
+
+
+    /*
+      // TODO: implementation for finding a color for the attached container nodes
+    */
+
+
+    svg.add(path)
+
+    const finalX = svg.bbox().cx
+    const finalY = svg.bbox().cy
+
+    svg.back()
+    svg
+      .attr({ opacity: 0 })
+      .center(this.focusNode.getFinalX(), this.focusNode.getFinalY())
       .animate({ duration: this.config.animationSpeed })
-      .dx(this.offset)
-      .transform({ scale: 1, rotate: this.angle })
+      .center(finalX, finalY)
       .attr({ opacity: 1 })
+
+    this.finalX = finalX
+    this.finalY = finalY
+
+
+
+    this.svg = svg
   }
 
 
-  transformToInitialPosition() {
-
+  transformToFinalPosition({ isParentOperation = false, X = this.node.finalX, Y = this.node.finalY }) {
+    if (isParentOperation) {
+      this.svg
+        .animate({ duration: this.config.animationSpeed })
+        .center(X, Y - 50)
+    }
+    else {
+      this.svg
+        .animate({ duration: this.config.animationSpeed })
+        .center(X, Y + 50)
+    }
   }
 
-
-  removeConnection(X, Y) {
-    if (this.svg !== null) {
+  /**
+   * Removes the leaf node from the canvas and resets clears its SVG representation.
+   */
+  removeSVG() {
+    if (this.isRendered()) {
       this.svg.remove()
       this.svg = null
     }
   }
 
+  setType(type) {
+    this.type = type
+  }
 
+  getType() {
+    return this.type
+  }
+
+
+  /**
+   * Determins where the leaf is rendered or not.
+   * @returns True, if the SVG is rendered, else false.
+   */
   isRendered() {
     return this.svg !== null
   }
 
-  getFinalX() {
-    return this.fx
-  }
-
-
-  getFinalY() {
-    return this.fy
+  setLayoutId(layoutId) {
+    this.layoutId = layoutId
   }
 }
 

@@ -1,5 +1,5 @@
 
-// main library 
+// main library
 export { default as Visualization } from "./Visualization"
 
 // nodes
@@ -9,6 +9,8 @@ export { default as Control } from "./nodes/ControlNode"
 export { default as Custom } from "./nodes/CustomNode"
 export { default as Requirement } from "./nodes/RequirementNode"
 export { default as Risk } from "./nodes/RiskNode"
+export { default as BaseNode } from "./nodes/BaseNode"
+
 
 // edges
 export { default as EdgeFactory } from "./edges/EdgeFactory"
@@ -26,3 +28,4 @@ export { default as TreeLayout } from "./layouts/TreeLayout"
 export { default as ContextualLayout } from "./layouts/ContextualLayout"
 
 
+// export {}

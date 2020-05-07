@@ -1,19 +1,15 @@
+/* eslint-disable no-param-reassign */
 /* eslint-disable class-methods-use-this */
-import { SVG } from "@svgdotjs/svg.js"
-import "@svgdotjs/svg.draggable.js"
-import "./extensions/panzoom"
-
 import GridLayout from "./layouts/GridLayout"
 import RadialLayout from "./layouts/RadialLayout"
 import TreeLayout from "./layouts/TreeLayout"
 import ContextualLayout from "./layouts/ContextualLayout"
 
 import { createTooltip } from "./utils/Tooltip"
+import { createRenderCanvas } from "./utils/Canvas"
 
 import Graph from "./data/Graph"
 import VisualizationConfiguration from "./configuration/VisualizationConfiguration"
-
-
 
 
 /**
@@ -30,7 +26,7 @@ import VisualizationConfiguration from "./configuration/VisualizationConfigurati
  * @description A SVG object provided by svgdotjs
  * @typedef {SVG} SVG
  * @category Type Definitions
- * 
+ *
  * @see https://svgjs.com/docs/3.0/container-elements/
  */
 
@@ -62,10 +58,11 @@ import VisualizationConfiguration from "./configuration/VisualizationConfigurati
  */
 
 
-
 /**
  * KNOWN ISSUES:
- *    - svgdotjs library while animating sometimes 0.5 1 xy value (.svg.bbox().cx, .svg.bbox().cy) off calculated position
+ * - svgdotjs library while animating sometimes 0.5 1 xy value (.svg.bbox().cx, .svg.bbox().cy) off calculated position
+ * - svgdotjs does not provide an option to draw vertical gradients: implemented workaround: rotate -> draw linear gradient
+ *            -> rotate back to original position
  */
 
 
@@ -95,27 +92,14 @@ class Visualization {
     }
 
 
-    // create the background element to hold the main canvas
-    const element = document.createElement("div")
-    element.setAttribute("id", this.config.canvasId)
-    element.style.position = "relative"
-    document.body.appendChild(element)
+    // // create the background element to hold the main canvas
+    this.canvas = createRenderCanvas(this.config)
+    this.canvas.attr("zoomCurrent", this.config.zoomLevel)
+    this.canvas.attr("zoomThreshold", this.config.zoomLabelThreshold)
 
 
     // add tooltip support
-    createTooltip(element)
-
-
-    // set up canvas and zooming
-    this.canvas = SVG()
-      .addTo(element)
-      .size(this.config.canvasWidth, this.config.canvasHeight)
-      .viewbox(0, 0, this.config.canvasWidth, this.config.canvasHeight)
-      .panZoom({ zoomMin: 0.25, zoomMax: 10, zoomFactor: 0.25 })
-      .zoom(this.config.zoomLevel, { x: this.config.zoomX, y: this.config.zoomY })
-
-    this.canvas.attr("zoomCurrent", this.config.zoomLevel)
-    this.canvas.attr("zoomThreshold", this.config.zoomLabelThreshold)
+    createTooltip(document.getElementById(this.config.canvasId))
 
 
     // register mouse wheel zooming
@@ -171,8 +155,6 @@ class Visualization {
   }
 
 
-
-
   /**
    * This is the main method to gernate layouts. It calls the required methods for each layout type and
    * passes further information about the new layout.
@@ -211,11 +193,7 @@ class Visualization {
 
     if (layout instanceof ContextualLayout) {
       layout.setLayoutIdentifier(`contextual_${this.generateRandomLayoutId()}`)
-      // const createdLayout = await layout.loadInitialContextualDataAsync()
-      // const layouts = this.layouts.slice(0, this.layouts.indexOf(layout))
-      // const offset = layouts.map((l) => l.layoutInfo.w).reduce((a, b) => a + b, 0)
-      // createdLayout.calculateLayout(offset)
-      // createdLayout.renderLayout()
+      await layout.loadInitialContextualDataAsync()
     }
 
     if (layout instanceof RadialLayout) {
@@ -247,7 +225,8 @@ class Visualization {
    *
    * @async
    * @param {BaseLayout} layout The layout which is about to be updated.
-   * @param {Graph|Object} graphOrConfigData Either an updated graph instance or new layout configuration that alternates the existing one.
+   * @param {Graph|Object} graphOrConfigData Either an updated graph instance or new layout configuration that
+   *                       alternates the existing one.
    * @param {Object} config An optional layout configuration object if the previouse parameter is set.
    *
    * @see TreeLayoutConfiguration
@@ -288,7 +267,7 @@ class Visualization {
       }
 
       if (layout instanceof RadialLayout) {
-        await loadInitialRadialDataAsync()
+        await layout.loadInitialRadialDataAsync()
       }
 
       if (layout instanceof GridLayout) {
@@ -336,7 +315,7 @@ class Visualization {
         "expanderFontSize",
         "expanderFontWeight",
         "expanderFontStyle",
-        "expanderTextBackground"
+        "expanderTextBackground",
 
       ]
       const requireRebuild = reRenderOperations.filter((r) => Object.keys(conf).includes(r)).length > 0
@@ -367,7 +346,6 @@ class Visualization {
         if (requireRebuild === true) {
           await layout.rebuildGridLayoutAsync({ removeOldData: false })
         }
-
       }
 
       if (layout instanceof ContextualLayout) {
@@ -441,26 +419,25 @@ class Visualization {
    * @see GridLayout
    */
   async transform(currentLayout, existingGraphData, newLayout) {
-
-    // remove the existing layout 
-    await currentLayout.removeLayoutAsync({ removeOldData: true, })
+    // remove the existing layout
+    await currentLayout.removeLayoutAsync({ removeOldData: true })
 
 
     // update existing layout references
-    this.layouts = this.layouts.filter(layout => layout !== currentLayout)
+    this.layouts = this.layouts.filter((layout) => layout !== currentLayout)
 
-    // the amount of which to shift a layout to the left 
+    // the amount of which to shift a layout to the left
     const shiftToLeft = currentLayout.layoutInfo.w
 
-    this.layouts.forEach(layout => {
+    this.layouts.forEach((layout) => {
       layout.calculateLayout({ offset: layout.getCurrentOffset() - shiftToLeft - this.config.layoutSpacing })
-      layout.setLayoutReferences(layout.getLayoutReferences().filter(l => l !== currentLayout))
+      layout.setLayoutReferences(layout.getLayoutReferences().filter((l) => l !== currentLayout))
       layout.renderLayout({ isReRender: true })
     })
 
 
     // simply call the render method again
-    return await this.render(existingGraphData, newLayout)
+    return this.render(existingGraphData, newLayout)
   }
 
 
@@ -469,14 +446,13 @@ class Visualization {
    * @returns {String} A 5 character unique string.
    */
   generateRandomLayoutId() {
-
     const letters = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
     const len = 5
-    let rtn = "";
+    let rtn = ""
     for (let i = 0; i < len; i += 1) {
-      rtn += letters.charAt(Math.floor(Math.random() * letters.length));
+      rtn += letters.charAt(Math.floor(Math.random() * letters.length))
     }
-    return rtn;
+    return rtn
   }
 }
 

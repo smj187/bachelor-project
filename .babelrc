@@ -12,6 +12,9 @@
                 "regenerator": false,
                 "useESModules": true
             }
+        ],
+        [
+            "istanbul"
         ]
     ]
 }

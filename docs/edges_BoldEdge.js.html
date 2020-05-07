@@ -131,7 +131,7 @@ import BoldEdgeConfiguration from "../configuration/BoldEdgeConfiguration"
 
 /**
  * This class is responsible for the visual representation of bold edges.
- * 
+ *
  * @category SVG Representations
  * @subcategory Edges
  * @property {Data} data The loaded data element from a database.
@@ -153,14 +153,12 @@ class BoldEdge extends BaseEdge {
 
   /**
   * Calculates and renders a bold edge between two given nodes.
-  * 
+  *
   * @param {Object} [opts={ }] An object containing additional information.
   * @param {Number} [opts.FX=this.finalFromX] The final X render position.
   * @param {Number} [opts.FY=this.finalFromY] The final Y render position.
   */
   render({ X = this.finalFromX, Y = this.finalFromY }) {
-
-
     const svg = this.createSVGElement(`boldEdge#${this.layoutId}_${this.fromNode.id}_${this.toNode.id}`)
 
     // the calculate bold arrow

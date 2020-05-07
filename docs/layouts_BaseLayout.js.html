@@ -142,7 +142,7 @@ import EdgeFactory from "../edges/EdgeFactory"
 
 /**
  * This is the base class for layouts.
- * 
+ *
  * @category Layouts
  * @property {Object} additionalNodeRepresentations An object containing additional node representations.
  * @property {Object} additionalEdgeRepresentations An object containing additional edge representations.
@@ -221,14 +221,11 @@ class BaseLayout {
   }
 
 
-
-
   /**
    * Loads the initial tree layout data.
    * @async
    */
   async loadInitialGridDataAsync() {
-
     // only load the amount of nodes determined by the limit nodes configuration
     const limit = this.config.limitNodes ? this.config.limitNodes : this.nodeData.length
     const ids = this.nodeData.map((n) => n.id).slice(0, limit)
@@ -265,7 +262,6 @@ class BaseLayout {
   }
 
 
-
   /**
    * Rebuilds the entire grid layout.
    * @async
@@ -276,14 +272,6 @@ class BaseLayout {
     await this.removeLayoutAsync({ removeOldData })
     await this.loadInitialGridDataAsync()
   }
-
-
-
-
-
-
-
-
 
 
   /**
@@ -500,7 +488,6 @@ class BaseLayout {
     }
 
 
-
     // calculate the coordinates from where new nodes originate
     const coords = clickedNode.coords[clickedNode.coords.length - 1]
     const x = coords[0]
@@ -520,14 +507,6 @@ class BaseLayout {
     await this.removeLayoutAsync({ removeOldData })
     await this.loadInitialTreeDataAsync()
   }
-
-
-
-
-
-
-
-
 
 
   /**
@@ -742,8 +721,6 @@ class BaseLayout {
     }
 
 
-
-
     // calculate the coordinates from where new nodes originate
     const coords = clickedNode.coords[clickedNode.coords.length - 1]
     const x = coords[0]
@@ -765,11 +742,6 @@ class BaseLayout {
   }
 
 
-
-
-
-
-
   /**
    * Updates all layouts to the right if necessary.
    * @param {Object} [opts={ }] An object containing additional information.
@@ -778,20 +750,14 @@ class BaseLayout {
    * @param {Number} [opts.y=null] The y coordinate for the clicked node.
    */
   updateLayoutsToTheRight({ isReRender = false, x = null, y = null }) {
-
     let prevLayoutWidth = 0
     this.layoutReferences.forEach((llayout, i) => {
-
       llayout.calculateLayout({ offset: prevLayoutWidth })
       llayout.renderLayout({ isReRender, x, y })
 
       prevLayoutWidth += llayout.layoutInfo.w + (this.globalLayoutSpacing)
-
     })
-
   }
-
-
 
 
   /**
@@ -822,14 +788,12 @@ class BaseLayout {
     }
 
 
-
     const delay = (time) => new Promise((resolve) => setTimeout(resolve, time))
 
     // wait some time to see the SVG objects disappear
     await delay(delayTime)
 
     this.canvas.clear()
-
   }
 
 
@@ -841,7 +805,6 @@ class BaseLayout {
    * @param {String} [opts.renderingSize=this.config.renderingSize] Determines the node render representation defined on layout level.
    */
   createRepresentations({ nodes = [], edges = [], renderingSize = this.config.renderingSize }) {
-
     // load the current zoom from the SVG DOM storage
     const currentZoomLevel = this.canvas.parent().attr().zoomCurrent
     const currenZoomThreshold = this.canvas.parent().attr().zoomThreshold
@@ -875,8 +838,7 @@ class BaseLayout {
 
     // check if the newley created labels should not be visible
     if (currentZoomLevel &lt;= currenZoomThreshold) {
-
-      // NOTE: this sort of delay is unfortunately needed since svgdotjs takes some time to create an 
+      // NOTE: this sort of delay is unfortunately needed since svgdotjs takes some time to create an
       //       SVG object to add it to the DOM
       setTimeout(() => {
         const labels = document.querySelectorAll("#label")
@@ -886,13 +848,6 @@ class BaseLayout {
       }, 1)
     }
   }
-
-
-
-
-
-
-
 
 
   async updateLayoutConfiguration(newConfiguration) {
@@ -1011,8 +966,6 @@ class BaseLayout {
 
     this.calculateLayout(offset)
     this.renderLayout()
-
-
   }
 
   async loadInitialContextualDataAsync() {
@@ -1116,8 +1069,6 @@ class BaseLayout {
 
     return this
   }
-
-
 
 
   removeRepresentation(nodes = [], edges = []) {
@@ -1366,7 +1317,6 @@ class BaseLayout {
 
     this.nodes.push(node)
   }
-
 
 
   // some other useful methods..

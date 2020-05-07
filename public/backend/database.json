@@ -483,7 +483,7 @@
             "label": "Requirement 35",
             "description": "lorem ipsum",
             "type": "requirement",
-            "state": "FULFILLED",
+            "state": "partially-fulfilled",
             "attributes": null,
             "tooltipText": null,
             "parent": 28,
@@ -499,9 +499,8 @@
             "attributes": null,
             "tooltipText": null,
             "parent": [
-                33,
-                34,
-                35
+                35,
+                34
             ],
             "children": [
                 37,
@@ -727,17 +726,6 @@
             "config": null
         },
         {
-            "id": 5,
-            "label": "Control 5",
-            "description": "clita kasd gubergren, no sea takimata  ante enim nibh tincidunt taciti justo ad",
-            "type": "control",
-            "attributes": null,
-            "tooltipText": null,
-            "parent": null,
-            "children": [],
-            "config": null
-        },
-        {
             "id": 51,
             "label": "Control 51",
             "description": "clita kasd gubergren, no sea takimata  ante enim nibh tincidunt taciti justo ad",
@@ -843,8 +831,12 @@
             "type": "control",
             "attributes": null,
             "tooltipText": null,
-            "parent": null,
-            "children": [],
+            "parent": 59,
+            "children": [
+                61,
+                62,
+                63
+            ],
             "config": null
         },
         {
@@ -954,7 +946,7 @@
             "state": "FULFILLED",
             "attributes": null,
             "tooltipText": null,
-            "parent": 37,
+            "parent": 36,
             "children": [],
             "config": null
         },
@@ -966,7 +958,7 @@
             "state": "FULFILLED",
             "attributes": null,
             "tooltipText": null,
-            "parent": 37,
+            "parent": 36,
             "children": [],
             "config": null
         },
@@ -978,7 +970,7 @@
             "state": "FULFILLED",
             "attributes": null,
             "tooltipText": null,
-            "parent": 37,
+            "parent": 36,
             "children": [],
             "config": null
         },
@@ -990,8 +982,22 @@
             "state": "FULFILLED",
             "attributes": null,
             "tooltipText": null,
-            "parent": 37,
+            "parent": 36,
             "children": [],
+            "config": null
+        },
+        {
+            "id": 74,
+            "label": "Requirement 74",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltipText": null,
+            "parent": null,
+            "children": [
+                36
+            ],
             "config": null
         },
         {
@@ -2221,9 +2227,9 @@
         {
             "id": 25,
             "type": "bold",
-            "label": "B",
-            "fromNode": 119,
-            "toNode": 110,
+            "label": "some label",
+            "fromNode": 36,
+            "toNode": 35,
             "config": {}
         }
     ]

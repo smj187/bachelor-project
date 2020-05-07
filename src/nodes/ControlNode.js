@@ -5,13 +5,13 @@ import ControlNodeConfiguration from "../configuration/ControlNodeConfiguration"
 
 /**
  * This class is responsible for the visual representation of controls.
- * 
+ *
  * @category SVG Representations
  * @subcategory Nodes
  * @property {Data} data Loaded data from a database.
  * @property {Canvas} canvas The nested canvas to render the node on.
  * @property {Object} customRepresentation An optional object that contains information to override default representations.
- * 
+ *
  * @see ControlNodeConfiguration
  */
 class ControlNode extends BaseNode {
@@ -75,7 +75,7 @@ class ControlNode extends BaseNode {
 
   /**
   * Transforms the node to its final rendered position.
-  * 
+  *
   * @param {Object} [opts={ }] An object containing additional information.
   * @param {Number} [opts.FX=this.finalY] The final X render position.
   * @param {Number} [opts.FY=this.finalY] The final Y render position.
@@ -103,16 +103,16 @@ class ControlNode extends BaseNode {
 
   /**
   * Renders a control node in minimal representation.
-  * 
+  *
   * @param {Object} [opts={ }] An object containing additional information.
   * @param {Number} [opts.IX=this.initialX] The initial X render position.
   * @param {Number} [opts.IY=this.initialY] The initial Y render position.
   * @param {Number} [opts.FX=this.finalY] The final X render position.
   * @param {Number} [opts.FY=this.finalY] The final Y render position.
   */
-  renderAsMin({ IX = this.initialX, IY = this.initialY, FX = this.finalX, FY = this.finalY }) {
-
-
+  renderAsMin({
+    IX = this.initialX, IY = this.initialY, FX = this.finalX, FY = this.finalY,
+  }) {
     // create svg elements
     const svg = this.createSVGElement()
     const node = this.createNode()
@@ -155,8 +155,8 @@ class ControlNode extends BaseNode {
     this.currentHeight = this.config.minHeight
     this.nodeSize = "min"
 
-    this.currentX = IX
-    this.currentY = IY
+    this.currentX = FX
+    this.currentY = FY
     this.coords.push([FX, FY])
 
 
@@ -166,14 +166,16 @@ class ControlNode extends BaseNode {
 
   /**
   * Renders a control node in detailed representation.
-  * 
+  *
   * @param {Object} [opts={ }] An object containing additional information.
   * @param {Number} [opts.IX=this.initialX] The initial X render position.
   * @param {Number} [opts.IY=this.initialY] The initial Y render position.
   * @param {Number} [opts.FX=this.finalY] The final X render position.
   * @param {Number} [opts.FY=this.finalY] The final Y render position.
   */
-  renderAsMax({ IX = this.initialX, IY = this.initialY, FX = this.finalX, FY = this.finalY }) {
+  renderAsMax({
+    IX = this.initialX, IY = this.initialY, FX = this.finalX, FY = this.finalY,
+  }) {
     // create svg elements
     const svg = this.createSVGElement()
     const node = this.createNode()
@@ -215,8 +217,8 @@ class ControlNode extends BaseNode {
     this.currentHeight = this.config.maxHeight
     this.nodeSize = "max"
 
-    this.currentX = IX
-    this.currentY = IY
+    this.currentX = FX
+    this.currentY = FY
     this.coords.push([this.finalX, this.finalY])
 
 
@@ -226,7 +228,7 @@ class ControlNode extends BaseNode {
 
   /**
   * Transforms a node from minimal version to detailed representation.
-  * 
+  *
   * @param {Object} [opts={ }] An object containing additional information.
   * @param {Number} [opts.FX=this.finalY] The final X render position.
   * @param {Number} [opts.FY=this.finalY] The final Y render position.
@@ -298,7 +300,7 @@ class ControlNode extends BaseNode {
 
   /**
   * Transforms a node from detailed representation to minimal version.
-  * 
+  *
   * @param {Object} [opts={ }] An object containing additional information.
   * @param {Number} [opts.FX=this.finalY] The final X render position.
   * @param {Number} [opts.FY=this.finalY] The final Y render position.

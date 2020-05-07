@@ -2,7 +2,7 @@
 
 This example illustrates how to render multiple layouts simultaneously. <em> Note: Since loading data from the backend is an async process, it is best to wrap all render calls into an async method and wait for them individually to avoid unexpected  behaviour. </em>
 ```javascript
-import { Visualization, GridLayout } from "./path/to/visualization.min.js"
+import { Visualization, GridLayout, RadialLayout, TreeLayout } from "./path/to/visualization.min.js"
 
 // initialize the visualization
 const visualization = new Visualization({

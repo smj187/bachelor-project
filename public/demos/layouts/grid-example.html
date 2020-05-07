@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Grid Layout Demo</title>
+
+    <link href="https://fonts.googleapis.com/css?family=Montserrat&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+            box-sizing: border-box;
+        }
+    </style>
+
+</head>
+
+<body>
+    <script type="module">
+        import { Visualization, GridLayout } from "../../dist/visualization.esm.min.js"
+
+
+        const visualization = new Visualization({
+            databaseUrl: "http://localhost:3001",
+            nodeEndpoint: "node-data",
+            edgeEndpoint: "edge-data",
+            contextualRelationshipEndpoint: "contextual-relationships",
+            zoomLevel: 0.85
+        })
+
+        const graph = visualization.createInitialGraph()
+
+        for (let i = 0; i <= 12; i += 1) {
+            graph.includeNode(i)
+        }
+
+        visualization.render(graph, new GridLayout({ limitNodes: 6, }))
+
+
+    </script>
+</body>
+
+</html>

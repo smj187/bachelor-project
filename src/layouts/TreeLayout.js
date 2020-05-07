@@ -68,8 +68,6 @@ class TreeLayout extends BaseLayout {
   }
 
 
-
-
   /**
    * Calculates the tree layout based on an underlying algorithm.
    *
@@ -77,9 +75,7 @@ class TreeLayout extends BaseLayout {
    * @param {Number} [opts.offset=0] Determines the space the layout has to shift in order to avoid overlapping layouts.
    * @param {Boolean} [opts.isReRender=false] Determines if the layout is rerenderd.
    */
-  calculateLayout({
-    offset = 0, isReRender = false
-  }) {
+  calculateLayout({ offset = 0, isReRender = false, }) {
     const isVertical = this.config.orientation === "vertical"
     this.currentOffset = offset
 
@@ -572,8 +568,6 @@ class TreeLayout extends BaseLayout {
         w: calculateDistance(x0, y0, x1, y1),
         h: calculateDistance(x1, y1, x2, y2),
       }
-
-
     }
 
 
@@ -614,7 +608,6 @@ class TreeLayout extends BaseLayout {
     // get the position where to start rendering the nodes from
     const X = x || this.nodes.find((n) => n.id === this.rootId).getFinalX()
     const Y = y || this.nodes.find((n) => n.id === this.rootId).getFinalY()
-
 
 
     // render nodes and edges

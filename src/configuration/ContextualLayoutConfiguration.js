@@ -36,40 +36,107 @@
  * @property {String} parentContainerBackgroundColor=#fff         - Determines the containers background color.
  */
 const ContextualLayoutConfiguration = {
-  maxLayoutWidth: 1200,
-  maxLayoutHeight: 800,
-  translateX: -50,
-  translateY: 0,
-  animationSpeed: 300,
-  hideOtherLayouts: false, // TODO:
-  spacing: 16,
-  renderingSize: "min",
 
-  assignedFocusDistance: 800,
-  riskFocusDistance: 500,
-  childrenFocusDistance: 80,
-  parentFocusDistance: 80,
+  layoutWidth: 1500,
+  layoutHeight: 900,
 
-  riskContainerNodeLimit: 3,
-  riskContainerColumns: 2,
-  riskContainderBorderRadius: 5,
-  riskContainerBorderStrokeColor: "#888888cc",
-  riskContainerBorderStrokeWidth: 1.85,
-  riskContainerBackgroundColor: "#ff8e9e05",
+  // assigned connection
+
+  riskConnectionLineWidth: 20,
+  riskConnectionArrowWidth: 30,
+  riskConnectionarrowHeight: 25,
+  riskConnectionOffset: 16,
+  riskConnectionStrokeColor: "#ff8e9e",
+  riskConnectionStrokeWidth: 1,
+  riskConnectionStrokeDasharray: 0,
+  riskConnectionColor: "#dd415bcc",
+  riskConnectionLabelText: "Attached_Risks", /// must be seperated with _ to avoid new line creation
+  riskConnectionLabelColor: "#ff8e9e",
+  riskConnectionLabelFontFamily: "Montserrat",
+  riskConnectionLabelFontSize: 16,
+  riskConnectionLabelFontWeight: 600,
+  riskConnectionLabelFontStyle: "normal",
+  riskConnectionLabelBackground: "#ffffffcc",
+
+
+  // child container
 
   childContainerNodeLimit: 6,
   childContainerColumns: 3,
-  childContainderBorderRadius: 5,
-  childContainerBorderStrokeColor: "#888888cc",
-  childContainerBorderStrokeWidth: 1.85,
+  childContainerBorderRadius: 5,
+  childContainerBorderStrokeColor: "#75f",
+  childContainerBorderStrokeWidth: 1.25,
   childContainerBackgroundColor: "#fff",
+
+
+  // parent container
 
   parentContainerNodeLimit: 6,
   parentContainerColumns: 3,
-  parentContainderBorderRadius: 5,
-  parentContainerBorderStrokeColor: "#888888cc",
-  parentContainerBorderStrokeWidth: 1.85,
+  parentContainerBorderRadius: 5,
+  parentContainerBorderStrokeColor: "#f75",
+  parentContainerBorderStrokeWidth: 1.25,
   parentContainerBackgroundColor: "#fff",
+
+
+  // risk container
+
+  riskContainerNodeLimit: 4,
+  riskContainerColumns: 2,
+  riskContainerBorderRadius: 5,
+  riskContainerBorderStrokeColor: "#dd415bcc",
+  riskContainerBorderStrokeWidth: 1.25,
+  riskContainerBackgroundColor: "#ff8e9e05",
+
+  riskNodeConnectionStrokeWidth: 2,
+  riskNodeConnectionStrokeColor: "#dd415bcc",
+  riskNodeConnectionStrokeDasharray: "10 5",
+
+  // generall container
+  containerConnectionLineWidth: 25,
+  containerConnectionArrowWidth: 25,
+  containerConnectionarrowHeight: 25,
+  containerConnectionStrokeColor: "inherit", // #cccccc, inherit
+  containerConnectionStrokeWidth: 1,
+  containerConnectionStrokeDasharray: 0,
+  containerConnectionColor: "inherit", // #cccccc
+
+
+  // distances between nodes
+  focusXShift: -200,
+  riskFocusDistance: 617.5,
+  riskConnectionDistance: 75,
+  childrenFocusDistance: 80,
+  parentFocusDistance: 80,
+
+
+  // expander
+  expanderTextColor: "#222",
+  expanderFontFamily: "Montserrat",
+  expanderFontSize: 12,
+  expanderFontWeight: 600,
+  expanderFontStyle: "normal",
+  expanderTextBackground: "#fff",
+  showParentExpander: true,
+  showChildExpander: true,
+  showRiskExpander: true,
+
+
+  // maxLayoutWidth: 1200,
+  // maxLayoutHeight: 800,
+  translateX: -50,
+  translateY: 0,
+  animationSpeed: 1300,
+  spacing: 16,
+  renderingSize: "min",
+
+
+
+
+
+
+
+
 
 
 }

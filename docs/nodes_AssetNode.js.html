@@ -132,13 +132,13 @@ import AssetNodeConfiguration from "../configuration/AssetNodeConfiguration"
 
 /**
  * This class is responsible for the visual representation of assets.
- * 
+ *
  * @category SVG Representations
  * @subcategory Nodes
  * @property {Data} data The loaded data element from a database.
  * @property {Canvas} canvas The nested canvas to render the node on.
  * @property {Object} customRepresentation An optional object that contains information to override default representations.
- * 
+ *
  * @see AssetNodeConfiguration
  * @see https://svgjs.com/docs/3.0/container-elements/#svg-svg
  */
@@ -254,7 +254,7 @@ class AssetNode extends BaseNode {
 
   /**
   * Transforms the node to its final rendered position.
-  * 
+  *
   * @param {Object} [opts={ }] An object containing additional information.
   * @param {Number} [opts.FX=this.finalY] The final X render position.
   * @param {Number} [opts.FY=this.finalY] The final Y render position.
@@ -282,14 +282,16 @@ class AssetNode extends BaseNode {
 
   /**
   * Renders an asset node in minimal representation.
-  * 
+  *
   * @param {Object} [opts={ }] An object containing additional information.
   * @param {Number} [opts.IX=this.initialX] The initial X render position.
   * @param {Number} [opts.IY=this.initialY] The initial Y render position.
   * @param {Number} [opts.FX=this.finalY] The final X render position.
   * @param {Number} [opts.FY=this.finalY] The final Y render position.
   */
-  renderAsMin({ IX = this.initialX, IY = this.initialY, FX = this.finalX, FY = this.finalY }) {
+  renderAsMin({
+    IX = this.initialX, IY = this.initialY, FX = this.finalX, FY = this.finalY,
+  }) {
     // create svg elements
     const svg = this.createSVGElement()
     const node = this.createNode()
@@ -343,14 +345,16 @@ class AssetNode extends BaseNode {
 
   /**
   * Renders an asset node in detailed representation.
-  * 
+  *
   * @param {Object} [opts={ }] An object containing additional information.
   * @param {Number} [opts.IX=this.initialX] The initial X render position.
   * @param {Number} [opts.IY=this.initialY] The initial Y render position.
   * @param {Number} [opts.FX=this.finalY] The final X render position.
   * @param {Number} [opts.FY=this.finalY] The final Y render position.
   */
-  renderAsMax({ IX = this.initialX, IY = this.initialY, FX = this.finalX, FY = this.finalY }) {
+  renderAsMax({
+    IX = this.initialX, IY = this.initialY, FX = this.finalX, FY = this.finalY,
+  }) {
     // create svg elements
     const svg = this.createSVGElement()
     const node = this.createNode()
@@ -403,7 +407,7 @@ class AssetNode extends BaseNode {
 
   /**
   * Transforms a node from minimal version to detailed representation.
-  * 
+  *
   * @param {Object} [opts={ }] An object containing additional information.
   * @param {Number} [opts.FX=this.finalY] The final X render position.
   * @param {Number} [opts.FY=this.finalY] The final Y render position.
@@ -475,7 +479,7 @@ class AssetNode extends BaseNode {
 
   /**
   * Transforms a node from detailed representation to minimal version.
-  * 
+  *
   * @param {Object} [opts={ }] An object containing additional information.
   * @param {Number} [opts.FX=this.finalY] The final X render position.
   * @param {Number} [opts.FY=this.finalY] The final Y render position.

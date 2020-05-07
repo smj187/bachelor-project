@@ -5,10 +5,10 @@
  *
  * @category SVG Representations
  * @subcategory Customizations
- * @property {Number} maxWidth=350                  - Sets the detailed node width.
- * @property {Number} maxHeight=225                 - Sets the detailed height.
- * @property {Number} minWidth=150                  - Sets the minimal node width.
- * @property {Number} minHeight=80                  - Sets the minimal node height.
+ * @property {Number} maxWidth=370                  - Sets the detailed node width.
+ * @property {Number} maxHeight=200                 - Sets the detailed height.
+ * @property {Number} minWidth=155                  - Sets the minimal node width.
+ * @property {Number} minHeight=50                  - Sets the minimal node height.
  *
  * @property {Array.<DefaultStates>} states=Array   - Determines an array of aviable requirement states.
  * @property {String} states.state=provided         - Determines an array of aviable requirement states.

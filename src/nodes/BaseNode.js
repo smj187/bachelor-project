@@ -9,7 +9,7 @@ import FallbackCustomIcon from "../resources/fallbackCustomIcon.svg"
 
 /**
  * This is the base class for nodes.
- * 
+ *
  * @category SVG Representations
  * @subcategory Nodes
  * @property {Data} data Loaded data from a database.
@@ -114,17 +114,13 @@ class BaseNode {
   }
 
 
-
-
-
   /**
    * Creates the initial SVG object reference and the drop shadow for mouse hover effects.
    * @return {SVG} A bare bone SVG object.
-   * 
+   *
    * @see https://github.com/svgdotjs/svg.filter.js
    */
   createSVGElement() {
-
     // create the SVG object on the canvas.
     const svg = this.canvas.group().draggable()
     // const svg = this.canvas.group()
@@ -184,7 +180,6 @@ class BaseNode {
 
     // register an event that listens of the cursor leaves the nodes SVG object
     svg.on("mouseout", () => {
-
       // reset border stroke to its original value
       const node = this.svg.get(0)
       node.stroke({
@@ -205,8 +200,6 @@ class BaseNode {
     })
 
 
-
-
     return svg
   }
 
@@ -214,7 +207,7 @@ class BaseNode {
   /**
    * Creates the nodes actual SVG shape.
    * @return {SVG} The node as SVG representation.
-   * 
+   *
    * @see https://svgjs.com/docs/3.0/shape-elements/#svg-rect
    * @see https://svgjs.com/docs/3.0/shape-elements/#svg-ellipse
    * @see https://svgjs.com/docs/3.0/shape-elements/#svg-path
@@ -273,11 +266,15 @@ class BaseNode {
   /**
    * Creates the nodes icon.
    * @return {SVG} The icon image.
-   * 
+   *
    * @see https://svgjs.com/docs/3.0/shape-elements/#svg-image
    */
   createIcon() {
+
+
     let icon = null
+
+
 
     // use a default icon
     if (this.config.iconUrl === null) {
@@ -307,12 +304,12 @@ class BaseNode {
   /**
    * Creates the nodes label using HTML.
    * @return {SVG} The label in HTML format.
-   * 
+   *
    * @see https://svgjs.com/docs/3.0/shape-elements/#svg-foreignobject
    * @see https://github.com/xavi160/Clamp.js
    */
   createLabel() {
-    // create the foreign object which holds 
+    // create the foreign object which holds
     // Note: this.config.minTextHeight is actually not useful for a colored background, therefore its omitted
     const fobj = this.canvas.foreignObject(this.config.minTextWidth, 1)
 
@@ -363,23 +360,43 @@ class BaseNode {
   /**
    * Removes the rendered SVG object from the canvas.
    */
-  removeSVG() {
-    if (this.isRendered() === false) return
+  removeSVG({ isContextualNode = false, isContextualParentOperation = false }) {
 
     const x = this.finalX
     const y = this.finalY
 
     this.svg.back()
 
-    this.svg
-      .animate({ duration: this.config.animationSpeed })
-      .transform({ scale: 0.001, position: [x, y + 100] })
-      .after(() => {
-        try { this.svg.remove() } catch (error) { }
-        this.svg = null
-      })
-  }
 
+    if (isContextualNode === true) {
+
+      const offset = isContextualParentOperation ? -50 : 50
+
+      try { this.svg.remove() } catch (error) { }
+      this.svg = null
+      // this.svg
+      //   // .animate({ duration: this.config.animationSpeed })
+      //   .transform({ position: [x, y + offset] })
+      //   .attr({ opacity: 0 })
+      //   .after(() => {
+      //     try { this.svg.remove() } catch (error) { }
+      //     this.svg = null
+      //   })
+    } else {
+      if (this.isRendered() === false) return
+
+
+
+      this.svg
+        .animate({ duration: this.config.animationSpeed })
+        .transform({ scale: 0.001, position: [x, y + 100] })
+        .after(() => {
+          try { this.svg.remove() } catch (error) { }
+          this.svg = null
+        })
+    }
+
+  }
 
 
   /**

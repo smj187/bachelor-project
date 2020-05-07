@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Risk Node Demo</title>
+
+    <link href="https://fonts.googleapis.com/css?family=Montserrat&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+            box-sizing: border-box;
+        }
+    </style>
+
+</head>
+
+<body>
+    <script type="module">
+        import { Visualization, Risk } from "../../dist/visualization.esm.min.js"
+
+
+        const { canvas } = new Visualization({
+            databaseUrl: "http://localhost:3001",
+            nodeEndpoint: "node-data",
+            edgeEndpoint: "edge-data",
+            contextualRelationshipEndpoint: "contextual-relationships",
+            zoomLevel: 0.85
+        })
+
+        const nodeData1 = { id: 9, label: "Risk 9", description: "aute irure dolor in reprehenderit in voluptate velit esse sanctus est Lorem ipsum dolor sit amet voluptate expedita dicta neque harum debitis laudantium molestias velit aut", type: "risk", state: "critical", tooltipText: null, parent: null, children: [], config: null }
+        const nodeData2 = { id: 10, label: "Risk 10", description: "aute irure dolor in reprehenderit in voluptate velit esse sanctus est Lorem ipsum dolor sit amet voluptate expedita dicta neque harum debitis laudantium molestias velit aut", type: "risk", state: "critical", tooltipText: null, parent: null, children: [], config: null }
+
+        const min = new Risk(nodeData1, visualization.canvas)
+        const max = new Risk(nodeData2, visualization.canvas)
+        max.renderAsMax({ IX: 300, IY: 100, FX: 500, FY: 200 })
+        min.renderAsMin({ IX: 100, IY: 100, FX: 200, FY: 200 })
+
+        setTimeout(() => {
+            max.transformToMin({ X: 200, Y: 200 })
+            min.transformToMax({ X: 600, Y: 250 })
+        }, 1000)
+
+
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,11 @@
+{
+    "id": 9,
+    "label": "Risk 9",
+    "description": "aute irure dolor in reprehenderit in voluptate velit esse sanctus est Lorem ipsum dolor sit amet voluptate expedita dicta neque harum debitis laudantium molestias velit aut",
+    "type": "risk",
+    "state": "critical",
+    "tooltipText": null,
+    "parent": null,
+    "children": [],
+    "config": null
+}

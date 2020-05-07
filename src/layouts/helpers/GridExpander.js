@@ -1,6 +1,6 @@
 /**
  * Class representing the option to collapse or expand a grid layout.
- * 
+ *
  * @category Layouts
  * @subcategory Helpers
  * @property {Canvas} canvas The current canvas to render the element on.
@@ -20,6 +20,7 @@ class GridExpander {
     // general info
     this.layoutId = null
     this.isLayoutExpended = false
+    this.type = "grid"
   }
 
 
@@ -31,7 +32,9 @@ class GridExpander {
   * @param {Number} [opts.X=this.finalX] The expanders calculated final X position.
   * @param {Number} [opts.Y=this.finalY] The expanders calculated final Y position.
   */
-  render({ cx = 0, cy = 0, X = this.finalX, Y = this.finalY }) {
+  render({
+    cx = 0, cy = 0, X = this.finalX, Y = this.finalY,
+  }) {
     const svg = this.canvas.group()
     svg.css("cursor", "pointer")
     svg.id(`gridExpander#${this.layoutId}`)
@@ -94,35 +97,32 @@ class GridExpander {
     svg.add(collapse)
 
 
-
     // animate expander into position
     svg
       .center(cx, cy)
       .scale(0.001)
       .attr({ opacity: 0 })
       .animate({ duration: this.config.animationSpeed })
-      .transform({ scale: 1, position: [X + svg.bbox().w / 2, Y], })
+      .transform({ scale: 1, position: [X + svg.bbox().w / 2, Y] })
       .attr({ opacity: 1 })
 
 
     // add hover focus
     svg.on("mouseover", () => {
-      collapse.transform({ scale: 1.025, })
-      expand.transform({ scale: 1.025, })
+      collapse.transform({ scale: 1.025 })
+      expand.transform({ scale: 1.025 })
     })
 
 
     // remove hover focus
     svg.on("mouseout", () => {
-      collapse.transform({ scale: 0.975, })
-      expand.transform({ scale: 0.975, })
+      collapse.transform({ scale: 0.975 })
+      expand.transform({ scale: 0.975 })
     })
-
 
 
     this.svg = svg
   }
-
 
 
   /**
@@ -138,10 +138,7 @@ class GridExpander {
       .svg
       .get(1)
       .attr({ opacity: 1 })
-
-
   }
-
 
 
   /**
@@ -157,20 +154,16 @@ class GridExpander {
       .svg
       .get(1)
       .attr({ opacity: 0 })
-
   }
-
 
 
   /**
    * Transforms the expander from its final position to its initial rendered position.
-   * @param {Object} [opts={ }] An object containing additional information. 
+   * @param {Object} [opts={ }] An object containing additional information.
    * @param {Number} [opts.X=this.finalX] The expanders calculated final X position.
    * @param {Number} [opts.X=this.finalY] The expanders calculated final X position.
    */
   transformToFinalPosition({ X = this.finalX, Y = this.finalY }) {
-
-
     this
       .svg
       .animate({ duration: this.config.animationSpeed })
@@ -197,8 +190,13 @@ class GridExpander {
     }
   }
 
+  setType(type) {
+    this.type = type
+  }
 
-
+  getType() {
+    return this.type
+  }
 
 
   setIsLayoutExpended(isLayoutExpended) {

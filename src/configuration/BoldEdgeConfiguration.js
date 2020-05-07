@@ -16,7 +16,7 @@
  * @property {String} strokeColor=#ffffff           - Determines the edges color.
  * @property {String} strokeDasharray="0"           - Determines the graps in the edge line (dashed edge specific).
  *
- * @property {String} labelWidth=50                 - Determines the text width for the label.
+ * @property {String} labelWidth=150                - Determines the text width for the label.
  * @property {String} labelLineClamp=1              - Determines how many lines are visible for the label.
  * @property {String} labelTranslateX=0             - Determines the horizontal adjustment for the label.
  * @property {String} labelTranslateY=0             - Determines the vertical adjustment for the label.
@@ -31,18 +31,18 @@ const BoldEdgeConfiguration = {
   offset: 16,
   animationSpeed: 300,
 
-  color: null,
+  color: "inherit", // #cccccc, inherit
 
   lineWidth: 25,
   arrowWidth: 40,
   arrowHeight: 20,
 
   strokeWidth: 0,
-  strokeColor: "#fff",
+  strokeColor: "#fff", // #cccccc, inherit
   strokeDasharray: "0",
 
   // text
-  labelWidth: 50, // recommended: min node width - some padding
+  labelWidth: 150, // recommended: min node width - some padding
   labelLineClamp: 1,
   labelTranslateX: 0,
   labelTranslateY: 5,

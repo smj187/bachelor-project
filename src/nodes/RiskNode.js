@@ -5,13 +5,13 @@ import RiskNodeConfiguration from "../configuration/RiskNodeConfiguration"
 
 /**
  * This class is responsible for the visual representation of risks.
- * 
+ *
  * @category SVG Representations
  * @subcategory Nodes
  * @property {Data} data Loaded data from a database.
  * @property {Canvas} canvas The nested canvas to render the node on.
  * @property {Object} customRepresentation An optional object that contains information to override default representations.
- * 
+ *
  * @see RiskNodeConfiguration
  */
 class RiskNode extends BaseNode {
@@ -143,12 +143,12 @@ class RiskNode extends BaseNode {
 
   /**
   * Transforms the node to its final rendered position.
-  * 
+  *
   * @param {Object} [opts={ }] An object containing additional information.
   * @param {Number} [opts.FX=this.finalY] The final X render position.
   * @param {Number} [opts.FY=this.finalY] The final Y render position.
   */
-  transformToFinalPosition(X = this.finalX, Y = this.finalY) {
+  transformToFinalPosition({ X = this.finalX, Y = this.finalY }) {
     if (this.isRendered() === false) {
       return
     }
@@ -171,14 +171,14 @@ class RiskNode extends BaseNode {
 
   /**
   * Renders a risk node in minimal representation.
-  * 
+  *
   * @param {Object} [opts={ }] An object containing additional information.
   * @param {Number} [opts.IX=this.initialX] The initial X render position.
   * @param {Number} [opts.IY=this.initialY] The initial Y render position.
   * @param {Number} [opts.FX=this.finalY] The final X render position.
   * @param {Number} [opts.FY=this.finalY] The final Y render position.
   */
-  renderAsMin(IX = this.initialX, IY = this.initialY, FX = this.finalX, FY = this.finalY) {
+  renderAsMin({ IX = this.initialX, IY = this.initialY, FX = this.finalX, FY = this.finalY }) {
     // create svg elements
     const svg = this.createSVGElement()
     const node = this.createNode()
@@ -200,7 +200,7 @@ class RiskNode extends BaseNode {
       .center(FX, FY)
 
     icon
-      .center(IX, IY)
+      .center(IX + this.config.minIconTranslateX, IY + this.config.minIconTranslateY)
       .attr({ opacity: this.config.minIconOpacity })
       .size(this.config.minIconSize, this.config.minIconSize)
       .dx(-this.config.minIconSize / 2)
@@ -221,8 +221,8 @@ class RiskNode extends BaseNode {
     this.currentHeight = this.config.minHeight
     this.nodeSize = "min"
 
-    this.currentX = IX
-    this.currentY = IY
+    this.currentX = FX
+    this.currentY = FY
     this.coords.push([this.finalX, this.finalY])
 
 
@@ -232,14 +232,14 @@ class RiskNode extends BaseNode {
 
   /**
   * Renders a risk node in detailed representation.
-  * 
+  *
   * @param {Object} [opts={ }] An object containing additional information.
   * @param {Number} [opts.IX=this.initialX] The initial X render position.
   * @param {Number} [opts.IY=this.initialY] The initial Y render position.
   * @param {Number} [opts.FX=this.finalY] The final X render position.
   * @param {Number} [opts.FY=this.finalY] The final Y render position.
   */
-  renderAsMax(IX = this.initialX, IY = this.initialY, FX = this.finalX, FY = this.finalY) {
+  renderAsMax({ IX = this.initialX, IY = this.initialY, FX = this.finalX, FY = this.finalY }) {
     // create svg elements
     const svg = this.createSVGElement()
     const node = this.createNode()
@@ -281,8 +281,8 @@ class RiskNode extends BaseNode {
     this.currentHeight = this.config.maxHeight
     this.nodeSize = "max"
 
-    this.currentX = IX
-    this.currentY = IY
+    this.currentX = FX
+    this.currentY = FY
     this.coords.push([this.finalX, this.finalY])
 
 
@@ -292,12 +292,12 @@ class RiskNode extends BaseNode {
 
   /**
   * Transforms a node from minimal version to detailed representation.
-  * 
+  *
   * @param {Object} [opts={ }] An object containing additional information.
   * @param {Number} [opts.FX=this.finalY] The final X render position.
   * @param {Number} [opts.FY=this.finalY] The final Y render position.
   */
-  transformToMax(X = this.finalX, Y = this.finalY) {
+  transformToMax({ X = this.finalX, Y = this.finalY }) {
     // update current elements
     this
       .svg
@@ -364,12 +364,12 @@ class RiskNode extends BaseNode {
 
   /**
   * Transforms a node from detailed representation to minimal version.
-  * 
+  *
   * @param {Object} [opts={ }] An object containing additional information.
   * @param {Number} [opts.FX=this.finalY] The final X render position.
   * @param {Number} [opts.FY=this.finalY] The final Y render position.
   */
-  transformToMin(X = this.finalX, Y = this.finalY) {
+  transformToMin({ X = this.finalX, Y = this.finalY }) {
     // update current elements
     this
       .svg

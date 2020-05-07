@@ -6,7 +6,7 @@
 
 
 import {
-  Visualization, TreeLayout, ContextualLayout, GridLayout, RadialLayout, Asset,
+  Visualization, TreeLayout, ContextualLayout, GridLayout, RadialLayout, Control, Asset, Requirement, Custom, Risk
 } from "./graphVisualization.js"
 
 
@@ -18,19 +18,13 @@ const visualization = new Visualization({
   zoomLevel: 0.85
 })
 
-// const data = { "id": 74, "label": "TEST ASSET 1", "description": "Lorem ipsum dolor sit amet consectetur adipisicing elit. Quibusdam maxime cupiditate fugiat deserunt libero, ab temporibus delectus sunt et doloribus. Voluptate expedita dicta neque harum debitis laudantium molestias velit aut, quos impedit consequatur est libero aliquam enim quibusdam optio nisi aspernatur. Voluptates iure reiciendis, eos illo explicabo sequi architecto! Iure numquam officia temporibus et, mollitia, dolore quas eos non quibusdam quia hic dolores impedit debitis eligendi? Sequi a maxime provident tenetur eveniet modi animi consectetur vitae, nostrum amet ad iusto accusamus placeat, beatae saepe voluptatum! Veritatis architecto error cum eaque. Ipsam blanditiis ab, tenetur eveniet modi doloribus aspernatur aliquid dicta.", "type": "asset", "keyValuePairs": [{ "key": "key 1", "value": "key value pair: value 1" }, { "key": "key 2", "value": "key value pair: value 2" }, { "key": "key 3", "value": "key value pair: value 3" }, { "key": "key 4", "value": "key value pair: value 4" }, { "key": "key 5", "value": "key value pair: value 5" }, { "key": "key 6", "value": "key value pair: value 6" }], "tooltip": "Asset with <br> tooltip", "parent": null, "children": [], "config": null }
-// const asset = new Asset(data, visualization.canvas)
-// // asset.renderAsMax(300, 400, 400, 300)
-// asset.renderAsMin(100, 50, 150, 100)
 
 
-// // setTimeout(() => asset.transformToMin(100, 50), 1000)
-// setTimeout(() => asset.transformToMax(500, 500), 1000)
 
 
-// const asset = new Asset(data, visualization.canvas)
-// asset.setFinalXY(300, 300)
-// asset.renderAsMin(250, 250, 300, 300)
+
+
+
 
 
 
@@ -172,20 +166,138 @@ const updateRadialLayout = () => {
   }, 1000)
 }
 
+const gridLayout = async () => {
+  // create the underlying graph structure that holds references to our data
+  const graph = visualization.createInitialGraph()
 
-const contextualLayout = () => {
-  const graph6 = visualization.createInitialGraph()
-  for (let i = 16; i <= 39; i += 1) {
-    graph6.includeNode(i)
+  // add nodes
+  for (let i = 0; i <= 12; i += 1) {
+    graph.includeNode(i)
   }
 
-  graph6.includeEdge(36, 34)
-  graph6.includeEdge(37, 36)
 
 
-  const contextual1 = new ContextualLayout({ focus: 36, animationSpeed: 1 })
-  visualization.render(graph6, contextual1)
+  // create a grid layout with additional layout configuration
+  const customEventlisteners = [
+    { event: "click", modifier: "shiftKey", func: "expandOrCollapseEvent" },
+    { event: "dblclick", modifier: "ctrlKey", func: "expandOrCollapseEvent" },
+    { event: "dblclick", modifier: undefined, func: "expandOrCollapseEvent" },
+  ]
+  const grid1 = new GridLayout()
+  const grid2 = new GridLayout({ limitColumns: 3, limitNodes: 4 })
+  const grid3 = new GridLayout({ limitColumns: 3, limitNodes: 2 })
+  const grid4 = new GridLayout({ limitColumns: 1, limitNodes: 2 })
+  const grid5 = new GridLayout({ limitColumns: 1, limitNodes: 4 })
+
+  // visualization.addCustomNodeRepresentation(grid1, { custom: { borderStrokeColor: "#f0f" }, requirement: { labelColor: "#f0f" } })
+  // visualization.addCustomNodeRepresentation(grid1, { control: { borderStrokeColor: "#f0f" } })
+
+  // render the layout
+  // await visualization.render(graph, grid1)
+  await visualization.render(graph, grid2)
+  // await visualization.render(graph, grid3)
+  // await visualization.render(graph, grid4)
+  // await visualization.render(graph, grid5)
+
+  // setTimeout(() => {
+  //   // console.log("update now")
+  //   // graph.excludeNode(160)
+
+  //   visualization.update(grid1, graph, { limitColumns: 1 })
+  // }, 1000)
+
+  // setTimeout(() => {
+  //   visualization.update(grid2, { limitColumns: 3, vSpacing: 100 })
+  // }, 2000)
 }
+
+const side_by_side_example = async () => {
+  // create the underlying graph structure that holds references to our data
+  const graph1 = visualization.createInitialGraph()
+
+  // add nodes
+  for (let i = 0; i <= 20; i += 1) {
+    graph1.includeNode(i)
+  }
+
+  const graph2 = visualization.createInitialGraph()
+
+  // add nodes
+  for (let i = 20; i <= 20; i += 1) {
+    graph2.includeNode(i)
+  }
+
+  const graph3 = visualization.createInitialGraph()
+
+  // add nodes
+  for (let i = 0; i <= 163; i += 1) {
+    graph3.includeNode(i)
+  }
+
+  // add edges
+  graph3.includeEdge(111, 110)
+  graph3.includeEdge(112, 110)
+  graph3.includeEdge(113, 110)
+  graph3.includeEdge(119, 110)
+  graph3.includeEdge(163, 161)
+
+  // add edges
+  // graph.includeEdge(111, 110)
+  // graph.includeEdge(112, 110)
+  // graph.includeEdge(113, 110)
+  // graph.includeEdge(119, 110)
+  // graph.includeEdge(163, 161)
+
+
+  const grid1 = new GridLayout({ limitColumns: 2, limitNodes: 5 })
+  const tree3 = new TreeLayout({ rootId: 110, renderDepth: 1, animationSpeed: 300, orientation: "vertical" })
+  const radial4 = new RadialLayout({ rootId: 137, renderDepth: 1 })
+  const render = async () => {
+    await visualization.render(graph3, radial4)
+    await visualization.render(graph3, tree3)
+    await visualization.render(graph1, grid1)
+  }
+
+  await render()
+  // await visualization.render(graph2, grid2)
+}
+
+const transform_layout = async () => {
+  const graph = visualization.createInitialGraph()
+
+  // add nodes
+  for (let i = 0; i <= 163; i += 1) {
+    graph.includeNode(i)
+  }
+
+  // add edges
+  graph.includeEdge(111, 110)
+  graph.includeEdge(112, 110)
+  graph.includeEdge(113, 110)
+  graph.includeEdge(119, 110)
+  graph.includeEdge(163, 161)
+
+
+  const radial1 = new RadialLayout({ rootId: 110, renderDepth: 0 })
+  const radial4 = new RadialLayout({ rootId: 137, renderDepth: 0 })
+  const tree2 = new TreeLayout({ rootId: 153, renderDepth: 0, animationSpeed: 300, orientation: "vertical" })
+  const grid1 = new GridLayout({ limitColumns: 2, limitNodes: 5 })
+  await visualization.render(graph, radial1)
+  await visualization.render(graph, radial4)
+  await visualization.render(graph, tree2)
+  // await visualization.render(graph, grid1)
+
+
+  setTimeout(() => {
+    visualization.transform(radial1, graph, new GridLayout({ limitColumns: 2, limitNodes: 5 }))
+  }, 1000)
+
+  setTimeout(() => {
+    visualization.transform(radial4, graph, new RadialLayout({ rootId: 110, renderDepth: 0 }))
+  }, 3000)
+
+}
+
 
 const radialLayout = async () => {
   // create the underlying graph structure which holds references to our data
@@ -292,104 +404,8 @@ const treeLayout = async () => {
   // }, 1000)
 }
 
-
-const gridLayout = async () => {
+const contextualLayout = () => {
   // create the underlying graph structure that holds references to our data
-  const graph = visualization.createInitialGraph()
-
-  // add nodes
-  for (let i = 0; i <= 14; i += 1) {
-    graph.includeNode(i)
-  }
-
-
-
-  // create a grid layout with additional layout configuration
-  const customEventlisteners = [
-    { event: "click", modifier: "shiftKey", func: "expandOrCollapseEvent" },
-    { event: "dblclick", modifier: "ctrlKey", func: "expandOrCollapseEvent" },
-    { event: "dblclick", modifier: undefined, func: "expandOrCollapseEvent" },
-  ]
-  const grid1 = new GridLayout()
-  const grid2 = new GridLayout({ limitColumns: 1, limitNodes: 4 })
-  const grid3 = new GridLayout({ limitColumns: 1, limitNodes: 2 })
-  const grid4 = new GridLayout({ limitColumns: 1, limitNodes: 2 })
-  const grid5 = new GridLayout({ limitColumns: 1, limitNodes: 4 })
-
-  visualization.addCustomNodeRepresentation(grid1, { custom: { borderStrokeColor: "#f0f" }, requirement: { labelColor: "#f0f" } })
-  // visualization.addCustomNodeRepresentation(grid1, { control: { borderStrokeColor: "#f0f" } })
-
-  // render the layout
-  await visualization.render(graph, grid1)
-  // await visualization.render(graph, grid2)
-  // await visualization.render(graph, grid3)
-  // await visualization.render(graph, grid4)
-  // await visualization.render(graph, grid5)
-
-  // setTimeout(() => {
-  //   // console.log("update now")
-  //   // graph.excludeNode(160)
-
-  //   visualization.update(grid1, graph, { limitColumns: 1 })
-  // }, 1000)
-
-  // setTimeout(() => {
-  //   visualization.update(grid2, { limitColumns: 3, vSpacing: 100 })
-  // }, 2000)
-}
-
-const side_by_side_example = async () => {
-  // create the underlying graph structure that holds references to our data
-  const graph1 = visualization.createInitialGraph()
-
-  // add nodes
-  for (let i = 0; i <= 20; i += 1) {
-    graph1.includeNode(i)
-  }
-
-  const graph2 = visualization.createInitialGraph()
-
-  // add nodes
-  for (let i = 20; i <= 20; i += 1) {
-    graph2.includeNode(i)
-  }
-
-  const graph3 = visualization.createInitialGraph()
-
-  // add nodes
-  for (let i = 0; i <= 163; i += 1) {
-    graph3.includeNode(i)
-  }
-
-  // add edges
-  graph3.includeEdge(111, 110)
-  graph3.includeEdge(112, 110)
-  graph3.includeEdge(113, 110)
-  graph3.includeEdge(119, 110)
-  graph3.includeEdge(163, 161)
-
-  // add edges
-  // graph.includeEdge(111, 110)
-  // graph.includeEdge(112, 110)
-  // graph.includeEdge(113, 110)
-  // graph.includeEdge(119, 110)
-  // graph.includeEdge(163, 161)
-
-
-  const grid1 = new GridLayout({ limitColumns: 2, limitNodes: 5 })
-  const tree3 = new TreeLayout({ rootId: 110, renderDepth: 1, animationSpeed: 300, orientation: "vertical" })
-  const radial4 = new RadialLayout({ rootId: 137, renderDepth: 1 })
-  const render = async () => {
-    await visualization.render(graph3, radial4)
-    await visualization.render(graph3, tree3)
-    await visualization.render(graph1, grid1)
-  }
-
-  await render()
-  // await visualization.render(graph2, grid2)
-}
-
-const transform_layout = async () => {
   const graph = visualization.createInitialGraph()
 
   // add nodes
@@ -398,6 +414,9 @@ const transform_layout = async () => {
   }
 
   // add edges
+  graph.includeEdge(36, 34)
+  graph.includeEdge(36, 35)
+  graph.includeEdge(37, 36)
   graph.includeEdge(111, 110)
   graph.includeEdge(112, 110)
   graph.includeEdge(113, 110)
@@ -405,29 +424,17 @@ const transform_layout = async () => {
   graph.includeEdge(163, 161)
 
 
-  const radial1 = new RadialLayout({ rootId: 110, renderDepth: 0 })
-  const radial4 = new RadialLayout({ rootId: 137, renderDepth: 0 })
-  const tree2 = new TreeLayout({ rootId: 153, renderDepth: 0, animationSpeed: 300, orientation: "vertical" })
-  const grid1 = new GridLayout({ limitColumns: 2, limitNodes: 5 })
-  await visualization.render(graph, radial1)
-  await visualization.render(graph, radial4)
-  await visualization.render(graph, tree2)
-  // await visualization.render(graph, grid1)
-
-
-  setTimeout(() => {
-    visualization.transform(radial1, graph, new GridLayout({ limitColumns: 2, limitNodes: 5 }))
-  }, 1000)
-
-  setTimeout(() => {
-    visualization.transform(radial4, graph, new RadialLayout({ rootId: 110, renderDepth: 0 }))
-  }, 3000)
-
+  const contextual1 = new ContextualLayout({ focusId: 36 })
+  visualization.render(graph, contextual1)
 }
 
+
+
+
+contextualLayout()
 // gridLayout()
 // radialLayout()
-treeLayout()
+// treeLayout()
 
 // side_by_side_example()
 // transform_layout()

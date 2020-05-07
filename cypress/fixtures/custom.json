@@ -1,0 +1,17 @@
+{
+    "id": 5,
+    "label": "Custom 5",
+    "description": "adipiscing eros tellus feugiat cursus porttitor dolor faucibus bibendum lobortis amet mi quam habitasse leo per aliquet vestibulum erat vehicula blandit",
+    "type": "custom",
+    "state": "Unknown State",
+    "attributes": null,
+    "tooltipText": null,
+    "parent": null,
+    "children": [],
+    "config": {
+        "minIconSize": 70,
+        "minIconTranslateY": -15,
+        "minTextTranslateY": 30,
+        "labelBackground": "#cccccc33"
+    }
+}

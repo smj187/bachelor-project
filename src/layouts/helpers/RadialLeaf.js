@@ -4,7 +4,7 @@ import { calculateNodeLineIntersection } from "../../utils/Calculations"
 
 /**
  * This class calculates and renders an indication if more child nodes may be available within a radial layout.
- * 
+ *
  * @category Layouts
  * @subcategory Helpers
  * @property {Canvas} canvas The current canvas to render the element on.
@@ -180,14 +180,12 @@ class RadialLeaf {
         .center(startX, startY)
         .animate({ duration: this.config.animationSpeed })
         .transform({ position: [finalX, finalY] })
-
     } else {
       svg
         .scale(isReRender ? 1 : 0.001)
         .center(tx, ty)
         .animate({ duration: this.config.animationSpeed })
         .transform({ scale: 1, position: [finalX, finalY] })
-
     }
 
 

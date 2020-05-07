@@ -4,7 +4,7 @@ import ThinEdgeConfiguration from "../configuration/ThinEdgeConfiguration"
 
 /**
  * This class is responsible for the visual representation of bold edges.
- * 
+ *
  * @category SVG Representations
  * @subcategory Edges
  * @property {Data} data The loaded data element from a database.
@@ -28,13 +28,12 @@ class ThinEdge extends BaseEdge {
 
   /**
   * Calculates and renders a thin edge between two given nodes.
-  * 
+  *
   * @param {Object} [opts={ }] An object containing additional information.
   * @param {Number} [opts.FX=this.finalFromX] The final X render position.
   * @param {Number} [opts.FY=this.finalFromY] The final Y render position.
   */
   render({ X = this.finalFromX, Y = this.finalFromY }) {
-
     const svg = this.createSVGElement(`thinEdge#${this.layoutId}_${this.fromNode.id}_${this.toNode.id}`)
 
     // the line that connects two nodes
@@ -128,8 +127,7 @@ class ThinEdge extends BaseEdge {
         this.animation = null
       })
 
-    // re-positions the la
-    bel
+    // re-positions the label
     if (this.label) {
       const x = (this.finalFromX + this.finalToX) / 2 + this.config.labelTranslateX
       const y = (this.finalFromY + this.finalToY) / 2 + this.config.labelTranslateY

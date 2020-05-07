@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Control Node Demo</title>
+
+    <link href="https://fonts.googleapis.com/css?family=Montserrat&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+            box-sizing: border-box;
+        }
+    </style>
+
+</head>
+
+<body>
+    <script type="module">
+        import { Visualization, Control } from "../../dist/visualization.esm.min.js"
+
+
+        const { canvas } = new Visualization({
+            databaseUrl: "http://localhost:3001",
+            nodeEndpoint: "node-data",
+            edgeEndpoint: "edge-data",
+            contextualRelationshipEndpoint: "contextual-relationships",
+            zoomLevel: 0.85
+        })
+
+        const nodeData1 = { id: 6, label: "Control 6", description: "adipiscing eros tellus feugiat cursus porttitor dolor ante enim nibh tincidunt taciti justo ad", type: "control", attributes: null, tooltipText: null, parent: null, children: [], config: null }
+        const nodeData2 = { id: 7, label: "Control 7", description: "adipiscing eros tellus feugiat cursus porttitor dolor ante enim nibh tincidunt taciti justo ad", type: "control", attributes: null, tooltipText: null, parent: null, children: [], config: null }
+
+        const min = new Control(nodeData1, visualization.canvas)
+        const max = new Control(nodeData2, visualization.canvas)
+        max.renderAsMax({ IX: 300, IY: 100, FX: 500, FY: 200 })
+        min.renderAsMin({ IX: 100, IY: 100, FX: 200, FY: 200 })
+
+        setTimeout(() => {
+            max.transformToMin({ X: 200, Y: 200 })
+            min.transformToMax({ X: 600, Y: 250 })
+        }, 1000)
+
+
+
+
+    </script>
+</body>
+
+</html>

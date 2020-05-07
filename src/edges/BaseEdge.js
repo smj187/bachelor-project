@@ -19,7 +19,7 @@ class BaseEdge {
     this.canvas = canvas
     this.fromNode = fromNode
     this.toNode = toNode
-    this.label = null
+    this.label = data.label || null
     this.config = { ...data.config }
 
 
@@ -40,13 +40,12 @@ class BaseEdge {
 
   /**
    * Calculates the two points indicating the starting and end point for edges.
-   * 
+   *
    * @param {Object} [opts={ }] An object containing additional information.
    * @param {Number} [opts.isContextualParent=false] Determines if the current edge is a contextual parent edge.
    * @param {Number} [opts.isContextualChild=false] Determines if the current edge is a contextual child edge
    */
   calculateEdge({ isContextualParent = false, isContextualChild = false }) {
-
     // the coordinates for the from node
     let fx = this.fromNode.getFinalX()
     const fy = this.fromNode.getFinalY()
@@ -96,26 +95,6 @@ class BaseEdge {
 
 
 
-
-
-  removeEdge(X = 0, Y = 0) { // TODO: remove
-    if (this.svg !== null) {
-      this
-        .svg
-        .attr({ opacity: 1 })
-        .animate({ duration: this.config.animationSpeed })
-        .transform({ scale: 0.001, position: [X, Y] })
-        .attr({ opacity: 0 })
-        .after(() => {
-          if (this.svg !== null) {
-            this.svg.remove()
-            this.svg = null
-          }
-        })
-    }
-  }
-
-
   /**
    * Removes the rendered SVG object from the canvas.
    */
@@ -148,13 +127,12 @@ class BaseEdge {
   /**
    * Creates the edges label using HTML.
    * @return {SVG} The label in HTML format.
-   * 
+   *
    * @see https://svgjs.com/docs/3.0/shape-elements/#svg-foreignobject
    * @see https://github.com/xavi160/Clamp.js
    */
   createLabel() {
-
-    // create the foreign object which holds 
+    // create the foreign object which holds
     const fobj = this.canvas.foreignObject(0, 0)
 
     // simply return if there is no label provided

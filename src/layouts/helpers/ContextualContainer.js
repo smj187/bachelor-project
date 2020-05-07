@@ -1,66 +1,135 @@
-const ContextualConfig = {
-
-  offset: 8,
-  animationSpeed: 300,
-
-  color: "#ff8e9e",
-
-  blockarrowLineWidth: 3,
-  blockarrowArrowWidth: 10,
-  blockarrowArrowLength: 5,
-}
-
 
 class ContextualConainer {
-  constructor(canvas, type, config, ix, iy, cx, cy, w, h) {
+  constructor(canvas, focusNode, containerInfo, config) {
     this.canvas = canvas
     this.svg = null
-    this.type = type
+    this.focusNode = focusNode
+    this.containerInfo = containerInfo
     this.config = config
 
-    this.initialX = ix
-    this.initialY = iy
-    this.finalX = cx
-    this.finalY = cy
-    this.w = w
-    this.h = h
 
-    this.dy = 0
+    // layout 
+    this.layoutId = 0
+    this.animation = null
+
+
   }
 
-  render(X = this.initialX, Y = this.initialY) {
-    const svg = this.canvas.rect(0, 0).draggable()
+  render({ isParentOperation = false }) {
 
-    if (this.type === "child") {
-      svg.radius(this.config.childContainderBorderRadius)
-      svg.stroke({ width: this.config.childContainerBorderStrokeWidth })
-      svg.stroke({ color: this.config.childContainerBorderStrokeColor })
-      svg.fill({ color: this.config.childContainerBackgroundColor })
-    } else if (this.type === "parent") {
-      svg.radius(this.config.parentContainderBorderRadius)
-      svg.stroke({ width: this.config.parentContainerBorderStrokeWidth })
-      svg.stroke({ color: this.config.parentContainerBorderStrokeColor })
-      svg.fill({ color: this.config.parentContainerBackgroundColor })
-    } else if (this.type === "risk") {
-      svg.radius(this.config.riskContainderBorderRadius)
-      svg.stroke({ width: this.config.riskContainerBorderStrokeWidth })
-      svg.stroke({ color: this.config.riskContainerBorderStrokeColor })
-      svg.fill({ color: this.config.riskContainerBackgroundColor })
+    const svg = this.canvas.group()
+    svg.id(`contextualContainer#${this.layoutId}`)
+
+    const { type, minHeight, width, mincx, mincy } = this.containerInfo
+
+    const container = this.canvas.rect(0, 0).center(mincx, mincy)
+
+    if (type === "child") {
+      container.radius(this.config.childContainerBorderRadius)
+      container.fill(this.config.childContainerBackgroundColor)
+      container.stroke({ width: this.config.childContainerBorderStrokeWidth })
+      container.stroke({ color: this.config.childContainerBorderStrokeColor })
     }
 
+    if (type === "parent") {
+      container.radius(this.config.parentContainerBorderRadius)
+      container.fill(this.config.parentContainerBackgroundColor)
+      container.stroke({ width: this.config.parentContainerBorderStrokeWidth })
+      container.stroke({ color: this.config.parentContainerBorderStrokeColor })
+    }
 
-    svg.center(X, Y)
+    if (type === "risk") {
+      container.radius(this.config.riskContainerBorderRadius)
+      container.fill(this.config.riskContainerBackgroundColor)
+      container.stroke({ width: this.config.riskContainerBorderStrokeWidth })
+      container.stroke({ color: this.config.riskContainerBorderStrokeColor })
+    }
+
+    svg.add(container)
+
+
+
+    svg
+      .get(0)
+      .center(this.focusNode.getFinalX(), this.focusNode.getFinalY())
+      .animate({ duration: this.config.animationSpeed })
+      .center(mincx, mincy)
+      .width(width)
+      .height(minHeight)
 
     this.svg = svg
   }
 
-  update() {
-    this
-      .svg
-      .animate({ duration: this.config.animationSpeed })
-      .height(this.h)
-      .dy(this.dy)
+  update({ areChildrenExpended = false, areParentsExpended = false, areRisksExpended = false }) {
+    const { type, minHeight, maxHeight, width, mincx, mincy, maxcx, maxcy } = this.containerInfo
+
+    // cancel an ongoing animation
+    if (this.animation !== null) {
+      this.animation.unschedule()
+    }
+
+    if (this.type === "child") {
+      if (areChildrenExpended === true) {
+        this.animation = this
+          .svg
+          .get(0)
+          .animate({ duration: this.config.animationSpeed })
+          .height(maxHeight)
+          .after(() => { this.animation = null })
+      } else {
+        this.animation = this
+          .svg
+          .get(0)
+          .animate({ duration: this.config.animationSpeed })
+          .height(minHeight)
+          .after(() => { this.animation = null })
+      }
+    }
+
+
+    if (this.type === "risk") {
+      if (areRisksExpended === true) {
+        this.animation = this
+          .svg
+          .get(0)
+          .animate({ duration: this.config.animationSpeed })
+          .height(maxHeight)
+          .after(() => { this.animation = null })
+      } else {
+        this.animation = this
+          .svg
+          .get(0)
+          .animate({ duration: this.config.animationSpeed })
+          .height(minHeight)
+          .after(() => { this.animation = null })
+      }
+    }
+
+
+    if (this.type === "parent") {
+      if (areParentsExpended === true) {
+        this.animation = this
+          .svg
+          .get(0)
+          .animate({ duration: this.config.animationSpeed })
+          .height(maxHeight)
+          .dy((mincy - maxcx) / 2)
+          .center(maxcx, maxcy)
+          .after(() => { this.animation = null })
+      } else {
+        this.animation = this
+          .svg
+          .get(0)
+          .animate({ duration: this.config.animationSpeed })
+          .height(minHeight)
+          .dy((maxcx - mincy) / 2)
+          .center(mincx, mincy)
+          .after(() => { this.animation = null })
+      }
+    }
+
   }
+
 
   transformToFinalPosition(X = this.finalX, Y = this.finalY) {
     this
@@ -72,21 +141,6 @@ class ContextualConainer {
       .animate({ duration: this.config.animationSpeed })
       .size(this.w, this.h)
       .center(X, Y)
-  }
-
-  transformToInitialPosition(X = this.finalX, Y = this.finalY) {
-    this
-      .svg
-      .back()
-
-    this.svg.back()
-    this
-      .svg
-      .animate({ duration: this.config.animationSpeed })
-      .center(X, Y)
-      .size(0, 0)
-      .attr({ opacity: 0 })
-      .after(() => this.svg.attr({ opacity: 1 }))
   }
 
 
@@ -103,6 +157,18 @@ class ContextualConainer {
           this.svg = null
         })
     }
+  }
+
+  setType(type) {
+    this.type = type
+  }
+
+  getType() {
+    return this.type
+  }
+
+  setLayoutId(layoutId) {
+    this.layoutId = layoutId
   }
 
   isRendered() {

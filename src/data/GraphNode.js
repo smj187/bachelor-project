@@ -1,7 +1,7 @@
 
 /**
  * This class represents a graph node.
- * 
+ *
  * @category Underlying Data
  * @param {Number} id The given id for this node.
  */

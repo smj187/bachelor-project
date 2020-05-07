@@ -3,7 +3,7 @@ import { shape, intersect } from "svg-intersections"
 
 /**
  * Calculates an intersection between an arc and a line.
- * 
+ *
  * @private
  * @param {Number} x0 The starting X coordinate.
  * @param {Number} y0 The starting Y coordinate.
@@ -26,7 +26,7 @@ const calculateArcLineIntersection = (x0, y0, x1, y1, path) => {
 
 /**
  * Calculates an intersection between an arc and a node.
- * 
+ *
  * @private
  * @param {Number} x0 The starting X coordinate.
  * @param {Number} y0 The starting Y coordinate.
@@ -40,6 +40,7 @@ const calculateNodeLineIntersection = (x0, y0, x1, y1, node) => {
 
   // spacing between node and leaf
   const spacing = node.config.offset
+
 
   const rect1 = shape("rect", {
     x: x0 - w / 2 - spacing / 2,
@@ -63,7 +64,7 @@ const calculateNodeLineIntersection = (x0, y0, x1, y1, node) => {
 
 /**
  * Calculates the distance between two points.
- * 
+ *
  * @private
  * @param {Number} sx The starting x coordinate.
  * @param {Number} sy The starting y coordinate.

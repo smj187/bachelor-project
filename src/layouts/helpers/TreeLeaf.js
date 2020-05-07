@@ -3,7 +3,7 @@ import { calculateNodeLineIntersection, calculateDistance } from "../../utils/Ca
 
 /**
  * This class calculates and renders an indication if more child nodes may be available within a tree layout.
- * 
+ *
  * @category Layouts
  * @subcategory Helpers
  * @property {Canvas} canvas The current canvas to render the element on.
