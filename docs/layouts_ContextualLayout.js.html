@@ -131,15 +131,26 @@ import GridExpander from "./helpers/GridExpander"
 import ContextualRiskConnection from "./helpers/ContextualRiskConnection"
 import ContextualContainerConnection from "./helpers/ContextualContainerConnection"
 import ContextualLayoutConfiguration from "../configuration/ContextualLayoutConfiguration"
-import ContextualAssginedConnection from "./helpers/ContextualAssginedConnection"
+import ContextualassignedConnection from "./helpers/ContextualAssginedConnection"
 import { calculateDistance } from "../utils/Calculations"
 import BoldEdge from "../edges/BoldEdge"
 
 
 /**
- * This class calculates and renders the contextual layout.
+ * This class calculates and renders the contextual layout. It consists of the following elements
+ *  - focusNode: the node on which the layout is constructed on
+ *  - parentNodes: the focusNodes' parents
+ *  - childNodes: the focusNodes' children
+ *  - assignedNode: an external assigned node
+ *  - assignedParentNodes: the parent nodes for the assigned node
+ *  - assignedChildNodes: the child nodes for the assigned node
  *
  * @category Layouts
+ * @param {Object} [customConfig={ }] Overrides default layout configuration properties.
+ *                                    Available options: {@link TreeLayoutConfiguration}
+ * @param {Object} [customEvents={ }] Overrides event listener configuration properties.
+ * @param {Object} [customNodes={ }] Overrides default node representation properties.
+ * @param {Object} [customEdges={ }] Overrides default edge representation properties.
  */
 class ContextualLayout extends BaseLayout {
   constructor(customConfig = {}, customEventlisteners = [], customNodes = {}, customEdges = {}) {
@@ -155,21 +166,17 @@ class ContextualLayout extends BaseLayout {
 
     // layout specific
     this.focusId = customConfig.focusId
-    this.areChildrenExpended = false
-    this.areParentsExpended = false
-    this.areRisksExpended = false
+    this.areChildrenExpanded = false
+    this.areParentsExpanded = false
+    this.areRisksExpanded = false
+    this.areAssignedParentExpanded = false
+    this.areAssignedChildrenExpanded = false
     this.assignedInfo = null
     this.riskConnection = null
     this.assignedConnection = null
     this.containerConnections = []
     this.containers = []
     this.expanders = []
-
-    this.focus = null
-    this.parents = []
-    this.children = []
-    this.assgined = null
-    this.risks = []
 
 
     // events
@@ -192,15 +199,22 @@ class ContextualLayout extends BaseLayout {
     })
   }
 
+
+  /**
+   * Event method which either loads more data or removes existing data form a group of nodes.
+   * @async
+   * @param {Object} [opts={ }] An object containing additional information.
+   * @param {Number} [opts.isParentOperation=false] Determines where nodes originate from.
+   * @param {Number} [opts.type=parent] Determines which container loads more data.
+   */
   async expandOrCollapseGridEvent({ isParentOperation = false, type = "parent" }) {
     // node references
-    const focusNode = this.nodes.find((n) => n.getId() === this.focusId)
-    const childNodes = this.nodes.filter((n) => focusNode.childrenIds.includes(n.id))
-    const riskNodes = this.nodes.filter((n) => this.assignedInfo.risks.includes(n.id))
-    const parentIds = focusNode.parentId !== null
-      ? focusNode.parentId instanceof Array ? focusNode.parentId : [focusNode.parentId]
-      : []
-    const parentNodes = this.nodes.filter((n) => parentIds.includes(n.id))
+    const { childNodes } = this
+    const { parentNodes } = this
+    const { riskNodes } = this
+    const { assignedChildNodes } = this
+    const { assignedParentNodes } = this
+
 
     const addOrRemoveNodes = (upperLimit, currentLimit, offset, nodes) => {
       // add new nodes
@@ -235,11 +249,13 @@ class ContextualLayout extends BaseLayout {
       const offset = isParentOperation ? -50 : 50
 
       // limitations
-      const upperLimit = this.config.riskContainerNodeLimit
-      const currentLimit = riskNodes.filter((n) => n.isRendered() === true).length
-
+      const upperLimit = this.config.parentContainerNodeLimit
+      const currentLimit = parentNodes.filter((n) => n.isRendered() === true).length
       addOrRemoveNodes(upperLimit, currentLimit, offset, parentNodes)
-      updateContainer("parent", { areParentsExpended: this.areParentsExpended })
+      updateContainer("parent", { areParentsExpanded: this.areParentsExpanded })
+
+
+
     }
 
     if (type === "child") {
@@ -252,7 +268,7 @@ class ContextualLayout extends BaseLayout {
       const currentLimit = childNodes.filter((n) => n.isRendered() === true).length
 
       addOrRemoveNodes(upperLimit, currentLimit, offset, childNodes)
-      updateContainer("child", { areChildrenExpended: this.areChildrenExpended })
+      updateContainer("child", { areChildrenExpanded: this.areChildrenExpanded })
     }
 
     if (type === "risk") {
@@ -265,38 +281,67 @@ class ContextualLayout extends BaseLayout {
 
 
       addOrRemoveNodes(upperLimit, currentLimit, offset, riskNodes)
-      updateContainer("risk", { areRisksExpended: this.areRisksExpended })
+      updateContainer("risk", { areRisksExpanded: this.areRisksExpanded })
+    }
+
+    if (type === "assignedChild") {
+      // determines how far down nodes animate in
+      const offset = isParentOperation ? -50 : 50
+
+      // limitations
+      const upperLimit = this.config.assignedChildContainerNodeLimit
+      const currentLimit = assignedChildNodes.filter((n) => n.isRendered() === true).length
+      addOrRemoveNodes(upperLimit, currentLimit, offset, assignedChildNodes)
+      updateContainer("assignedChild", { areAssignedChildrenExpanded: this.areAssignedChildrenExpanded })
+    }
+
+    if (type === "assignedParent") {
+      // determines how far down nodes animate in
+      const offset = isParentOperation ? -50 : 50
+
+      // limitations
+      const upperLimit = this.config.assignedParentContainerNodeLimit
+      const currentLimit = assignedParentNodes.filter((n) => n.isRendered() === true).length
+      addOrRemoveNodes(upperLimit, currentLimit, offset, assignedParentNodes)
+      updateContainer("assignedParent", { areAssignedParentExpanded: this.areAssignedParentExpanded })
     }
   }
 
 
-  async traverseInLayoutEvent(node) {
+  /**
+   * Event method which either loads more data or removes existing data.
+   * @async
+   * @param {Object} [opts={ }] An object containing additional information.
+   * @param {Number} [opts.node=null] The clicked node.
+   * @param {Number} [opts.isParentOperation=false] Determines where nodes originate from.
+   */
+  async traverseInLayoutEvent({ node = null, isParentOperation = false }) {
     if (node.id === this.focusId) {
       return
     }
-    await this.updateContextualDataAsync({ clickedNode: node })
+
+    await this.updateContextualDataAsync({ clickedNode: node, isParentOperation })
   }
 
 
-  calculateLayout({ offset = 0, isReRender = false, isParentOperation = false }) {
+  /**
+   * Calculates the contextual layout.
+   *
+   * @param {Object} [opts={ }] An object containing additional information.
+   * @param {Number} [opts.offset=0] Determines the space the layout has to shift in order to avoid overlapping layouts.
+   * @param {Number} [opts.isReRender=false] Determines if the layout is rerenderd.
+   */
+  calculateLayout({ offset = 0, isReRender = false }) {
     this.currentOffset = offset
-    // console.log(this.nodes, this.edges)
 
-    this.canvas.circle(15).center(offset, 10).fill("red")
-    this.canvas.circle(15).center(offset, this.config.layoutHeight).fill("red")
-    this.canvas.circle(15).center(offset + this.config.layoutWidth, 10).fill("orange")
-    this.canvas.circle(15).center(offset + this.config.layoutWidth, this.config.layoutHeight).fill("orange")
 
-    const focusNode = this.nodes.find((n) => n.getId() === this.focusId)
-    const assginedNode = this.nodes.find((n) => n.getId() === this.assignedInfo.assigned)
-    const childNodes = this.nodes.filter((n) => focusNode.childrenIds.includes(n.id))
-
-    const parentIds = focusNode.parentId !== null
-      ? focusNode.parentId instanceof Array ? focusNode.parentId : [focusNode.parentId]
-      : []
-    const parentNodes = this.nodes.filter((n) => parentIds.includes(n.id))
-
-    const riskNodes = this.nodes.filter((n) => this.assignedInfo.risks.includes(n.id))
+    const { focusNode } = this
+    const { assignedNode } = this
+    const { childNodes } = this
+    const { parentNodes } = this
+    const { riskNodes } = this
+    const { assignedChildNodes } = this
+    const { assignedParentNodes } = this
 
 
     // calculate focus position
@@ -304,46 +349,51 @@ class ContextualLayout extends BaseLayout {
       // the focus element area takes 3/2 of available space
 
 
-      const x = (this.config.layoutWidth / 3) + offset + this.config.focusXShift
-      const y = (this.config.layoutHeight / 2)
+      const x = offset + this.config.focusXShift + this.config.translateX
+      const y = (this.config.layoutHeight / 2) + this.config.translateY
 
       focusNode.setInitialX(x)
       focusNode.setInitialY(y + 50)
 
       focusNode.setFinalX(x)
       focusNode.setFinalY(y)
+
+      focusNode.setNodeSize("max")
     }
 
-    // caculate assgined node position
+    // caculate assigned node position
     const calculateAssignedPosition = () => {
       // skip this method if no assigned information is provided
       if (this.assignedInfo === null) {
         return
       }
 
-      const w = assginedNode.getMinWidth()
-      const x = (this.config.layoutWidth - w / 2) + offset
-      const y = (this.config.layoutHeight / 2)
+      const x = focusNode.getFinalX() + this.config.focusAssignedDistance
+      const y = (this.config.layoutHeight / 2) + this.config.translateY
 
-      assginedNode.setInitialX(x)
-      assginedNode.setInitialY(y + 50)
+      assignedNode.setInitialX(x)
+      assignedNode.setInitialY(y + 50)
 
-      assginedNode.setFinalX(x)
-      assginedNode.setFinalY(y)
+      assignedNode.setFinalX(x)
+      assignedNode.setFinalY(y)
+      assignedNode.setNodeSize("min")
     }
 
+
+    // calculate the connection between the focus and assigned nodes
     const calculateAssignedConnection = () => {
       // skip this method if no assigned information is provided
       if (this.assignedInfo === null) {
         return
       }
 
-      const assignedConnection = new ContextualAssginedConnection(this.canvas, focusNode, assginedNode, this.config)
+      const assignedConnection = new ContextualassignedConnection(this.canvas, focusNode, assignedNode, this.config)
       assignedConnection.setLayoutId(this.layoutIdentifier)
-
       this.assignedConnection = assignedConnection
     }
 
+
+    // calculate node positions
     const calculateNodePositions = (nodes, type) => {
       // skip this method if no assigned information is provided
       if (nodes.length === 0) {
@@ -362,16 +412,42 @@ class ContextualLayout extends BaseLayout {
         cols = this.config.childContainerColumns
         containerLimitation = this.config.childContainerColumns
         showExpander = this.config.showChildExpander
-      } else if (type === "parent") {
+      }
+
+      if (type === "parent") {
         limitedNodes = nodes.slice(0, this.config.parentContainerNodeLimit)
         cols = this.config.parentContainerColumns
         containerLimitation = this.config.parentContainerColumns
         showExpander = this.config.showParentExpander
-      } else if (type === "risk") {
+      }
+
+      if (type === "risk") {
         limitedNodes = nodes.slice(0, this.config.riskContainerNodeLimit)
         cols = this.config.riskContainerColumns
         containerLimitation = this.config.riskContainerColumns
         showExpander = this.config.showRiskExpander
+      }
+
+      if (type === "assignedParent") {
+        limitedNodes = nodes.slice(0, this.config.assignedParentContainerNodeLimit)
+        cols = this.config.assignedParentContainerColumns
+        containerLimitation = this.config.assignedParentContainerColumns
+        showExpander = this.config.showAssignedParentExpander
+
+        if (this.config.showAssignedParentNodes === false) {
+          return
+        }
+      }
+
+      if (type === "assignedChild") {
+        limitedNodes = nodes.slice(0, this.config.assignedChildContainerNodeLimit)
+        cols = this.config.assignedChildContainerColumns
+        containerLimitation = this.config.assignedChildContainerColumns
+        showExpander = this.config.showAssignedChildExpander
+
+        if (this.config.showAssignedChildNodes === false) {
+          return
+        }
       }
 
 
@@ -416,30 +492,43 @@ class ContextualLayout extends BaseLayout {
         let y
 
         if (type === "child") {
-          x = this.config.spacing + w / 2
-          y = this.config.spacing
+          x = this.config.contextualNodeSpacing + w / 2
+          y = this.config.contextualNodeSpacing
             + focusNode.getFinalY()
             + focusNode.getMaxHeight() / 2
             + this.config.childrenFocusDistance
-            + this.config.spacing * 2
+            + this.config.contextualNodeSpacing * 2
             + h / 2
         }
 
         if (type === "parent") {
-          x = this.config.spacing + node.getMinWidth() / 2
+          x = this.config.contextualNodeSpacing + node.getMinWidth() / 2
           y = focusNode.getFinalY()
             - focusNode.getMaxHeight() / 2
             - this.config.parentFocusDistance
-            - this.config.spacing * 3
+            - this.config.contextualNodeSpacing * 3
             - node.getMinHeight() / 2
         }
+
         if (type === "risk") {
-          x = this.config.spacing + w / 2
-          y = this.config.spacing
+          x = this.config.contextualNodeSpacing + w / 2
+          y = this.config.contextualNodeSpacing
             + focusNode.getFinalY()
             + this.config.riskConnectionDistance
-            + this.config.spacing
+            + this.config.contextualNodeSpacing
             + h / 2
+        }
+
+        if (type === "assignedParent") {
+          x = assignedNode.getFinalX()
+          y = assignedNode.getFinalY()
+            - this.config.assignedParentConnectionDistance
+        }
+
+        if (type === "assignedChild") {
+          x = assignedNode.getFinalX()
+          y = assignedNode.getFinalY()
+            + this.config.assignedParentConnectionDistance
         }
 
 
@@ -460,7 +549,7 @@ class ContextualLayout extends BaseLayout {
       nodeRows.forEach((row, i) => {
         if (i >= 1) {
           row.forEach((n) => {
-            const h = (rowSpacing + this.config.spacing) * i
+            const h = (rowSpacing + this.config.contextualNodeSpacing) * i
 
             if (type === "child") {
               n.setFinalY(n.getFinalY() + h)
@@ -469,6 +558,12 @@ class ContextualLayout extends BaseLayout {
               n.setFinalY(n.getFinalY() - h)
             }
             if (type === "risk") {
+              n.setFinalY(n.getFinalY() + h)
+            }
+            if (type === "assignedParent") {
+              n.setFinalY(n.getFinalY() - h)
+            }
+            if (type === "assignedChild") {
               n.setFinalY(n.getFinalY() + h)
             }
           })
@@ -488,7 +583,7 @@ class ContextualLayout extends BaseLayout {
       nodeCols.forEach((column, i) => {
         if (i >= 1) {
           column.forEach((n) => {
-            const w = (columnSpacing + this.config.spacing) * i
+            const w = (columnSpacing + this.config.contextualNodeSpacing) * i
             n.setFinalX(n.getFinalX() + w)
           })
         }
@@ -499,19 +594,19 @@ class ContextualLayout extends BaseLayout {
       // top left
       let x0 = Math.min(...nodes.map((n) => {
         const w = n.getMinWidth()
-        return n.getFinalX() - w / 2 - this.config.spacing / 1
+        return n.getFinalX() - w / 2 - this.config.contextualNodeSpacing / 1
       }))
 
       let y0 = Math.min(...nodes.map((n) => {
         const h = n.getMinHeight()
-        return n.getFinalY() - h / 2 - this.config.spacing / 1
+        return n.getFinalY() - h / 2 - this.config.contextualNodeSpacing / 1
       }))
 
 
       // top right
       let x1 = Math.max(...nodes.map((n) => {
         const w = n.getMinWidth()
-        return n.getFinalX() + w / 2 + this.config.spacing / 1
+        return n.getFinalX() + w / 2 + this.config.contextualNodeSpacing / 1
       }))
 
       let y1 = y0
@@ -519,6 +614,9 @@ class ContextualLayout extends BaseLayout {
 
       // adjust X position
       let adjustment = focusNode.getFinalX() - (x0 + x1) / 2
+      if (type === "assignedChild" || type === "assignedParent") {
+        adjustment = assignedNode.getFinalX() - (x0 + x1) / 2
+      }
       if (type === "risk") {
         adjustment += this.config.riskFocusDistance
       }
@@ -531,7 +629,7 @@ class ContextualLayout extends BaseLayout {
       let x2 = x1
       const y2 = Math.max(...nodes.map((n) => {
         const h = n.getMinHeight()
-        return n.getFinalY() + h / 2 + this.config.spacing / 1
+        return n.getFinalY() + h / 2 + this.config.contextualNodeSpacing / 1
       }))
 
       // absolute bottom left
@@ -546,7 +644,7 @@ class ContextualLayout extends BaseLayout {
       let x4 = x0
       const y4 = Math.max(...limitedNodes.map((n) => {
         const h = n.getMinHeight()
-        return n.getFinalY() + h / 2 + this.config.spacing / 1
+        return n.getFinalY() + h / 2 + this.config.contextualNodeSpacing / 1
       }))
 
       // minimal button right
@@ -561,7 +659,7 @@ class ContextualLayout extends BaseLayout {
       let x6 = x0
       const y6 = Math.min(...limitedNodes.map((n) => {
         const h = n.getMinHeight()
-        return n.getFinalY() - h / 2 - this.config.spacing / 1
+        return n.getFinalY() - h / 2 - this.config.contextualNodeSpacing / 1
       }))
 
       let x7 = x1
@@ -580,21 +678,9 @@ class ContextualLayout extends BaseLayout {
       mincx += adjustment
 
 
-      // this.canvas.circle(5).fill("#000").center(x0, y0)
-      // this.canvas.circle(5).fill("#75f").center(x1, y1)
-      // this.canvas.circle(5).fill("#f75").center(x2, y2)
-      // this.canvas.circle(5).fill("#00f").center(x3, y3)
-      // this.canvas.circle(5).fill("#f00").center(x4, y4)
-      // this.canvas.circle(5).fill("#ff0").center(x5, y5)
-      // this.canvas.circle(1).fill("#ccc").center(x6, y6)
-      // this.canvas.circle(1).fill("#222").center(x7, y7)
-      // this.canvas.circle(5).fill("#1f1").center(maxcx, maxcy)
-      // this.canvas.circle(5).fill("#000").center(mincx, mincy)
-
-
       const xx0 = x0
       const yy0 = y0
-      if (type === "parent") {
+      if (type === "parent" || type === "assignedParent") {
         x0 = x6
         y0 = y6
 
@@ -605,20 +691,28 @@ class ContextualLayout extends BaseLayout {
         mincy = (y6 + y5) / 2
       }
 
-      const maxHeight = (type === "child" || type === "risk")
+      const maxHeight = (type === "child" || type === "risk" || type === "assignedChild")
         ? calculateDistance(x1, y1, x2, y2)
         : calculateDistance(xx0, yy0, x4, y4)
 
 
       // set initial render position
       nodes.forEach((node) => {
-        node.setInitialX(focusNode.getFinalX())
-        node.setInitialY(focusNode.getFinalY())
+        if (type === "assignedChild" || type === "assignedParent") {
+          node.setInitialX(assignedNode.getFinalX())
+          node.setInitialY(assignedNode.getFinalY())
+        } else {
+          node.setInitialX(focusNode.getFinalX())
+          node.setInitialY(focusNode.getFinalY())
+        }
+
+
+        node.setNodeSize("min")
       })
 
 
       // calculate container
-      if (limitedNodes.length &lt;= containerLimitation) {
+      if (limitedNodes.length &lt;= containerLimitation &amp;&amp; (type !== "assignedChild" &amp;&amp; type !== "assignedParent")) {
         return
       }
 
@@ -635,7 +729,13 @@ class ContextualLayout extends BaseLayout {
         width: calculateDistance(x0, y0, x1, y1),
       }
 
-      const container = new ContextualContainer(this.canvas, focusNode, containerInfo, this.config)
+      let container
+      if (type === "assignedChild" || type === "assignedParent") {
+        container = new ContextualContainer(this.canvas, assignedNode, containerInfo, this.config)
+      } else {
+        container = new ContextualContainer(this.canvas, focusNode, containerInfo, this.config)
+      }
+
       container.setLayoutId(this.layoutIdentifier)
       container.setType(type)
       this.containers.push(container)
@@ -653,26 +753,33 @@ class ContextualLayout extends BaseLayout {
         expander.setType(type)
 
         if (type === "child") {
-          expander.setIsLayoutExpended(this.areChildrenExpended)
+          expander.setIsLayoutExpanded(this.areChildrenExpanded)
         }
         if (type === "parent") {
-          expander.setIsLayoutExpended(this.areParentsExpended)
+          expander.setIsLayoutExpanded(this.areParentsExpanded)
         }
         if (type === "risk") {
-          expander.setIsLayoutExpended(this.areRisksExpended)
+          expander.setIsLayoutExpanded(this.areRisksExpanded)
         }
 
+        if (type === "assignedParent") {
+          expander.setIsLayoutExpanded(this.areAssignedParentExpanded)
+        }
+
+        if (type === "assignedChild") {
+          expander.setIsLayoutExpanded(this.areAssignedChildrenExpanded)
+        }
 
         // expander on top
-        if (type === "risk" || type === "child") {
-          const ex = x0 + this.config.spacing
-          const ey = y0 - this.config.spacing * 1.5
+        if (type === "risk" || type === "child" || type === "assignedChild") {
+          const ex = x0 + this.config.contextualNodeSpacing
+          const ey = y0 - this.config.contextualNodeSpacing * 1.5
 
           expander.setFinalX(ex)
           expander.setFinalY(ey)
         } else {
-          const ex = x0 + this.config.spacing
-          const ey = y3 + this.config.spacing * 1.5
+          const ex = x0 + this.config.contextualNodeSpacing
+          const ey = y3 + this.config.contextualNodeSpacing * 1.5
 
           expander.setFinalX(ex)
           expander.setFinalY(ey)
@@ -682,6 +789,8 @@ class ContextualLayout extends BaseLayout {
       }
     }
 
+
+    // calculate the small connection between risk nodes and the assigned connection arrow
     const calculateRiskConnection = () => {
       if (this.assignedInfo === null || riskNodes.length === 0) {
         return
@@ -691,7 +800,7 @@ class ContextualLayout extends BaseLayout {
         riskNodes,
         this.containers.find((c) => c.type === "risk"),
         focusNode,
-        assginedNode,
+        assignedNode,
         this.assignedConnection,
         this.config,
       )
@@ -700,14 +809,11 @@ class ContextualLayout extends BaseLayout {
     }
 
 
-    const calculateContainerEdges = () => {
+    // calculate edges
+    const calculateEdges = () => {
       const parentContainer = this.containers.find((c) => c.type === "parent") || null
       const childContainer = this.containers.find((c) => c.type === "child") || null
 
-      // skip this method if no containers exist
-      // if (parentContainer === null &amp;&amp; childContainer === null) {
-      //   return
-      // }
 
       // calculate container edges
       if (parentContainer !== null) {
@@ -724,6 +830,22 @@ class ContextualLayout extends BaseLayout {
         this.containerConnections.push(containerConnection)
       }
 
+      // calculate assigned node connections
+      if (assignedChildNodes.length > 0) {
+        const assignedChildContainer = this.containers.find((c) => c.type === "assignedChild")
+        const containerConnection = new ContextualContainerConnection(this.canvas, assignedNode, assignedChildContainer, assignedChildNodes, this.config)
+        containerConnection.setLayoutId(this.layoutIdentifier)
+        containerConnection.setType("assignedChild")
+        this.containerConnections.push(containerConnection)
+      }
+      if (assignedParentNodes.length > 0) {
+        const assignedChildContainer = this.containers.find((c) => c.type === "assignedParent")
+        const containerConnection = new ContextualContainerConnection(this.canvas, assignedNode, assignedChildContainer, assignedParentNodes, this.config)
+        containerConnection.setLayoutId(this.layoutIdentifier)
+        containerConnection.setType("assignedParent")
+        this.containerConnections.push(containerConnection)
+      }
+
 
       // calculate parent edges
       const parentEdges = this.edges.filter((e) => e.fromNode.id === focusNode.id)
@@ -731,7 +853,7 @@ class ContextualLayout extends BaseLayout {
       if (parentContainer === null) {
         parentEdges.forEach((edge) => {
           // update fromNode X position only for bold edges
-          edge.calculateEdge({ isContextualParent: true })
+          edge.calculateEdge({ isContextualParent: true, isReRender })
         })
       } else {
         this.edges = this.edges.filter((e) => e.fromNode.id !== focusNode.id)
@@ -741,81 +863,43 @@ class ContextualLayout extends BaseLayout {
       // calculate child edges
       if (childContainer === null) {
         childEdges.forEach((edge) => {
-          edge.calculateEdge({ isContextualChild: true })
+          // update toNode X position only for bold edges
+
+
+          edge.calculateEdge({ isContextualChild: true, isReRender })
         })
       } else {
         this.edges = this.edges.filter((e) => e.toNode.id !== focusNode.id)
       }
+
+
+      // calculate assigned edges
     }
 
 
+    // calculate the layout dimensions
     const calculateLayoutInfo = () => {
-      const nodes = [
-        ...this.parents.slice(0, this.config.parentContainerNodeLimit),
-        ...this.children.slice(0, this.config.childContainerNodeLimit),
-        ...this.risks.slice(0, this.config.riskContainerNodeLimit),
-        this.assgined,
-      ]
-
-
-      let x0 = Math.min(...nodes.map((n) => {
-        const w = n.getMinWidth()
-        return n.getFinalX() - w / 2 - this.config.spacing * 2
+      // calculate the layout info by gathering information about three points
+      const x0 = Math.min(...this.nodes.map((n) => {
+        const w = n.getNodeSize() === "min" ? n.config.minWidth : n.config.maxWidth
+        return n.getFinalX() - w
       }))
-
-      if (this.parents.length === 0 &amp;&amp; this.children.length === 0) {
-        x0 = this.focus.getFinalX() - this.focus.getMaxWidth() / 2 - this.config.spacing * 2
-      }
-
       const y0 = 0
-      // this.canvas.circle(5).fill("#f75").center(x0, y0)
 
-
-      // top right
-      let x1 = Math.max(...nodes.map((n) => {
-        const w = n.getMinWidth()
-        return n.getFinalX() + w / 2 + this.config.spacing / 2
+      const x1 = Math.max(...this.nodes.map((n) => {
+        const w = n.getNodeSize() === "min" ? n.config.minWidth : n.config.maxWidth
+        return n.getFinalX() + w
       }))
+      const y1 = 0
 
-      if (this.parents.length === 0 &amp;&amp; this.children.length === 0) {
-        x1 = this.focus.getFinalX() + this.focus.getMaxWidth() / 2 + this.config.spacing * 2
-      }
-
-      const y1 = y0
-      // this.canvas.circle(5).fill("#75f").center(x1, y1)
-
-
-      // bottom right
       const x2 = x1
       const y2 = Math.max(...this.nodes.map((n) => {
-        const h = n.getMinHeight()
-        return n.getFinalY() + h / 2 + this.config.spacing / 2
+        const h = n.getNodeSize() === "min" ? n.config.minHeight : n.config.maxHeight
+        return n.getFinalY() + h
       }))
 
-      if (this.risks.length === 0 &amp;&amp; this.children.length === 0) {
-        y2 = this.focus.getFinalY() + this.focus.getMaxHeight() / 2 + this.config.spacing * 2
-      }
-      // this.canvas.circle(5).fill("#f75").center(x2, y2)
 
-
-      // bottom left
-      const x3 = x0
-      const y3 = y2
-      // this.canvas.circle(5).fill("#000").center(x3, y3)
-
-
-      const cx = (x0 + x2) / 2
-      const cy = (y0 + y2) / 2
-      // this.canvas.circle(5).fill("#1f1").center(cx, cy)
-
-      // store layout width and height info
-      const calculateDistance = (sx, sy, tx, ty) => {
-        const dx = tx - sx
-        const dy = ty - sy
-        return Math.sqrt(dx * dx + dy * dy)
-      }
-
-
+      // create the layout info object
       this.layoutInfo = {
         x: x0,
         y: y0,
@@ -824,6 +908,9 @@ class ContextualLayout extends BaseLayout {
         w: calculateDistance(x0, y0, x1, y1),
         h: calculateDistance(x1, y1, x2, y2),
       }
+
+      this.canvas.circle(5).center(x0 + 30, 10).fill("red")
+      this.canvas.circle(5).center(x0 + this.layoutInfo.w, 10).fill("red")
     }
 
 
@@ -835,53 +922,66 @@ class ContextualLayout extends BaseLayout {
     calculateNodePositions(parentNodes, "parent")
     calculateNodePositions(riskNodes, "risk")
 
+    calculateNodePositions(assignedParentNodes, "assignedParent")
+    calculateNodePositions(assignedChildNodes, "assignedChild")
+
     calculateRiskConnection()
 
-    calculateContainerEdges()
+    calculateEdges()
 
 
-    // calculateParentEdges()
-    // calculateChildEdges()
-    // calculateFocusAssginedEdge()
-
-    // calculateLayoutInfo()
+    calculateLayoutInfo()
 
 
     return this.layoutInfo
   }
 
 
+  /**
+   * Renders the contextual layout.
+   * @param {Object} [opts={ }] An object containing additional information.
+   * @param {Boolean} [opts.isReRender=false] Determines if the layout is rerenderd.
+   * @param {Boolean} [opts.isParentOperation=false] Determines where nodes originate from.
+   * @param {Boolean} [opts.oldFocusNode=false] A reference to the old focus node.
+   */
   renderLayout({
-    isReRender = false, x = null, y = null, isParentOperation = false,
+    isReRender = false, isParentOperation = false, oldFocusNode = null, updateSVGs = false, prevLayoutWidth = 0,
   }) {
-    this.centerX = this.config.maxLayoutWidth / 2
-    this.centerY = this.config.maxLayoutHeight / 2
-    const focusNode = this.nodes.find((n) => n.getId() === this.focusId)
+    const { focusNode } = this
+    const { assignedNode } = this
+    const { childNodes } = this
+    const { parentNodes } = this
+    const { riskNodes } = this
+    const { assignedChildNodes } = this
+    const { assignedParentNodes } = this
 
     const X = focusNode.getFinalX()
     const Y = focusNode.getFinalY()
 
+
+    // renders all node containers
     const renderContainers = () => {
       this.containers.forEach((container) => {
-        // if (container.isRendered() === false) {
         container.render({ isParentOperation })
-        // }
-
-        // if (container.isRendered() === true) {
-        //   container.transformToFinalPosition()
-        // }
       })
     }
 
 
+    // renders an expander for each container (but only if required)
     const renderExpanders = () => {
       this.expanders.forEach((expander) => {
-        expander.render({ cx: X, cy: Y })
+        const assignedNode = this.getContextualAssignedNode()
 
-        // find provided events
+        // assigned nodes come from a different origin
+        if (expander.type === "assignedParent" || expander.type === "assignedChild") {
+          expander.render({ cx: assignedNode.getFinalX(), cy: assignedNode.getFinalY() })
+        } else {
+          expander.render({ cx: X, cy: Y })
+        }
+
+        // find expander events
         const events = this.events.filter((e) => e.func === "expandOrCollapseGridEvent")
         const eventStr = [...new Set(events.map((e) => e.event))].toString().split(",")
-
 
         // attach events to SVG object
         expander.svg.on(eventStr, (e) => {
@@ -899,10 +999,10 @@ class ContextualLayout extends BaseLayout {
             if (myevent.event === type &amp;&amp; myevent.modifier === modifier) {
               if (expander.type === "child") {
                 // change the current expand state
-                this.areChildrenExpended = !this.areChildrenExpended
+                this.areChildrenExpanded = !this.areChildrenExpanded
 
                 // update the expanders text
-                if (this.areChildrenExpended === true) {
+                if (this.areChildrenExpanded === true) {
                   expander.changeToShowMoreText()
                 } else {
                   expander.changeToHideMoreText()
@@ -911,10 +1011,10 @@ class ContextualLayout extends BaseLayout {
 
               if (expander.type === "parent") {
                 // change the current expand state
-                this.areParentsExpended = !this.areParentsExpended
+                this.areParentsExpanded = !this.areParentsExpanded
 
                 // update the expanders text
-                if (this.areParentsExpended === true) {
+                if (this.areParentsExpanded === true) {
                   expander.changeToShowMoreText()
                 } else {
                   expander.changeToHideMoreText()
@@ -924,10 +1024,34 @@ class ContextualLayout extends BaseLayout {
 
               if (expander.type === "risk") {
                 // change the current expand state
-                this.areRisksExpended = !this.areRisksExpended
+                this.areRisksExpanded = !this.areRisksExpanded
 
                 // update the expanders text
-                if (this.areRisksExpended === true) {
+                if (this.areRisksExpanded === true) {
+                  expander.changeToShowMoreText()
+                } else {
+                  expander.changeToHideMoreText()
+                }
+              }
+
+              if (expander.type === "assignedParent") {
+                // change the current expand state
+                this.areAssignedParentExpanded = !this.areAssignedParentExpanded
+
+                // update the expanders text
+                if (this.areAssignedParentExpanded === true) {
+                  expander.changeToShowMoreText()
+                } else {
+                  expander.changeToHideMoreText()
+                }
+              }
+
+              if (expander.type === "assignedChild") {
+                // change the current expand state
+                this.areAssignedChildrenExpanded = !this.areAssignedChildrenExpanded
+
+                // update the expanders text
+                if (this.areAssignedChildrenExpanded === true) {
                   expander.changeToShowMoreText()
                 } else {
                   expander.changeToHideMoreText()
@@ -939,152 +1063,10 @@ class ContextualLayout extends BaseLayout {
           })
         })
       })
-
-      this.expanders.forEach((expander) => {
-        // if (expander.type === "childExpander" &amp;&amp; expander.isRendered() === false) {
-        //   const reRenderFunc = () => {
-        //     if (this.config.cachedChildNodeLimit === undefined) {
-        //       this.config = {
-        //         ...this.config,
-        //         cachedChildNodeLimit: this.config.childContainerNodeLimit,
-        //         childContainerNodeLimit: this.children.length,
-        //       }
-
-        //       this.calculateLayout()
-        //       const childExpander = this.expanders.find((e) => e.type === "childExpander")
-        //       childExpander.transformToFinalPosition()
-        //       this.containers.find((c) => c.type === "child").update()
-
-        //       const notRenderedNodes = this.children.filter((n) => n.isRendered() === false)
-        //       notRenderedNodes.forEach((child) => {
-        //         child.renderAsMin(child.getFinalX(), child.getFinalY())
-        //       })
-
-        //       expander.changeToShowMoreText()
-        //     } else {
-        //       this.config = {
-        //         ...this.config,
-        //         cachedChildNodeLimit: this.config.childContainerNodeLimit,
-        //         childContainerNodeLimit: this.config.cachedChildNodeLimit,
-        //       }
-        //       delete this.config.cachedChildNodeLimit
-
-        //       this.calculateLayout()
-        //       const childExpander = this.expanders.find((e) => e.type === "childExpander")
-        //       childExpander.transformToFinalPosition()
-        //       this.containers.find((c) => c.type === "child").update()
-
-        //       const nodesToHide = this.children.filter((c, i) => i >= this.config.childContainerNodeLimit)
-        //       nodesToHide.forEach((node) => {
-        //         node.removeNode(null, null, { animation: false })
-        //       })
-
-
-        //       expander.changeToHideMoreText()
-        //     }
-        //   }
-        //   expander.setReRenderFunc(reRenderFunc)
-        //   expander.render(X, Y)
-        //   expander.transformToFinalPosition()
-        // }
-
-        // if (expander.type === "parentExpander" &amp;&amp; expander.isRendered() === false) {
-        //   const reRenderFunc = () => {
-        //     if (this.config.cachedParentContainerNodeLimit === undefined) {
-        //       this.config = {
-        //         ...this.config,
-        //         cachedParentContainerNodeLimit: this.config.parentContainerNodeLimit,
-        //         parentContainerNodeLimit: this.parents.length,
-        //       }
-
-        //       this.calculateLayout()
-        //       const childExpander = this.expanders.find((e) => e.type === "parentExpander")
-        //       childExpander.transformToFinalPosition()
-        //       this.containers.find((c) => c.type === "parent").update()
-
-        //       const notRenderedNodes = this.parents.filter((n) => n.isRendered() === false)
-        //       notRenderedNodes.forEach((child) => {
-        //         child.renderAsMin(child.getFinalX(), child.getFinalY())
-        //       })
-
-        //       expander.changeToShowMoreText()
-        //     } else {
-        //       this.config = {
-        //         ...this.config,
-        //         cachedParentContainerNodeLimit: this.config.parentContainerNodeLimit,
-        //         parentContainerNodeLimit: this.config.cachedParentContainerNodeLimit,
-        //       }
-        //       delete this.config.cachedParentContainerNodeLimit
-
-        //       this.calculateLayout()
-        //       const childExpander = this.expanders.find((e) => e.type === "parentExpander")
-        //       childExpander.transformToFinalPosition()
-        //       this.containers.find((c) => c.type === "parent").update()
-
-        //       const nodesToHide = this.parents.filter((c, i) => i >= this.config.parentContainerNodeLimit)
-        //       nodesToHide.forEach((node) => {
-        //         node.removeNode(null, null, { animation: false })
-        //       })
-
-
-        //       expander.changeToHideMoreText()
-        //     }
-        //   }
-        //   expander.setReRenderFunc(reRenderFunc)
-        //   expander.render(X, Y)
-        //   expander.transformToFinalPosition()
-        // }
-
-        // if (expander.type === "riskExpander" &amp;&amp; expander.isRendered() === false) {
-        //   const reRenderFunc = () => {
-        //     if (this.config.cachedRiskContainerNodeLimit === undefined) {
-        //       this.config = {
-        //         ...this.config,
-        //         cachedRiskContainerNodeLimit: this.config.riskContainerNodeLimit,
-        //         riskContainerNodeLimit: this.risks.length,
-        //       }
-
-        //       this.calculateLayout()
-        //       const childExpander = this.expanders.find((e) => e.type === "riskExpander")
-        //       childExpander.transformToFinalPosition()
-        //       this.containers.find((c) => c.type === "risk").update()
-
-        //       const notRenderedNodes = this.risks.filter((n) => n.isRendered() === false)
-        //       notRenderedNodes.forEach((child) => {
-        //         // console.log(child.getFinalX(), child.getFinalY())
-        //         child.renderAsMin(child.getFinalX(), child.getFinalY())
-        //       })
-
-        //       expander.changeToShowMoreText()
-        //     } else {
-        //       this.config = {
-        //         ...this.config,
-        //         cachedRiskContainerNodeLimit: this.config.riskContainerNodeLimit,
-        //         riskContainerNodeLimit: this.config.cachedRiskContainerNodeLimit,
-        //       }
-        //       delete this.config.cachedRiskContainerNodeLimit
-
-        //       this.calculateLayout()
-        //       const childExpander = this.expanders.find((e) => e.type === "riskExpander")
-        //       childExpander.transformToFinalPosition()
-        //       this.containers.find((c) => c.type === "risk").update()
-
-        //       const nodesToHide = this.risks.filter((c, i) => i >= this.config.riskContainerNodeLimit)
-        //       nodesToHide.forEach((node) => {
-        //         node.removeNode(null, null, { animation: false })
-        //       })
-
-
-        //       expander.changeToHideMoreText()
-        //     }
-        //   }
-        //   expander.setReRenderFunc(reRenderFunc)
-        //   expander.render(X, Y)
-        //   expander.transformToFinalPosition()
-        // }
-      })
     }
 
+
+    // renders the connection between the assigned node and the focus node
     const renderConnections = () => {
       if (this.assignedConnection) {
         this.assignedConnection.render({ isParentOperation })
@@ -1095,231 +1077,124 @@ class ContextualLayout extends BaseLayout {
       }
     }
 
-    const makeFocus = async (node) => {
-      // remove event
 
-      node.svg.off("click")
-
-      // close expander (if open)
-      if (this.config.cachedChildNodeLimit !== undefined) {
-        this.config = {
-          ...this.config,
-          cachedChildNodeLimit: this.config.childContainerNodeLimit,
-          childContainerNodeLimit: this.config.cachedChildNodeLimit,
-        }
-        delete this.config.cachedChildNodeLimit
-      }
-      if (this.config.cachedParentContainerNodeLimit !== undefined) {
-        this.config = {
-          ...this.config,
-          cachedParentContainerNodeLimit: this.config.parentContainerNodeLimit,
-          parentContainerNodeLimit: this.config.cachedParentContainerNodeLimit,
-        }
-        delete this.config.cachedParentContainerNodeLimit
-      }
-
-      if (this.config.cachedRiskContainerNodeLimit !== undefined) {
-        this.config = {
-          ...this.config,
-          cachedRiskContainerNodeLimit: this.config.riskContainerNodeLimit,
-          riskContainerNodeLimit: this.config.cachedRiskContainerNodeLimit,
-        }
-        delete this.config.cachedRiskContainerNodeLimit
-      }
-
-
-      // remove nodes
-      const nodesToRemove = this.nodes.filter((n) => {
-        if (n.id === node.id) {
-          return false
-        }
-        // if (n.id === this.focus.id) {
-        //   return false
-        // }
-        return true
-      })
-
-      nodesToRemove.forEach((nodeToRemove) => {
-        nodeToRemove.removeNode(nodeToRemove.getFinalX(), nodeToRemove.getFinalY() + 100, { opacity: 0 })
-      })
-      this.assgined = null
-      this.risks = []
-      this.parents = []
-      this.children = []
-
-      // remove other stuff
-      this.containers.forEach((container) => {
-        container.removeContainer(container.getFinalX(), container.getFinalY() + 100)
-      })
-      this.containers = []
-
-      this.expanders.forEach((expander) => {
-        expander.removeNode()
-      })
-      this.expanders = []
-
-      this.connections.forEach((connection) => {
-        connection.removeConnection()
-      })
-      this.connections = []
-
-      // remove edges
-      this.parentEdges.forEach((edge) => {
-        edge.removeEdge()
-      })
-      this.parentEdges = []
-      this.childEdges.forEach((edge) => {
-        edge.removeEdge()
-      })
-      this.childEdges = []
-
-      // console.log(this.focus)
-      this.nodes = this.nodes.filter((n) => n.id === node.id)
-      this.edges = []
-
-
-      const fx = this.focus.getFinalX()
-      const fy = this.focus.getFinalY()
-      node.transformToMax(fx, fy)
-      node.transformToFinalPosition(fx, fy)
-      this.focus.transformToMin()
-
-      this.focus = node
-      await this.loadAdditionalContextualDataAsync()
-    }
-
-
+    // renders all required nodes
     const renderNodes = () => {
-      const assginedNode = this.nodes.find((n) => n.getId() === this.assignedInfo.assigned)
-      const childNodes = this.nodes.filter((n) => focusNode.childrenIds.includes(n.id))
-      const parentIds = focusNode.parentId !== null
-        ? focusNode.parentId instanceof Array ? focusNode.parentId : [focusNode.parentId]
-        : []
-      const parentNodes = this.nodes.filter((n) => parentIds.includes(n.id))
-      const riskNodes = this.nodes.filter((n) => this.assignedInfo.risks.includes(n.id))
+      // render the main assigned node
+      if (assignedNode !== null) {
+        assignedNode.renderAsMin({})
+      }
 
-
-      assginedNode.renderAsMin({})
-
-
-      childNodes.forEach((child, i) => {
-        if (i &lt; this.config.childContainerNodeLimit) {
+      // render its parents and children
+      assignedChildNodes.forEach((child, i) => {
+        if (i &lt; this.config.assignedChildContainerNodeLimit) {
           child.renderAsMin({})
         }
       })
 
-      parentNodes.forEach((parent, i) => {
-        if (i &lt; this.config.parentContainerNodeLimit) {
+      assignedParentNodes.forEach((parent, i) => {
+        if (i &lt; this.config.assignedParentContainerNodeLimit) {
           parent.renderAsMin({})
         }
       })
 
+
+      // render child nodes or transform a clicked child into the new focus node
+      childNodes.forEach((child, i) => {
+        if (i &lt; this.config.childContainerNodeLimit) {
+          if (child.isRendered() === false) {
+            child.renderAsMin({})
+          } else {
+            child.transformToMin({ IX: focusNode.getFinalX(), IY: focusNode.getFinalY() })
+          }
+        }
+      })
+
+      // render parent nodes or transform a clicked parent into the new focus node
+      parentNodes.forEach((parent, i) => {
+        if (i &lt; this.config.parentContainerNodeLimit) {
+          if (parent.isRendered() === false) {
+            parent.renderAsMin({})
+          } else {
+            parent.transformToMin({ IX: focusNode.getFinalX(), IY: focusNode.getFinalY() })
+          }
+        }
+      })
+
+
+      // render risks
       riskNodes.forEach((risk, i) => {
         if (i &lt; this.config.riskContainerNodeLimit) {
           risk.renderAsMin({})
         }
       })
 
-      const eventNodes = [...parentNodes, ...childNodes]
 
-      eventNodes.forEach((node) => {
-        if (node.isRendered() === true) {
-          // find provided events
-          const events = this.events.filter((e) => e.func === "traverseInLayoutEvent")
-          const eventStr = [...new Set(events.map((e) => e.event))].toString().split(",")
+      // attach traversal events to each parent and child node
+      const attachEvents = (nodes, isParentOperation) => {
+        nodes.forEach((node) => {
+          if (node.isRendered() === true) {
+            // find provided events
+            const events = this.events.filter((e) => e.func === "traverseInLayoutEvent")
+            const eventStr = [...new Set(events.map((e) => e.event))].toString().split(",")
 
-          // attach events to SVG object
-          node.svg.on(eventStr, (e) => {
-            const { type } = e
-            let modifier
-            if (e.altKey === true) {
-              modifier = "altKey"
-            } else if (e.ctrlKey === true) {
-              modifier = "ctrlKey"
-            } else if (e.shiftKey === true) {
-              modifier = "shiftKey"
-            }
-            // add provided events
-            events.forEach((myevent) => {
-              if (myevent.event === type &amp;&amp; myevent.modifier === modifier) {
-                this.traverseInLayoutEvent(node)
+            // attach events to SVG object
+            node.svg.on(eventStr, (e) => {
+              const { type } = e
+              let modifier
+              if (e.altKey === true) {
+                modifier = "altKey"
+              } else if (e.ctrlKey === true) {
+                modifier = "ctrlKey"
+              } else if (e.shiftKey === true) {
+                modifier = "shiftKey"
               }
+              // add provided events
+              events.forEach((myevent) => {
+                if (myevent.event === type &amp;&amp; myevent.modifier === modifier) {
+                  this.traverseInLayoutEvent({ node, isParentOperation })
+                }
+              })
             })
-          })
+          }
+        })
+      }
+
+      attachEvents(parentNodes, true)
+      attachEvents(childNodes, false)
+
+
+      if (focusNode.isRendered() === false) {
+        focusNode.renderAsMax({})
+      } else {
+        focusNode.transformToMax({})
+      }
+
+
+      // FIXME: bug: sometimes the focus node gets removed
+      if (isReRender === true &amp;&amp; oldFocusNode !== null) {
+        // remove none-needed nodes
+        const relevantNodes = [...parentNodes, ...childNodes]
+        if (relevantNodes.find((n) => n.id === oldFocusNode.id) === undefined) {
+          console.log("remove focus", oldFocusNode)
+          oldFocusNode.removeSVG({})
         }
-      })
-
-      focusNode.renderAsMax({})
-      // if (this.assgined !== null) {
-      //   if (this.assgined.isRendered() === false) {
-      //     this.assgined.renderAsMin(X, Y)
-      //   } else if (this.assgined.isRendered() === true) {
-      //     this.assgined.transformToFinalPosition()
-      //   }
-      // }
-
-
-      // if (this.focus.isRendered() === false) {
-      //   this.focus.renderAsMax(X, Y)
-      // } else if (this.focus.isRendered() === true) {
-      //   this.focus.transformToFinalPosition()
-      // }
-
-      // this.parents.forEach((parent, i) => {
-      //   if (i &lt; this.config.parentContainerNodeLimit) {
-      //     if (parent.isRendered() === false) {
-      //       parent.addEvent("click", () => makeFocus(parent))
-      //       parent.renderAsMin(X, Y)
-      //     } else if (parent.isRendered() === true) {
-      //       parent.transformToFinalPosition()
-      //     }
-      //   }
-      // })
-
-      // this.children.forEach((child, i) => {
-      //   if (i &lt; this.config.childContainerNodeLimit) {
-      //     if (child.isRendered() === false) {
-      //       child.addEvent("click", () => makeFocus(child))
-      //       child.renderAsMin(X, Y)
-      //     } else if (child.isRendered() === true) {
-      //       child.transformToFinalPosition()
-      //     }
-      //   }
-      // })
-
-      // this.risks.forEach((risk, i) => {
-      //   if (i &lt; this.config.riskContainerNodeLimit) {
-      //     if (risk.isRendered() === false) {
-      //       risk.renderAsMin(X, Y)
-      //     } else if (risk.isRendered() === true) {
-      //       risk.transformToFinalPosition()
-      //     }
-      //   }
-      // })
+      }
     }
 
+
+    // renders required edges
     const renderEdges = () => {
       this.edges.forEach((edge) => {
         const isContextualBoldEdge = edge instanceof BoldEdge
-        if (edge.isRendered() === false) edge.render({ X, Y, isContextualBoldEdge })
+        if (edge.isHidden === false) {
+          if (edge.isRendered() === false) edge.render({ X, Y, isContextualBoldEdge })
+        }
       })
-      // this.parentEdges.forEach((edge) => {
-      //   if (edge.isRendered() === false) {
-      //     edge.render(X, Y)
-      //   } else if (edge.isRendered() === true) {
-      //     edge.transformToFinalPosition()
-      //   }
-      // })
-
-      // this.childEdges.forEach((edge) => {
-      //   if (edge.isRendered() === false) {
-      //     edge.render(X, Y)
-      //   } else if (edge.isRendered() === true) {
-      //     edge.transformToFinalPosition()
-      //   }
-      // })
     }
 
+
+    // update the container connections
     const renderContainerConnections = () => {
       this.containerConnections.forEach((con) => {
         con.render({ isParentOperation })
@@ -1328,27 +1203,97 @@ class ContextualLayout extends BaseLayout {
 
 
     // rendering
+
     renderContainers()
     renderExpanders()
     renderConnections()
     renderNodes()
     renderContainerConnections()
     renderEdges()
+  }
 
 
-    // // render containers
-    // this.containers.forEach((container) => {
-    //   container.render(X, Y)
-    //   container.transform()
-    // })
+  /**
+   * Returns the currently active focus node.
+   * @return {BaseNode} The focus node.
+   */
+  getContextualFocusNode() {
+    return this.nodes.find((n) => n.getId() === this.focusId)
+  }
 
 
-    // this.edges.forEach((edge) => {
-    //   if (edge.svg === null) {
-    //     edge.render(X, Y)
-    //   }
-    //   edge.transformToFinalPosition()
-    // })
+  /**
+   * Returns the currently active assigned node.
+   * @returns {BaseNode|null} The assigned node.
+   */
+  getContextualAssignedNode() {
+    if (this.assignedInfo !== null) {
+      return this.nodes.find((n) => n.getId() === this.assignedInfo.assigned)
+    }
+    return null
+  }
+
+
+  /**
+   * Returns all currently active focus child node.
+   * @param {BaseNode} focusNode The current focus node.
+   * @returns {Array.&lt;BaseNode>} The child nodes.
+   */
+  getContextualChildNodes(focusNode) {
+    return this.nodes.filter((n) => focusNode.childrenIds.includes(n.id))
+  }
+
+
+  /**
+   * Returns an array containing parents for the focus node.
+   * @param {BaseNode} focusNode The current focus node.
+   * @returns {Array.&lt;BaseNode>|[]} The parent nodes.
+   */
+  getContextualParentNodes(focusNode) {
+    const parentIds = focusNode.parentId !== null
+      ? focusNode.parentId instanceof Array ? focusNode.parentId : [focusNode.parentId]
+      : []
+    return this.nodes.filter((n) => parentIds.includes(n.id))
+  }
+
+
+  /**
+   * Returns an array of risks between the focus and assigned node.
+   * @param {BaseNode} focusNode The current focus node.
+   * @returns {Array.&lt;BaseNode>|[]} The risk nodes.
+   */
+  getContextualRiskNodes() {
+    if (this.assignedInfo !== null) {
+      return this.nodes.filter((n) => this.assignedInfo.risks.includes(n.id))
+    }
+    return []
+  }
+
+
+  /**
+   * Returns all parents the assigned node has.
+   * @param {BaseNode} focusNode The current focus node.
+   * @returns {Array.&lt;BaseNode>|[]} The parent nodes.
+   */
+  getAssignedParentNodes(assignedNode) {
+    if (this.assignedInfo !== null) {
+      const pIds = assignedNode.parentId !== null ? assignedNode.parentId instanceof Array ? assignedNode.parentId : [assignedNode.parentId] : []
+      return this.nodes.filter((n) => pIds.includes(n.id))
+    }
+    return []
+  }
+
+
+  /**
+   * Returns all children the assigned node has.
+   * @param {BaseNode} focusNode The current focus node.
+   * @returns {Array.&lt;BaseNode>|[]} The children nodes.
+   */
+  getAssignedChildNodes(assignedNode) {
+    if (this.assignedInfo !== null) {
+      return this.nodes.filter((n) => assignedNode.childrenIds.includes(n.id))
+    }
+    return []
   }
 }
 

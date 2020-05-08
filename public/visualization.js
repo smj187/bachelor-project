@@ -209,7 +209,7 @@ var shared = createCommonjsModule(function (module) {
 (module.exports = function (key, value) {
   return sharedStore[key] || (sharedStore[key] = value !== undefined ? value : {});
 })('versions', []).push({
-  version: '3.6.5',
+  version: '3.6.4',
   mode:  'global',
   copyright: '© 2020 Denis Pushkarev (zloirock.ru)'
 });
@@ -3457,19 +3457,6 @@ _export({ target: 'Array', proto: true }, {
   }
 });
 
-var nativeJoin = [].join;
-
-var ES3_STRINGS = indexedObject != Object;
-var STRICT_METHOD$3 = arrayMethodIsStrict('join', ',');
-
-// `Array.prototype.join` method
-// https://tc39.github.io/ecma262/#sec-array.prototype.join
-_export({ target: 'Array', proto: true, forced: ES3_STRINGS || !STRICT_METHOD$3 }, {
-  join: function join(separator) {
-    return nativeJoin.call(toIndexedObject(this), separator === undefined ? ',' : separator);
-  }
-});
-
 // this method was added to unscopables after implementation
 // in popular engines, so it's moved to a separate module
 
@@ -3550,13 +3537,7 @@ if (!set$1 || !clear) {
     defer = functionBindContext(port.postMessage, port, 1);
   // Browsers with postMessage, skip WebWorkers
   // IE8 has postMessage, but it's sync & typeof its postMessage is 'object'
-  } else if (
-    global_1.addEventListener &&
-    typeof postMessage == 'function' &&
-    !global_1.importScripts &&
-    !fails(post) &&
-    location.protocol !== 'file:'
-  ) {
+  } else if (global_1.addEventListener && typeof postMessage == 'function' && !global_1.importScripts && !fails(post)) {
     defer = post;
     global_1.addEventListener('message', listener, false);
   // IE8-
@@ -7740,16 +7721,16 @@ _export$1({ target: 'Array', proto: true, forced: NEGATIVE_ZERO$1 || SLOPPY_METH
   }
 });
 
-var nativeJoin$1 = [].join;
+var nativeJoin = [].join;
 
-var ES3_STRINGS$1 = indexedObject$1 != Object;
+var ES3_STRINGS = indexedObject$1 != Object;
 var SLOPPY_METHOD$1 = sloppyArrayMethod('join', ',');
 
 // `Array.prototype.join` method
 // https://tc39.github.io/ecma262/#sec-array.prototype.join
-_export$1({ target: 'Array', proto: true, forced: ES3_STRINGS$1 || SLOPPY_METHOD$1 }, {
+_export$1({ target: 'Array', proto: true, forced: ES3_STRINGS || SLOPPY_METHOD$1 }, {
   join: function join(separator) {
-    return nativeJoin$1.call(toIndexedObject$1(this), separator === undefined ? ',' : separator);
+    return nativeJoin.call(toIndexedObject$1(this), separator === undefined ? ',' : separator);
   }
 });
 
@@ -16309,8 +16290,7 @@ var BaseNode = /*#__PURE__*/function () {
       var _this = this;
 
       // create the SVG object on the canvas.
-      var svg = this.canvas.group().draggable(); // const svg = this.canvas.group()
-      // attach some CSS and an ID
+      var svg = this.canvas.group(); // attach some CSS and an ID
 
       svg.css("cursor", "pointer");
       svg.id("node#".concat(this.id)); // register a hover event
@@ -16532,27 +16512,30 @@ var BaseNode = /*#__PURE__*/function () {
 
       var _ref$isContextualNode = _ref.isContextualNode,
           isContextualNode = _ref$isContextualNode === void 0 ? false : _ref$isContextualNode,
-          _ref$isContextualPare = _ref.isContextualParentOperation;
+          _ref$isContextualPare = _ref.isContextualParentOperation,
+          isContextualParentOperation = _ref$isContextualPare === void 0 ? false : _ref$isContextualPare;
       var x = this.finalX;
       var y = this.finalY;
-      this.svg.back();
 
       if (isContextualNode === true) {
+        var offset = isContextualParentOperation ? 50 : -50;
+        if (this.isRendered() === false) return;
+        this.svg.animate({
+          duration: this.config.animationSpeed
+        }).transform({
+          position: [x, y + offset]
+        }).attr({
+          opacity: 0
+        }).after(function () {
+          try {
+            _this2.svg.remove();
+          } catch (error) {}
 
-        try {
-          this.svg.remove();
-        } catch (error) {}
-
-        this.svg = null; // this.svg
-        //   // .animate({ duration: this.config.animationSpeed })
-        //   .transform({ position: [x, y + offset] })
-        //   .attr({ opacity: 0 })
-        //   .after(() => {
-        //     try { this.svg.remove() } catch (error) { }
-        //     this.svg = null
-        //   })
+          _this2.svg = null;
+        });
       } else {
         if (this.isRendered() === false) return;
+        this.svg.back();
         this.svg.animate({
           duration: this.config.animationSpeed
         }).transform({
@@ -16564,6 +16547,23 @@ var BaseNode = /*#__PURE__*/function () {
           } catch (error) {}
 
           _this2.svg = null;
+        });
+      }
+    }
+    /**
+     * Evaluates the current zoom level with the provided threshold and hides labels, if necessary.
+     */
+
+  }, {
+    key: "checkZoomLevel",
+    value: function checkZoomLevel() {
+      var currentZoomLevel = this.canvas.parent().attr().zoomCurrent;
+      var currenZoomThreshold = this.canvas.parent().attr().zoomThreshold; // check if the newley created labels should not be visible
+
+      if (currentZoomLevel <= currenZoomThreshold) {
+        var labels = document.querySelectorAll("#label");
+        labels.forEach(function (doc) {
+          doc.style.opacity = "0";
         });
       }
     }
@@ -17092,7 +17092,7 @@ var RiskNode = /*#__PURE__*/function (_BaseNode) {
       label.style.fontStyle = this.config.labelFontStyle;
 
       if (this.state !== null) {
-        label.style.textAlign = "right";
+        label.style.textAlign = "left";
       } else {
         label.style.width = "inherit";
         label.style.textAlign = "center";
@@ -17190,9 +17190,11 @@ var RiskNode = /*#__PURE__*/function (_BaseNode) {
         this.svg.get(0).animate({
           duration: this.config.animationSpeed
         }).center(X, Y);
+        var ix = X + this.config.minIconTranslateX;
+        var iy = Y + this.config.minIconTranslateY;
         this.svg.get(1).animate({
           duration: this.config.animationSpeed
-        }).center(X + this.config.minIconTranslateX, Y + this.config.minIconTranslateY);
+        }).center(ix, iy);
         this.svg.get(2).animate({
           duration: this.config.animationSpeed
         }).center(X, Y);
@@ -17200,9 +17202,14 @@ var RiskNode = /*#__PURE__*/function (_BaseNode) {
         this.svg.get(0).animate({
           duration: this.config.animationSpeed
         }).center(X, Y);
+
+        var _ix = X + this.config.maxIconTranslateX;
+
+        var _iy = Y + this.config.maxIconTranslateY;
+
         this.svg.get(1).animate({
           duration: this.config.animationSpeed
-        }).center(X + this.config.maxIconTranslateX, Y + this.config.maxIconTranslateY);
+        }).center(_ix, _iy);
         this.svg.get(2).animate({
           duration: this.config.animationSpeed
         }).center(X, Y);
@@ -17259,6 +17266,7 @@ var RiskNode = /*#__PURE__*/function (_BaseNode) {
       this.currentY = FY;
       this.coords.push([this.finalX, this.finalY]);
       this.svg = svg;
+      this.checkZoomLevel();
     }
     /**
     * Renders a risk node in detailed representation.
@@ -17311,6 +17319,7 @@ var RiskNode = /*#__PURE__*/function (_BaseNode) {
       this.currentY = FY;
       this.coords.push([this.finalX, this.finalY]);
       this.svg = svg;
+      this.checkZoomLevel();
     }
     /**
     * Transforms a node from minimal version to detailed representation.
@@ -17323,6 +17332,8 @@ var RiskNode = /*#__PURE__*/function (_BaseNode) {
   }, {
     key: "transformToMax",
     value: function transformToMax(_ref4) {
+      var _this2 = this;
+
       var _ref4$X = _ref4.X,
           X = _ref4$X === void 0 ? this.finalX : _ref4$X,
           _ref4$Y = _ref4.Y,
@@ -17345,28 +17356,62 @@ var RiskNode = /*#__PURE__*/function (_BaseNode) {
       this.svg.add(icon);
       this.svg.add(text); // put new elements into position
 
+      var iconBlurRemoved = false;
+      var textBlurRemoved = false;
       icon.attr({
         opacity: 0
-      }).center(ix, iy).animate({
+      }).size(1, 1).center(ix, iy).filterWith(function (add) {
+        add.gaussianBlur(25, 25);
+        add.id("transformBlurIcon".concat(_this2.id));
+      }).animate({
         duration: this.config.animationSpeed
       }).attr({
         opacity: this.config.maxIconOpacity
-      }).size(this.config.maxIconSize, this.config.maxIconSize).cx(X - this.config.maxIconSize / 2 + this.config.maxIconTranslateX + this.config.maxIconSize / 2).cy(Y - this.config.maxIconSize / 2 + this.config.maxIconTranslateY + this.config.maxIconSize / 2);
-      text.attr({
+      }).size(this.config.maxIconSize, this.config.maxIconSize).cx(X - this.config.maxIconSize / 2 + this.config.maxIconTranslateX + this.config.maxIconSize / 2).cy(Y - this.config.maxIconSize / 2 + this.config.maxIconTranslateY + this.config.maxIconSize / 2).during(function () {
+        var time = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this2;
+
+        if (time > 0.85 && iconBlurRemoved === false) {
+          iconBlurRemoved = true;
+          icon.unfilter();
+
+          var filters = _toConsumableArray(_this2.canvas.defs().node.childNodes).find(function (d) {
+            return d.id === "transformBlurIcon".concat(_this2.id);
+          });
+
+          filters.remove();
+        }
+      });
+      var tw = text.bbox().w;
+      var th = text.bbox().h;
+      text.size(1, 1).center(tx, ty).attr({
         opacity: 0
-      }).center(tx, ty).scale(0.001).animate({
+      }).filterWith(function (add) {
+        add.gaussianBlur(11, 11);
+        add.id("transformBlurText".concat(_this2.id));
+      }).animate({
         duration: this.config.animationSpeed
       }).attr({
         opacity: 1
-      }).transform({
-        scale: 1,
-        translate: [this.config.maxTextTranslateX, this.config.maxTextTranslateY]
-      }).center(X, Y);
+      }).size(tw, th).center(X + this.config.maxTextTranslateX, Y + this.config.maxTextTranslateY).during(function () {
+        var time = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this2;
+
+        if (time > 0.85 && textBlurRemoved === false) {
+          textBlurRemoved = true;
+          text.unfilter();
+
+          var filters = _toConsumableArray(_this2.canvas.defs().node.childNodes).find(function (d) {
+            return d.id === "transformBlurText".concat(_this2.id);
+          });
+
+          filters.remove();
+        }
+      });
       this.currentWidth = this.config.minWidth;
       this.currentHeight = this.config.minHeight;
       this.nodeSize = "max";
       this.currentX = X;
       this.currentY = Y;
+      this.checkZoomLevel();
     }
     /**
     * Transforms a node from detailed representation to minimal version.
@@ -17379,6 +17424,8 @@ var RiskNode = /*#__PURE__*/function (_BaseNode) {
   }, {
     key: "transformToMin",
     value: function transformToMin(_ref5) {
+      var _this3 = this;
+
       var _ref5$X = _ref5.X,
           X = _ref5$X === void 0 ? this.finalX : _ref5$X,
           _ref5$Y = _ref5.Y,
@@ -17401,28 +17448,62 @@ var RiskNode = /*#__PURE__*/function (_BaseNode) {
       this.svg.add(icon);
       this.svg.add(text); // put new elements into position
 
-      icon.size(1, 1).attr({
+      var iconBlurRemoved = false;
+      icon.attr({
         opacity: 0
-      }).center(ix, iy).animate({
+      }).size(1, 1).center(ix, iy).filterWith(function (add) {
+        add.gaussianBlur(25, 25);
+        add.id("transformBlurIcon".concat(_this3.id));
+      }).animate({
         duration: this.config.animationSpeed
       }).attr({
         opacity: this.config.minIconOpacity
-      }).size(this.config.minIconSize, this.config.minIconSize).dx(-this.config.minIconSize / 2 + this.config.minIconTranslateX).dy(-this.config.minIconSize / 2 + this.config.minIconTranslateY);
-      text.attr({
+      }).size(this.config.minIconSize, this.config.minIconSize).cx(X - this.config.minIconSize / 2 + this.config.minIconTranslateX + this.config.minIconSize / 2).cy(Y - this.config.minIconSize / 2 + this.config.minIconTranslateY + this.config.minIconSize / 2).during(function () {
+        var time = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this3;
+
+        if (time > 0.85 && iconBlurRemoved === false) {
+          iconBlurRemoved = true;
+          icon.unfilter();
+
+          var filters = _toConsumableArray(_this3.canvas.defs().node.childNodes).find(function (d) {
+            return d.id === "transformBlurIcon".concat(_this3.id);
+          });
+
+          filters.remove();
+        }
+      });
+      var textBlurRemoved = false;
+      var tw = this.config.minTextWidth;
+      var th = text.children()[0].node.clientHeight;
+      text.size(1, 1).center(tx, ty).attr({
         opacity: 0
-      }).center(tx, ty).scale(0.001).size(this.config.minTextWidth, text.children()[0].node.clientHeight).animate({
+      }).filterWith(function (add) {
+        add.gaussianBlur(11, 11);
+        add.id("transformBlurText".concat(_this3.id));
+      }).animate({
         duration: this.config.animationSpeed
       }).attr({
         opacity: 1
-      }).transform({
-        scale: 1,
-        translate: [this.config.minTextTranslateX, this.config.minTextTranslateY]
+      }).size(tw, th).center(X + this.config.minTextTranslateX, Y + this.config.minTextTranslateY).during(function () {
+        var time = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this3;
+
+        if (time > 0.85 && textBlurRemoved === false) {
+          textBlurRemoved = true;
+          text.unfilter();
+
+          var filters = _toConsumableArray(_this3.canvas.defs().node.childNodes).find(function (d) {
+            return d.id === "transformBlurText".concat(_this3.id);
+          });
+
+          filters.remove();
+        }
       });
       this.currentWidth = this.config.minWidth;
       this.currentHeight = this.config.minHeight;
       this.nodeSize = "min";
       this.currentX = X;
       this.currentY = Y;
+      this.checkZoomLevel();
     }
   }]);
 
@@ -17689,9 +17770,11 @@ var AssetNode = /*#__PURE__*/function (_BaseNode) {
         this.svg.get(0).animate({
           duration: this.config.animationSpeed
         }).center(X, Y);
+        var ix = X + this.config.minIconTranslateX;
+        var iy = Y + this.config.minIconTranslateY;
         this.svg.get(1).animate({
           duration: this.config.animationSpeed
-        }).center(X + this.config.minIconTranslateX, Y + this.config.minIconTranslateY);
+        }).center(ix, iy);
         this.svg.get(2).animate({
           duration: this.config.animationSpeed
         }).center(X, Y);
@@ -17699,9 +17782,14 @@ var AssetNode = /*#__PURE__*/function (_BaseNode) {
         this.svg.get(0).animate({
           duration: this.config.animationSpeed
         }).center(X, Y);
+
+        var _ix = X + this.config.maxIconTranslateX;
+
+        var _iy = Y + this.config.maxIconTranslateY;
+
         this.svg.get(1).animate({
           duration: this.config.animationSpeed
-        }).center(X + this.config.maxIconTranslateX, Y + this.config.maxIconTranslateY);
+        }).center(_ix, _iy);
         this.svg.get(2).animate({
           duration: this.config.animationSpeed
         }).center(X, Y);
@@ -17758,6 +17846,7 @@ var AssetNode = /*#__PURE__*/function (_BaseNode) {
       this.currentY = FY;
       this.coords.push([this.finalX, this.finalY]);
       this.svg = svg;
+      this.checkZoomLevel();
     }
     /**
     * Renders an asset node in detailed representation.
@@ -17810,6 +17899,7 @@ var AssetNode = /*#__PURE__*/function (_BaseNode) {
       this.currentY = FY;
       this.coords.push([this.finalX, this.finalY]);
       this.svg = svg;
+      this.checkZoomLevel();
     }
     /**
     * Transforms a node from minimal version to detailed representation.
@@ -17822,6 +17912,8 @@ var AssetNode = /*#__PURE__*/function (_BaseNode) {
   }, {
     key: "transformToMax",
     value: function transformToMax(_ref4) {
+      var _this3 = this;
+
       var _ref4$X = _ref4.X,
           X = _ref4$X === void 0 ? this.finalX : _ref4$X,
           _ref4$Y = _ref4.Y,
@@ -17844,28 +17936,62 @@ var AssetNode = /*#__PURE__*/function (_BaseNode) {
       this.svg.add(icon);
       this.svg.add(text); // put new elements into position
 
+      var iconBlurRemoved = false;
+      var textBlurRemoved = false;
       icon.attr({
         opacity: 0
-      }).center(ix, iy).animate({
+      }).size(1, 1).center(ix, iy).filterWith(function (add) {
+        add.gaussianBlur(25, 25);
+        add.id("transformBlurIcon".concat(_this3.id));
+      }).animate({
         duration: this.config.animationSpeed
       }).attr({
         opacity: this.config.maxIconOpacity
-      }).size(this.config.maxIconSize, this.config.maxIconSize).cx(X - this.config.maxIconSize / 2 + this.config.maxIconTranslateX + this.config.maxIconSize / 2).cy(Y - this.config.maxIconSize / 2 + this.config.maxIconTranslateY + this.config.maxIconSize / 2);
-      text.attr({
+      }).size(this.config.maxIconSize, this.config.maxIconSize).cx(X - this.config.maxIconSize / 2 + this.config.maxIconTranslateX + this.config.maxIconSize / 2).cy(Y - this.config.maxIconSize / 2 + this.config.maxIconTranslateY + this.config.maxIconSize / 2).during(function () {
+        var time = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this3;
+
+        if (time > 0.85 && iconBlurRemoved === false) {
+          iconBlurRemoved = true;
+          icon.unfilter();
+
+          var filters = _toConsumableArray(_this3.canvas.defs().node.childNodes).find(function (d) {
+            return d.id === "transformBlurIcon".concat(_this3.id);
+          });
+
+          filters.remove();
+        }
+      });
+      var tw = text.bbox().w;
+      var th = text.bbox().h;
+      text.size(1, 1).center(tx, ty).attr({
         opacity: 0
-      }).center(tx, ty).scale(0.001).animate({
+      }).filterWith(function (add) {
+        add.gaussianBlur(11, 11);
+        add.id("transformBlurText".concat(_this3.id));
+      }).animate({
         duration: this.config.animationSpeed
       }).attr({
         opacity: 1
-      }).transform({
-        scale: 1,
-        translate: [this.config.maxTextTranslateX, this.config.maxTextTranslateY]
-      }).center(X, Y);
+      }).size(tw, th).center(X + this.config.maxTextTranslateX, Y + this.config.maxTextTranslateY).during(function () {
+        var time = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this3;
+
+        if (time > 0.85 && textBlurRemoved === false) {
+          textBlurRemoved = true;
+          text.unfilter();
+
+          var filters = _toConsumableArray(_this3.canvas.defs().node.childNodes).find(function (d) {
+            return d.id === "transformBlurText".concat(_this3.id);
+          });
+
+          filters.remove();
+        }
+      });
       this.currentWidth = this.config.minWidth;
       this.currentHeight = this.config.minHeight;
       this.nodeSize = "max";
       this.currentX = X;
       this.currentY = Y;
+      this.checkZoomLevel();
     }
     /**
     * Transforms a node from detailed representation to minimal version.
@@ -17878,6 +18004,8 @@ var AssetNode = /*#__PURE__*/function (_BaseNode) {
   }, {
     key: "transformToMin",
     value: function transformToMin(_ref5) {
+      var _this4 = this;
+
       var _ref5$X = _ref5.X,
           X = _ref5$X === void 0 ? this.finalX : _ref5$X,
           _ref5$Y = _ref5.Y,
@@ -17900,28 +18028,62 @@ var AssetNode = /*#__PURE__*/function (_BaseNode) {
       this.svg.add(icon);
       this.svg.add(text); // put new elements into position
 
-      icon.size(1, 1).attr({
+      var iconBlurRemoved = false;
+      icon.attr({
         opacity: 0
-      }).center(ix, iy).animate({
+      }).size(1, 1).center(ix, iy).filterWith(function (add) {
+        add.gaussianBlur(25, 25);
+        add.id("transformBlurIcon".concat(_this4.id));
+      }).animate({
         duration: this.config.animationSpeed
       }).attr({
         opacity: this.config.minIconOpacity
-      }).size(this.config.minIconSize, this.config.minIconSize).dx(-this.config.minIconSize / 2 + this.config.minIconTranslateX).dy(-this.config.minIconSize / 2 + this.config.minIconTranslateY).center(X, Y);
-      text.attr({
+      }).size(this.config.minIconSize, this.config.minIconSize).cx(X - this.config.minIconSize / 2 + this.config.minIconTranslateX + this.config.minIconSize / 2).cy(Y - this.config.minIconSize / 2 + this.config.minIconTranslateY + this.config.minIconSize / 2).during(function () {
+        var time = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this4;
+
+        if (time > 0.85 && iconBlurRemoved === false) {
+          iconBlurRemoved = true;
+          icon.unfilter();
+
+          var filters = _toConsumableArray(_this4.canvas.defs().node.childNodes).find(function (d) {
+            return d.id === "transformBlurIcon".concat(_this4.id);
+          });
+
+          filters.remove();
+        }
+      });
+      var textBlurRemoved = false;
+      var tw = this.config.minTextWidth;
+      var th = text.children()[0].node.clientHeight;
+      text.size(1, 1).center(tx, ty).attr({
         opacity: 0
-      }).center(tx, ty).scale(0.001).size(this.config.minTextWidth, text.children()[0].node.clientHeight).animate({
+      }).filterWith(function (add) {
+        add.gaussianBlur(11, 11);
+        add.id("transformBlurText".concat(_this4.id));
+      }).animate({
         duration: this.config.animationSpeed
       }).attr({
         opacity: 1
-      }).transform({
-        scale: 1,
-        translate: [this.config.minTextTranslateX, this.config.minTextTranslateY]
-      }).center(X, Y);
+      }).size(tw, th).center(X + this.config.minTextTranslateX, Y + this.config.minTextTranslateY).during(function () {
+        var time = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this4;
+
+        if (time > 0.85 && textBlurRemoved === false) {
+          textBlurRemoved = true;
+          text.unfilter();
+
+          var filters = _toConsumableArray(_this4.canvas.defs().node.childNodes).find(function (d) {
+            return d.id === "transformBlurText".concat(_this4.id);
+          });
+
+          filters.remove();
+        }
+      });
       this.currentWidth = this.config.minWidth;
       this.currentHeight = this.config.minHeight;
       this.nodeSize = "min";
       this.currentX = X;
       this.currentY = Y;
+      this.checkZoomLevel();
     }
   }]);
 
@@ -18273,6 +18435,7 @@ var RequirementNode = /*#__PURE__*/function (_BaseNode) {
       this.currentX = FX;
       this.currentY = FY;
       this.coords.push([this.finalX, this.finalY]);
+      this.checkZoomLevel();
       this.svg = svg;
     }
     /**
@@ -18318,6 +18481,7 @@ var RequirementNode = /*#__PURE__*/function (_BaseNode) {
       this.currentX = FX;
       this.currentY = FY;
       this.coords.push([this.finalX, this.finalY]);
+      this.checkZoomLevel();
       this.svg = svg;
     }
     /**
@@ -18331,6 +18495,8 @@ var RequirementNode = /*#__PURE__*/function (_BaseNode) {
   }, {
     key: "transformToMax",
     value: function transformToMax(_ref4) {
+      var _this3 = this;
+
       var _ref4$X = _ref4.X,
           X = _ref4$X === void 0 ? this.finalX : _ref4$X,
           _ref4$Y = _ref4.Y,
@@ -18347,21 +18513,38 @@ var RequirementNode = /*#__PURE__*/function (_BaseNode) {
       var text = this.createRequirementDetails();
       this.svg.add(text); // put new elements into position
 
-      text.attr({
+      var textBlurRemoved = false;
+      var tw = text.bbox().w;
+      var th = text.bbox().h;
+      text.size(1, 1).center(tx, ty).attr({
         opacity: 0
-      }).center(tx, ty).scale(0.001).animate({
+      }).filterWith(function (add) {
+        add.gaussianBlur(11, 11);
+        add.id("transformBlurText".concat(_this3.id));
+      }).animate({
         duration: this.config.animationSpeed
       }).attr({
         opacity: 1
-      }).transform({
-        scale: 1,
-        translate: [this.config.maxTextTranslateX, this.config.maxTextTranslateY]
+      }).size(tw, th).center(X + this.config.maxTextTranslateX, Y + this.config.maxTextTranslateY).during(function () {
+        var time = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this3;
+
+        if (time > 0.85 && textBlurRemoved === false) {
+          textBlurRemoved = true;
+          text.unfilter();
+
+          var filters = _toConsumableArray(_this3.canvas.defs().node.childNodes).find(function (d) {
+            return d.id === "transformBlurText".concat(_this3.id);
+          });
+
+          filters.remove();
+        }
       });
       this.currentWidth = this.config.maxWidth;
       this.currentHeight = this.config.maxHeight;
       this.nodeSize = "max";
       this.currentX = X;
       this.currentY = Y;
+      this.checkZoomLevel();
     }
     /**
     * Transforms a node from detailed representation to minimal version.
@@ -18374,37 +18557,53 @@ var RequirementNode = /*#__PURE__*/function (_BaseNode) {
   }, {
     key: "transformToMin",
     value: function transformToMin(_ref5) {
-      var _ref5$X = _ref5.X,
-          X = _ref5$X === void 0 ? this.finalX : _ref5$X,
-          _ref5$Y = _ref5.Y,
-          Y = _ref5$Y === void 0 ? this.finalY : _ref5$Y;
+      var _this4 = this;
+
+      var _ref5$IX = _ref5.IX,
+          IX = _ref5$IX === void 0 ? this.initialX : _ref5$IX,
+          _ref5$IY = _ref5.IY,
+          IY = _ref5$IY === void 0 ? this.initialY : _ref5$IY,
+          _ref5$FX = _ref5.FX,
+          FX = _ref5$FX === void 0 ? this.finalX : _ref5$FX,
+          _ref5$FY = _ref5.FY,
+          FY = _ref5$FY === void 0 ? this.finalY : _ref5$FY;
       // update current elements
-      this.svg.get(0).animate({
+      this.svg.get(0).center(IX, IY).animate({
         duration: this.config.animationSpeed
-      }).width(this.config.minWidth).height(this.config.minHeight).center(X, Y); // old text position
+      }).width(this.config.minWidth).height(this.config.minHeight).dmove(-this.config.minWidth / 2, -this.config.minHeight / 2).center(FX, FY); // old text position
 
       var tx = this.svg.get(1).bbox().cx;
       var ty = this.svg.get(1).bbox().cy;
       this.svg.get(1).remove(); // create new elements
 
       var text = this.createLabel();
-      this.svg.add(text); // put new elements into position
-
-      text.attr({
-        opacity: 0
-      }).center(tx, ty).scale(0.001).size(this.config.minTextWidth, text.children()[0].node.clientHeight).animate({
+      this.svg.add(text);
+      var textBlurRemoved = false;
+      text.size(1, 1).center(tx, ty).filterWith(function (add) {
+        add.gaussianBlur(11, 11);
+        add.id("transformBlurText".concat(_this4.id));
+      }).animate({
         duration: this.config.animationSpeed
-      }).attr({
-        opacity: 1
-      }).transform({
-        scale: 1,
-        translate: [this.config.minTextTranslateX, this.config.minTextTranslateY]
+      }).size(this.config.minTextWidth, text.children()[0].node.clientHeight).center(FX + this.config.minTextTranslateX, FY + this.config.minTextTranslateY).during(function () {
+        var time = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this4;
+
+        if (time > 0.85 && textBlurRemoved === false) {
+          textBlurRemoved = true;
+          text.unfilter();
+
+          var filters = _toConsumableArray(_this4.canvas.defs().node.childNodes).find(function (d) {
+            return d.id === "transformBlurText".concat(_this4.id);
+          });
+
+          filters.remove();
+        }
       });
       this.currentWidth = this.config.minWidth;
       this.currentHeight = this.config.minHeight;
       this.nodeSize = "min";
-      this.currentX = X;
-      this.currentY = Y;
+      this.currentX = FX;
+      this.currentY = FY;
+      this.checkZoomLevel();
     }
   }]);
 
@@ -18632,9 +18831,11 @@ var CustomNode = /*#__PURE__*/function (_BaseNode) {
         this.svg.get(0).animate({
           duration: this.config.animationSpeed
         }).center(X, Y);
+        var ix = X + this.config.minIconTranslateX;
+        var iy = Y + this.config.minIconTranslateY;
         this.svg.get(1).animate({
           duration: this.config.animationSpeed
-        }).center(X + this.config.minIconTranslateX, Y + this.config.minIconTranslateY);
+        }).center(ix, iy);
         this.svg.get(2).animate({
           duration: this.config.animationSpeed
         }).center(X, Y);
@@ -18642,9 +18843,14 @@ var CustomNode = /*#__PURE__*/function (_BaseNode) {
         this.svg.get(0).animate({
           duration: this.config.animationSpeed
         }).center(X, Y);
+
+        var _ix = X + this.config.maxIconTranslateX;
+
+        var _iy = Y + this.config.maxIconTranslateY;
+
         this.svg.get(1).animate({
           duration: this.config.animationSpeed
-        }).center(X + this.config.maxIconTranslateX, Y + this.config.maxIconTranslateY);
+        }).center(_ix, _iy);
         this.svg.get(2).animate({
           duration: this.config.animationSpeed
         }).center(X, Y);
@@ -18712,6 +18918,7 @@ var CustomNode = /*#__PURE__*/function (_BaseNode) {
       this.currentY = FY;
       this.coords.push([this.finalX, this.finalY]);
       this.svg = svg;
+      this.checkZoomLevel();
     }
     /**
     * Renders a custom node in detailed representation.
@@ -18772,6 +18979,7 @@ var CustomNode = /*#__PURE__*/function (_BaseNode) {
       this.currentY = FY;
       this.coords.push([this.finalX, this.finalY]);
       this.svg = svg;
+      this.checkZoomLevel();
     }
     /**
     * Transforms a node from minimal version to detailed representation.
@@ -18784,6 +18992,8 @@ var CustomNode = /*#__PURE__*/function (_BaseNode) {
   }, {
     key: "transformToMax",
     value: function transformToMax(_ref4) {
+      var _this2 = this;
+
       var _ref4$X = _ref4.X,
           X = _ref4$X === void 0 ? this.finalX : _ref4$X,
           _ref4$Y = _ref4.Y,
@@ -18806,28 +19016,62 @@ var CustomNode = /*#__PURE__*/function (_BaseNode) {
       this.svg.add(icon);
       this.svg.add(text); // put new elements into position
 
-      icon.size(0, 0).attr({
+      var iconBlurRemoved = false;
+      var textBlurRemoved = false;
+      icon.attr({
         opacity: 0
-      }).center(ix, iy).animate({
+      }).size(1, 1).center(ix, iy).filterWith(function (add) {
+        add.gaussianBlur(25, 25);
+        add.id("transformBlurIcon".concat(_this2.id));
+      }).animate({
         duration: this.config.animationSpeed
       }).attr({
         opacity: this.config.maxIconOpacity
-      }).size(this.config.maxIconSize, this.config.maxIconSize).cx(X - this.config.maxIconSize / 2 + this.config.maxIconTranslateX + this.config.maxIconSize / 2).cy(Y - this.config.maxIconSize / 2 + this.config.maxIconTranslateY + this.config.maxIconSize / 2);
-      text.attr({
+      }).size(this.config.maxIconSize, this.config.maxIconSize).cx(X - this.config.maxIconSize / 2 + this.config.maxIconTranslateX + this.config.maxIconSize / 2).cy(Y - this.config.maxIconSize / 2 + this.config.maxIconTranslateY + this.config.maxIconSize / 2).during(function () {
+        var time = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this2;
+
+        if (time > 0.85 && iconBlurRemoved === false) {
+          iconBlurRemoved = true;
+          icon.unfilter();
+
+          var filters = _toConsumableArray(_this2.canvas.defs().node.childNodes).find(function (d) {
+            return d.id === "transformBlurIcon".concat(_this2.id);
+          });
+
+          filters.remove();
+        }
+      });
+      var tw = text.bbox().w;
+      var th = text.bbox().h;
+      text.size(1, 1).center(tx, ty).attr({
         opacity: 0
-      }).center(tx, ty).scale(0.001).animate({
+      }).filterWith(function (add) {
+        add.gaussianBlur(11, 11);
+        add.id("transformBlurText".concat(_this2.id));
+      }).animate({
         duration: this.config.animationSpeed
       }).attr({
         opacity: 1
-      }).transform({
-        scale: 1,
-        translate: [this.config.maxTextTranslateX, this.config.maxTextTranslateY]
-      }).center(X, Y);
+      }).size(tw, th).center(X + this.config.maxTextTranslateX, Y + this.config.maxTextTranslateY).during(function () {
+        var time = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this2;
+
+        if (time > 0.85 && textBlurRemoved === false) {
+          textBlurRemoved = true;
+          text.unfilter();
+
+          var filters = _toConsumableArray(_this2.canvas.defs().node.childNodes).find(function (d) {
+            return d.id === "transformBlurText".concat(_this2.id);
+          });
+
+          filters.remove();
+        }
+      });
       this.currentWidth = this.config.minWidth;
       this.currentHeight = this.config.minHeight;
       this.nodeSize = "max";
       this.currentX = X;
       this.currentY = Y;
+      this.checkZoomLevel();
     }
     /**
     * Transforms a node from detailed representation to minimal version.
@@ -18840,6 +19084,8 @@ var CustomNode = /*#__PURE__*/function (_BaseNode) {
   }, {
     key: "transformToMin",
     value: function transformToMin(_ref5) {
+      var _this3 = this;
+
       var _ref5$X = _ref5.X,
           X = _ref5$X === void 0 ? this.finalX : _ref5$X,
           _ref5$Y = _ref5.Y,
@@ -18862,28 +19108,62 @@ var CustomNode = /*#__PURE__*/function (_BaseNode) {
       this.svg.add(icon);
       this.svg.add(text); // put new elements into position
 
-      icon.size(1, 1).attr({
+      var iconBlurRemoved = false;
+      icon.attr({
         opacity: 0
-      }).center(ix, iy).animate({
+      }).size(1, 1).center(ix, iy).filterWith(function (add) {
+        add.gaussianBlur(25, 25);
+        add.id("transformBlurIcon".concat(_this3.id));
+      }).animate({
         duration: this.config.animationSpeed
       }).attr({
         opacity: this.config.minIconOpacity
-      }).size(this.config.minIconSize, this.config.minIconSize).dx(-this.config.minIconSize / 2 + this.config.minIconTranslateX).dy(-this.config.minIconSize / 2 + this.config.minIconTranslateY).center(X, Y);
-      text.attr({
+      }).size(this.config.minIconSize, this.config.minIconSize).cx(X - this.config.minIconSize / 2 + this.config.minIconTranslateX + this.config.minIconSize / 2).cy(Y - this.config.minIconSize / 2 + this.config.minIconTranslateY + this.config.minIconSize / 2).during(function () {
+        var time = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this3;
+
+        if (time > 0.85 && iconBlurRemoved === false) {
+          iconBlurRemoved = true;
+          icon.unfilter();
+
+          var filters = _toConsumableArray(_this3.canvas.defs().node.childNodes).find(function (d) {
+            return d.id === "transformBlurIcon".concat(_this3.id);
+          });
+
+          filters.remove();
+        }
+      });
+      var textBlurRemoved = false;
+      var tw = this.config.minTextWidth;
+      var th = text.children()[0].node.clientHeight;
+      text.size(1, 1).center(tx, ty).attr({
         opacity: 0
-      }).center(tx, ty).scale(0.001).size(this.config.minTextWidth, text.children()[0].node.clientHeight).animate({
+      }).filterWith(function (add) {
+        add.gaussianBlur(11, 11);
+        add.id("transformBlurText".concat(_this3.id));
+      }).animate({
         duration: this.config.animationSpeed
       }).attr({
         opacity: 1
-      }).transform({
-        scale: 1,
-        translate: [this.config.minTextTranslateX, this.config.minTextTranslateY]
-      }).center(X, Y);
+      }).size(tw, th).center(X + this.config.minTextTranslateX, Y + this.config.minTextTranslateY).during(function () {
+        var time = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this3;
+
+        if (time > 0.85 && textBlurRemoved === false) {
+          textBlurRemoved = true;
+          text.unfilter();
+
+          var filters = _toConsumableArray(_this3.canvas.defs().node.childNodes).find(function (d) {
+            return d.id === "transformBlurText".concat(_this3.id);
+          });
+
+          filters.remove();
+        }
+      });
       this.currentWidth = this.config.minWidth;
       this.currentHeight = this.config.minHeight;
       this.nodeSize = "min";
       this.currentX = X;
       this.currentY = Y;
+      this.checkZoomLevel();
     }
   }]);
 
@@ -19099,9 +19379,11 @@ var ControlNode = /*#__PURE__*/function (_BaseNode) {
         this.svg.get(0).animate({
           duration: this.config.animationSpeed
         }).center(X, Y);
+        var ix = X + this.config.minIconTranslateX;
+        var iy = Y + this.config.minIconTranslateY;
         this.svg.get(1).animate({
           duration: this.config.animationSpeed
-        }).center(X + this.config.minIconTranslateX, Y + this.config.minIconTranslateY);
+        }).center(ix, iy);
         this.svg.get(2).animate({
           duration: this.config.animationSpeed
         }).center(X, Y);
@@ -19109,9 +19391,14 @@ var ControlNode = /*#__PURE__*/function (_BaseNode) {
         this.svg.get(0).animate({
           duration: this.config.animationSpeed
         }).center(X, Y);
+
+        var _ix = X + this.config.maxIconTranslateX;
+
+        var _iy = Y + this.config.maxIconTranslateY;
+
         this.svg.get(1).animate({
           duration: this.config.animationSpeed
-        }).center(X + this.config.maxIconTranslateX, Y + this.config.maxIconTranslateY);
+        }).center(_ix, _iy);
         this.svg.get(2).animate({
           duration: this.config.animationSpeed
         }).center(X, Y);
@@ -19168,6 +19455,7 @@ var ControlNode = /*#__PURE__*/function (_BaseNode) {
       this.currentY = FY;
       this.coords.push([FX, FY]);
       this.svg = svg;
+      this.checkZoomLevel();
     }
     /**
     * Renders a control node in detailed representation.
@@ -19220,6 +19508,7 @@ var ControlNode = /*#__PURE__*/function (_BaseNode) {
       this.currentY = FY;
       this.coords.push([this.finalX, this.finalY]);
       this.svg = svg;
+      this.checkZoomLevel();
     }
     /**
     * Transforms a node from minimal version to detailed representation.
@@ -19232,6 +19521,8 @@ var ControlNode = /*#__PURE__*/function (_BaseNode) {
   }, {
     key: "transformToMax",
     value: function transformToMax(_ref4) {
+      var _this2 = this;
+
       var _ref4$X = _ref4.X,
           X = _ref4$X === void 0 ? this.finalX : _ref4$X,
           _ref4$Y = _ref4.Y,
@@ -19254,28 +19545,62 @@ var ControlNode = /*#__PURE__*/function (_BaseNode) {
       this.svg.add(icon);
       this.svg.add(text); // put new elements into position
 
+      var iconBlurRemoved = false;
+      var textBlurRemoved = false;
       icon.attr({
         opacity: 0
-      }).center(ix, iy).animate({
+      }).size(1, 1).center(ix, iy).filterWith(function (add) {
+        add.gaussianBlur(25, 25);
+        add.id("transformBlurIcon".concat(_this2.id));
+      }).animate({
         duration: this.config.animationSpeed
       }).attr({
         opacity: this.config.maxIconOpacity
-      }).size(this.config.maxIconSize, this.config.maxIconSize).cx(X - this.config.maxIconSize / 2 + this.config.maxIconTranslateX + this.config.maxIconSize / 2).cy(Y - this.config.maxIconSize / 2 + this.config.maxIconTranslateY + this.config.maxIconSize / 2);
-      text.attr({
+      }).size(this.config.maxIconSize, this.config.maxIconSize).cx(X - this.config.maxIconSize / 2 + this.config.maxIconTranslateX + this.config.maxIconSize / 2).cy(Y - this.config.maxIconSize / 2 + this.config.maxIconTranslateY + this.config.maxIconSize / 2).during(function () {
+        var time = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this2;
+
+        if (time > 0.85 && iconBlurRemoved === false) {
+          iconBlurRemoved = true;
+          icon.unfilter();
+
+          var filters = _toConsumableArray(_this2.canvas.defs().node.childNodes).find(function (d) {
+            return d.id === "transformBlurIcon".concat(_this2.id);
+          });
+
+          filters.remove();
+        }
+      });
+      var tw = text.bbox().w;
+      var th = text.bbox().h;
+      text.size(1, 1).center(tx, ty).attr({
         opacity: 0
-      }).center(tx, ty).scale(0.001).animate({
+      }).filterWith(function (add) {
+        add.gaussianBlur(11, 11);
+        add.id("transformBlurText".concat(_this2.id));
+      }).animate({
         duration: this.config.animationSpeed
       }).attr({
         opacity: 1
-      }).transform({
-        scale: 1,
-        translate: [this.config.maxTextTranslateX, this.config.maxTextTranslateY]
-      }).center(X, Y);
+      }).size(tw, th).center(X + this.config.maxTextTranslateX, Y + this.config.maxTextTranslateY).during(function () {
+        var time = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this2;
+
+        if (time > 0.85 && textBlurRemoved === false) {
+          textBlurRemoved = true;
+          text.unfilter();
+
+          var filters = _toConsumableArray(_this2.canvas.defs().node.childNodes).find(function (d) {
+            return d.id === "transformBlurText".concat(_this2.id);
+          });
+
+          filters.remove();
+        }
+      });
       this.currentWidth = this.config.minWidth;
       this.currentHeight = this.config.minHeight;
       this.nodeSize = "max";
       this.currentX = X;
       this.currentY = Y;
+      this.checkZoomLevel();
     }
     /**
     * Transforms a node from detailed representation to minimal version.
@@ -19288,6 +19613,8 @@ var ControlNode = /*#__PURE__*/function (_BaseNode) {
   }, {
     key: "transformToMin",
     value: function transformToMin(_ref5) {
+      var _this3 = this;
+
       var _ref5$X = _ref5.X,
           X = _ref5$X === void 0 ? this.finalX : _ref5$X,
           _ref5$Y = _ref5.Y,
@@ -19310,28 +19637,62 @@ var ControlNode = /*#__PURE__*/function (_BaseNode) {
       this.svg.add(icon);
       this.svg.add(text); // put new elements into position
 
-      icon.size(1, 1).attr({
+      var iconBlurRemoved = false;
+      icon.attr({
         opacity: 0
-      }).center(ix, iy).animate({
+      }).size(1, 1).center(ix, iy).filterWith(function (add) {
+        add.gaussianBlur(25, 25);
+        add.id("transformBlurIcon".concat(_this3.id));
+      }).animate({
         duration: this.config.animationSpeed
       }).attr({
         opacity: this.config.minIconOpacity
-      }).size(this.config.minIconSize, this.config.minIconSize).dx(-this.config.minIconSize / 2 + this.config.minIconTranslateX).dy(-this.config.minIconSize / 2 + this.config.minIconTranslateY).center(X, Y);
-      text.attr({
+      }).size(this.config.minIconSize, this.config.minIconSize).cx(X - this.config.minIconSize / 2 + this.config.minIconTranslateX + this.config.minIconSize / 2).cy(Y - this.config.minIconSize / 2 + this.config.minIconTranslateY + this.config.minIconSize / 2).during(function () {
+        var time = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this3;
+
+        if (time > 0.85 && iconBlurRemoved === false) {
+          iconBlurRemoved = true;
+          icon.unfilter();
+
+          var filters = _toConsumableArray(_this3.canvas.defs().node.childNodes).find(function (d) {
+            return d.id === "transformBlurIcon".concat(_this3.id);
+          });
+
+          filters.remove();
+        }
+      });
+      var textBlurRemoved = false;
+      var tw = this.config.minTextWidth;
+      var th = text.children()[0].node.clientHeight;
+      text.size(1, 1).center(tx, ty).attr({
         opacity: 0
-      }).center(tx, ty).scale(0.001).size(this.config.minTextWidth, text.children()[0].node.clientHeight).animate({
+      }).filterWith(function (add) {
+        add.gaussianBlur(11, 11);
+        add.id("transformBlurText".concat(_this3.id));
+      }).animate({
         duration: this.config.animationSpeed
       }).attr({
         opacity: 1
-      }).transform({
-        scale: 1,
-        translate: [this.config.minTextTranslateX, this.config.minTextTranslateY]
-      }).center(X, Y);
+      }).size(tw, th).center(X + this.config.minTextTranslateX, Y + this.config.minTextTranslateY).during(function () {
+        var time = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this3;
+
+        if (time > 0.85 && textBlurRemoved === false) {
+          textBlurRemoved = true;
+          text.unfilter();
+
+          var filters = _toConsumableArray(_this3.canvas.defs().node.childNodes).find(function (d) {
+            return d.id === "transformBlurText".concat(_this3.id);
+          });
+
+          filters.remove();
+        }
+      });
       this.currentWidth = this.config.minWidth;
       this.currentHeight = this.config.minHeight;
       this.nodeSize = "min";
       this.currentX = X;
       this.currentY = Y;
+      this.checkZoomLevel();
     }
   }]);
 
@@ -23720,7 +24081,7 @@ var calculateArcLineIntersection = function calculateArcLineIntersection(x0, y0,
   };
 };
 /**
- * Calculates an intersection between an arc and a node.
+ * Calculates an intersection between a node and line for the contextual layout.
  *
  * @private
  * @param {Number} x0 The starting X coordinate.
@@ -23731,9 +24092,9 @@ var calculateArcLineIntersection = function calculateArcLineIntersection(x0, y0,
  */
 
 
-var calculateNodeLineIntersection = function calculateNodeLineIntersection(x0, y0, x1, y1, node) {
-  var w = node.nodeSize === "min" ? node.config.minWidth : node.config.maxWidth;
-  var h = node.nodeSize === "min" ? node.config.minHeight : node.config.maxHeight; // spacing between node and leaf
+var calculatContextualIntersection = function calculatContextualIntersection(x0, y0, x1, y1, node) {
+  var w = node.getNodeSize() === "min" ? node.config.minWidth : node.config.maxWidth;
+  var h = node.getNodeSize() === "min" ? node.config.minHeight : node.config.maxHeight; // spacing between node and leaf
 
   var spacing = node.config.offset;
   var rect1 = shape("rect", {
@@ -23753,6 +24114,53 @@ var calculateNodeLineIntersection = function calculateNodeLineIntersection(x0, y
 
   var _intersect2 = intersect$1(rect1, line1),
       points = _intersect2.points;
+
+  if (points[0]) {
+    return {
+      x: points[0].x,
+      y: points[0].y
+    };
+  }
+
+  return {
+    x: 0,
+    y: 0
+  };
+};
+/**
+ * Calculates an intersection between an arc and a node.
+ *
+ * @private
+ * @param {Number} x0 The starting X coordinate.
+ * @param {Number} y0 The starting Y coordinate.
+ * @param {Number} x1 The ending X coordinate.
+ * @param {Number} y1 The ending Y coordinate.
+ * @param {BaseNode} node The intersected node.
+ */
+
+
+var calculateNodeLineIntersection = function calculateNodeLineIntersection(x0, y0, x1, y1, node) {
+  var w = node.getNodeSize() === "min" ? node.config.minWidth : node.config.maxWidth;
+  var h = node.getNodeSize() === "min" ? node.config.minHeight : node.config.maxHeight; // spacing between node and leaf
+
+  var spacing = node.config.offset;
+  var rect1 = shape("rect", {
+    x: x0 - w / 2 - spacing / 2,
+    y: y0 - h / 2 - spacing / 2,
+    width: w + spacing,
+    height: h + spacing,
+    rx: node.config.borderRadius,
+    ry: node.config.borderRadius
+  });
+  var line1 = shape("line", {
+    x1: x0,
+    y1: y0,
+    x2: x1,
+    y2: y1
+  });
+
+  var _intersect3 = intersect$1(rect1, line1),
+      points = _intersect3.points;
 
   return {
     x: points[0].x,
@@ -23824,7 +24232,8 @@ var BaseEdge = /*#__PURE__*/function () {
       var _ref$isContextualPare = _ref.isContextualParent,
           isContextualParent = _ref$isContextualPare === void 0 ? false : _ref$isContextualPare,
           _ref$isContextualChil = _ref.isContextualChild,
-          isContextualChild = _ref$isContextualChil === void 0 ? false : _ref$isContextualChil;
+          isContextualChild = _ref$isContextualChil === void 0 ? false : _ref$isContextualChil,
+          _ref$isReRender = _ref.isReRender;
       // the coordinates for the from node
       var fx = this.fromNode.getFinalX();
       var fy = this.fromNode.getFinalY(); // the coordinates for the to node
@@ -23841,8 +24250,32 @@ var BaseEdge = /*#__PURE__*/function () {
       } // calculate intersections
 
 
-      var fromIntersection = calculateNodeLineIntersection(fx, fy, tx, ty, this.fromNode);
-      var toIntersection = calculateNodeLineIntersection(tx, ty, fx, fy, this.toNode);
+      var toIntersection;
+      var fromIntersection;
+
+      if (isContextualParent === false && isContextualChild === false) {
+        fromIntersection = calculateNodeLineIntersection(fx, fy, tx, ty, this.fromNode);
+        toIntersection = calculateNodeLineIntersection(tx, ty, fx, fy, this.toNode);
+      }
+
+      if (isContextualParent) {
+        fromIntersection = calculatContextualIntersection(fx, fy, tx, ty, this.fromNode, this.canvas);
+        toIntersection = calculatContextualIntersection(tx, ty, fx, fy, this.toNode, this.canvas);
+
+        if (toIntersection.x === 0 && toIntersection.y === 0) {
+          this.isHidden = true;
+        }
+      }
+
+      if (isContextualChild) {
+        fromIntersection = calculatContextualIntersection(fx, fy, tx, ty, this.fromNode, this.canvas);
+        toIntersection = calculatContextualIntersection(tx, ty, fx, fy, this.toNode, this.canvas);
+
+        if (toIntersection.x === 0 && toIntersection.y === 0) {
+          this.isHidden = true;
+        }
+      }
+
       this.finalFromX = fromIntersection.x;
       this.finalFromY = fromIntersection.y;
       this.finalToX = toIntersection.x;
@@ -23857,7 +24290,7 @@ var BaseEdge = /*#__PURE__*/function () {
     key: "createSVGElement",
     value: function createSVGElement(id) {
       // create the SVG object on the canvas.
-      var svg = this.canvas.group().draggable(); // attach some CSS and an ID
+      var svg = this.canvas.group(); // attach some CSS and an ID
 
       svg.css("cursor", "default");
       svg.id(id); // move to the back
@@ -23871,26 +24304,53 @@ var BaseEdge = /*#__PURE__*/function () {
 
   }, {
     key: "removeSVG",
-    value: function removeSVG() {
+    value: function removeSVG(_ref2) {
       var _this = this;
 
-      if (this.isRendered() === false) return; // find the point where to fade the element out
+      var _ref2$isContextualEdg = _ref2.isContextualEdge,
+          isContextualEdge = _ref2$isContextualEdg === void 0 ? false : _ref2$isContextualEdg,
+          _ref2$isContextualPar = _ref2.isContextualParentOperation,
+          isContextualParentOperation = _ref2$isContextualPar === void 0 ? false : _ref2$isContextualPar;
 
-      var x = (this.finalFromX + this.finalToX) / 2;
-      var y = (this.finalFromY + this.finalToY) / 2 + 100;
-      this.svg.back();
-      this.svg.animate({
-        duration: this.config.animationSpeed
-      }).transform({
-        scale: 0.001,
-        position: [x, y]
-      }).after(function () {
-        try {
-          _this.svg.remove();
-        } catch (error) {}
+      if (isContextualEdge === true) {
+        var offset = isContextualParentOperation ? 50 : -50;
+        if (this.isRendered() === false) return;
+        var x = (this.finalFromX + this.finalToX) / 2;
+        var y = (this.finalFromY + this.finalToY) / 2 + 100;
+        this.svg.back();
+        this.svg.animate({
+          duration: this.config.animationSpeed
+        }).transform({
+          scale: 0.001,
+          position: [x, y + offset]
+        }).after(function () {
+          try {
+            _this.svg.remove();
+          } catch (error) {}
 
-        _this.svg = null;
-      });
+          _this.svg = null;
+        });
+      } else {
+        if (this.isRendered() === false) return;
+
+        var _x = (this.finalFromX + this.finalToX) / 2;
+
+        var _y = (this.finalFromY + this.finalToY) / 2 + 100;
+
+        this.svg.back();
+        this.svg.animate({
+          duration: this.config.animationSpeed
+        }).transform({
+          scale: 0.001,
+          position: [_x, _y]
+        }).after(function () {
+          try {
+            _this.svg.remove();
+          } catch (error) {}
+
+          _this.svg = null;
+        });
+      }
     }
     /**
      * Determins if the SVG object is rendered.
@@ -24349,62 +24809,59 @@ var BoldEdge = /*#__PURE__*/function (_BaseEdge) {
         dasharray: this.config.strokeDasharray
       }); // color the edge
 
-      if (this.config.color === "inherit") {
-        var toColor = this.toNode.config.borderStrokeColor;
-        var fromColor = this.fromNode.config.borderStrokeColor;
-        var gradient = this.canvas.gradient("linear", function (add) {
-          add.stop(0, fromColor);
-          add.stop(1, toColor);
-        }); // svgdotjs bug: if a gradient gets an id, there is no way to create a gradient with a different color pairing
-        // gradient.id("defaultBoldGradient")
+      if (isContextualBoldEdge === true) {
+        if (this.config.color === "inherit") {
+          var toColor = this.toNode.config.borderStrokeColor;
+          var fromColor = this.fromNode.config.borderStrokeColor;
+          var gradient = this.canvas.gradient("linear", function (add) {
+            add.stop(0, fromColor);
+            add.stop(1, toColor);
+          }); // svgdotjs bug: if a gradient gets an id, there is no way to create a gradient with a different color pairing
+          // gradient.id("defaultBoldGradient")
 
-        path.fill(gradient);
+          path.fill(gradient);
+        } else {
+          path.fill(this.config.color);
+        } // move the edge into its initial position
+
+
+        path.center((x0 + x1) / 2, (y0 + y1) / 2);
+        path.rotate(-90);
       } else {
-        path.fill(this.config.color);
-      } // move the edge into its initial position
+        if (this.config.color !== "inherit") {
+          path.fill(this.config.color);
+        } else {
+          var theta = Math.atan2(this.finalToY - this.finalFromY, this.finalToX - this.finalFromX);
+          path.rotate(-theta * (180 / Math.PI));
+          var c1 = this.fromNode.config.borderStrokeColor;
+          var c2 = this.toNode.config.borderStrokeColor;
+
+          if (-theta * (180 / Math.PI) > 90) {
+            var t = c1;
+            c1 = c2;
+            c2 = t;
+          }
+
+          var _gradient = this.canvas.gradient("linear", function (add) {
+            add.stop(0, c1);
+            add.stop(1, c2);
+          }); // svgdotjs bug: if a gradient gets an id, there is no way to create a gradient with a different color pairing
+          // gradient.id("defaultBoldGradient")
 
 
-      path.center((x0 + x1) / 2, (y0 + y1) / 2);
-      path.rotate(-90); // // custom color fill
-      // if (this.config.color !== null) {
-      //   path.fill(this.config.color)
-      // } else {
-      //   // gradient requires a rotation before filling since svgdotjs only offers linear (left->right) gradients
-      //   const theta = Math.atan2(this.finalToY - this.finalFromY, this.finalToX - this.finalFromX)
-      //   path.rotate(-(theta) * (180 / Math.PI))
-      //   // fill based on two provided colors
-      //   let c1 = this.fromNode.config.borderStrokeColor
-      //   let c2 = this.toNode.config.borderStrokeColor
-      //   if ((-(theta) * (180 / Math.PI)) > 90) {
-      //     const t = c1
-      //     c1 = c2
-      //     c2 = t
-      //   }
-      //   const gradient = this.canvas.gradient("linear", (add) => {
-      //     add.stop(0, c1)
-      //     add.stop(1, c2)
-      //   })
-      //   // svgdotjs bug: if a gradient gets an id, there is no way to create a gradient with a different color pairing
-      //   // gradient.id("defaultBoldGradient")
-      //   path.fill(gradient)
-      //   // reverse rotation
-      //   path.rotate((theta) * (180 / Math.PI))
-      // }
-      // /*
-      //   // TODO: implementation for finding a color for the attached container nodes
-      // */
-      // path.center(X, Y)
+          path.fill(_gradient);
+          path.rotate(theta * (180 / Math.PI));
+        }
+
+        path.center(X, Y);
+      }
 
       svg.add(path); // add label
 
       if (this.label !== null) {
-        var label = this.createLabel(); // label.center((x0 + x1) / 2, (y0 + y1) / 2)
-
+        var label = this.createLabel();
         svg.add(label);
-      } // put new elements into position
-      // const cx = (this.finalFromX + this.finalToX) / 2
-      // const cy = (this.finalFromY + this.finalToY) / 2
-      // final label position
+      } // final label position
 
 
       var cx = (x0 + x1) / 2;
@@ -24469,78 +24926,15 @@ var BoldEdge = /*#__PURE__*/function (_BaseEdge) {
             });
           }
         }
-      } else {
-        console.log("todo..");
-      } // if (isContextualBoldEdge === true) {
-      //   const dif = this.fromNode.getNodeSize() === "min"
-      //     ? this.fromNode.getFinalY() - this.toNode.getFinalY()
-      //     : this.fromNode.getMaxHeight() - this.fromNode.getFinalY()
-      //   // parent edge
-      //   if (this.fromNode.getNodeSize() === "max") {
-      //     svg
-      //       .get(0)
-      //       // .dx(dif)
-      //       // .center(this.fromNode.getFinalX(), this.fromNode.getFinalY())
-      //       .rotate(90)
-      //       // .transform({ origin: [100,100], rotate: 90 })
-      //       .attr({ opacity: 0 })
-      //       .animate({ duration: this.config.animationSpeed })
-      //       .attr({ opacity: 1 })
-      //     // .center(cx, cy)
-      //     // if (this.label !== null) {
-      //     //   const y = this.fromNode.getNodeSize() === "min"
-      //     //     ? this.toNode.getFinalY()
-      //     //     : this.fromNode.getFinalY()
-      //     //   svg
-      //     //     .get(1)
-      //     //     .center(cx, y)
-      //     //     .scale(0.001)
-      //     //     .attr({ opacity: 0 })
-      //     //     .animate({ duration: this.config.animationSpeed })
-      //     //     .transform({ scale: 1 })
-      //     //     .attr({ opacity: 1 })
-      //     //     .center(cx + this.config.labelTranslateX, cy + this.config.labelTranslateY)
-      //     // }
-      //   } else {
-      //     svg
-      //       .get(0)
-      //       .dx(dif)
-      //       .attr({ opacity: 0 })
-      //       .animate({ duration: this.config.animationSpeed })
-      //       .attr({ opacity: 1 })
-      //       .center(cx, cy)
-      //     if (this.label !== null) {
-      //       const y = this.fromNode.getNodeSize() === "min"
-      //         ? this.toNode.getFinalY()
-      //         : this.fromNode.getFinalY()
-      //       svg
-      //         .get(1)
-      //         .center(cx, y)
-      //         .scale(0.001)
-      //         .attr({ opacity: 0 })
-      //         .animate({ duration: this.config.animationSpeed })
-      //         .transform({ scale: 1 })
-      //         .attr({ opacity: 1 })
-      //         .center(cx + this.config.labelTranslateX, cy + this.config.labelTranslateY)
-      //     }
-      //   }
-      // } else {
-      //   svg
-      //     .get(0)
-      //     .attr({ opacity: 0 })
-      //     .animate({ duration: this.config.animationSpeed })
-      //     .attr({ opacity: 1 })
-      //     .center(cx, cy)
-      //   if (this.label !== null) {
-      //     svg
-      //       .get(1)
-      //       .attr({ opacity: 0 })
-      //       .animate({ duration: this.config.animationSpeed })
-      //       .attr({ opacity: 1 })
-      //       .center(cx + this.config.labelTranslateX, cy + this.config.labelTranslateY)
-      //   }
-      // }
-
+      } else if (this.label !== null) {
+        svg.get(1).attr({
+          opacity: 0
+        }).animate({
+          duration: this.config.animationSpeed
+        }).attr({
+          opacity: 1
+        }).center(cx + this.config.labelTranslateX, cy + this.config.labelTranslateY);
+      }
 
       this.svg = svg;
     }
@@ -24550,19 +24944,33 @@ var BoldEdge = /*#__PURE__*/function (_BaseEdge) {
 
   }, {
     key: "transformToFinalPosition",
-    value: function transformToFinalPosition() {
+    value: function transformToFinalPosition(_ref2) {
+      var _ref2$isContextualBol = _ref2.isContextualBoldEdge,
+          isContextualBoldEdge = _ref2$isContextualBol === void 0 ? false : _ref2$isContextualBol;
       this.svg.back();
-      var plot = this.generateBoldArrow();
       var cx = (this.finalFromX + this.finalToX) / 2;
       var cy = (this.finalFromY + this.finalToY) / 2;
-      this.svg.get(0).animate({
-        duration: this.config.animationSpeed
-      }).plot(plot);
 
-      if (this.label !== null) {
-        this.svg.get(1).animate({
+      if (isContextualBoldEdge === true) {
+        this.svg.get(0).animate({
           duration: this.config.animationSpeed
-        }).center(cx + this.config.labelTranslateX, cy + this.config.labelTranslateY);
+        }).dy(cx - this.svg.bbox().cx);
+
+        if (this.label !== null) {
+          this.svg.get(1).animate({
+            duration: this.config.animationSpeed
+          }).center(cx + this.config.labelTranslateX, cy + this.config.labelTranslateY);
+        }
+      } else {
+        this.svg.get(0).animate({
+          duration: this.config.animationSpeed
+        }).plot(this.generateBoldArrow());
+
+        if (this.label !== null) {
+          this.svg.get(1).animate({
+            duration: this.config.animationSpeed
+          }).center(cx + this.config.labelTranslateX, cy + this.config.labelTranslateY);
+        }
       }
     }
     /**
@@ -24983,8 +25391,6 @@ var CustomEdge = /*#__PURE__*/function (_BaseEdge) {
 
       svg.add(path); // add label
 
-      console.log(this);
-
       if (this.label !== null) {
         var label = this.createLabel();
         svg.add(label);
@@ -25182,7 +25588,6 @@ var BaseLayout = /*#__PURE__*/function () {
     this.tree = null;
     this.layoutReferences = [];
     this.globalLayoutSpacing = 0;
-    this.fallbackIcons = [];
   }
   /**
   * Registers a new event listener to the layout.
@@ -25780,13 +26185,18 @@ var BaseLayout = /*#__PURE__*/function () {
 
       return rebuildTreeLayoutAsync;
     }()
+    /**
+     * Loads the initial contextual layout data.
+     * @async
+     */
+
   }, {
     key: "loadInitialContextualDataAsync",
     value: function () {
       var _loadInitialContextualDataAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee7() {
         var _this3 = this;
 
-        var response1, focus, assigned, nodesToFetch, parentIds, childrenIds, requiredEdges, edgesToFetch, response2, nodes, edges;
+        var response1, focus, assigned, nodesToFetch, response, parentDependencies, childDependencies, parentIds, childrenIds, requiredEdges, edgesToFetch, response2, nodes, edges;
         return regeneratorRuntime.wrap(function _callee7$(_context7) {
           while (1) {
             switch (_context7.prev = _context7.next) {
@@ -25813,21 +26223,33 @@ var BaseLayout = /*#__PURE__*/function () {
 
               case 6:
                 assigned = response1[1];
-                nodesToFetch = []; // check if we need to fetch an assigned node and some attached risks
+                nodesToFetch = []; // check if we need to fetch an assigned node along with some attached risks ids
 
-                if (assigned.length === undefined) {
-                  // format: {focus: 36, assigned: 60, risks: Array(5)}
-                  nodesToFetch.push.apply(nodesToFetch, _toConsumableArray(assigned.risks));
-                  nodesToFetch.push(assigned.assigned);
-                  this.assignedInfo = assigned;
-                } // load parents
+                if (!(assigned.length === undefined && this.config.showAssignedConnection === true)) {
+                  _context7.next = 19;
+                  break;
+                }
 
+                nodesToFetch.push.apply(nodesToFetch, _toConsumableArray(assigned.risks));
+                nodesToFetch.push(assigned.assigned);
+                _context7.next = 13;
+                return singlePostRequest("".concat(this.config.databaseUrl, "/").concat(this.config.nodeEndpoint), [assigned.assigned]);
 
+              case 13:
+                response = _context7.sent;
+                parentDependencies = response[0].parent !== null ? response[0].parent instanceof Array ? response[0].parent : [response[0].parent] : [];
+                childDependencies = response[0].children;
+                nodesToFetch.push.apply(nodesToFetch, _toConsumableArray(parentDependencies));
+                nodesToFetch.push.apply(nodesToFetch, _toConsumableArray(childDependencies));
+                this.assignedInfo = assigned;
+
+              case 19:
+                // parents
                 parentIds = focus.parent !== null ? focus.parent instanceof Array ? focus.parent : [focus.parent] : [];
-                nodesToFetch.push.apply(nodesToFetch, _toConsumableArray(parentIds)); // load children
+                nodesToFetch.push.apply(nodesToFetch, _toConsumableArray(parentIds)); // children
 
                 childrenIds = focus.children;
-                nodesToFetch.push.apply(nodesToFetch, _toConsumableArray(childrenIds)); // load edges
+                nodesToFetch.push.apply(nodesToFetch, _toConsumableArray(childrenIds)); // edges
 
                 requiredEdges = [].concat(_toConsumableArray(parentIds.map(function (id) {
                   return {
@@ -25846,7 +26268,7 @@ var BaseLayout = /*#__PURE__*/function () {
                     return e.fromNode === edge.fromNode && e.toNode === e.toNode;
                   });
                 });
-                _context7.next = 17;
+                _context7.next = 27;
                 return multiplePostRequests([{
                   url: "".concat(this.config.databaseUrl, "/").concat(this.config.nodeEndpoint),
                   body: nodesToFetch
@@ -25855,7 +26277,7 @@ var BaseLayout = /*#__PURE__*/function () {
                   body: edgesToFetch
                 }]);
 
-              case 17:
+              case 27:
                 response2 = _context7.sent;
                 nodes = response2[0];
                 edges = response2[1]; // create node and edge visualizations, first for the focus in detailed representation, then for all others in minimal
@@ -25899,9 +26321,17 @@ var BaseLayout = /*#__PURE__*/function () {
                       _this3.edges.push(edge);
                     }
                   }
-                });
+                }); // update references
 
-              case 23:
+                this.focusNode = this.getContextualFocusNode();
+                this.assignedNode = this.getContextualAssignedNode();
+                this.childNodes = this.getContextualChildNodes(this.focusNode);
+                this.parentNodes = this.getContextualParentNodes(this.focusNode);
+                this.riskNodes = this.getContextualRiskNodes();
+                this.assignedChildNodes = this.getAssignedChildNodes(this.assignedNode);
+                this.assignedParentNodes = this.getAssignedParentNodes(this.assignedNode);
+
+              case 40:
               case "end":
                 return _context7.stop();
             }
@@ -25915,34 +26345,385 @@ var BaseLayout = /*#__PURE__*/function () {
 
       return loadInitialContextualDataAsync;
     }()
+    /**
+     * Helper method that collects items related for removal.
+     */
+
+  }, {
+    key: "collectRemovals",
+    value: function collectRemovals(_ref5) {
+      var clickedNode = _ref5.clickedNode,
+          isParentOperation = _ref5.isParentOperation;
+      var nodesToRemove = [];
+      var edgesToRemove = this.edges;
+      var objectsToRemove = [];
+      var assignedNode = this.assignedNode;
+      var childNodes = this.childNodes;
+      var parentNodes = this.parentNodes;
+      var riskNodes = this.riskNodes;
+      var assignedChildNodes = this.assignedChildNodes;
+      var assignedParentNodes = this.assignedParentNodes;
+
+      if (this.assignedInfo !== null) {
+        nodesToRemove.push(assignedNode);
+      }
+
+      if (this.assignedInfo !== null) {
+        nodesToRemove.push.apply(nodesToRemove, _toConsumableArray(assignedParentNodes));
+        nodesToRemove.push.apply(nodesToRemove, _toConsumableArray(assignedChildNodes));
+      }
+
+      nodesToRemove.push.apply(nodesToRemove, _toConsumableArray(riskNodes));
+
+      if (this.riskConnection) {
+        this.riskConnection.removeSVG({
+          withAnimation: false
+        });
+      }
+
+      this.riskConnection = null; // remove existing layout information
+
+      if (isParentOperation === true) {
+        // remove SVGs to the bottom
+        this.containerConnections.forEach(function (connection) {
+          objectsToRemove.push({
+            svg: connection,
+            opts: {
+              X: connection.getFinalX(),
+              Y: connection.getFinalY() + 50,
+              withAnimation: true
+            }
+          });
+        });
+        this.containerConnections = [];
+        this.containers.forEach(function (container) {
+          objectsToRemove.push({
+            svg: container,
+            opts: {
+              X: container.getFinalX(),
+              Y: container.getFinalY() + 50,
+              withAnimation: true
+            }
+          });
+        });
+        this.containers = [];
+        this.expanders.forEach(function (expander) {
+          objectsToRemove.push({
+            svg: expander,
+            opts: {
+              X: expander.getFinalX(),
+              Y: expander.getFinalY() + 50,
+              withAnimation: true
+            }
+          });
+        });
+        this.expanders = [];
+
+        if (this.assignedConnection) {
+          objectsToRemove.push({
+            svg: this.assignedConnection,
+            opts: {
+              X: this.assignedConnection.getFinalX(),
+              Y: this.assignedConnection.getFinalY() + 50,
+              withAnimation: true
+            }
+          });
+        }
+
+        this.assignedConnection = null;
+        nodesToRemove.push.apply(nodesToRemove, _toConsumableArray(childNodes));
+        nodesToRemove.push.apply(nodesToRemove, _toConsumableArray(parentNodes.filter(function (n) {
+          return n.id !== clickedNode.id;
+        })));
+      } else {
+        // remove SVGs to the top
+        this.containerConnections.forEach(function (connection) {
+          objectsToRemove.push({
+            svg: connection,
+            opts: {
+              X: connection.getFinalX(),
+              Y: connection.getFinalY() - 50,
+              withAnimation: true
+            }
+          });
+        });
+        this.containerConnections = [];
+        this.containers.forEach(function (container) {
+          objectsToRemove.push({
+            svg: container,
+            opts: {
+              X: container.getFinalX(),
+              Y: container.getFinalY() - 50,
+              withAnimation: true
+            }
+          });
+        });
+        this.containers = [];
+        this.expanders.forEach(function (expander) {
+          objectsToRemove.push({
+            svg: expander,
+            opts: {
+              X: expander.getFinalX(),
+              Y: expander.getFinalY() - 50,
+              withAnimation: true
+            }
+          });
+        });
+        this.expanders = [];
+
+        if (this.assignedConnection) {
+          objectsToRemove.push({
+            svg: this.assignedConnection,
+            opts: {
+              X: this.assignedConnection.getFinalX(),
+              Y: this.assignedConnection.getFinalY() - 50,
+              withAnimation: true
+            }
+          });
+        }
+
+        this.assignedConnection = null;
+        nodesToRemove.push.apply(nodesToRemove, _toConsumableArray(parentNodes));
+        nodesToRemove.push.apply(nodesToRemove, _toConsumableArray(childNodes.filter(function (n) {
+          return n.id !== clickedNode.id;
+        })));
+      }
+
+      return {
+        nodesToRemove: nodesToRemove,
+        edgesToRemove: edgesToRemove,
+        objectsToRemove: objectsToRemove
+      };
+    }
+    /**
+     * Performs an add or removal operations.
+     * @async
+     * @param {Object} [opts={ }] An object containing additional information.
+     * @param {Number} [opts.clickedNode=null] The clicked node.
+     * @param {Number} [opts.isParentOperation=false] Determines the directions where nodes translate while removing and adding.
+     */
+
   }, {
     key: "updateContextualDataAsync",
     value: function () {
-      var _updateContextualDataAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee8(_ref5) {
+      var _updateContextualDataAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee8(_ref6) {
         var _this4 = this;
 
-        var _ref5$clickedNode, clickedNode, focusNode, oldFocusX, oldFocusY;
+        var _ref6$clickedNode, clickedNode, _ref6$isParentOperati, isParentOperation, focusNode, oldFocusX, oldFocusY, _this$collectRemovals, nodesToRemove, edgesToRemove, objectsToRemove, oldFocus, newFocus, response1, assigned, nodesToFetch, response, parentDependencies, childDependencies, newParentIds, newChildrenIds, requiredEdges, edgesToFetch, response2, newNodes, newEdges, prevLayoutWidth;
 
         return regeneratorRuntime.wrap(function _callee8$(_context8) {
           while (1) {
             switch (_context8.prev = _context8.next) {
               case 0:
-                _ref5$clickedNode = _ref5.clickedNode, clickedNode = _ref5$clickedNode === void 0 ? null : _ref5$clickedNode;
+                _ref6$clickedNode = _ref6.clickedNode, clickedNode = _ref6$clickedNode === void 0 ? null : _ref6$clickedNode, _ref6$isParentOperati = _ref6.isParentOperation, isParentOperation = _ref6$isParentOperati === void 0 ? false : _ref6$isParentOperati;
                 // transform clickedNode to focus and focus to child or parent
-                focusNode = this.nodes.find(function (n) {
-                  return n.getId() === _this4.focusId;
-                }); // console.log(focusNode, clickedNode)
-
+                focusNode = this.focusNode;
                 oldFocusX = focusNode.getFinalX();
                 oldFocusY = focusNode.getFinalY();
                 clickedNode.setFinalX(oldFocusX);
-                clickedNode.setFinalY(oldFocusY);
-                console.log(clickedNode.id, "transformToMax");
-                clickedNode.transformToMax({}); // remove existing layout information
-                // load new data
-                // create new data
+                clickedNode.setFinalY(oldFocusY); // restore expander values
 
-              case 8:
+                this.areChildrenExpended = false;
+                this.areParentsExpended = false;
+                this.areRisksExpended = false;
+                this.areAssignedParentExpanded = false;
+                this.areAssignedChildrenExpanded = false; // collect nodes, edges and other objects that will be removed
+
+                _this$collectRemovals = this.collectRemovals({
+                  clickedNode: clickedNode,
+                  isParentOperation: isParentOperation
+                }), nodesToRemove = _this$collectRemovals.nodesToRemove, edgesToRemove = _this$collectRemovals.edgesToRemove, objectsToRemove = _this$collectRemovals.objectsToRemove;
+                this.nodes = [clickedNode, focusNode];
+                this.edges = [];
+                oldFocus = focusNode;
+                newFocus = clickedNode;
+                this.focusId = newFocus.getId();
+                newFocus.setNodeSize("max");
+                oldFocus.setNodeSize("min"); // load new data
+                // load focus and assigned node
+
+                _context8.next = 21;
+                return singlePostRequest("".concat(this.config.databaseUrl, "/").concat(this.config.contextualRelationshipEndpoint), [this.focusId]);
+
+              case 21:
+                response1 = _context8.sent;
+                //  const response = await singlePostRequest(`${this.config.databaseUrl}/${this.config.nodeEndpoint}`, [assigned.assigned])
+                assigned = response1;
+                nodesToFetch = []; // check if we need to fetch an assigned node and some attached risks
+
+                if (!(assigned.length === undefined && this.config.showAssignedConnection === true)) {
+                  _context8.next = 37;
+                  break;
+                }
+
+                nodesToFetch.push.apply(nodesToFetch, _toConsumableArray(assigned.risks));
+                nodesToFetch.push(assigned.assigned);
+                _context8.next = 29;
+                return singlePostRequest("".concat(this.config.databaseUrl, "/").concat(this.config.nodeEndpoint), [assigned.assigned]);
+
+              case 29:
+                response = _context8.sent;
+                parentDependencies = response[0].parent !== null ? response[0].parent instanceof Array ? response[0].parent : [response[0].parent] : [];
+                childDependencies = response[0].children;
+                nodesToFetch.push.apply(nodesToFetch, _toConsumableArray(parentDependencies));
+                nodesToFetch.push.apply(nodesToFetch, _toConsumableArray(childDependencies));
+                this.assignedInfo = assigned;
+                _context8.next = 38;
+                break;
+
+              case 37:
+                this.assignedInfo = null;
+
+              case 38:
+                if (isParentOperation) {
+                  newParentIds = newFocus.parentId !== null ? newFocus.parentId instanceof Array ? newFocus.parentId : [newFocus.parentId] : [];
+                  newChildrenIds = newFocus.childrenIds.filter(function (id) {
+                    return id !== oldFocus.id;
+                  });
+                } else {
+                  newParentIds = newFocus.parentId !== null ? newFocus.parentId instanceof Array ? newFocus.parentId : [newFocus.parentId] : [];
+                  newParentIds = newParentIds.filter(function (id) {
+                    return id !== oldFocus.id;
+                  });
+                  newChildrenIds = newFocus.childrenIds;
+                }
+
+                nodesToFetch.push.apply(nodesToFetch, _toConsumableArray(newParentIds));
+                nodesToFetch.push.apply(nodesToFetch, _toConsumableArray(newChildrenIds)); // load edges
+
+                requiredEdges = [].concat(_toConsumableArray(newParentIds.map(function (id) {
+                  return {
+                    fromNode: _this4.focusId,
+                    toNode: id
+                  };
+                })), _toConsumableArray(newChildrenIds.map(function (id) {
+                  return {
+                    fromNode: id,
+                    toNode: _this4.focusId
+                  };
+                }))); // add missing edge (caused by not fetching the old focus)
+
+                if (isParentOperation) {
+                  requiredEdges.push({
+                    fromNode: oldFocus.id,
+                    toNode: newFocus.id
+                  });
+                } else {
+                  requiredEdges.push({
+                    fromNode: newFocus.id,
+                    toNode: oldFocus.id
+                  });
+                } // ..but, only edges known to the graph
+
+
+                edgesToFetch = requiredEdges.filter(function (edge) {
+                  return _this4.edgeData.find(function (e) {
+                    return e.fromNode === edge.fromNode && e.toNode === e.toNode;
+                  });
+                });
+                _context8.next = 46;
+                return multiplePostRequests([{
+                  url: "".concat(this.config.databaseUrl, "/").concat(this.config.nodeEndpoint),
+                  body: nodesToFetch
+                }, {
+                  url: "".concat(this.config.databaseUrl, "/").concat(this.config.edgeEndpoint),
+                  body: edgesToFetch
+                }]);
+
+              case 46:
+                response2 = _context8.sent;
+                newNodes = response2[0];
+                newEdges = response2[1]; // create node and edge visualizations, first for the focus in detailed representation, then for all others in minimal
+
+                this.createRepresentations({
+                  nodes: newNodes,
+                  edges: newEdges,
+                  renderingSize: "min"
+                }); // fallback: if an edge was not provided, create it manualy as solid edge
+
+                requiredEdges.forEach(function (e) {
+                  var existingEdge = newEdges.find(function (x) {
+                    return x.fromNode === e.fromNode && x.toNode === e.toNode;
+                  });
+
+                  if (existingEdge === undefined) {
+                    var fromNode = _this4.nodes.find(function (n) {
+                      return n.id === e.fromNode;
+                    });
+
+                    var toNode = _this4.nodes.find(function (n) {
+                      return n.id === e.toNode;
+                    });
+
+                    if (fromNode !== undefined && toNode !== undefined) {
+                      var edge = EdgeFactory.create({
+                        type: "bold",
+                        config: {
+                          animationSpeed: _this4.config.animationSpeed
+                        }
+                      }, _this4.canvas, fromNode, toNode, _this4.additionalEdgeRepresentations); // dont add a label
+
+                      edge.setLabel(null);
+                      edge.setLayoutId(_this4.layoutIdentifier);
+
+                      _this4.edges.push(edge);
+                    }
+                  }
+                }); // remove existing SVGs ()
+
+                nodesToRemove.forEach(function (node) {
+                  node.removeSVG({
+                    isContextualNode: true,
+                    isContextualParentOperation: isParentOperation
+                  });
+                });
+                edgesToRemove.forEach(function (edge) {
+                  edge.removeSVG({
+                    isContextualEdge: true,
+                    isContextualParentOperation: isParentOperation
+                  });
+                });
+                objectsToRemove.forEach(function (_ref7) {
+                  var svg = _ref7.svg,
+                      opts = _ref7.opts;
+                  svg.removeSVG(opts);
+                }); // update references
+
+                this.focusNode = this.getContextualFocusNode();
+                this.assignedNode = this.getContextualAssignedNode();
+                this.childNodes = this.getContextualChildNodes(this.focusNode);
+                this.parentNodes = this.getContextualParentNodes(this.focusNode);
+                this.riskNodes = this.getContextualRiskNodes();
+                this.assignedChildNodes = this.getAssignedChildNodes(this.assignedNode);
+                this.assignedParentNodes = this.getAssignedParentNodes(this.assignedNode);
+                prevLayoutWidth = 0;
+                this.layoutReferences.forEach(function (llayout) {
+                  if (llayout === _this4) {
+                    _this4.calculateLayout({
+                      offset: prevLayoutWidth,
+                      isReRender: true,
+                      oldFocusNode: oldFocus
+                    });
+
+                    _this4.renderLayout({
+                      isReRender: true,
+                      clickedNodId: clickedNode.id,
+                      oldFocusNode: oldFocus
+                    });
+                  } else {
+                    llayout.calculateLayout({
+                      offset: prevLayoutWidth
+                    });
+                    llayout.renderLayout({
+                      isReRender: true,
+                      prevLayoutWidth: prevLayoutWidth
+                    });
+                  }
+
+                  prevLayoutWidth += llayout.layoutInfo.w + _this4.globalLayoutSpacing;
+                });
+
+              case 63:
               case "end":
                 return _context8.stop();
             }
@@ -25957,6 +26738,47 @@ var BaseLayout = /*#__PURE__*/function () {
       return updateContextualDataAsync;
     }()
     /**
+    * Rebuilds the entire contextual layout.
+    * @async
+    * @param {Object} [opts={ }] An object containing additional information.
+    * @param {Number} [opts.removeOldData=true] Determines if the intial graph data should also be removed.
+    */
+
+  }, {
+    key: "rebuildContextualLayoutAsync",
+    value: function () {
+      var _rebuildContextualLayoutAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee9(_ref8) {
+        var _ref8$removeOldData, removeOldData;
+
+        return regeneratorRuntime.wrap(function _callee9$(_context9) {
+          while (1) {
+            switch (_context9.prev = _context9.next) {
+              case 0:
+                _ref8$removeOldData = _ref8.removeOldData, removeOldData = _ref8$removeOldData === void 0 ? true : _ref8$removeOldData;
+                _context9.next = 3;
+                return this.removeLayoutAsync({
+                  removeOldData: removeOldData
+                });
+
+              case 3:
+                _context9.next = 5;
+                return this.loadInitialContextualDataAsync();
+
+              case 5:
+              case "end":
+                return _context9.stop();
+            }
+          }
+        }, _callee9, this);
+      }));
+
+      function rebuildContextualLayoutAsync(_x5) {
+        return _rebuildContextualLayoutAsync.apply(this, arguments);
+      }
+
+      return rebuildContextualLayoutAsync;
+    }()
+    /**
      * Loads the initial radial layout data.
      * @async
      */
@@ -25964,23 +26786,23 @@ var BaseLayout = /*#__PURE__*/function () {
   }, {
     key: "loadInitialRadialDataAsync",
     value: function () {
-      var _loadInitialRadialDataAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee9() {
+      var _loadInitialRadialDataAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee10() {
         var _this5 = this;
 
         var response1, root, nodes, childNodeIds, i, response, children, trees, tree, searchRootRecursive, checkVisibilityRecursive, createEdgeConnections, requiredEdges, edgesToFetch, edges;
-        return regeneratorRuntime.wrap(function _callee9$(_context9) {
+        return regeneratorRuntime.wrap(function _callee10$(_context10) {
           while (1) {
-            switch (_context9.prev = _context9.next) {
+            switch (_context10.prev = _context10.next) {
               case 0:
-                _context9.next = 2;
+                _context10.next = 2;
                 return singlePostRequest("".concat(this.config.databaseUrl, "/").concat(this.config.nodeEndpoint), [this.rootId]);
 
               case 2:
-                response1 = _context9.sent;
+                response1 = _context10.sent;
                 root = response1[0] || null;
 
                 if (!(root === null)) {
-                  _context9.next = 6;
+                  _context10.next = 6;
                   break;
                 }
 
@@ -25994,15 +26816,15 @@ var BaseLayout = /*#__PURE__*/function () {
 
               case 9:
                 if (!(i < this.renderDepth && childNodeIds.length > 0)) {
-                  _context9.next = 19;
+                  _context10.next = 19;
                   break;
                 }
 
-                _context9.next = 12;
+                _context10.next = 12;
                 return singlePostRequest("".concat(this.config.databaseUrl, "/").concat(this.config.nodeEndpoint), childNodeIds);
 
               case 12:
-                response = _context9.sent;
+                response = _context10.sent;
                 children = response;
                 childNodeIds = children.map(function (c) {
                   return c.children;
@@ -26011,7 +26833,7 @@ var BaseLayout = /*#__PURE__*/function () {
 
               case 16:
                 i += 1;
-                _context9.next = 9;
+                _context10.next = 9;
                 break;
 
               case 19:
@@ -26041,7 +26863,7 @@ var BaseLayout = /*#__PURE__*/function () {
                 });
 
                 if (!(tree === null)) {
-                  _context9.next = 27;
+                  _context10.next = 27;
                   break;
                 }
 
@@ -26094,11 +26916,11 @@ var BaseLayout = /*#__PURE__*/function () {
                     return e.fromNode === edge.fromNode && e.toNode === e.toNode;
                   });
                 });
-                _context9.next = 34;
+                _context10.next = 34;
                 return singlePostRequest("".concat(this.config.databaseUrl, "/").concat(this.config.edgeEndpoint), edgesToFetch);
 
               case 34:
-                edges = _context9.sent;
+                edges = _context10.sent;
                 // create node and edge visualizations
                 this.createRepresentations({
                   nodes: nodes,
@@ -26137,10 +26959,10 @@ var BaseLayout = /*#__PURE__*/function () {
 
               case 37:
               case "end":
-                return _context9.stop();
+                return _context10.stop();
             }
           }
-        }, _callee9, this);
+        }, _callee10, this);
       }));
 
       function loadInitialRadialDataAsync() {
@@ -26159,16 +26981,16 @@ var BaseLayout = /*#__PURE__*/function () {
   }, {
     key: "updateRadialDataAsync",
     value: function () {
-      var _updateRadialDataAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee10(_ref6) {
+      var _updateRadialDataAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee11(_ref9) {
         var _this6 = this;
 
-        var _ref6$clickedNode, clickedNode, isAddOperation, requestedNodes, _nodes2, requiredEdges, edgesToFetch, edges, coords, x, y;
+        var _ref9$clickedNode, clickedNode, isAddOperation, requestedNodes, _nodes2, requiredEdges, edgesToFetch, edges, coords, x, y;
 
-        return regeneratorRuntime.wrap(function _callee10$(_context10) {
+        return regeneratorRuntime.wrap(function _callee11$(_context11) {
           while (1) {
-            switch (_context10.prev = _context10.next) {
+            switch (_context11.prev = _context11.next) {
               case 0:
-                _ref6$clickedNode = _ref6.clickedNode, clickedNode = _ref6$clickedNode === void 0 ? null : _ref6$clickedNode;
+                _ref9$clickedNode = _ref9.clickedNode, clickedNode = _ref9$clickedNode === void 0 ? null : _ref9$clickedNode;
                 // if the clicked node has no renderd children, its an add operation, else its a remove operation
                 isAddOperation = clickedNode.children.map(function (child) {
                   return child.svg;
@@ -26223,26 +27045,26 @@ var BaseLayout = /*#__PURE__*/function () {
 
 
                 if (!(isAddOperation === true)) {
-                  _context10.next = 18;
+                  _context11.next = 18;
                   break;
                 }
 
                 if (!(clickedNode.childrenIds.length === 0)) {
-                  _context10.next = 6;
+                  _context11.next = 6;
                   break;
                 }
 
-                return _context10.abrupt("return");
+                return _context11.abrupt("return");
 
               case 6:
                 requestedNodes = clickedNode.childrenIds.map(function (n) {
                   return isNaN(n) ? n.id : n;
                 });
-                _context10.next = 9;
+                _context11.next = 9;
                 return singlePostRequest("".concat(this.config.databaseUrl, "/").concat(this.config.nodeEndpoint), requestedNodes);
 
               case 9:
-                _nodes2 = _context10.sent;
+                _nodes2 = _context11.sent;
                 // find edges between new children and clicked node
                 requiredEdges = [];
 
@@ -26259,11 +27081,11 @@ var BaseLayout = /*#__PURE__*/function () {
                     return e.fromNode === edge.fromNode && e.toNode === e.toNode;
                   });
                 });
-                _context10.next = 15;
+                _context11.next = 15;
                 return singlePostRequest("".concat(this.config.databaseUrl, "/").concat(this.config.edgeEndpoint), edgesToFetch);
 
               case 15:
-                edges = _context10.sent;
+                edges = _context11.sent;
                 // create node and edge visualizations
                 this.createRepresentations({
                   nodes: _nodes2,
@@ -26313,13 +27135,13 @@ var BaseLayout = /*#__PURE__*/function () {
 
               case 22:
               case "end":
-                return _context10.stop();
+                return _context11.stop();
             }
           }
-        }, _callee10, this);
+        }, _callee11, this);
       }));
 
-      function updateRadialDataAsync(_x5) {
+      function updateRadialDataAsync(_x6) {
         return _updateRadialDataAsync.apply(this, arguments);
       }
 
@@ -26335,32 +27157,32 @@ var BaseLayout = /*#__PURE__*/function () {
   }, {
     key: "rebuildRadialLayoutAsync",
     value: function () {
-      var _rebuildRadialLayoutAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee11(_ref7) {
-        var _ref7$removeOldData, removeOldData;
+      var _rebuildRadialLayoutAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee12(_ref10) {
+        var _ref10$removeOldData, removeOldData;
 
-        return regeneratorRuntime.wrap(function _callee11$(_context11) {
+        return regeneratorRuntime.wrap(function _callee12$(_context12) {
           while (1) {
-            switch (_context11.prev = _context11.next) {
+            switch (_context12.prev = _context12.next) {
               case 0:
-                _ref7$removeOldData = _ref7.removeOldData, removeOldData = _ref7$removeOldData === void 0 ? true : _ref7$removeOldData;
-                _context11.next = 3;
+                _ref10$removeOldData = _ref10.removeOldData, removeOldData = _ref10$removeOldData === void 0 ? true : _ref10$removeOldData;
+                _context12.next = 3;
                 return this.removeLayoutAsync({
                   removeOldData: removeOldData
                 });
 
               case 3:
-                _context11.next = 5;
+                _context12.next = 5;
                 return this.loadInitialRadialDataAsync();
 
               case 5:
               case "end":
-                return _context11.stop();
+                return _context12.stop();
             }
           }
-        }, _callee11, this);
+        }, _callee12, this);
       }));
 
-      function rebuildRadialLayoutAsync(_x6) {
+      function rebuildRadialLayoutAsync(_x7) {
         return _rebuildRadialLayoutAsync.apply(this, arguments);
       }
 
@@ -26376,17 +27198,17 @@ var BaseLayout = /*#__PURE__*/function () {
 
   }, {
     key: "updateLayoutsToTheRight",
-    value: function updateLayoutsToTheRight(_ref8) {
+    value: function updateLayoutsToTheRight(_ref11) {
       var _this7 = this;
 
-      var _ref8$isReRender = _ref8.isReRender,
-          isReRender = _ref8$isReRender === void 0 ? false : _ref8$isReRender,
-          _ref8$x = _ref8.x,
-          x = _ref8$x === void 0 ? null : _ref8$x,
-          _ref8$y = _ref8.y,
-          y = _ref8$y === void 0 ? null : _ref8$y;
+      var _ref11$isReRender = _ref11.isReRender,
+          isReRender = _ref11$isReRender === void 0 ? false : _ref11$isReRender,
+          _ref11$x = _ref11.x,
+          x = _ref11$x === void 0 ? null : _ref11$x,
+          _ref11$y = _ref11.y,
+          y = _ref11$y === void 0 ? null : _ref11$y;
       var prevLayoutWidth = 0;
-      this.layoutReferences.forEach(function (llayout, i) {
+      this.layoutReferences.forEach(function (llayout) {
         llayout.calculateLayout({
           offset: prevLayoutWidth
         });
@@ -26409,14 +27231,14 @@ var BaseLayout = /*#__PURE__*/function () {
   }, {
     key: "removeLayoutAsync",
     value: function () {
-      var _removeLayoutAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee12(_ref9) {
-        var _ref9$removeOldData, removeOldData, _ref9$delayTime, delayTime, delay;
+      var _removeLayoutAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee13(_ref12) {
+        var _ref12$removeOldData, removeOldData, _ref12$delayTime, delayTime, delay;
 
-        return regeneratorRuntime.wrap(function _callee12$(_context12) {
+        return regeneratorRuntime.wrap(function _callee13$(_context13) {
           while (1) {
-            switch (_context12.prev = _context12.next) {
+            switch (_context13.prev = _context13.next) {
               case 0:
-                _ref9$removeOldData = _ref9.removeOldData, removeOldData = _ref9$removeOldData === void 0 ? true : _ref9$removeOldData, _ref9$delayTime = _ref9.delayTime, delayTime = _ref9$delayTime === void 0 ? this.config.animationSpeed + 25 : _ref9$delayTime;
+                _ref12$removeOldData = _ref12.removeOldData, removeOldData = _ref12$removeOldData === void 0 ? true : _ref12$removeOldData, _ref12$delayTime = _ref12.delayTime, delayTime = _ref12$delayTime === void 0 ? this.config.animationSpeed + 25 : _ref12$delayTime;
 
                 if (removeOldData === true) {
                   this.nodeData = [];
@@ -26428,16 +27250,16 @@ var BaseLayout = /*#__PURE__*/function () {
                 });
                 this.nodes = [];
                 this.edges.forEach(function (edge) {
-                  return edge.removeSVG();
+                  return edge.removeSVG({});
                 });
                 this.edges = [];
                 this.leafs.forEach(function (leaf) {
-                  return leaf.removeSVG();
+                  return leaf.removeSVG({});
                 });
                 this.leafs = [];
 
                 if (this.gridExpander) {
-                  this.gridExpander.removeSVG();
+                  this.gridExpander.removeSVG({});
                   this.gridExpander = null;
                 }
 
@@ -26448,7 +27270,7 @@ var BaseLayout = /*#__PURE__*/function () {
                 }; // wait some time to see the SVG objects disappear
 
 
-                _context12.next = 12;
+                _context13.next = 12;
                 return delay(delayTime);
 
               case 12:
@@ -26456,13 +27278,13 @@ var BaseLayout = /*#__PURE__*/function () {
 
               case 13:
               case "end":
-                return _context12.stop();
+                return _context13.stop();
             }
           }
-        }, _callee12, this);
+        }, _callee13, this);
       }));
 
-      function removeLayoutAsync(_x7) {
+      function removeLayoutAsync(_x8) {
         return _removeLayoutAsync.apply(this, arguments);
       }
 
@@ -26478,15 +27300,15 @@ var BaseLayout = /*#__PURE__*/function () {
 
   }, {
     key: "createRepresentations",
-    value: function createRepresentations(_ref10) {
+    value: function createRepresentations(_ref13) {
       var _this8 = this;
 
-      var _ref10$nodes = _ref10.nodes,
-          nodes = _ref10$nodes === void 0 ? [] : _ref10$nodes,
-          _ref10$edges = _ref10.edges,
-          edges = _ref10$edges === void 0 ? [] : _ref10$edges,
-          _ref10$renderingSize = _ref10.renderingSize,
-          renderingSize = _ref10$renderingSize === void 0 ? this.config.renderingSize : _ref10$renderingSize;
+      var _ref13$nodes = _ref13.nodes,
+          nodes = _ref13$nodes === void 0 ? [] : _ref13$nodes,
+          _ref13$edges = _ref13.edges,
+          edges = _ref13$edges === void 0 ? [] : _ref13$edges,
+          _ref13$renderingSize = _ref13.renderingSize,
+          renderingSize = _ref13$renderingSize === void 0 ? this.config.renderingSize : _ref13$renderingSize;
       // load the current zoom from the SVG DOM storage
       var currentZoomLevel = this.canvas.parent().attr().zoomCurrent;
       var currenZoomThreshold = this.canvas.parent().attr().zoomThreshold; // create nodes with the factory design pattern
@@ -26537,410 +27359,8 @@ var BaseLayout = /*#__PURE__*/function () {
           labels.forEach(function (doc) {
             doc.style.opacity = "0";
           });
-        }, 1);
+        }, 5);
       }
-    }
-  }, {
-    key: "updateLayoutConfiguration",
-    value: function () {
-      var _updateLayoutConfiguration = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee13(newConfiguration) {
-        return regeneratorRuntime.wrap(function _callee13$(_context13) {
-          while (1) {
-            switch (_context13.prev = _context13.next) {
-              case 0:
-                this.config = _objectSpread2(_objectSpread2({}, this.config), newConfiguration);
-
-                if (newConfiguration.limitColumns) {
-                  this.removeLayout();
-                }
-
-                return _context13.abrupt("return", this);
-
-              case 3:
-              case "end":
-                return _context13.stop();
-            }
-          }
-        }, _callee13, this);
-      }));
-
-      function updateLayoutConfiguration(_x8) {
-        return _updateLayoutConfiguration.apply(this, arguments);
-      }
-
-      return updateLayoutConfiguration;
-    }()
-  }, {
-    key: "updateGridLayoutConfiguration",
-    value: function () {
-      var _updateGridLayoutConfiguration = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee14(newConfiguration) {
-        return regeneratorRuntime.wrap(function _callee14$(_context14) {
-          while (1) {
-            switch (_context14.prev = _context14.next) {
-              case 0:
-                this.config = _objectSpread2(_objectSpread2({}, this.config), newConfiguration);
-                console.log("update", this);
-
-              case 2:
-              case "end":
-                return _context14.stop();
-            }
-          }
-        }, _callee14, this);
-      }));
-
-      function updateGridLayoutConfiguration(_x9) {
-        return _updateGridLayoutConfiguration.apply(this, arguments);
-      }
-
-      return updateGridLayoutConfiguration;
-    }()
-  }, {
-    key: "removeRepresentation",
-    value: function removeRepresentation() {
-      var nodes = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
-      var edges = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
-      this.nodes = this.nodes.filter(function (node) {
-        if (!nodes.includes(node.getId())) {
-          node.removeNode(0, 0, {
-            animation: true
-          });
-          return false;
-        }
-
-        return true;
-      });
-      this.edges = this.edges.filter(function (edge) {
-        if (!edges.includes(edge.id)) {
-          edge.removeEdge(0, 0, {
-            animation: false
-          });
-          return false;
-        }
-
-        return true;
-      });
-    }
-  }, {
-    key: "createContextualDataAsync",
-    value: function () {
-      var _createContextualDataAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee15(nodeData, edgeData) {
-        var _this9 = this;
-
-        var focusNode, focusFetchUrl, fetchedFocus, parentChildNodeIds, mapNodeIdsToUrl, nodeIdsToFetch, nodeFetchUrl, fetchedNodes, parentNodeIds, childNodeIds, assignedNodeDataUrl, assignedNodeData, assignedNodeId, riskIds, assignedNodeUrl, assignedNode, riskIdsToFetch, riskFetchUrl, fetchedRisks, config, connection, parentChildEdges, mapEdgeIdsToUrl, edgeIdsToFetch, edgeFetchUrl, fetchedEdges;
-        return regeneratorRuntime.wrap(function _callee15$(_context15) {
-          while (1) {
-            switch (_context15.prev = _context15.next) {
-              case 0:
-                this.nodeData = nodeData;
-                this.edgeData = edgeData; // in order to load parents and children, the data of the focus node has to be loaded first
-
-                focusNode = this.nodeData.find(function (n) {
-                  return n.id === _this9.fromNodeId;
-                });
-                focusFetchUrl = "".concat(this.config.databaseUrl, "/nodes?id=").concat(focusNode.id);
-                _context15.next = 6;
-                return fetch(focusFetchUrl).then(function (data) {
-                  return data.json();
-                });
-
-              case 6:
-                fetchedFocus = _context15.sent;
-                this.createNodeFromData(fetchedFocus[0], "max");
-                this.focus = this.nodes.find(function (n) {
-                  return n.id === _this9.fromNodeId;
-                }); // load parents and children passed on edges inside the graph structure
-
-                parentChildNodeIds = this.edgeData.map(function (e) {
-                  if (e.fromNodeId === _this9.fromNodeId) {
-                    return e.toNodeId;
-                  }
-
-                  if (e.toNodeId === _this9.fromNodeId) {
-                    return e.fromNodeId;
-                  }
-
-                  return null;
-                }).filter(function (id) {
-                  return id !== null;
-                });
-
-                mapNodeIdsToUrl = function mapNodeIdsToUrl(id) {
-                  return "id=".concat(id, "&");
-                };
-
-                nodeIdsToFetch = parentChildNodeIds.map(mapNodeIdsToUrl).join("").slice(0, -1);
-                nodeFetchUrl = "".concat(this.config.databaseUrl, "/nodes?").concat(nodeIdsToFetch);
-                _context15.next = 15;
-                return fetch(nodeFetchUrl).then(function (data) {
-                  return data.json();
-                });
-
-              case 15:
-                fetchedNodes = _context15.sent;
-                fetchedNodes.forEach(function (rawNode) {
-                  _this9.createNodeFromData(rawNode, "min");
-                });
-                parentNodeIds = this.edgeData.filter(function (e) {
-                  return e.fromNodeId === _this9.fromNodeId;
-                }).map(function (e) {
-                  return e.toNodeId;
-                });
-                childNodeIds = this.edgeData.filter(function (e) {
-                  return e.toNodeId === _this9.fromNodeId;
-                }).map(function (e) {
-                  return e.fromNodeId;
-                });
-                this.parents = this.nodes.filter(function (n) {
-                  return parentNodeIds.includes(n.id);
-                });
-                this.children = this.nodes.filter(function (n) {
-                  return childNodeIds.includes(n.id);
-                }); // here we load attached risks which are attached to a different node
-
-                assignedNodeDataUrl = "".concat(this.config.databaseUrl, "/RiskEdgeConnectionTable?fromNodeId=").concat(this.fromNodeId);
-                _context15.next = 24;
-                return fetch(assignedNodeDataUrl).then(function (data) {
-                  return data.json();
-                });
-
-              case 24:
-                assignedNodeData = _context15.sent;
-                assignedNodeId = assignedNodeData[0].toNodeId;
-                riskIds = assignedNodeData[0].risks;
-                assignedNodeUrl = "".concat(this.config.databaseUrl, "/nodes?id=").concat(assignedNodeId);
-                _context15.next = 30;
-                return fetch(assignedNodeUrl).then(function (data) {
-                  return data.json();
-                });
-
-              case 30:
-                assignedNode = _context15.sent;
-                this.createNodeFromData(assignedNode[0], "min");
-                this.assginedNode = this.nodes.find(function (n) {
-                  return n.id === assignedNodeId;
-                });
-                riskIdsToFetch = riskIds.map(mapNodeIdsToUrl).join("").slice(0, -1);
-                riskFetchUrl = "".concat(this.config.databaseUrl, "/nodes?").concat(riskIdsToFetch);
-                _context15.next = 37;
-                return fetch(riskFetchUrl).then(function (data) {
-                  return data.json();
-                });
-
-              case 37:
-                fetchedRisks = _context15.sent;
-                fetchedRisks.forEach(function (rawNode) {
-                  _this9.createNodeFromData(rawNode, "min");
-                });
-                this.risks = this.nodes.filter(function (n) {
-                  return riskIds.includes(n.id);
-                });
-                config = {
-                  color1: "#F26A7C",
-                  color2: "#F26A7C",
-                  labelTranslateY: -20,
-                  labelColor: "#ff8e9e"
-                };
-                connection = new BoldEdge(this.canvas, this.focus, this.assginedNode, config);
-                connection.setLabel("associated");
-                this.edges.push(connection); // load edges
-
-                parentChildEdges = this.edgeData.filter(function (e) {
-                  if (e.fromNodeId === _this9.fromNodeId) {
-                    return true;
-                  }
-
-                  if (e.toNodeId === _this9.fromNodeId) {
-                    return true;
-                  }
-
-                  return false;
-                }); // fetch edges based on given ids
-
-                mapEdgeIdsToUrl = function mapEdgeIdsToUrl(n) {
-                  return "toNodeId=".concat(n.toNodeId, "&fromNodeId=").concat(n.fromNodeId, "&");
-                };
-
-                edgeIdsToFetch = parentChildEdges.map(mapEdgeIdsToUrl).join("").slice(0, -1);
-                edgeFetchUrl = "".concat(this.config.databaseUrl, "/edges?").concat(edgeIdsToFetch);
-                _context15.next = 50;
-                return fetch(edgeFetchUrl).then(function (data) {
-                  return data.json();
-                });
-
-              case 50:
-                fetchedEdges = _context15.sent;
-                // create new edges
-                fetchedEdges.forEach(function (rawEdge) {
-                  var fromNode = _this9.nodes.find(function (n) {
-                    return n.id === rawEdge.fromNodeId;
-                  });
-
-                  var toNode = _this9.nodes.find(function (n) {
-                    return n.id === rawEdge.toNodeId;
-                  });
-
-                  var edge = null;
-                  if (rawEdge.type === "solid") edge = new ThinEdge(_this9.canvas, fromNode, toNode, {
-                    type: "solid"
-                  });else if (rawEdge.type === "dashed") edge = new ThinEdge(_this9.canvas, fromNode, toNode, {
-                    type: "dashed"
-                  });else if (rawEdge.type === "bold") edge = new BoldEdge(_this9.canvas, fromNode, toNode, {
-                    type: "bold"
-                  });else edge = new ThinEdge(_this9.canvas, fromNode, toNode, {
-                    type: "solid"
-                  });
-                  fromNode.addOutgoingEdge(edge);
-                  toNode.addIncomingEdge(edge);
-                  edge.setLabel(rawEdge.label);
-
-                  _this9.edges.push(edge);
-                }); // re-calculate and re-render layout
-
-                this.calculateLayout();
-                this.renderLayout();
-
-              case 54:
-              case "end":
-                return _context15.stop();
-            }
-          }
-        }, _callee15, this);
-      }));
-
-      function createContextualDataAsync(_x10, _x11) {
-        return _createContextualDataAsync.apply(this, arguments);
-      }
-
-      return createContextualDataAsync;
-    }()
-  }, {
-    key: "manageContextualDataAsync",
-    value: function () {
-      var _manageContextualDataAsync = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee16(clickedNode) {
-        var removedNodes, nodesToRemove, X, Y;
-        return regeneratorRuntime.wrap(function _callee16$(_context16) {
-          while (1) {
-            switch (_context16.prev = _context16.next) {
-              case 0:
-                // remove all elements but the clicked node
-                removedNodes = [];
-                nodesToRemove = this.nodes; // .filter((n) => n.id !== clickedNode.id)
-
-                X = this.focus.getFinalX();
-                Y = this.focus.getFinalY(); // remove children
-
-                nodesToRemove.forEach(function (child) {
-                  child.removeNode(X, Y);
-                  removedNodes.push(child.id);
-                });
-                clickedNode.setChildren([]); // this.nodes = this.nodes.filter((node) => !removedNodes.includes(node.id))
-
-                this.nodes = []; // remove containers
-
-                this.containers.forEach(function (container) {
-                  container.removeContainer(X, Y);
-                });
-                this.containers = []; // remove edges
-
-                this.edges.forEach(function (edge) {
-                  edge.removeEdge(X, Y);
-                });
-                this.edges = []; // transform clicked node into max and position it to focus
-                // clickedNode.setInitialXY(clickedNode.getFinalX(), clickedNode.getFinalY())
-                // clickedNode.transformToMax(X, Y)
-                // clear layout
-
-                this.focus = null;
-                this.parents = [];
-                this.children = [];
-                this.assginedNode = null;
-                this.assignedRisks = [];
-                this.containers = []; // this.nodes[0].transformToMax(X, Y)
-                // // add data
-
-                this.fromNodeId = clickedNode.id;
-                this.createContextualDataAsync(this.nodeData, this.edgeData); // // in order to load parents and children, the data of the focus node has to be loaded first
-                // const focusFetchUrl = `${this.config.databaseUrl}/nodes?id=${clickedNode.getId()}`
-                // const fetchedFocus = await fetch(focusFetchUrl).then((data) => data.json())
-                // console.log(fetchedFocus[0])
-                // this.createNodeFromData(fetchedFocus[0], "max")
-                // this.focus = this.nodes.find((n) => n.id === fetchedFocus[0].id)
-                // // load parents and children edges
-                // const parentEdgeFetchUrl = `${this.config.databaseUrl}/edges?fromNodeId=${fetchedFocus[0].id}`
-                // const childrenEdgeFetchUrl = `${this.config.databaseUrl}/edges?toNodeId=${fetchedFocus[0].id}`
-                // const fetchedParentEdges = await fetch(parentEdgeFetchUrl).then((data) => data.json())
-                // const fetchedChildrenEdges = await fetch(childrenEdgeFetchUrl).then((data) => data.json())
-                // const fetchedEdges = [...fetchedChildrenEdges, ...fetchedParentEdges]
-                // // load nodes based on edngNodeIds in edge response
-                // const nodeIds = fetchedEdges.map((e) => e.toNodeId)
-                // const mapNodeIdsToUrl = (id) => `id=${id}&`
-                // const nodeIdsToFetch = nodeIds.map(mapNodeIdsToUrl).join("").slice(0, -1)
-                // const nodeFetchUrl = `${this.config.databaseUrl}/nodes?${nodeIdsToFetch}`
-                // const fetchedNodes = await fetch(nodeFetchUrl).then((data) => data.json())
-                // fetchedNodes.forEach((rawNode) => {
-                //   this.createNodeFromData(rawNode, "min")
-                // })
-                // // console.log(fetchedEdges)
-                // const parentNodeIds = fetchedEdges.filter((e) => e.toNodeId !== clickedNode.id).map((n) => n.toNodeId)
-                // const childNodeIds = fetchedEdges.filter((e) => e.fromNodeId !== clickedNode.id).map((n) => n.fromNodeId)
-                // this.parents = this.nodes.filter((n) => parentNodeIds.includes(n.id))
-                // this.children = this.nodes.filter((n) => childNodeIds.includes(n.id))
-                // console.log(childNodeIds, this.nodes)
-                // // // this.parents = this.nodes.filter((n) => parentNodeIds.includes(n.id))
-                // // // this.children = this.nodes.filter((n) => childNodeIds.includes(n.id))
-                // create new edges
-                // fetchedEdges.forEach((rawEdge) => {
-                //   const fromNode = this.nodes.find((n) => n.id === rawEdge.fromNodeId)
-                //   const toNode = this.nodes.find((n) => n.id === rawEdge.toNodeId)
-                //   let edge = null
-                //   if (rawEdge.type === "solid") edge = new ThinEdge(this.canvas, fromNode, toNode, { type: "solid" })
-                //   else if (rawEdge.type === "dashed") edge = new ThinEdge(this.canvas, fromNode, toNode, { type: "dashed" })
-                //   else if (rawEdge.type === "bold") edge = new BoldEdge(this.canvas, fromNode, toNode, { type: "bold" })
-                //   else edge = new ThinEdge(this.canvas, fromNode, toNode, { type: "solid" })
-                //   fromNode.addOutgoingEdge(edge)
-                //   toNode.addIncomingEdge(edge)
-                //   edge.setLabel(rawEdge.label)
-                //   this.edges.push(edge)
-                // })
-                // load parents and children passed on those edges
-                // console.log(fetchedEdges)
-
-              case 19:
-              case "end":
-                return _context16.stop();
-            }
-          }
-        }, _callee16, this);
-      }));
-
-      function manageContextualDataAsync(_x12) {
-        return _manageContextualDataAsync.apply(this, arguments);
-      }
-
-      return manageContextualDataAsync;
-    }()
-  }, {
-    key: "createNodeFromData",
-    value: function createNodeFromData(data, renderingSize) {
-      var _this10 = this;
-
-      var node;
-      if (data.type === "risk") node = new RiskNode(data, this.canvas);
-      if (data.type === "asset") node = new AssetNode(data, this.canvas);
-      if (data.type === "custom") node = new CustomNode(data, this.canvas);
-      if (data.type === "requirement") node = new RequirementNode(data, this.canvas);
-      if (data.type === "control") node = new ControlNode(data, this.canvas); // sets the currently used rendering size
-
-      node.setNodeSize(renderingSize);
-
-      if (data.type === "control") {
-        node.addEvent("dblclick", function () {
-          _this10.manageContextualDataAsync(node);
-        });
-      }
-
-      this.nodes.push(node);
     } // some other useful methods..
 
   }, {
@@ -26970,17 +27390,17 @@ var BaseLayout = /*#__PURE__*/function () {
     }
   }, {
     key: "registerAdditionalNodeRepresentation",
-    value: function registerAdditionalNodeRepresentation(_ref11) {
-      var _ref11$control = _ref11.control,
-          control = _ref11$control === void 0 ? {} : _ref11$control,
-          _ref11$asset = _ref11.asset,
-          asset = _ref11$asset === void 0 ? {} : _ref11$asset,
-          _ref11$custom = _ref11.custom,
-          custom = _ref11$custom === void 0 ? {} : _ref11$custom,
-          _ref11$requirement = _ref11.requirement,
-          requirement = _ref11$requirement === void 0 ? {} : _ref11$requirement,
-          _ref11$risk = _ref11.risk,
-          risk = _ref11$risk === void 0 ? {} : _ref11$risk;
+    value: function registerAdditionalNodeRepresentation(_ref14) {
+      var _ref14$control = _ref14.control,
+          control = _ref14$control === void 0 ? {} : _ref14$control,
+          _ref14$asset = _ref14.asset,
+          asset = _ref14$asset === void 0 ? {} : _ref14$asset,
+          _ref14$custom = _ref14.custom,
+          custom = _ref14$custom === void 0 ? {} : _ref14$custom,
+          _ref14$requirement = _ref14.requirement,
+          requirement = _ref14$requirement === void 0 ? {} : _ref14$requirement,
+          _ref14$risk = _ref14.risk,
+          risk = _ref14$risk === void 0 ? {} : _ref14$risk;
       this.additionalNodeRepresentations = {
         control: control,
         asset: asset,
@@ -26991,13 +27411,13 @@ var BaseLayout = /*#__PURE__*/function () {
     }
   }, {
     key: "registerAdditionalEdgeRepresentation",
-    value: function registerAdditionalEdgeRepresentation(_ref12) {
-      var _ref12$thinEdge = _ref12.thinEdge,
-          thinEdge = _ref12$thinEdge === void 0 ? {} : _ref12$thinEdge,
-          _ref12$boldEdge = _ref12.boldEdge,
-          boldEdge = _ref12$boldEdge === void 0 ? {} : _ref12$boldEdge,
-          _ref12$customEdge = _ref12.customEdge,
-          customEdge = _ref12$customEdge === void 0 ? {} : _ref12$customEdge;
+    value: function registerAdditionalEdgeRepresentation(_ref15) {
+      var _ref15$thinEdge = _ref15.thinEdge,
+          thinEdge = _ref15$thinEdge === void 0 ? {} : _ref15$thinEdge,
+          _ref15$boldEdge = _ref15.boldEdge,
+          boldEdge = _ref15$boldEdge === void 0 ? {} : _ref15$boldEdge,
+          _ref15$customEdge = _ref15.customEdge,
+          customEdge = _ref15$customEdge === void 0 ? {} : _ref15$customEdge;
       this.additionalEdgeRepresentations = {
         thinEdge: thinEdge,
         boldEdge: boldEdge,
@@ -27084,6 +27504,16 @@ var BaseLayout = /*#__PURE__*/function () {
     key: "getRenderDepth",
     value: function getRenderDepth() {
       return this.renderDepth;
+    }
+  }, {
+    key: "setFocusId",
+    value: function setFocusId(focusId) {
+      this.focusId = focusId;
+    }
+  }, {
+    key: "getFocusId",
+    value: function getFocusId() {
+      return this.focusId;
     }
   }, {
     key: "setRootId",
@@ -27246,7 +27676,7 @@ var GridExpander = /*#__PURE__*/function () {
     this.finalY = 0; // general info
 
     this.layoutId = null;
-    this.isLayoutExpended = false;
+    this.isLayoutExpanded = false;
     this.type = "grid";
   }
   /**
@@ -27321,7 +27751,7 @@ var GridExpander = /*#__PURE__*/function () {
       var expand = createText(expandText);
       var collapse = createText(collapseText); // only one text representation is active at once
 
-      if (this.isLayoutExpended === false) {
+      if (this.isLayoutExpanded === false) {
         expand.attr({
           opacity: 1
         });
@@ -27368,6 +27798,8 @@ var GridExpander = /*#__PURE__*/function () {
           scale: 0.975
         });
       });
+      this.finalX = svg.bbox().cx;
+      this.finalY = svg.bbox().cy;
       this.svg = svg;
     }
     /**
@@ -27420,12 +27852,37 @@ var GridExpander = /*#__PURE__*/function () {
     }
     /**
      * Removes the rendered SVG expander from the canvas.
+     * @param {Object} [opts={ }] An object containing additional information.
+     * @param {Number} [opts.withAnimation=false] An indication whether to use an animation to remove the SVG object.
+     * @param {Number} [opts.X=this.finalX] The calculated final X position.
+     * @param {Number} [opts.X=this.finalY] The calculated final X position.
      */
 
   }, {
     key: "removeSVG",
-    value: function removeSVG() {
-      if (this.isRendered()) {
+    value: function removeSVG(_ref3) {
+      var _this2 = this;
+
+      var _ref3$withAnimation = _ref3.withAnimation,
+          withAnimation = _ref3$withAnimation === void 0 ? false : _ref3$withAnimation,
+          _ref3$X = _ref3.X,
+          X = _ref3$X === void 0 ? this.finalX : _ref3$X,
+          _ref3$Y = _ref3.Y,
+          Y = _ref3$Y === void 0 ? this.finalY : _ref3$Y;
+
+      if (withAnimation === true) {
+        if (this.isRendered()) {
+          this.svg.animate({
+            duration: this.config.animationSpeed
+          }).center(X, Y).attr({
+            opacity: 0
+          }).after(function () {
+            _this2.svg.remove();
+
+            _this2.svg = null;
+          });
+        }
+      } else if (this.isRendered()) {
         this.svg.remove();
         this.svg = null;
       }
@@ -27451,9 +27908,9 @@ var GridExpander = /*#__PURE__*/function () {
       return this.type;
     }
   }, {
-    key: "setIsLayoutExpended",
-    value: function setIsLayoutExpended(isLayoutExpended) {
-      this.isLayoutExpended = isLayoutExpended;
+    key: "setIsLayoutExpanded",
+    value: function setIsLayoutExpanded(isLayoutExpanded) {
+      this.isLayoutExpanded = isLayoutExpanded;
     }
   }, {
     key: "setLayoutId",
@@ -27559,7 +28016,7 @@ var GridLayout = /*#__PURE__*/function (_BaseLayout) {
     _this.config = _objectSpread2(_objectSpread2({}, GridLayoutConfiguration), customConfig); // layout specific
 
     _this.gridExpander = null;
-    _this.isLayoutExpended = false; // events
+    _this.isLayoutExpanded = false; // events
 
     _this.events = [{
       event: "click",
@@ -27589,7 +28046,7 @@ var GridLayout = /*#__PURE__*/function (_BaseLayout) {
           while (1) {
             switch (_context.prev = _context.next) {
               case 0:
-                if (this.isLayoutExpended === true) {
+                if (this.isLayoutExpanded === true) {
                   // update the configuration to render all nodes provided by the initial graph
                   this.config = _objectSpread2(_objectSpread2({}, this.config), {}, {
                     cachedLimit: this.config.limitNodes,
@@ -27749,7 +28206,7 @@ var GridLayout = /*#__PURE__*/function (_BaseLayout) {
 
         var expander = _this3.gridExpander === null ? new GridExpander(_this3.canvas, _this3.config) : _this3.gridExpander;
         expander.setLayoutId(_this3.layoutIdentifier);
-        expander.setIsLayoutExpended(_this3.isLayoutExpended); // get left-most X coordinate
+        expander.setIsLayoutExpanded(_this3.isLayoutExpanded); // get left-most X coordinate
 
         var minX = Math.min.apply(Math, _toConsumableArray(_this3.nodes.map(function (n) {
           return n.getFinalX();
@@ -27900,15 +28357,15 @@ var GridLayout = /*#__PURE__*/function (_BaseLayout) {
           _this4.events.forEach(function (myevent) {
             if (myevent.event === type && myevent.modifier === modifier) {
               // change the current expand state
-              _this4.isLayoutExpended = !_this4.isLayoutExpended; // update the expanders text
+              _this4.isLayoutExpanded = !_this4.isLayoutExpanded; // update the expanders text
 
-              if (_this4.isLayoutExpended === true) {
+              if (_this4.isLayoutExpanded === true) {
                 expander.changeToShowMoreText();
               } else {
                 expander.changeToHideMoreText();
               }
 
-              _this4.expandGridLayoutEvent(_this4.isLayoutExpended);
+              _this4.expandGridLayoutEvent(_this4.isLayoutExpanded);
             }
           });
         });
@@ -27930,7 +28387,6 @@ var GridLayout = /*#__PURE__*/function (_BaseLayout) {
 
             if (isReRender) node.moveToBack(); // or transform the existing node into position
           } else if (node.isRendered() === true) {
-            // console.log("trf", node)
             node.transformToFinalPosition({});
           }
         });
@@ -28224,6 +28680,7 @@ var RadialLayoutConfiguration = {
  *                                    Available options: {@link RadialLayoutConfiguration}
  * @param {Object} [customEvents={ }] Overrides event listener configuration properties.
  * @param {Object} [customNodes={ }] Overrides default node representation properties.
+ * @param {Object} [customEdges={ }] Overrides default edge representation properties.
  *
  * @see https://scholarworks.rit.edu/cgi/viewcontent.cgi?article=1355&context=theses
  */
@@ -28951,6 +29408,7 @@ var TreeLayoutConfiguration = {
  *                                    Available options: {@link TreeLayoutConfiguration}
  * @param {Object} [customEvents={ }] Overrides event listener configuration properties.
  * @param {Object} [customNodes={ }] Overrides default node representation properties.
+ * @param {Object} [customEdges={ }] Overrides default edge representation properties.
  *
  * @see https://rachel53461.wordpress.com/2014/04/20/algorithm-for-drawing-trees/
  */
@@ -29472,7 +29930,7 @@ var TreeLayout = /*#__PURE__*/function (_BaseLayout) {
 
         addLeaf(node);
         removeLeaf();
-      }; // calculate the layout dimensions and move off screen objects into the screen
+      }; // calculate the layout dimensions and move objects that are not on the screen into the screen
 
 
       var calculateLayoutInfo = function calculateLayoutInfo(tree) {
@@ -29695,6 +30153,8 @@ var ContextualConainer = /*#__PURE__*/function () {
 
     this.layoutId = 0;
     this.animation = null;
+    this.finalX = 0;
+    this.finalY = 0;
   }
   /**
    * Calculates and renders the container.
@@ -29748,19 +30208,46 @@ var ContextualConainer = /*#__PURE__*/function () {
         });
       }
 
-      svg.add(container); // moves the container into position
+      if (type === "assignedParent") {
+        container.radius(this.config.assignedParentContainerBorderRadius);
+        container.fill(this.config.assignedParentContainerBackgroundColor);
+        container.stroke({
+          width: this.config.assignedParentContainerBorderStrokeWidth
+        });
+        container.stroke({
+          color: this.config.assignedParentContainerBorderStrokeColor
+        });
+      }
+
+      if (type === "assignedChild") {
+        container.radius(this.config.assignedChildContainerBorderRadius);
+        container.fill(this.config.assignedChildContainerBackgroundColor);
+        container.stroke({
+          width: this.config.assignedChildContainerBorderStrokeWidth
+        });
+        container.stroke({
+          color: this.config.assignedChildContainerBorderStrokeColor
+        });
+      }
+
+      svg.add(container);
+      svg.back(); // moves the container into position
 
       svg.get(0).center(this.focusNode.getFinalX(), this.focusNode.getFinalY()).animate({
         duration: this.config.animationSpeed
       }).center(mincx, mincy).width(width).height(minHeight);
+      this.finalX = mincx;
+      this.finalY = mincy;
       this.svg = svg;
     }
     /**
      * Updates a currently rendered container.
      * @param {Object} [opts={ }] An object containing additional information.
-     * @param {Number} [opts.areChildrenExpended=false] Determines if the child container is expended.
-     * @param {Number} [opts.areParentsExpended=false] Determines if the parent container is expended.
-     * @param {Number} [opts.areRisksExpended=false] Determines if the risk container is expended.
+     * @param {Number} [opts.areChildrenExpanded=false] Determines if the child container is Expanded.
+     * @param {Number} [opts.areParentsExpanded=false] Determines if the parent container is Expanded.
+     * @param {Number} [opts.areRisksExpanded=false] Determines if the risk container is Expanded.
+     * @param {Number} [opts.areAssignedParentExpanded=false] Determines if the assigned parent nodes container is Expanded.
+     * @param {Number} [opts.areAssignedChildrenExpanded=false] Determines if the assigned child nodes container is Expanded.
      */
 
   }, {
@@ -29768,12 +30255,16 @@ var ContextualConainer = /*#__PURE__*/function () {
     value: function update(_ref) {
       var _this = this;
 
-      var _ref$areChildrenExpen = _ref.areChildrenExpended,
-          areChildrenExpended = _ref$areChildrenExpen === void 0 ? false : _ref$areChildrenExpen,
-          _ref$areParentsExpend = _ref.areParentsExpended,
-          areParentsExpended = _ref$areParentsExpend === void 0 ? false : _ref$areParentsExpend,
-          _ref$areRisksExpended = _ref.areRisksExpended,
-          areRisksExpended = _ref$areRisksExpended === void 0 ? false : _ref$areRisksExpended;
+      var _ref$areChildrenExpan = _ref.areChildrenExpanded,
+          areChildrenExpanded = _ref$areChildrenExpan === void 0 ? false : _ref$areChildrenExpan,
+          _ref$areParentsExpand = _ref.areParentsExpanded,
+          areParentsExpanded = _ref$areParentsExpand === void 0 ? false : _ref$areParentsExpand,
+          _ref$areRisksExpanded = _ref.areRisksExpanded,
+          areRisksExpanded = _ref$areRisksExpanded === void 0 ? false : _ref$areRisksExpanded,
+          _ref$areAssignedParen = _ref.areAssignedParentExpanded,
+          areAssignedParentExpanded = _ref$areAssignedParen === void 0 ? false : _ref$areAssignedParen,
+          _ref$areAssignedChild = _ref.areAssignedChildrenExpanded,
+          areAssignedChildrenExpanded = _ref$areAssignedChild === void 0 ? false : _ref$areAssignedChild;
       var _this$containerInfo2 = this.containerInfo,
           minHeight = _this$containerInfo2.minHeight,
           maxHeight = _this$containerInfo2.maxHeight,
@@ -29788,7 +30279,7 @@ var ContextualConainer = /*#__PURE__*/function () {
 
 
       if (this.type === "child") {
-        if (areChildrenExpended === true) {
+        if (areChildrenExpanded === true) {
           this.animation = this.svg.get(0).animate({
             duration: this.config.animationSpeed
           }).height(maxHeight).after(function () {
@@ -29805,7 +30296,7 @@ var ContextualConainer = /*#__PURE__*/function () {
 
 
       if (this.type === "risk") {
-        if (areRisksExpended === true) {
+        if (areRisksExpanded === true) {
           this.animation = this.svg.get(0).animate({
             duration: this.config.animationSpeed
           }).height(maxHeight).after(function () {
@@ -29822,7 +30313,39 @@ var ContextualConainer = /*#__PURE__*/function () {
 
 
       if (this.type === "parent") {
-        if (areParentsExpended === true) {
+        if (areParentsExpanded === true) {
+          this.animation = this.svg.get(0).animate({
+            duration: this.config.animationSpeed
+          }).height(maxHeight).dy((mincy - maxcx) / 2).center(maxcx, maxcy).after(function () {
+            _this.animation = null;
+          });
+        } else {
+          this.animation = this.svg.get(0).animate({
+            duration: this.config.animationSpeed
+          }).height(minHeight).dy((maxcx - mincy) / 2).center(mincx, mincy).after(function () {
+            _this.animation = null;
+          });
+        }
+      }
+
+      if (this.type === "assignedParent") {
+        if (areAssignedParentExpanded === true) {
+          this.animation = this.svg.get(0).animate({
+            duration: this.config.animationSpeed
+          }).height(maxHeight).dy((mincy - maxcx) / 2).center(maxcx, maxcy).after(function () {
+            _this.animation = null;
+          });
+        } else {
+          this.animation = this.svg.get(0).animate({
+            duration: this.config.animationSpeed
+          }).height(minHeight).dy((maxcx - mincy) / 2).center(mincx, mincy).after(function () {
+            _this.animation = null;
+          });
+        }
+      }
+
+      if (this.type === "assignedChild") {
+        if (areAssignedChildrenExpanded === true) {
           this.animation = this.svg.get(0).animate({
             duration: this.config.animationSpeed
           }).height(maxHeight).dy((mincy - maxcx) / 2).center(maxcx, maxcy).after(function () {
@@ -29859,12 +30382,37 @@ var ContextualConainer = /*#__PURE__*/function () {
     }
     /**
      * Removes the container.
+     * @param {Object} [opts={ }] An object containing additional information.
+     * @param {Number} [opts.withAnimation=false] An indication whether to use an animation to remove the SVG object.
+     * @param {Number} [opts.X=this.finalX] The calculated final X position.
+     * @param {Number} [opts.X=this.finalY] The calculated final X position.
      */
 
   }, {
     key: "removeSVG",
-    value: function removeSVG() {
-      if (this.isRendered()) {
+    value: function removeSVG(_ref3) {
+      var _this2 = this;
+
+      var _ref3$withAnimation = _ref3.withAnimation,
+          withAnimation = _ref3$withAnimation === void 0 ? false : _ref3$withAnimation,
+          _ref3$X = _ref3.X,
+          X = _ref3$X === void 0 ? this.finalX : _ref3$X,
+          _ref3$Y = _ref3.Y,
+          Y = _ref3$Y === void 0 ? this.finalY : _ref3$Y;
+
+      if (withAnimation === true) {
+        if (this.isRendered()) {
+          this.svg.animate({
+            duration: this.config.animationSpeed
+          }).center(X, Y).attr({
+            opacity: 0
+          }).after(function () {
+            _this2.svg.remove();
+
+            _this2.svg = null;
+          });
+        }
+      } else if (this.isRendered()) {
         this.svg.remove();
         this.svg = null;
       }
@@ -29903,6 +30451,16 @@ var ContextualConainer = /*#__PURE__*/function () {
     key: "getFinalY",
     value: function getFinalY() {
       return this.finalY;
+    }
+  }, {
+    key: "setFinalX",
+    value: function setFinalX(finalX) {
+      this.finalX = finalX;
+    }
+  }, {
+    key: "setFinalY",
+    value: function setFinalY(finalY) {
+      this.finalY = finalY;
     }
   }]);
 
@@ -30060,12 +30618,37 @@ var ContextualRiskConnection = /*#__PURE__*/function () {
     }
     /**
      * Removes the risk connection.
+     * @param {Object} [opts={ }] An object containing additional information.
+     * @param {Number} [opts.withAnimation=false] An indication whether to use an animation to remove the SVG object.
+     * @param {Number} [opts.X=this.finalX] The calculated final X position.
+     * @param {Number} [opts.X=this.finalY] The calculated final X position.
      */
 
   }, {
     key: "removeSVG",
-    value: function removeSVG() {
-      if (this.isRendered()) {
+    value: function removeSVG(_ref3) {
+      var _this = this;
+
+      var _ref3$withAnimation = _ref3.withAnimation,
+          withAnimation = _ref3$withAnimation === void 0 ? false : _ref3$withAnimation,
+          _ref3$X = _ref3.X,
+          X = _ref3$X === void 0 ? this.finalX : _ref3$X,
+          _ref3$Y = _ref3.Y,
+          Y = _ref3$Y === void 0 ? this.finalY : _ref3$Y;
+
+      if (withAnimation === true) {
+        if (this.isRendered()) {
+          this.svg.animate({
+            duration: this.config.animationSpeed
+          }).center(X, Y).attr({
+            opacity: 0
+          }).after(function () {
+            _this.svg.remove();
+
+            _this.svg = null;
+          });
+        }
+      } else if (this.isRendered()) {
         this.svg.remove();
         this.svg = null;
       }
@@ -30106,19 +30689,19 @@ var ContextualRiskConnection = /*#__PURE__*/function () {
  * @category Layouts
  * @subcategory Helpers
  * @property {Canvas} canvas The current canvas to render the element on.
- * @property {BaseNode} focusNode The currently active focus node.
+ * @property {BaseNode} connectedNode The currently active focus node.
  * @property {ContextualContainer} container The container which to connect to.
  * @property {Array.<BaseNode>} containerNodes An array of nodes within the container.
  * @property {ContextualLayoutConfiguration} config An object containing visual restrictions.
  */
 
 var ContextualContainerConnection = /*#__PURE__*/function () {
-  function ContextualContainerConnection(canvas, focusNode, container, containerNodes, config) {
+  function ContextualContainerConnection(canvas, connectedNode, container, containerNodes, config) {
     _classCallCheck(this, ContextualContainerConnection);
 
     this.svg = null;
     this.canvas = canvas;
-    this.focusNode = focusNode;
+    this.connectedNode = connectedNode;
     this.container = container;
     this.containerNodes = containerNodes;
     this.config = config;
@@ -30146,17 +30729,31 @@ var ContextualContainerConnection = /*#__PURE__*/function () {
       var y1;
 
       if (this.type === "parent") {
-        x0 = this.focusNode.getFinalX();
-        y0 = this.focusNode.getFinalY() - this.focusNode.getMaxHeight() / 2 - this.focusNode.config.offset / 2;
+        x0 = this.connectedNode.getFinalX();
+        y0 = this.connectedNode.getFinalY() - this.connectedNode.getMaxHeight() / 2 - this.connectedNode.config.offset / 2;
         x1 = containerInfo.maxcx;
-        y1 = containerInfo.maxcy + containerInfo.maxHeight / 2 + this.focusNode.config.offset / 2;
+        y1 = containerInfo.maxcy + containerInfo.maxHeight / 2 + this.connectedNode.config.offset / 2;
       }
 
       if (this.type === "child") {
         x0 = containerInfo.maxcx;
-        y0 = containerInfo.maxcy - containerInfo.maxHeight / 2 - this.focusNode.config.offset / 2;
-        x1 = this.focusNode.getFinalX();
-        y1 = this.focusNode.getFinalY() + this.focusNode.getMaxHeight() / 2 + this.focusNode.config.offset / 2;
+        y0 = containerInfo.maxcy - containerInfo.maxHeight / 2 - this.connectedNode.config.offset / 2;
+        x1 = this.connectedNode.getFinalX();
+        y1 = this.connectedNode.getFinalY() + this.connectedNode.getMaxHeight() / 2 + this.connectedNode.config.offset / 2;
+      }
+
+      if (this.type === "assignedChild") {
+        x0 = containerInfo.maxcx;
+        y0 = containerInfo.maxcy - containerInfo.maxHeight / 2 - this.connectedNode.config.offset / 2;
+        x1 = this.connectedNode.getFinalX();
+        y1 = this.connectedNode.getFinalY() + this.connectedNode.getMinHeight() / 2 + this.connectedNode.config.offset / 2;
+      }
+
+      if (this.type === "assignedParent") {
+        x0 = this.connectedNode.getFinalX();
+        y0 = this.connectedNode.getFinalY() - this.connectedNode.getMinHeight() / 2 - this.connectedNode.config.offset / 2;
+        x1 = containerInfo.maxcx;
+        y1 = containerInfo.maxcy + containerInfo.maxHeight / 2 + this.connectedNode.config.offset / 2;
       }
 
       var dist1 = calculateDistance(x1, y1, x0, y0); // calculate points forming the connection
@@ -30193,7 +30790,7 @@ var ContextualContainerConnection = /*#__PURE__*/function () {
       if (this.config.containerConnectionColor === "inherit") {
         if (this.type === "parent") {
           var toColor = this.config.parentContainerBorderStrokeColor;
-          var fromColor = this.focusNode.config.borderStrokeColor;
+          var fromColor = this.connectedNode.config.borderStrokeColor;
           var gradient = this.canvas.gradient("linear", function (add) {
             add.stop(0, fromColor);
             add.stop(1, toColor);
@@ -30201,9 +30798,9 @@ var ContextualContainerConnection = /*#__PURE__*/function () {
           path.fill(gradient);
         }
 
-        if (this.type === "child") {
-          var _toColor = this.focusNode.config.borderStrokeColor;
-          var _fromColor = this.config.childContainerBorderStrokeColor;
+        if (this.type === "assignedParent") {
+          var _toColor = this.config.assignedParentContainerBorderStrokeColor;
+          var _fromColor = this.connectedNode.config.borderStrokeColor;
 
           var _gradient = this.canvas.gradient("linear", function (add) {
             add.stop(0, _fromColor);
@@ -30211,6 +30808,30 @@ var ContextualContainerConnection = /*#__PURE__*/function () {
           });
 
           path.fill(_gradient);
+        }
+
+        if (this.type === "child") {
+          var _toColor2 = this.connectedNode.config.borderStrokeColor;
+          var _fromColor2 = this.config.childContainerBorderStrokeColor;
+
+          var _gradient2 = this.canvas.gradient("linear", function (add) {
+            add.stop(0, _fromColor2);
+            add.stop(1, _toColor2);
+          });
+
+          path.fill(_gradient2);
+        }
+
+        if (this.type === "assignedChild") {
+          var _toColor3 = this.connectedNode.config.borderStrokeColor;
+          var _fromColor3 = this.config.assignedChildContainerBorderStrokeColor;
+
+          var _gradient3 = this.canvas.gradient("linear", function (add) {
+            add.stop(0, _fromColor3);
+            add.stop(1, _toColor3);
+          });
+
+          path.fill(_gradient3);
         }
       } else {
         path.fill(this.config.containerConnectionColor);
@@ -30229,7 +30850,7 @@ var ContextualContainerConnection = /*#__PURE__*/function () {
 
       svg.attr({
         opacity: 0
-      }).center(this.focusNode.getFinalX(), this.focusNode.getFinalY()).animate({
+      }).center(this.connectedNode.getFinalX(), this.connectedNode.getFinalY()).animate({
         duration: this.config.animationSpeed
       }).center(finalX, finalY).attr({
         opacity: 1
@@ -30266,12 +30887,37 @@ var ContextualContainerConnection = /*#__PURE__*/function () {
     }
     /**
      * Removes the container connection.
+     * @param {Object} [opts={ }] An object containing additional information.
+     * @param {Number} [opts.withAnimation=false] An indication whether to use an animation to remove the SVG object.
+     * @param {Number} [opts.X=this.finalX] The calculated final X position.
+     * @param {Number} [opts.X=this.finalY] The calculated final X position.
      */
 
   }, {
     key: "removeSVG",
-    value: function removeSVG() {
-      if (this.isRendered()) {
+    value: function removeSVG(_ref2) {
+      var _this = this;
+
+      var _ref2$withAnimation = _ref2.withAnimation,
+          withAnimation = _ref2$withAnimation === void 0 ? false : _ref2$withAnimation,
+          _ref2$X = _ref2.X,
+          X = _ref2$X === void 0 ? this.finalX : _ref2$X,
+          _ref2$Y = _ref2.Y,
+          Y = _ref2$Y === void 0 ? this.finalY : _ref2$Y;
+
+      if (withAnimation === true) {
+        if (this.isRendered()) {
+          this.svg.animate({
+            duration: this.config.animationSpeed
+          }).center(X, Y).attr({
+            opacity: 0
+          }).after(function () {
+            _this.svg.remove();
+
+            _this.svg = null;
+          });
+        }
+      } else if (this.isRendered()) {
         this.svg.remove();
         this.svg = null;
       }
@@ -30322,7 +30968,6 @@ var ContextualContainerConnection = /*#__PURE__*/function () {
  *
  * @category Layouts
  * @subcategory Customizations
- * @property {Number} layoutWidth=1500                            - The width used by the layout representation.
  * @property {Number} layoutHeight=900                            - The height used by the layout representation.
  *
  * @property {Number} riskConnectionLineWidth=20                  - Determines the thickness of the arrow.
@@ -30357,6 +31002,27 @@ var ContextualContainerConnection = /*#__PURE__*/function () {
  * @property {Number} parentContainerBorderStrokeWidth=1.25       - Determines the containers border width.
  * @property {String} parentContainerBackgroundColor=#ffffff      - Determines the containers background color.
  *
+ * @property {Number} assignedParentContainerNodeLimit=6                - Limits how many nodes the assigned parent container renderes.
+ * @property {Number} assignedParentContainerColumns=3                  - Limits how many columns the assigned parent container has.
+ * @property {Number} assignedParentContainerBorderRadius=5             - Determines the containers border radius.
+ * @property {String} assignedParentContainerBorderStrokeColor=#7daed6  - Determines the containers border color.
+ * @property {Number} assignedParentContainerBorderStrokeWidth=3        - Determines the containers border width.
+ * @property {String} assignedParentContainerBackgroundColor=#ffffff    - Determines the containers background color.
+ * @property {Boolean} showAssignedParentNodes=true                     - Determines if the assigned parent nodes are visible.
+ * @property {Boolean} showAssignedParentExpander=true                  - Determines if the assigned parent container has a visible expander.
+ * @property {Number} assignedParentConnectionDistance=200              - Determines the containers background color.
+ *
+ * @property {Number} assignedChildContainerNodeLimit=6                 - Limits how many nodes the assigned child container renderes.
+ * @property {Number} assignedChildContainerColumns=3                   - Limits how many columns the assigned child container has.
+ * @property {Number} assignedChildContainerBorderRadius=5              - Determines the containers border radius.
+ * @property {String} assignedChildContainerBorderStrokeColor=#7daed6   - Determines the containers border color.
+ * @property {Number} assignedChildContainerBorderStrokeWidth=3         - Determines the containers border width.
+ * @property {String} assignedChildContainerBackgroundColor=#ffffff      - Determines the containers background color.
+ * @property {Boolean} showAssignedChildNodes=true                      - Determines if the assigned child nodes are visible.
+ * @property {Boolean} showAssignedChildExpander=true                   - Determines if the assigned child container has a visible expander.
+ * @property {Number} assignedChildConnectionDistance=200               - Determines the containers background color.
+ *
+ *
  * @property {Number} riskContainerNodeLimit=4                    - Limits how many nodes the risk container renderes.
  * @property {Number} riskContainerColumns=2                      - Limits how many columns the risk container has.
  * @property {Number} riskContainderBorderRadius=5                - Determines the containers border radius.
@@ -30375,11 +31041,12 @@ var ContextualContainerConnection = /*#__PURE__*/function () {
  * @property {String} containerConnectionStrokeDasharray="0"      - Determines the dash arrow of the container connection.
  * @property {String} containerConnectionColor=inherit            - Determines the default arrow fill color. Available: "inherit" or hex value as String.
  *
- * @property {Number} focusXShift=-200                            - Determines how much the focus node is shifted on the X axis.
- * @property {Number} riskFocusDistance=617.5                     - Determines the distance between risks nodes and focus node.
- * @property {Number} riskConnectionDistance=617.5                - Determines the distance between risk nodes and the assigned connection.
+ * @property {Number} focusXShift=200                             - Determines how much the focus node is shifted on the X axis.
+ * @property {Number} riskFocusDistance=506                       - Determines the distance between risks nodes and focus node.
+ * @property {Number} riskConnectionDistance=75                   - Determines the distance between risk nodes and the assigned connection.
  * @property {Number} childrenFocusDistance=80                    - Determines the distance between child nodes and focus node.
  * @property {Number} parentFocusDistance=80                      - Determines the distance between parent nodes and focus node.
+ * @property {Number} focusAssignedDistance=900                   - Determines the distance between the focus and main assigned node.
  *
  * @property {String} expanderTextColor=#222                      - Determines the color for the text.
  * @property {String} expanderFontFamily=Montserrat               - Determines the font family for the text.
@@ -30387,21 +31054,18 @@ var ContextualContainerConnection = /*#__PURE__*/function () {
  * @property {String} expanderFontWeight=600                      - Determines the font weight for the text.
  * @property {String} expanderFontStyle=normal                    - Determines the font style for the text.
  * @property {String} expanderTextBackground=#ccc                 - Determines the background color for the text.
- * @property {String} showParentExpander=true                     - Determines if the parent container has a visible expander.
- * @property {String} showChildExpander=true                      - Determines if the child container has a visible expander.
- * @property {String} showRiskExpander=true                       - Determines if the risk container has a visible expander.
+ * @property {Boolean} showParentExpander=true                    - Determines if the parent container has a visible expander.
+ * @property {Boolean} showChildExpander=true                     - Determines if the child container has a visible expander.
+ * @property {Boolean} showRiskExpander=true                      - Determines if the risk container has a visible expander.
  *
- * @property {Number} translateX=-50                              - Adds additional X translation for all SVG elements before rendering.
+ * @property {Number} translateX=0                                - Adds additional X translation for all SVG elements before rendering.
  * @property {Number} translateY=0                                - Adds additional Y translation for all SVG elements before rendering.
  * @property {Number} animationSpeed=300                          - Determines how fast SVG elements animates inside the current layout.
- * @property {Number} spacing=16                                  - Determines the minimal spacing between nodes.
- *
- *
- *
- *
+ * @property {Number} contextualNodeSpacing=16                    - Determines the minimal spacing between nodes.
+ * 
+ * @property {Boolean} showAssignedConnection=true                - Determines if the assigned connection information is visible.
  */
 var ContextualLayoutConfiguration = {
-  layoutWidth: 1500,
   layoutHeight: 900,
   // assigned node connection
   riskConnectionLineWidth: 20,
@@ -30436,6 +31100,27 @@ var ContextualLayoutConfiguration = {
   parentContainerBorderStrokeColor: "#888888cc",
   parentContainerBorderStrokeWidth: 1.25,
   parentContainerBackgroundColor: "#ffffff",
+  // assigned parents container
+  assignedParentContainerNodeLimit: 6,
+  // limits how many nodes are visible within the container
+  assignedParentContainerColumns: 3,
+  assignedParentContainerBorderRadius: 5,
+  assignedParentContainerBorderStrokeColor: "#7daed6",
+  assignedParentContainerBorderStrokeWidth: 3,
+  assignedParentContainerBackgroundColor: "#ffffff",
+  showAssignedParentNodes: true,
+  showAssignedParentExpander: true,
+  assignedParentConnectionDistance: 200,
+  // assigned child container
+  assignedChildContainerNodeLimit: 6,
+  assignedChildContainerColumns: 3,
+  assignedChildContainerBorderRadius: 15,
+  assignedChildContainerBorderStrokeColor: "#7daed6",
+  assignedChildContainerBorderStrokeWidth: 3,
+  assignedChildContainerBackgroundColor: "#ffffff",
+  showassignedChildNodes: true,
+  showassignedChildExpander: true,
+  assignedChildConnectionDistance: 200,
   // risk container
   riskContainerNodeLimit: 4,
   riskContainerColumns: 2,
@@ -30457,11 +31142,12 @@ var ContextualLayoutConfiguration = {
   containerConnectionColor: "inherit",
   // #cccccc
   // distances between nodes
-  focusXShift: -200,
-  riskFocusDistance: 617.5,
+  focusXShift: 300,
+  riskFocusDistance: 506,
   riskConnectionDistance: 75,
   childrenFocusDistance: 80,
   parentFocusDistance: 80,
+  focusAssignedDistance: 900,
   // expander
   expanderTextColor: "#222",
   expanderFontFamily: "Montserrat",
@@ -30472,10 +31158,11 @@ var ContextualLayoutConfiguration = {
   showParentExpander: true,
   showChildExpander: true,
   showRiskExpander: true,
-  translateX: -50,
+  translateX: 0,
   translateY: 0,
   animationSpeed: 300,
-  spacing: 16
+  contextualNodeSpacing: 16,
+  showAssignedConnection: true
 };
 
 /**
@@ -30492,6 +31179,7 @@ var ContextualAssginedConnection = /*#__PURE__*/function () {
   function ContextualAssginedConnection(canvas, focusNode, assignedNode, config) {
     _classCallCheck(this, ContextualAssginedConnection);
 
+    this.svg = null;
     this.canvas = canvas;
     this.focusNode = focusNode;
     this.assignedNode = assignedNode;
@@ -30605,7 +31293,6 @@ var ContextualAssginedConnection = /*#__PURE__*/function () {
       var translateY = this.config.riskConnectionLabelTranslateY;
 
       if (isParentOperation === true) {
-        console.log("TODO:");
         svg.get(1).center(cx, cy - 25 - riskConnectionLineWidth / 2).animate({
           duration: this.config.animationSpeed
         }).center(cx + translateX, cy - 25 / 1.5 - riskConnectionLineWidth / 2 + translateY);
@@ -30649,12 +31336,37 @@ var ContextualAssginedConnection = /*#__PURE__*/function () {
     }
     /**
      * Removes the connection.
+     * @param {Object} [opts={ }] An object containing additional information.
+     * @param {Number} [opts.withAnimation=false] An indication whether to use an animation to remove the SVG object.
+     * @param {Number} [opts.X=this.finalX] The calculated final X position.
+     * @param {Number} [opts.X=this.finalY] The calculated final X position.
      */
 
   }, {
     key: "removeSVG",
-    value: function removeSVG() {
-      if (this.isRendered()) {
+    value: function removeSVG(_ref3) {
+      var _this = this;
+
+      var _ref3$withAnimation = _ref3.withAnimation,
+          withAnimation = _ref3$withAnimation === void 0 ? false : _ref3$withAnimation,
+          _ref3$X = _ref3.X,
+          X = _ref3$X === void 0 ? this.finalX : _ref3$X,
+          _ref3$Y = _ref3.Y,
+          Y = _ref3$Y === void 0 ? this.finalY : _ref3$Y;
+
+      if (withAnimation === true) {
+        if (this.isRendered()) {
+          this.svg.animate({
+            duration: this.config.animationSpeed
+          }).center(X, Y).attr({
+            opacity: 0
+          }).after(function () {
+            _this.svg.remove();
+
+            _this.svg = null;
+          });
+        }
+      } else if (this.isRendered()) {
         this.svg.remove();
         this.svg = null;
       }
@@ -30690,9 +31402,20 @@ var ContextualAssginedConnection = /*#__PURE__*/function () {
 }();
 
 /**
- * This class calculates and renders the contextual layout.
+ * This class calculates and renders the contextual layout. It consists of the following elements
+ *  - focusNode: the node on which the layout is constructed on
+ *  - parentNodes: the focusNodes' parents
+ *  - childNodes: the focusNodes' children
+ *  - assignedNode: an external assigned node
+ *  - assignedParentNodes: the parent nodes for the assigned node
+ *  - assignedChildNodes: the child nodes for the assigned node
  *
  * @category Layouts
+ * @param {Object} [customConfig={ }] Overrides default layout configuration properties.
+ *                                    Available options: {@link TreeLayoutConfiguration}
+ * @param {Object} [customEvents={ }] Overrides event listener configuration properties.
+ * @param {Object} [customNodes={ }] Overrides default node representation properties.
+ * @param {Object} [customEdges={ }] Overrides default edge representation properties.
  */
 
 var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
@@ -30719,20 +31442,17 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
     _this.config = _objectSpread2(_objectSpread2({}, ContextualLayoutConfiguration), customConfig); // layout specific
 
     _this.focusId = customConfig.focusId;
-    _this.areChildrenExpended = false;
-    _this.areParentsExpended = false;
-    _this.areRisksExpended = false;
+    _this.areChildrenExpanded = false;
+    _this.areParentsExpanded = false;
+    _this.areRisksExpanded = false;
+    _this.areAssignedParentExpanded = false;
+    _this.areAssignedChildrenExpanded = false;
     _this.assignedInfo = null;
     _this.riskConnection = null;
     _this.assignedConnection = null;
     _this.containerConnections = [];
     _this.containers = [];
-    _this.expanders = [];
-    _this.focus = null;
-    _this.parents = [];
-    _this.children = [];
-    _this.assgined = null;
-    _this.risks = []; // events
+    _this.expanders = []; // events
 
     _this.events = [{
       event: "click",
@@ -30750,6 +31470,14 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
     });
     return _this;
   }
+  /**
+   * Event method which either loads more data or removes existing data form a group of nodes.
+   * @async
+   * @param {Object} [opts={ }] An object containing additional information.
+   * @param {Number} [opts.isParentOperation=false] Determines where nodes originate from.
+   * @param {Number} [opts.type=parent] Determines which container loads more data.
+   */
+
 
   _createClass(ContextualLayout, [{
     key: "expandOrCollapseGridEvent",
@@ -30757,7 +31485,7 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
       var _expandOrCollapseGridEvent = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee(_ref) {
         var _this2 = this;
 
-        var _ref$isParentOperatio, isParentOperation, _ref$type, type, focusNode, childNodes, riskNodes, parentIds, parentNodes, addOrRemoveNodes, updateContainer, offset, upperLimit, currentLimit, _offset, _upperLimit, _currentLimit, _offset2, _upperLimit2, _currentLimit2;
+        var _ref$isParentOperatio, isParentOperation, _ref$type, type, childNodes, parentNodes, riskNodes, assignedChildNodes, assignedParentNodes, addOrRemoveNodes, updateContainer, offset, upperLimit, currentLimit, _offset, _upperLimit, _currentLimit, _offset2, _upperLimit2, _currentLimit2, _offset3, _upperLimit3, _currentLimit3, _offset4, _upperLimit4, _currentLimit4;
 
         return regeneratorRuntime.wrap(function _callee$(_context) {
           while (1) {
@@ -30765,19 +31493,11 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
               case 0:
                 _ref$isParentOperatio = _ref.isParentOperation, isParentOperation = _ref$isParentOperatio === void 0 ? false : _ref$isParentOperatio, _ref$type = _ref.type, type = _ref$type === void 0 ? "parent" : _ref$type;
                 // node references
-                focusNode = this.nodes.find(function (n) {
-                  return n.getId() === _this2.focusId;
-                });
-                childNodes = this.nodes.filter(function (n) {
-                  return focusNode.childrenIds.includes(n.id);
-                });
-                riskNodes = this.nodes.filter(function (n) {
-                  return _this2.assignedInfo.risks.includes(n.id);
-                });
-                parentIds = focusNode.parentId !== null ? focusNode.parentId instanceof Array ? focusNode.parentId : [focusNode.parentId] : [];
-                parentNodes = this.nodes.filter(function (n) {
-                  return parentIds.includes(n.id);
-                });
+                childNodes = this.childNodes;
+                parentNodes = this.parentNodes;
+                riskNodes = this.riskNodes;
+                assignedChildNodes = this.assignedChildNodes;
+                assignedParentNodes = this.assignedParentNodes;
 
                 addOrRemoveNodes = function addOrRemoveNodes(upperLimit, currentLimit, offset, nodes) {
                   // add new nodes
@@ -30818,13 +31538,13 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
                   // determines how far down nodes animate in
                   offset = isParentOperation ? -50 : 50; // limitations
 
-                  upperLimit = this.config.riskContainerNodeLimit;
-                  currentLimit = riskNodes.filter(function (n) {
+                  upperLimit = this.config.parentContainerNodeLimit;
+                  currentLimit = parentNodes.filter(function (n) {
                     return n.isRendered() === true;
                   }).length;
                   addOrRemoveNodes(upperLimit, currentLimit, offset, parentNodes);
                   updateContainer("parent", {
-                    areParentsExpended: this.areParentsExpended
+                    areParentsExpanded: this.areParentsExpanded
                   });
                 }
 
@@ -30838,7 +31558,7 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
                   }).length;
                   addOrRemoveNodes(_upperLimit, _currentLimit, _offset, childNodes);
                   updateContainer("child", {
-                    areChildrenExpended: this.areChildrenExpended
+                    areChildrenExpanded: this.areChildrenExpanded
                   });
                 }
 
@@ -30852,11 +31572,39 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
                   }).length;
                   addOrRemoveNodes(_upperLimit2, _currentLimit2, _offset2, riskNodes);
                   updateContainer("risk", {
-                    areRisksExpended: this.areRisksExpended
+                    areRisksExpanded: this.areRisksExpanded
                   });
                 }
 
-              case 11:
+                if (type === "assignedChild") {
+                  // determines how far down nodes animate in
+                  _offset3 = isParentOperation ? -50 : 50; // limitations
+
+                  _upperLimit3 = this.config.assignedChildContainerNodeLimit;
+                  _currentLimit3 = assignedChildNodes.filter(function (n) {
+                    return n.isRendered() === true;
+                  }).length;
+                  addOrRemoveNodes(_upperLimit3, _currentLimit3, _offset3, assignedChildNodes);
+                  updateContainer("assignedChild", {
+                    areAssignedChildrenExpanded: this.areAssignedChildrenExpanded
+                  });
+                }
+
+                if (type === "assignedParent") {
+                  // determines how far down nodes animate in
+                  _offset4 = isParentOperation ? -50 : 50; // limitations
+
+                  _upperLimit4 = this.config.assignedParentContainerNodeLimit;
+                  _currentLimit4 = assignedParentNodes.filter(function (n) {
+                    return n.isRendered() === true;
+                  }).length;
+                  addOrRemoveNodes(_upperLimit4, _currentLimit4, _offset4, assignedParentNodes);
+                  updateContainer("assignedParent", {
+                    areAssignedParentExpanded: this.areAssignedParentExpanded
+                  });
+                }
+
+              case 13:
               case "end":
                 return _context.stop();
             }
@@ -30870,28 +31618,41 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
 
       return expandOrCollapseGridEvent;
     }()
+    /**
+     * Event method which either loads more data or removes existing data.
+     * @async
+     * @param {Object} [opts={ }] An object containing additional information.
+     * @param {Number} [opts.node=null] The clicked node.
+     * @param {Number} [opts.isParentOperation=false] Determines where nodes originate from.
+     */
+
   }, {
     key: "traverseInLayoutEvent",
     value: function () {
-      var _traverseInLayoutEvent = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee2(node) {
+      var _traverseInLayoutEvent = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee2(_ref2) {
+        var _ref2$node, node, _ref2$isParentOperati, isParentOperation;
+
         return regeneratorRuntime.wrap(function _callee2$(_context2) {
           while (1) {
             switch (_context2.prev = _context2.next) {
               case 0:
+                _ref2$node = _ref2.node, node = _ref2$node === void 0 ? null : _ref2$node, _ref2$isParentOperati = _ref2.isParentOperation, isParentOperation = _ref2$isParentOperati === void 0 ? false : _ref2$isParentOperati;
+
                 if (!(node.id === this.focusId)) {
-                  _context2.next = 2;
+                  _context2.next = 3;
                   break;
                 }
 
                 return _context2.abrupt("return");
 
-              case 2:
-                _context2.next = 4;
+              case 3:
+                _context2.next = 5;
                 return this.updateContextualDataAsync({
-                  clickedNode: node
+                  clickedNode: node,
+                  isParentOperation: isParentOperation
                 });
 
-              case 4:
+              case 5:
               case "end":
                 return _context2.stop();
             }
@@ -30905,47 +31666,42 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
 
       return traverseInLayoutEvent;
     }()
+    /**
+     * Calculates the contextual layout.
+     *
+     * @param {Object} [opts={ }] An object containing additional information.
+     * @param {Number} [opts.offset=0] Determines the space the layout has to shift in order to avoid overlapping layouts.
+     * @param {Number} [opts.isReRender=false] Determines if the layout is rerenderd.
+     */
+
   }, {
     key: "calculateLayout",
-    value: function calculateLayout(_ref2) {
+    value: function calculateLayout(_ref3) {
       var _this3 = this;
 
-      var _ref2$offset = _ref2.offset,
-          offset = _ref2$offset === void 0 ? 0 : _ref2$offset,
-          _ref2$isReRender = _ref2.isReRender,
-          _ref2$isParentOperati = _ref2.isParentOperation;
-      this.currentOffset = offset; // console.log(this.nodes, this.edges)
-
-      this.canvas.circle(15).center(offset, 10).fill("red");
-      this.canvas.circle(15).center(offset, this.config.layoutHeight).fill("red");
-      this.canvas.circle(15).center(offset + this.config.layoutWidth, 10).fill("orange");
-      this.canvas.circle(15).center(offset + this.config.layoutWidth, this.config.layoutHeight).fill("orange");
-      var focusNode = this.nodes.find(function (n) {
-        return n.getId() === _this3.focusId;
-      });
-      var assginedNode = this.nodes.find(function (n) {
-        return n.getId() === _this3.assignedInfo.assigned;
-      });
-      var childNodes = this.nodes.filter(function (n) {
-        return focusNode.childrenIds.includes(n.id);
-      });
-      var parentIds = focusNode.parentId !== null ? focusNode.parentId instanceof Array ? focusNode.parentId : [focusNode.parentId] : [];
-      var parentNodes = this.nodes.filter(function (n) {
-        return parentIds.includes(n.id);
-      });
-      var riskNodes = this.nodes.filter(function (n) {
-        return _this3.assignedInfo.risks.includes(n.id);
-      }); // calculate focus position
+      var _ref3$offset = _ref3.offset,
+          offset = _ref3$offset === void 0 ? 0 : _ref3$offset,
+          _ref3$isReRender = _ref3.isReRender,
+          isReRender = _ref3$isReRender === void 0 ? false : _ref3$isReRender;
+      this.currentOffset = offset;
+      var focusNode = this.focusNode;
+      var assignedNode = this.assignedNode;
+      var childNodes = this.childNodes;
+      var parentNodes = this.parentNodes;
+      var riskNodes = this.riskNodes;
+      var assignedChildNodes = this.assignedChildNodes;
+      var assignedParentNodes = this.assignedParentNodes; // calculate focus position
 
       var calculateFocusPosition = function calculateFocusPosition() {
         // the focus element area takes 3/2 of available space
-        var x = _this3.config.layoutWidth / 3 + offset + _this3.config.focusXShift;
-        var y = _this3.config.layoutHeight / 2;
+        var x = offset + _this3.config.focusXShift + _this3.config.translateX;
+        var y = _this3.config.layoutHeight / 2 + _this3.config.translateY;
         focusNode.setInitialX(x);
         focusNode.setInitialY(y + 50);
         focusNode.setFinalX(x);
         focusNode.setFinalY(y);
-      }; // caculate assgined node position
+        focusNode.setNodeSize("max");
+      }; // caculate assigned node position
 
 
       var calculateAssignedPosition = function calculateAssignedPosition() {
@@ -30954,14 +31710,16 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
           return;
         }
 
-        var w = assginedNode.getMinWidth();
-        var x = _this3.config.layoutWidth - w / 2 + offset;
-        var y = _this3.config.layoutHeight / 2;
-        assginedNode.setInitialX(x);
-        assginedNode.setInitialY(y + 50);
-        assginedNode.setFinalX(x);
-        assginedNode.setFinalY(y);
-      };
+        var x = focusNode.getFinalX() + _this3.config.focusAssignedDistance;
+
+        var y = _this3.config.layoutHeight / 2 + _this3.config.translateY;
+        assignedNode.setInitialX(x);
+        assignedNode.setInitialY(y + 50);
+        assignedNode.setFinalX(x);
+        assignedNode.setFinalY(y);
+        assignedNode.setNodeSize("min");
+      }; // calculate the connection between the focus and assigned nodes
+
 
       var calculateAssignedConnection = function calculateAssignedConnection() {
         // skip this method if no assigned information is provided
@@ -30969,10 +31727,11 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
           return;
         }
 
-        var assignedConnection = new ContextualAssginedConnection(_this3.canvas, focusNode, assginedNode, _this3.config);
+        var assignedConnection = new ContextualAssginedConnection(_this3.canvas, focusNode, assignedNode, _this3.config);
         assignedConnection.setLayoutId(_this3.layoutIdentifier);
         _this3.assignedConnection = assignedConnection;
-      };
+      }; // calculate node positions
+
 
       var calculateNodePositions = function calculateNodePositions(nodes, type) {
         // skip this method if no assigned information is provided
@@ -30991,16 +31750,42 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
           cols = _this3.config.childContainerColumns;
           containerLimitation = _this3.config.childContainerColumns;
           showExpander = _this3.config.showChildExpander;
-        } else if (type === "parent") {
+        }
+
+        if (type === "parent") {
           limitedNodes = nodes.slice(0, _this3.config.parentContainerNodeLimit);
           cols = _this3.config.parentContainerColumns;
           containerLimitation = _this3.config.parentContainerColumns;
           showExpander = _this3.config.showParentExpander;
-        } else if (type === "risk") {
+        }
+
+        if (type === "risk") {
           limitedNodes = nodes.slice(0, _this3.config.riskContainerNodeLimit);
           cols = _this3.config.riskContainerColumns;
           containerLimitation = _this3.config.riskContainerColumns;
           showExpander = _this3.config.showRiskExpander;
+        }
+
+        if (type === "assignedParent") {
+          limitedNodes = nodes.slice(0, _this3.config.assignedParentContainerNodeLimit);
+          cols = _this3.config.assignedParentContainerColumns;
+          containerLimitation = _this3.config.assignedParentContainerColumns;
+          showExpander = _this3.config.showAssignedParentExpander;
+
+          if (_this3.config.showAssignedParentNodes === false) {
+            return;
+          }
+        }
+
+        if (type === "assignedChild") {
+          limitedNodes = nodes.slice(0, _this3.config.assignedChildContainerNodeLimit);
+          cols = _this3.config.assignedChildContainerColumns;
+          containerLimitation = _this3.config.assignedChildContainerColumns;
+          showExpander = _this3.config.showAssignedChildExpander;
+
+          if (_this3.config.showAssignedChildNodes === false) {
+            return;
+          }
         }
 
         var nodeIndex = 0;
@@ -31043,18 +31828,28 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
           var y;
 
           if (type === "child") {
-            x = _this3.config.spacing + w / 2;
-            y = _this3.config.spacing + focusNode.getFinalY() + focusNode.getMaxHeight() / 2 + _this3.config.childrenFocusDistance + _this3.config.spacing * 2 + h / 2;
+            x = _this3.config.contextualNodeSpacing + w / 2;
+            y = _this3.config.contextualNodeSpacing + focusNode.getFinalY() + focusNode.getMaxHeight() / 2 + _this3.config.childrenFocusDistance + _this3.config.contextualNodeSpacing * 2 + h / 2;
           }
 
           if (type === "parent") {
-            x = _this3.config.spacing + node.getMinWidth() / 2;
-            y = focusNode.getFinalY() - focusNode.getMaxHeight() / 2 - _this3.config.parentFocusDistance - _this3.config.spacing * 3 - node.getMinHeight() / 2;
+            x = _this3.config.contextualNodeSpacing + node.getMinWidth() / 2;
+            y = focusNode.getFinalY() - focusNode.getMaxHeight() / 2 - _this3.config.parentFocusDistance - _this3.config.contextualNodeSpacing * 3 - node.getMinHeight() / 2;
           }
 
           if (type === "risk") {
-            x = _this3.config.spacing + w / 2;
-            y = _this3.config.spacing + focusNode.getFinalY() + _this3.config.riskConnectionDistance + _this3.config.spacing + h / 2;
+            x = _this3.config.contextualNodeSpacing + w / 2;
+            y = _this3.config.contextualNodeSpacing + focusNode.getFinalY() + _this3.config.riskConnectionDistance + _this3.config.contextualNodeSpacing + h / 2;
+          }
+
+          if (type === "assignedParent") {
+            x = assignedNode.getFinalX();
+            y = assignedNode.getFinalY() - _this3.config.assignedParentConnectionDistance;
+          }
+
+          if (type === "assignedChild") {
+            x = assignedNode.getFinalX();
+            y = assignedNode.getFinalY() + _this3.config.assignedParentConnectionDistance;
           }
 
           node.setFinalX(x);
@@ -31073,7 +31868,7 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
         nodeRows.forEach(function (row, i) {
           if (i >= 1) {
             row.forEach(function (n) {
-              var h = (rowSpacing + _this3.config.spacing) * i;
+              var h = (rowSpacing + _this3.config.contextualNodeSpacing) * i;
 
               if (type === "child") {
                 n.setFinalY(n.getFinalY() + h);
@@ -31084,6 +31879,14 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
               }
 
               if (type === "risk") {
+                n.setFinalY(n.getFinalY() + h);
+              }
+
+              if (type === "assignedParent") {
+                n.setFinalY(n.getFinalY() - h);
+              }
+
+              if (type === "assignedChild") {
                 n.setFinalY(n.getFinalY() + h);
               }
             });
@@ -31102,7 +31905,7 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
         nodeCols.forEach(function (column, i) {
           if (i >= 1) {
             column.forEach(function (n) {
-              var w = (columnSpacing + _this3.config.spacing) * i;
+              var w = (columnSpacing + _this3.config.contextualNodeSpacing) * i;
               n.setFinalX(n.getFinalX() + w);
             });
           }
@@ -31111,20 +31914,24 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
 
         var x0 = Math.min.apply(Math, _toConsumableArray(nodes.map(function (n) {
           var w = n.getMinWidth();
-          return n.getFinalX() - w / 2 - _this3.config.spacing / 1;
+          return n.getFinalX() - w / 2 - _this3.config.contextualNodeSpacing / 1;
         })));
         var y0 = Math.min.apply(Math, _toConsumableArray(nodes.map(function (n) {
           var h = n.getMinHeight();
-          return n.getFinalY() - h / 2 - _this3.config.spacing / 1;
+          return n.getFinalY() - h / 2 - _this3.config.contextualNodeSpacing / 1;
         }))); // top right
 
         var x1 = Math.max.apply(Math, _toConsumableArray(nodes.map(function (n) {
           var w = n.getMinWidth();
-          return n.getFinalX() + w / 2 + _this3.config.spacing / 1;
+          return n.getFinalX() + w / 2 + _this3.config.contextualNodeSpacing / 1;
         })));
         var y1 = y0; // adjust X position
 
         var adjustment = focusNode.getFinalX() - (x0 + x1) / 2;
+
+        if (type === "assignedChild" || type === "assignedParent") {
+          adjustment = assignedNode.getFinalX() - (x0 + x1) / 2;
+        }
 
         if (type === "risk") {
           adjustment += _this3.config.riskFocusDistance;
@@ -31137,7 +31944,7 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
         var x2 = x1;
         var y2 = Math.max.apply(Math, _toConsumableArray(nodes.map(function (n) {
           var h = n.getMinHeight();
-          return n.getFinalY() + h / 2 + _this3.config.spacing / 1;
+          return n.getFinalY() + h / 2 + _this3.config.contextualNodeSpacing / 1;
         }))); // absolute bottom left
         var y3 = y2;
         var maxcx = (x0 + x2) / 2;
@@ -31146,7 +31953,7 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
         var x4 = x0;
         var y4 = Math.max.apply(Math, _toConsumableArray(limitedNodes.map(function (n) {
           var h = n.getMinHeight();
-          return n.getFinalY() + h / 2 + _this3.config.spacing / 1;
+          return n.getFinalY() + h / 2 + _this3.config.contextualNodeSpacing / 1;
         }))); // minimal button right
 
         var x5 = x1;
@@ -31157,7 +31964,7 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
         var x6 = x0;
         var y6 = Math.min.apply(Math, _toConsumableArray(limitedNodes.map(function (n) {
           var h = n.getMinHeight();
-          return n.getFinalY() - h / 2 - _this3.config.spacing / 1;
+          return n.getFinalY() - h / 2 - _this3.config.contextualNodeSpacing / 1;
         })));
         var x7 = x1;
         var y7 = y6;
@@ -31169,21 +31976,11 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
         x6 += adjustment;
         x7 += adjustment;
         maxcx += adjustment;
-        mincx += adjustment; // this.canvas.circle(5).fill("#000").center(x0, y0)
-        // this.canvas.circle(5).fill("#75f").center(x1, y1)
-        // this.canvas.circle(5).fill("#f75").center(x2, y2)
-        // this.canvas.circle(5).fill("#00f").center(x3, y3)
-        // this.canvas.circle(5).fill("#f00").center(x4, y4)
-        // this.canvas.circle(5).fill("#ff0").center(x5, y5)
-        // this.canvas.circle(1).fill("#ccc").center(x6, y6)
-        // this.canvas.circle(1).fill("#222").center(x7, y7)
-        // this.canvas.circle(5).fill("#1f1").center(maxcx, maxcy)
-        // this.canvas.circle(5).fill("#000").center(mincx, mincy)
-
+        mincx += adjustment;
         var xx0 = x0;
         var yy0 = y0;
 
-        if (type === "parent") {
+        if (type === "parent" || type === "assignedParent") {
           x0 = x6;
           y0 = y6;
           x1 = x7;
@@ -31192,14 +31989,21 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
           mincy = (y6 + y5) / 2;
         }
 
-        var maxHeight = type === "child" || type === "risk" ? calculateDistance(x1, y1, x2, y2) : calculateDistance(xx0, yy0, x4, y4); // set initial render position
+        var maxHeight = type === "child" || type === "risk" || type === "assignedChild" ? calculateDistance(x1, y1, x2, y2) : calculateDistance(xx0, yy0, x4, y4); // set initial render position
 
         nodes.forEach(function (node) {
-          node.setInitialX(focusNode.getFinalX());
-          node.setInitialY(focusNode.getFinalY());
+          if (type === "assignedChild" || type === "assignedParent") {
+            node.setInitialX(assignedNode.getFinalX());
+            node.setInitialY(assignedNode.getFinalY());
+          } else {
+            node.setInitialX(focusNode.getFinalX());
+            node.setInitialY(focusNode.getFinalY());
+          }
+
+          node.setNodeSize("min");
         }); // calculate container
 
-        if (limitedNodes.length <= containerLimitation) {
+        if (limitedNodes.length <= containerLimitation && type !== "assignedChild" && type !== "assignedParent") {
           return;
         } // we only want the limited amount of nodes to calculate the container info
 
@@ -31214,7 +32018,14 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
           maxHeight: maxHeight,
           width: calculateDistance(x0, y0, x1, y1)
         };
-        var container = new ContextualConainer(_this3.canvas, focusNode, containerInfo, _this3.config);
+        var container;
+
+        if (type === "assignedChild" || type === "assignedParent") {
+          container = new ContextualConainer(_this3.canvas, assignedNode, containerInfo, _this3.config);
+        } else {
+          container = new ContextualConainer(_this3.canvas, focusNode, containerInfo, _this3.config);
+        }
+
         container.setLayoutId(_this3.layoutIdentifier);
         container.setType(type);
 
@@ -31232,27 +32043,35 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
           expander.setType(type);
 
           if (type === "child") {
-            expander.setIsLayoutExpended(_this3.areChildrenExpended);
+            expander.setIsLayoutExpanded(_this3.areChildrenExpanded);
           }
 
           if (type === "parent") {
-            expander.setIsLayoutExpended(_this3.areParentsExpended);
+            expander.setIsLayoutExpanded(_this3.areParentsExpanded);
           }
 
           if (type === "risk") {
-            expander.setIsLayoutExpended(_this3.areRisksExpended);
+            expander.setIsLayoutExpanded(_this3.areRisksExpanded);
+          }
+
+          if (type === "assignedParent") {
+            expander.setIsLayoutExpanded(_this3.areAssignedParentExpanded);
+          }
+
+          if (type === "assignedChild") {
+            expander.setIsLayoutExpanded(_this3.areAssignedChildrenExpanded);
           } // expander on top
 
 
-          if (type === "risk" || type === "child") {
-            var ex = x0 + _this3.config.spacing;
-            var ey = y0 - _this3.config.spacing * 1.5;
+          if (type === "risk" || type === "child" || type === "assignedChild") {
+            var ex = x0 + _this3.config.contextualNodeSpacing;
+            var ey = y0 - _this3.config.contextualNodeSpacing * 1.5;
             expander.setFinalX(ex);
             expander.setFinalY(ey);
           } else {
-            var _ex = x0 + _this3.config.spacing;
+            var _ex = x0 + _this3.config.contextualNodeSpacing;
 
-            var _ey = y3 + _this3.config.spacing * 1.5;
+            var _ey = y3 + _this3.config.contextualNodeSpacing * 1.5;
 
             expander.setFinalX(_ex);
             expander.setFinalY(_ey);
@@ -31260,7 +32079,8 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
 
           _this3.expanders.push(expander);
         }
-      };
+      }; // calculate the small connection between risk nodes and the assigned connection arrow
+
 
       var calculateRiskConnection = function calculateRiskConnection() {
         if (_this3.assignedInfo === null || riskNodes.length === 0) {
@@ -31269,22 +32089,19 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
 
         var contextualRiskConnection = new ContextualRiskConnection(_this3.canvas, riskNodes, _this3.containers.find(function (c) {
           return c.type === "risk";
-        }), focusNode, assginedNode, _this3.assignedConnection, _this3.config);
+        }), focusNode, assignedNode, _this3.assignedConnection, _this3.config);
         contextualRiskConnection.setLayoutId(_this3.layoutIdentifier);
         _this3.riskConnection = contextualRiskConnection;
-      };
+      }; // calculate edges
 
-      var calculateContainerEdges = function calculateContainerEdges() {
+
+      var calculateEdges = function calculateEdges() {
         var parentContainer = _this3.containers.find(function (c) {
           return c.type === "parent";
         }) || null;
         var childContainer = _this3.containers.find(function (c) {
           return c.type === "child";
-        }) || null; // skip this method if no containers exist
-        // if (parentContainer === null && childContainer === null) {
-        //   return
-        // }
-        // calculate container edges
+        }) || null; // calculate container edges
 
         if (parentContainer !== null) {
           var containerConnection = new ContextualContainerConnection(_this3.canvas, focusNode, parentContainer, parentNodes, _this3.config);
@@ -31302,6 +32119,35 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
           _containerConnection.setType("child");
 
           _this3.containerConnections.push(_containerConnection);
+        } // calculate assigned node connections
+
+
+        if (assignedChildNodes.length > 0) {
+          var assignedChildContainer = _this3.containers.find(function (c) {
+            return c.type === "assignedChild";
+          });
+
+          var _containerConnection2 = new ContextualContainerConnection(_this3.canvas, assignedNode, assignedChildContainer, assignedChildNodes, _this3.config);
+
+          _containerConnection2.setLayoutId(_this3.layoutIdentifier);
+
+          _containerConnection2.setType("assignedChild");
+
+          _this3.containerConnections.push(_containerConnection2);
+        }
+
+        if (assignedParentNodes.length > 0) {
+          var _assignedChildContainer = _this3.containers.find(function (c) {
+            return c.type === "assignedParent";
+          });
+
+          var _containerConnection3 = new ContextualContainerConnection(_this3.canvas, assignedNode, _assignedChildContainer, assignedParentNodes, _this3.config);
+
+          _containerConnection3.setLayoutId(_this3.layoutIdentifier);
+
+          _containerConnection3.setType("assignedParent");
+
+          _this3.containerConnections.push(_containerConnection3);
         } // calculate parent edges
 
 
@@ -31317,7 +32163,8 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
           parentEdges.forEach(function (edge) {
             // update fromNode X position only for bold edges
             edge.calculateEdge({
-              isContextualParent: true
+              isContextualParent: true,
+              isReRender: isReRender
             });
           });
         } else {
@@ -31329,15 +32176,51 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
 
         if (childContainer === null) {
           childEdges.forEach(function (edge) {
+            // update toNode X position only for bold edges
             edge.calculateEdge({
-              isContextualChild: true
+              isContextualChild: true,
+              isReRender: isReRender
             });
           });
         } else {
           _this3.edges = _this3.edges.filter(function (e) {
             return e.toNode.id !== focusNode.id;
           });
-        }
+        } // calculate assigned edges
+
+      }; // calculate the layout dimensions
+
+
+      var calculateLayoutInfo = function calculateLayoutInfo() {
+        // calculate the layout info by gathering information about three points
+        var x0 = Math.min.apply(Math, _toConsumableArray(_this3.nodes.map(function (n) {
+          var w = n.getNodeSize() === "min" ? n.config.minWidth : n.config.maxWidth;
+          return n.getFinalX() - w;
+        })));
+        var y0 = 0;
+        var x1 = Math.max.apply(Math, _toConsumableArray(_this3.nodes.map(function (n) {
+          var w = n.getNodeSize() === "min" ? n.config.minWidth : n.config.maxWidth;
+          return n.getFinalX() + w;
+        })));
+        var y1 = 0;
+        var x2 = x1;
+        var y2 = Math.max.apply(Math, _toConsumableArray(_this3.nodes.map(function (n) {
+          var h = n.getNodeSize() === "min" ? n.config.minHeight : n.config.maxHeight;
+          return n.getFinalY() + h;
+        }))); // create the layout info object
+
+        _this3.layoutInfo = {
+          x: x0,
+          y: y0,
+          cx: (x0 + x2) / 2,
+          cy: (y0 + y2) / 2,
+          w: calculateDistance(x0, y0, x1, y1),
+          h: calculateDistance(x1, y1, x2, y2)
+        };
+
+        _this3.canvas.circle(5).center(x0 + 30, 10).fill("red");
+
+        _this3.canvas.circle(5).center(x0 + _this3.layoutInfo.w, 10).fill("red");
       };
 
       calculateFocusPosition();
@@ -31346,50 +32229,70 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
       calculateNodePositions(childNodes, "child");
       calculateNodePositions(parentNodes, "parent");
       calculateNodePositions(riskNodes, "risk");
+      calculateNodePositions(assignedParentNodes, "assignedParent");
+      calculateNodePositions(assignedChildNodes, "assignedChild");
       calculateRiskConnection();
-      calculateContainerEdges(); // calculateParentEdges()
-      // calculateChildEdges()
-      // calculateFocusAssginedEdge()
-      // calculateLayoutInfo()
-
+      calculateEdges();
+      calculateLayoutInfo();
       return this.layoutInfo;
     }
+    /**
+     * Renders the contextual layout.
+     * @param {Object} [opts={ }] An object containing additional information.
+     * @param {Boolean} [opts.isReRender=false] Determines if the layout is rerenderd.
+     * @param {Boolean} [opts.isParentOperation=false] Determines where nodes originate from.
+     * @param {Boolean} [opts.oldFocusNode=false] A reference to the old focus node.
+     */
+
   }, {
     key: "renderLayout",
-    value: function renderLayout(_ref3) {
+    value: function renderLayout(_ref4) {
       var _this4 = this;
 
-      var _ref3$isReRender = _ref3.isReRender,
-          _ref3$x = _ref3.x,
-          _ref3$y = _ref3.y,
-          _ref3$isParentOperati = _ref3.isParentOperation,
-          isParentOperation = _ref3$isParentOperati === void 0 ? false : _ref3$isParentOperati;
-      this.centerX = this.config.maxLayoutWidth / 2;
-      this.centerY = this.config.maxLayoutHeight / 2;
-      var focusNode = this.nodes.find(function (n) {
-        return n.getId() === _this4.focusId;
-      });
+      var _ref4$isReRender = _ref4.isReRender,
+          isReRender = _ref4$isReRender === void 0 ? false : _ref4$isReRender,
+          _ref4$isParentOperati = _ref4.isParentOperation,
+          isParentOperation = _ref4$isParentOperati === void 0 ? false : _ref4$isParentOperati,
+          _ref4$oldFocusNode = _ref4.oldFocusNode,
+          oldFocusNode = _ref4$oldFocusNode === void 0 ? null : _ref4$oldFocusNode,
+          _ref4$updateSVGs = _ref4.updateSVGs,
+          _ref4$prevLayoutWidth = _ref4.prevLayoutWidth;
+      var focusNode = this.focusNode;
+      var assignedNode = this.assignedNode;
+      var childNodes = this.childNodes;
+      var parentNodes = this.parentNodes;
+      var riskNodes = this.riskNodes;
+      var assignedChildNodes = this.assignedChildNodes;
+      var assignedParentNodes = this.assignedParentNodes;
       var X = focusNode.getFinalX();
-      var Y = focusNode.getFinalY();
+      var Y = focusNode.getFinalY(); // renders all node containers
 
       var renderContainers = function renderContainers() {
         _this4.containers.forEach(function (container) {
-          // if (container.isRendered() === false) {
           container.render({
             isParentOperation: isParentOperation
-          }); // }
-          // if (container.isRendered() === true) {
-          //   container.transformToFinalPosition()
-          // }
+          });
         });
-      };
+      }; // renders an expander for each container (but only if required)
+
 
       var renderExpanders = function renderExpanders() {
         _this4.expanders.forEach(function (expander) {
-          expander.render({
-            cx: X,
-            cy: Y
-          }); // find provided events
+          var assignedNode = _this4.getContextualAssignedNode(); // assigned nodes come from a different origin
+
+
+          if (expander.type === "assignedParent" || expander.type === "assignedChild") {
+            expander.render({
+              cx: assignedNode.getFinalX(),
+              cy: assignedNode.getFinalY()
+            });
+          } else {
+            expander.render({
+              cx: X,
+              cy: Y
+            });
+          } // find expander events
+
 
           var events = _this4.events.filter(function (e) {
             return e.func === "expandOrCollapseGridEvent";
@@ -31417,9 +32320,9 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
               if (myevent.event === type && myevent.modifier === modifier) {
                 if (expander.type === "child") {
                   // change the current expand state
-                  _this4.areChildrenExpended = !_this4.areChildrenExpended; // update the expanders text
+                  _this4.areChildrenExpanded = !_this4.areChildrenExpanded; // update the expanders text
 
-                  if (_this4.areChildrenExpended === true) {
+                  if (_this4.areChildrenExpanded === true) {
                     expander.changeToShowMoreText();
                   } else {
                     expander.changeToHideMoreText();
@@ -31428,9 +32331,9 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
 
                 if (expander.type === "parent") {
                   // change the current expand state
-                  _this4.areParentsExpended = !_this4.areParentsExpended; // update the expanders text
+                  _this4.areParentsExpanded = !_this4.areParentsExpanded; // update the expanders text
 
-                  if (_this4.areParentsExpended === true) {
+                  if (_this4.areParentsExpanded === true) {
                     expander.changeToShowMoreText();
                   } else {
                     expander.changeToHideMoreText();
@@ -31439,9 +32342,31 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
 
                 if (expander.type === "risk") {
                   // change the current expand state
-                  _this4.areRisksExpended = !_this4.areRisksExpended; // update the expanders text
+                  _this4.areRisksExpanded = !_this4.areRisksExpanded; // update the expanders text
 
-                  if (_this4.areRisksExpended === true) {
+                  if (_this4.areRisksExpanded === true) {
+                    expander.changeToShowMoreText();
+                  } else {
+                    expander.changeToHideMoreText();
+                  }
+                }
+
+                if (expander.type === "assignedParent") {
+                  // change the current expand state
+                  _this4.areAssignedParentExpanded = !_this4.areAssignedParentExpanded; // update the expanders text
+
+                  if (_this4.areAssignedParentExpanded === true) {
+                    expander.changeToShowMoreText();
+                  } else {
+                    expander.changeToHideMoreText();
+                  }
+                }
+
+                if (expander.type === "assignedChild") {
+                  // change the current expand state
+                  _this4.areAssignedChildrenExpanded = !_this4.areAssignedChildrenExpanded; // update the expanders text
+
+                  if (_this4.areAssignedChildrenExpanded === true) {
                     expander.changeToShowMoreText();
                   } else {
                     expander.changeToHideMoreText();
@@ -31456,127 +32381,8 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
             });
           });
         });
+      }; // renders the connection between the assigned node and the focus node
 
-        _this4.expanders.forEach(function (expander) {// if (expander.type === "childExpander" && expander.isRendered() === false) {
-          //   const reRenderFunc = () => {
-          //     if (this.config.cachedChildNodeLimit === undefined) {
-          //       this.config = {
-          //         ...this.config,
-          //         cachedChildNodeLimit: this.config.childContainerNodeLimit,
-          //         childContainerNodeLimit: this.children.length,
-          //       }
-          //       this.calculateLayout()
-          //       const childExpander = this.expanders.find((e) => e.type === "childExpander")
-          //       childExpander.transformToFinalPosition()
-          //       this.containers.find((c) => c.type === "child").update()
-          //       const notRenderedNodes = this.children.filter((n) => n.isRendered() === false)
-          //       notRenderedNodes.forEach((child) => {
-          //         child.renderAsMin(child.getFinalX(), child.getFinalY())
-          //       })
-          //       expander.changeToShowMoreText()
-          //     } else {
-          //       this.config = {
-          //         ...this.config,
-          //         cachedChildNodeLimit: this.config.childContainerNodeLimit,
-          //         childContainerNodeLimit: this.config.cachedChildNodeLimit,
-          //       }
-          //       delete this.config.cachedChildNodeLimit
-          //       this.calculateLayout()
-          //       const childExpander = this.expanders.find((e) => e.type === "childExpander")
-          //       childExpander.transformToFinalPosition()
-          //       this.containers.find((c) => c.type === "child").update()
-          //       const nodesToHide = this.children.filter((c, i) => i >= this.config.childContainerNodeLimit)
-          //       nodesToHide.forEach((node) => {
-          //         node.removeNode(null, null, { animation: false })
-          //       })
-          //       expander.changeToHideMoreText()
-          //     }
-          //   }
-          //   expander.setReRenderFunc(reRenderFunc)
-          //   expander.render(X, Y)
-          //   expander.transformToFinalPosition()
-          // }
-          // if (expander.type === "parentExpander" && expander.isRendered() === false) {
-          //   const reRenderFunc = () => {
-          //     if (this.config.cachedParentContainerNodeLimit === undefined) {
-          //       this.config = {
-          //         ...this.config,
-          //         cachedParentContainerNodeLimit: this.config.parentContainerNodeLimit,
-          //         parentContainerNodeLimit: this.parents.length,
-          //       }
-          //       this.calculateLayout()
-          //       const childExpander = this.expanders.find((e) => e.type === "parentExpander")
-          //       childExpander.transformToFinalPosition()
-          //       this.containers.find((c) => c.type === "parent").update()
-          //       const notRenderedNodes = this.parents.filter((n) => n.isRendered() === false)
-          //       notRenderedNodes.forEach((child) => {
-          //         child.renderAsMin(child.getFinalX(), child.getFinalY())
-          //       })
-          //       expander.changeToShowMoreText()
-          //     } else {
-          //       this.config = {
-          //         ...this.config,
-          //         cachedParentContainerNodeLimit: this.config.parentContainerNodeLimit,
-          //         parentContainerNodeLimit: this.config.cachedParentContainerNodeLimit,
-          //       }
-          //       delete this.config.cachedParentContainerNodeLimit
-          //       this.calculateLayout()
-          //       const childExpander = this.expanders.find((e) => e.type === "parentExpander")
-          //       childExpander.transformToFinalPosition()
-          //       this.containers.find((c) => c.type === "parent").update()
-          //       const nodesToHide = this.parents.filter((c, i) => i >= this.config.parentContainerNodeLimit)
-          //       nodesToHide.forEach((node) => {
-          //         node.removeNode(null, null, { animation: false })
-          //       })
-          //       expander.changeToHideMoreText()
-          //     }
-          //   }
-          //   expander.setReRenderFunc(reRenderFunc)
-          //   expander.render(X, Y)
-          //   expander.transformToFinalPosition()
-          // }
-          // if (expander.type === "riskExpander" && expander.isRendered() === false) {
-          //   const reRenderFunc = () => {
-          //     if (this.config.cachedRiskContainerNodeLimit === undefined) {
-          //       this.config = {
-          //         ...this.config,
-          //         cachedRiskContainerNodeLimit: this.config.riskContainerNodeLimit,
-          //         riskContainerNodeLimit: this.risks.length,
-          //       }
-          //       this.calculateLayout()
-          //       const childExpander = this.expanders.find((e) => e.type === "riskExpander")
-          //       childExpander.transformToFinalPosition()
-          //       this.containers.find((c) => c.type === "risk").update()
-          //       const notRenderedNodes = this.risks.filter((n) => n.isRendered() === false)
-          //       notRenderedNodes.forEach((child) => {
-          //         // console.log(child.getFinalX(), child.getFinalY())
-          //         child.renderAsMin(child.getFinalX(), child.getFinalY())
-          //       })
-          //       expander.changeToShowMoreText()
-          //     } else {
-          //       this.config = {
-          //         ...this.config,
-          //         cachedRiskContainerNodeLimit: this.config.riskContainerNodeLimit,
-          //         riskContainerNodeLimit: this.config.cachedRiskContainerNodeLimit,
-          //       }
-          //       delete this.config.cachedRiskContainerNodeLimit
-          //       this.calculateLayout()
-          //       const childExpander = this.expanders.find((e) => e.type === "riskExpander")
-          //       childExpander.transformToFinalPosition()
-          //       this.containers.find((c) => c.type === "risk").update()
-          //       const nodesToHide = this.risks.filter((c, i) => i >= this.config.riskContainerNodeLimit)
-          //       nodesToHide.forEach((node) => {
-          //         node.removeNode(null, null, { animation: false })
-          //       })
-          //       expander.changeToHideMoreText()
-          //     }
-          //   }
-          //   expander.setReRenderFunc(reRenderFunc)
-          //   expander.render(X, Y)
-          //   expander.transformToFinalPosition()
-          // }
-        });
-      };
 
       var renderConnections = function renderConnections() {
         if (_this4.assignedConnection) {
@@ -31590,144 +32396,136 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
             isParentOperation: false
           });
         }
-      };
+      }; // renders all required nodes
+
 
       var renderNodes = function renderNodes() {
-        var assginedNode = _this4.nodes.find(function (n) {
-          return n.getId() === _this4.assignedInfo.assigned;
-        });
+        // render the main assigned node
+        if (assignedNode !== null) {
+          assignedNode.renderAsMin({});
+        } // render its parents and children
 
-        var childNodes = _this4.nodes.filter(function (n) {
-          return focusNode.childrenIds.includes(n.id);
-        });
 
-        var parentIds = focusNode.parentId !== null ? focusNode.parentId instanceof Array ? focusNode.parentId : [focusNode.parentId] : [];
-
-        var parentNodes = _this4.nodes.filter(function (n) {
-          return parentIds.includes(n.id);
-        });
-
-        var riskNodes = _this4.nodes.filter(function (n) {
-          return _this4.assignedInfo.risks.includes(n.id);
-        });
-
-        assginedNode.renderAsMin({});
-        childNodes.forEach(function (child, i) {
-          if (i < _this4.config.childContainerNodeLimit) {
+        assignedChildNodes.forEach(function (child, i) {
+          if (i < _this4.config.assignedChildContainerNodeLimit) {
             child.renderAsMin({});
           }
         });
-        parentNodes.forEach(function (parent, i) {
-          if (i < _this4.config.parentContainerNodeLimit) {
+        assignedParentNodes.forEach(function (parent, i) {
+          if (i < _this4.config.assignedParentContainerNodeLimit) {
             parent.renderAsMin({});
           }
-        });
+        }); // render child nodes or transform a clicked child into the new focus node
+
+        childNodes.forEach(function (child, i) {
+          if (i < _this4.config.childContainerNodeLimit) {
+            if (child.isRendered() === false) {
+              child.renderAsMin({});
+            } else {
+              child.transformToMin({
+                IX: focusNode.getFinalX(),
+                IY: focusNode.getFinalY()
+              });
+            }
+          }
+        }); // render parent nodes or transform a clicked parent into the new focus node
+
+        parentNodes.forEach(function (parent, i) {
+          if (i < _this4.config.parentContainerNodeLimit) {
+            if (parent.isRendered() === false) {
+              parent.renderAsMin({});
+            } else {
+              parent.transformToMin({
+                IX: focusNode.getFinalX(),
+                IY: focusNode.getFinalY()
+              });
+            }
+          }
+        }); // render risks
+
         riskNodes.forEach(function (risk, i) {
           if (i < _this4.config.riskContainerNodeLimit) {
             risk.renderAsMin({});
           }
-        });
-        var eventNodes = [].concat(_toConsumableArray(parentNodes), _toConsumableArray(childNodes));
-        eventNodes.forEach(function (node) {
-          if (node.isRendered() === true) {
-            // find provided events
-            var events = _this4.events.filter(function (e) {
-              return e.func === "traverseInLayoutEvent";
-            });
+        }); // attach traversal events to each parent and child node
 
-            var eventStr = _toConsumableArray(new Set(events.map(function (e) {
-              return e.event;
-            }))).toString().split(","); // attach events to SVG object
-
-
-            node.svg.on(eventStr, function (e) {
-              var type = e.type;
-              var modifier;
-
-              if (e.altKey === true) {
-                modifier = "altKey";
-              } else if (e.ctrlKey === true) {
-                modifier = "ctrlKey";
-              } else if (e.shiftKey === true) {
-                modifier = "shiftKey";
-              } // add provided events
-
-
-              events.forEach(function (myevent) {
-                if (myevent.event === type && myevent.modifier === modifier) {
-                  _this4.traverseInLayoutEvent(node);
-                }
+        var attachEvents = function attachEvents(nodes, isParentOperation) {
+          nodes.forEach(function (node) {
+            if (node.isRendered() === true) {
+              // find provided events
+              var events = _this4.events.filter(function (e) {
+                return e.func === "traverseInLayoutEvent";
               });
-            });
+
+              var eventStr = _toConsumableArray(new Set(events.map(function (e) {
+                return e.event;
+              }))).toString().split(","); // attach events to SVG object
+
+
+              node.svg.on(eventStr, function (e) {
+                var type = e.type;
+                var modifier;
+
+                if (e.altKey === true) {
+                  modifier = "altKey";
+                } else if (e.ctrlKey === true) {
+                  modifier = "ctrlKey";
+                } else if (e.shiftKey === true) {
+                  modifier = "shiftKey";
+                } // add provided events
+
+
+                events.forEach(function (myevent) {
+                  if (myevent.event === type && myevent.modifier === modifier) {
+                    _this4.traverseInLayoutEvent({
+                      node: node,
+                      isParentOperation: isParentOperation
+                    });
+                  }
+                });
+              });
+            }
+          });
+        };
+
+        attachEvents(parentNodes, true);
+        attachEvents(childNodes, false);
+
+        if (focusNode.isRendered() === false) {
+          focusNode.renderAsMax({});
+        } else {
+          focusNode.transformToMax({});
+        } // FIXME: bug: sometimes the focus node gets removed
+
+
+        if (isReRender === true && oldFocusNode !== null) {
+          // remove none-needed nodes
+          var relevantNodes = [].concat(_toConsumableArray(parentNodes), _toConsumableArray(childNodes));
+
+          if (relevantNodes.find(function (n) {
+            return n.id === oldFocusNode.id;
+          }) === undefined) {
+            console.log("remove focus", oldFocusNode);
+            oldFocusNode.removeSVG({});
           }
-        });
-        focusNode.renderAsMax({}); // if (this.assgined !== null) {
-        //   if (this.assgined.isRendered() === false) {
-        //     this.assgined.renderAsMin(X, Y)
-        //   } else if (this.assgined.isRendered() === true) {
-        //     this.assgined.transformToFinalPosition()
-        //   }
-        // }
-        // if (this.focus.isRendered() === false) {
-        //   this.focus.renderAsMax(X, Y)
-        // } else if (this.focus.isRendered() === true) {
-        //   this.focus.transformToFinalPosition()
-        // }
-        // this.parents.forEach((parent, i) => {
-        //   if (i < this.config.parentContainerNodeLimit) {
-        //     if (parent.isRendered() === false) {
-        //       parent.addEvent("click", () => makeFocus(parent))
-        //       parent.renderAsMin(X, Y)
-        //     } else if (parent.isRendered() === true) {
-        //       parent.transformToFinalPosition()
-        //     }
-        //   }
-        // })
-        // this.children.forEach((child, i) => {
-        //   if (i < this.config.childContainerNodeLimit) {
-        //     if (child.isRendered() === false) {
-        //       child.addEvent("click", () => makeFocus(child))
-        //       child.renderAsMin(X, Y)
-        //     } else if (child.isRendered() === true) {
-        //       child.transformToFinalPosition()
-        //     }
-        //   }
-        // })
-        // this.risks.forEach((risk, i) => {
-        //   if (i < this.config.riskContainerNodeLimit) {
-        //     if (risk.isRendered() === false) {
-        //       risk.renderAsMin(X, Y)
-        //     } else if (risk.isRendered() === true) {
-        //       risk.transformToFinalPosition()
-        //     }
-        //   }
-        // })
-      };
+        }
+      }; // renders required edges
+
 
       var renderEdges = function renderEdges() {
         _this4.edges.forEach(function (edge) {
           var isContextualBoldEdge = edge instanceof BoldEdge;
-          if (edge.isRendered() === false) edge.render({
-            X: X,
-            Y: Y,
-            isContextualBoldEdge: isContextualBoldEdge
-          });
-        }); // this.parentEdges.forEach((edge) => {
-        //   if (edge.isRendered() === false) {
-        //     edge.render(X, Y)
-        //   } else if (edge.isRendered() === true) {
-        //     edge.transformToFinalPosition()
-        //   }
-        // })
-        // this.childEdges.forEach((edge) => {
-        //   if (edge.isRendered() === false) {
-        //     edge.render(X, Y)
-        //   } else if (edge.isRendered() === true) {
-        //     edge.transformToFinalPosition()
-        //   }
-        // })
 
-      };
+          if (edge.isHidden === false) {
+            if (edge.isRendered() === false) edge.render({
+              X: X,
+              Y: Y,
+              isContextualBoldEdge: isContextualBoldEdge
+            });
+          }
+        });
+      }; // update the container connections
+
 
       var renderContainerConnections = function renderContainerConnections() {
         _this4.containerConnections.forEach(function (con) {
@@ -31743,17 +32541,120 @@ var ContextualLayout = /*#__PURE__*/function (_BaseLayout) {
       renderConnections();
       renderNodes();
       renderContainerConnections();
-      renderEdges(); // // render containers
-      // this.containers.forEach((container) => {
-      //   container.render(X, Y)
-      //   container.transform()
-      // })
-      // this.edges.forEach((edge) => {
-      //   if (edge.svg === null) {
-      //     edge.render(X, Y)
-      //   }
-      //   edge.transformToFinalPosition()
-      // })
+      renderEdges();
+    }
+    /**
+     * Returns the currently active focus node.
+     * @return {BaseNode} The focus node.
+     */
+
+  }, {
+    key: "getContextualFocusNode",
+    value: function getContextualFocusNode() {
+      var _this5 = this;
+
+      return this.nodes.find(function (n) {
+        return n.getId() === _this5.focusId;
+      });
+    }
+    /**
+     * Returns the currently active assigned node.
+     * @returns {BaseNode|null} The assigned node.
+     */
+
+  }, {
+    key: "getContextualAssignedNode",
+    value: function getContextualAssignedNode() {
+      var _this6 = this;
+
+      if (this.assignedInfo !== null) {
+        return this.nodes.find(function (n) {
+          return n.getId() === _this6.assignedInfo.assigned;
+        });
+      }
+
+      return null;
+    }
+    /**
+     * Returns all currently active focus child node.
+     * @param {BaseNode} focusNode The current focus node.
+     * @returns {Array.<BaseNode>} The child nodes.
+     */
+
+  }, {
+    key: "getContextualChildNodes",
+    value: function getContextualChildNodes(focusNode) {
+      return this.nodes.filter(function (n) {
+        return focusNode.childrenIds.includes(n.id);
+      });
+    }
+    /**
+     * Returns an array containing parents for the focus node.
+     * @param {BaseNode} focusNode The current focus node.
+     * @returns {Array.<BaseNode>|[]} The parent nodes.
+     */
+
+  }, {
+    key: "getContextualParentNodes",
+    value: function getContextualParentNodes(focusNode) {
+      var parentIds = focusNode.parentId !== null ? focusNode.parentId instanceof Array ? focusNode.parentId : [focusNode.parentId] : [];
+      return this.nodes.filter(function (n) {
+        return parentIds.includes(n.id);
+      });
+    }
+    /**
+     * Returns an array of risks between the focus and assigned node.
+     * @param {BaseNode} focusNode The current focus node.
+     * @returns {Array.<BaseNode>|[]} The risk nodes.
+     */
+
+  }, {
+    key: "getContextualRiskNodes",
+    value: function getContextualRiskNodes() {
+      var _this7 = this;
+
+      if (this.assignedInfo !== null) {
+        return this.nodes.filter(function (n) {
+          return _this7.assignedInfo.risks.includes(n.id);
+        });
+      }
+
+      return [];
+    }
+    /**
+     * Returns all parents the assigned node has.
+     * @param {BaseNode} focusNode The current focus node.
+     * @returns {Array.<BaseNode>|[]} The parent nodes.
+     */
+
+  }, {
+    key: "getAssignedParentNodes",
+    value: function getAssignedParentNodes(assignedNode) {
+      if (this.assignedInfo !== null) {
+        var pIds = assignedNode.parentId !== null ? assignedNode.parentId instanceof Array ? assignedNode.parentId : [assignedNode.parentId] : [];
+        return this.nodes.filter(function (n) {
+          return pIds.includes(n.id);
+        });
+      }
+
+      return [];
+    }
+    /**
+     * Returns all children the assigned node has.
+     * @param {BaseNode} focusNode The current focus node.
+     * @returns {Array.<BaseNode>|[]} The children nodes.
+     */
+
+  }, {
+    key: "getAssignedChildNodes",
+    value: function getAssignedChildNodes(assignedNode) {
+      if (this.assignedInfo !== null) {
+        return this.nodes.filter(function (n) {
+          return assignedNode.childrenIds.includes(n.id);
+        });
+      }
+
+      return [];
     }
   }]);
 
@@ -31781,131 +32682,6 @@ var createTooltip = function createTooltip(element) {
   tooltip.style.fontStyle = "normal";
   element.appendChild(tooltip);
 };
-
-const getCoordsFromEvent = (ev) => {
-  if (ev.changedTouches) {
-    ev = ev.changedTouches[0];
-  }
-  return { x: ev.clientX, y: ev.clientY }
-};
-
-// Creates handler, saves it
-class DragHandler {
-  constructor (el) {
-    el.remember('_draggable', this);
-    this.el = el;
-
-    this.drag = this.drag.bind(this);
-    this.startDrag = this.startDrag.bind(this);
-    this.endDrag = this.endDrag.bind(this);
-  }
-
-  // Enables or disabled drag based on input
-  init (enabled) {
-    if (enabled) {
-      this.el.on('mousedown.drag', this.startDrag);
-      this.el.on('touchstart.drag', this.startDrag);
-    } else {
-      this.el.off('mousedown.drag');
-      this.el.off('touchstart.drag');
-    }
-  }
-
-  // Start dragging
-  startDrag (ev) {
-    const isMouse = !ev.type.indexOf('mouse');
-
-    // Check for left button
-    if (isMouse && (ev.which || ev.buttons) !== 1) {
-      return
-    }
-
-    // Fire beforedrag event
-    if (this.el.dispatch('beforedrag', { event: ev, handler: this }).defaultPrevented) {
-      return
-    }
-
-    // Prevent browser drag behavior as soon as possible
-    ev.preventDefault();
-
-    // Prevent propagation to a parent that might also have dragging enabled
-    ev.stopPropagation();
-
-    // Make sure that start events are unbound so that one element
-    // is only dragged by one input only
-    this.init(false);
-
-    this.box = this.el.bbox();
-    this.lastClick = this.el.point(getCoordsFromEvent(ev));
-
-    // We consider the drag done, when a touch is canceled, too
-    const eventMove = (isMouse ? 'mousemove' : 'touchmove') + '.drag';
-    const eventEnd = (isMouse ? 'mouseup' : 'touchcancel.drag touchend') + '.drag';
-
-    // Bind drag and end events to window
-    on(window, eventMove, this.drag);
-    on(window, eventEnd, this.endDrag);
-
-    // Fire dragstart event
-    this.el.fire('dragstart', { event: ev, handler: this, box: this.box });
-  }
-
-  // While dragging
-  drag (ev) {
-
-    const { box, lastClick } = this;
-
-    const currentClick = this.el.point(getCoordsFromEvent(ev));
-    const x = box.x + (currentClick.x - lastClick.x);
-    const y = box.y + (currentClick.y - lastClick.y);
-    const newBox = new Box(x, y, box.w, box.h);
-
-    if (this.el.dispatch('dragmove', {
-      event: ev,
-      handler: this,
-      box: newBox
-    }).defaultPrevented) return
-
-    this.move(x, y);
-    return newBox
-  }
-
-  move (x, y) {
-    // Svg elements bbox depends on their content even though they have
-    // x, y, width and height - strange!
-    // Thats why we handle them the same as groups
-    if (this.el.type === 'svg') {
-      G.prototype.move.call(this.el, x, y);
-    } else {
-      this.el.move(x, y);
-    }
-  }
-
-  endDrag (ev) {
-    // final drag
-    const box = this.drag(ev);
-
-    // fire dragend event
-    this.el.fire('dragend', { event: ev, handler: this, box });
-
-    // unbind events
-    off(window, 'mousemove.drag');
-    off(window, 'touchmove.drag');
-    off(window, 'mouseup.drag');
-    off(window, 'touchend.drag');
-
-    // Rebind initial Events
-    this.init(true);
-  }
-}
-
-extend(Element, {
-  draggable (enable = true) {
-    const dragHandler = this.remember('_draggable') || new DragHandler(this);
-    dragHandler.init(enable);
-    return this
-  }
-});
 
 // a string of all valid unicode whitespaces
 // eslint-disable-next-line max-len
@@ -32005,33 +32781,32 @@ if (isForced_1(NUMBER$1, !NativeNumber$1(' 0o1') || !NativeNumber$1('0b1') || Na
   redefine(global_1, NUMBER$1, NumberWrapper$1);
 }
 
-var normalizeEvent = function normalizeEvent(ev) {
-  return ev.touches || [{
-    clientX: ev.clientX,
-    clientY: ev.clientY
-  }];
-};
+/**
+ * Minified extension. The orginal library had a lot of unwanted functionality
+ *
+ * @see https://github.com/svgdotjs/svg.panzoom.js
+ * @private
+ */
 
 extend(Svg, {
   panZoom: function panZoom(options) {
-    var _this = this;
+    var _options,
+        _options$zoomFactor,
+        _options$zoomMin,
+        _options$zoomMax,
+        _options$wheelZoom,
+        _options$margins,
+        _this = this;
 
-    this.off(".panZoom"); // when called with false, disable panZoom
+    this.off('.panZoom'); // when called with false, disable panZoom
 
     if (options === false) return this;
-    options = options === null || options === undefined ? {} : options;
-    var zoomFactor = options.zoomFactor || 2;
-    var zoomMin = options.zoomMin || Number.MIN_VALUE;
-    var zoomMax = options.zoomMax || Number.MAX_VALUE;
-    var doWheelZoom = options.wheelZoom || true;
-    var doPinchZoom = options.pinchZoom || true;
-    var doPanning = options.panning || true;
-    var panButton = options.panButton || 0;
-    var oneFingerPan = options.oneFingerPan || false;
-    var margins = options.margins || false;
-    var lastP;
-    var lastTouches;
-    var zoomInProgress = false;
+    options = (_options = options) !== null && _options !== void 0 ? _options : {};
+    var zoomFactor = (_options$zoomFactor = options.zoomFactor) !== null && _options$zoomFactor !== void 0 ? _options$zoomFactor : 2;
+    var zoomMin = (_options$zoomMin = options.zoomMin) !== null && _options$zoomMin !== void 0 ? _options$zoomMin : Number.MIN_VALUE;
+    var zoomMax = (_options$zoomMax = options.zoomMax) !== null && _options$zoomMax !== void 0 ? _options$zoomMax : Number.MAX_VALUE;
+    var doWheelZoom = (_options$wheelZoom = options.wheelZoom) !== null && _options$wheelZoom !== void 0 ? _options$wheelZoom : true;
+    var margins = (_options$margins = options.margins) !== null && _options$margins !== void 0 ? _options$margins : false;
 
     var restrictToMargins = function restrictToMargins(box) {
       if (!margins) return;
@@ -32041,7 +32816,7 @@ extend(Svg, {
           right = margins.right;
       var zoom = _this.width() / box.width;
 
-      var _this$attr = _this.attr(["width", "height"]),
+      var _this$attr = _this.attr(['width', 'height']),
           width = _this$attr.width,
           height = _this$attr.height;
 
@@ -32069,7 +32844,7 @@ extend(Svg, {
         lvl = zoomMin;
       }
 
-      if (this.dispatch("zoom", {
+      if (this.dispatch('zoom', {
         level: lvl,
         focus: p
       }).defaultPrevented) {
@@ -32084,182 +32859,224 @@ extend(Svg, {
       }
     };
 
-    var pinchZoomStart = function pinchZoomStart(ev) {
-      lastTouches = normalizeEvent(ev); // Start panning in case only one touch is found
-
-      if (lastTouches.length < 2) {
-        if (doPanning && oneFingerPan) {
-          panStart.call(this, ev);
-        }
-
-        return;
-      } // Stop panning for more than one touch
-
-
-      if (doPanning && oneFingerPan) {
-        panStop.call(this, ev);
-      } // We call it so late, so the user is still able to scroll / reload the page via gesture
-      // In case oneFingerPan is not active
-
-
-      ev.preventDefault();
-
-      if (this.dispatch("pinchZoomStart", {
-        event: ev
-      }).defaultPrevented) {
-        return;
-      }
-
-      this.off("touchstart.panZoom", pinchZoomStart);
-      zoomInProgress = true;
-      on(document, "touchmove.panZoom", pinchZoom, this, {
-        passive: false
-      });
-      on(document, "touchend.panZoom", pinchZoomStop, this, {
-        passive: false
-      });
-    };
-
-    var pinchZoomStop = function pinchZoomStop(ev) {
-      ev.preventDefault();
-      var currentTouches = normalizeEvent(ev);
-
-      if (currentTouches.length > 1) {
-        return;
-      }
-
-      zoomInProgress = false;
-      this.dispatch("pinchZoomEnd", {
-        event: ev
-      });
-      off(document, "touchmove.panZoom", pinchZoom);
-      off(document, "touchend.panZoom", pinchZoomStop);
-      this.on("touchstart.panZoom", pinchZoomStart);
-
-      if (currentTouches.length && doPanning && oneFingerPan) {
-        panStart.call(this, ev);
-      }
-    };
-
-    var pinchZoom = function pinchZoom(ev) {
-      ev.preventDefault();
-      var currentTouches = normalizeEvent(ev);
-      var zoom = this.zoom(); // Distance Formula
-
-      var lastDelta = Math.sqrt(Math.pow(lastTouches[0].clientX - lastTouches[1].clientX, 2) + Math.pow(lastTouches[0].clientY - lastTouches[1].clientY, 2));
-      var currentDelta = Math.sqrt(Math.pow(currentTouches[0].clientX - currentTouches[1].clientX, 2) + Math.pow(currentTouches[0].clientY - currentTouches[1].clientY, 2));
-      var zoomAmount = lastDelta / currentDelta;
-
-      if (zoom < zoomMin && zoomAmount > 1 || zoom > zoomMax && zoomAmount < 1) {
-        zoomAmount = 1;
-      }
-
-      var currentFocus = {
-        x: currentTouches[0].clientX + 0.5 * (currentTouches[1].clientX - currentTouches[0].clientX),
-        y: currentTouches[0].clientY + 0.5 * (currentTouches[1].clientY - currentTouches[0].clientY)
-      };
-      var lastFocus = {
-        x: lastTouches[0].clientX + 0.5 * (lastTouches[1].clientX - lastTouches[0].clientX),
-        y: lastTouches[0].clientY + 0.5 * (lastTouches[1].clientY - lastTouches[0].clientY)
-      };
-      var p = this.point(currentFocus.x, currentFocus.y);
-      var focusP = this.point(2 * currentFocus.x - lastFocus.x, 2 * currentFocus.y - lastFocus.y);
-      var box = new Box(this.viewbox()).transform(new Matrix().translate(-focusP.x, -focusP.y).scale(zoomAmount, 0, 0).translate(p.x, p.y));
-      restrictToMargins(box);
-      this.viewbox(box);
-      lastTouches = currentTouches;
-      this.dispatch("zoom", {
-        box: box,
-        focus: focusP
-      });
-    };
-
-    var panStart = function panStart(ev) {
-      var isMouse = ev.type.indexOf("mouse") > -1; // In case panStart is called with touch, ev.button is undefined
-
-      if (isMouse && ev.button !== panButton && ev.which !== panButton + 1) {
-        return;
-      }
-
-      ev.preventDefault();
-      this.off("mousedown.panZoom", panStart);
-      lastTouches = normalizeEvent(ev);
-      if (zoomInProgress) return;
-      this.dispatch("panStart", {
-        event: ev
-      });
-      lastP = {
-        x: lastTouches[0].clientX,
-        y: lastTouches[0].clientY
-      };
-      on(document, "touchmove.panZoom mousemove.panZoom", panning, this, {
-        passive: false
-      });
-      on(document, "touchend.panZoom mouseup.panZoom", panStop, this, {
-        passive: false
-      });
-    };
-
-    var panStop = function panStop(ev) {
-      ev.preventDefault();
-      off(document, "touchmove.panZoom mousemove.panZoom", panning);
-      off(document, "touchend.panZoom mouseup.panZoom", panStop);
-      this.on("mousedown.panZoom", panStart);
-      this.dispatch("panEnd", {
-        event: ev
-      });
-    };
-
-    var panning = function panning(ev) {
-      ev.preventDefault();
-      var currentTouches = normalizeEvent(ev);
-      var currentP = {
-        x: currentTouches[0].clientX,
-        y: currentTouches[0].clientY
-      };
-      var p1 = this.point(currentP.x, currentP.y);
-      var p2 = this.point(lastP.x, lastP.y);
-      var deltaP = [p2.x - p1.x, p2.y - p1.y];
-
-      if (!deltaP[0] && !deltaP[1]) {
-        return;
-      }
-
-      var box = new Box(this.viewbox()).transform(new Matrix().translate(deltaP[0], deltaP[1]));
-      lastP = currentP;
-      restrictToMargins(box);
-
-      if (this.dispatch("panning", {
-        box: box,
-        event: ev
-      }).defaultPrevented) {
-        return;
-      }
-
-      this.viewbox(box);
-    };
-
     if (doWheelZoom) {
-      this.on("wheel.panZoom", wheelZoom, this, {
-        passive: false
-      });
-    }
-
-    if (doPinchZoom) {
-      this.on("touchstart.panZoom", pinchZoomStart, this, {
-        passive: false
-      });
-    }
-
-    if (doPanning) {
-      this.on("mousedown.panZoom", panStart, this, {
+      this.on('wheel.panZoom', wheelZoom, this, {
         passive: false
       });
     }
 
     return this;
   }
-});
+}); // import {
+//   Svg, on, off, extend, Matrix, Box,
+// } from "@svgdotjs/svg.js"
+// const normalizeEvent = (ev) => ev.touches || [{ clientX: ev.clientX, clientY: ev.clientY }]
+// extend(Svg, {
+//   panZoom(options) {
+//     this.off(".panZoom")
+//     // when called with false, disable panZoom
+//     if (options === false) return this
+//     options = (options === null || options === undefined) ? {} : options
+//     const zoomFactor = options.zoomFactor || 2
+//     const zoomMin = options.zoomMin || Number.MIN_VALUE
+//     const zoomMax = options.zoomMax || Number.MAX_VALUE
+//     const doWheelZoom = options.wheelZoom || true
+//     const doPinchZoom = options.pinchZoom || true
+//     const doPanning = options.panning || true
+//     const panButton = options.panButton || 0
+//     const oneFingerPan = options.oneFingerPan || false
+//     const margins = options.margins || false
+//     let lastP
+//     let lastTouches
+//     let zoomInProgress = false
+//     const restrictToMargins = (box) => {
+//       if (!margins) return
+//       const {
+//         top, left, bottom, right,
+//       } = margins
+//       const zoom = this.width() / box.width
+//       const { width, height } = this.attr(["width", "height"])
+//       const leftLimit = width - left / zoom
+//       const rightLimit = (right - width) / zoom
+//       const topLimit = height - top / zoom
+//       const bottomLimit = (bottom - height) / zoom
+//       box.x = Math.min(leftLimit, Math.max(rightLimit, box.x))
+//       box.y = Math.min(topLimit, Math.max(bottomLimit, box.y))
+//       return box
+//     }
+//     const wheelZoom = function (ev) {
+//       ev.preventDefault()
+//       // touchpads can give ev.deltaY == 0, which skrews the lvl calculation
+//       if (ev.deltaY === 0) return
+//       let lvl = Math.pow(1 + zoomFactor, (-1 * ev.deltaY) / 100) * this.zoom()
+//       const p = this.point(ev.clientX, ev.clientY)
+//       if (lvl > zoomMax) {
+//         lvl = zoomMax
+//       }
+//       if (lvl < zoomMin) {
+//         lvl = zoomMin
+//       }
+//       if (this.dispatch("zoom", { level: lvl, focus: p }).defaultPrevented) {
+//         return this
+//       }
+//       this.zoom(lvl, p)
+//       if (margins) {
+//         const box = restrictToMargins(this.viewbox())
+//         this.viewbox(box)
+//       }
+//     }
+//     const pinchZoomStart = function (ev) {
+//       lastTouches = normalizeEvent(ev)
+//       // Start panning in case only one touch is found
+//       if (lastTouches.length < 2) {
+//         if (doPanning && oneFingerPan) {
+//           panStart.call(this, ev)
+//         }
+//         return
+//       }
+//       // Stop panning for more than one touch
+//       if (doPanning && oneFingerPan) {
+//         panStop.call(this, ev)
+//       }
+//       // We call it so late, so the user is still able to scroll / reload the page via gesture
+//       // In case oneFingerPan is not active
+//       ev.preventDefault()
+//       if (this.dispatch("pinchZoomStart", { event: ev }).defaultPrevented) {
+//         return
+//       }
+//       this.off("touchstart.panZoom", pinchZoomStart)
+//       zoomInProgress = true
+//       on(document, "touchmove.panZoom", pinchZoom, this, { passive: false })
+//       on(document, "touchend.panZoom", pinchZoomStop, this, { passive: false })
+//     }
+//     const pinchZoomStop = function (ev) {
+//       ev.preventDefault()
+//       const currentTouches = normalizeEvent(ev)
+//       if (currentTouches.length > 1) {
+//         return
+//       }
+//       zoomInProgress = false
+//       this.dispatch("pinchZoomEnd", { event: ev })
+//       off(document, "touchmove.panZoom", pinchZoom)
+//       off(document, "touchend.panZoom", pinchZoomStop)
+//       this.on("touchstart.panZoom", pinchZoomStart)
+//       if (currentTouches.length && doPanning && oneFingerPan) {
+//         panStart.call(this, ev)
+//       }
+//     }
+//     const pinchZoom = function (ev) {
+//       ev.preventDefault()
+//       const currentTouches = normalizeEvent(ev)
+//       const zoom = this.zoom()
+//       // Distance Formula
+//       const lastDelta = Math.sqrt(
+//         Math.pow(lastTouches[0].clientX - lastTouches[1].clientX, 2)
+//         + Math.pow(lastTouches[0].clientY - lastTouches[1].clientY, 2),
+//       )
+//       const currentDelta = Math.sqrt(
+//         Math.pow(currentTouches[0].clientX - currentTouches[1].clientX, 2)
+//         + Math.pow(currentTouches[0].clientY - currentTouches[1].clientY, 2),
+//       )
+//       let zoomAmount = lastDelta / currentDelta
+//       if (
+//         (zoom < zoomMin && zoomAmount > 1)
+//         || (zoom > zoomMax && zoomAmount < 1)
+//       ) {
+//         zoomAmount = 1
+//       }
+//       const currentFocus = {
+//         x:
+//           currentTouches[0].clientX
+//           + 0.5 * (currentTouches[1].clientX - currentTouches[0].clientX),
+//         y:
+//           currentTouches[0].clientY
+//           + 0.5 * (currentTouches[1].clientY - currentTouches[0].clientY),
+//       }
+//       const lastFocus = {
+//         x:
+//           lastTouches[0].clientX
+//           + 0.5 * (lastTouches[1].clientX - lastTouches[0].clientX),
+//         y:
+//           lastTouches[0].clientY
+//           + 0.5 * (lastTouches[1].clientY - lastTouches[0].clientY),
+//       }
+//       const p = this.point(currentFocus.x, currentFocus.y)
+//       const focusP = this.point(
+//         2 * currentFocus.x - lastFocus.x,
+//         2 * currentFocus.y - lastFocus.y,
+//       )
+//       const box = new Box(this.viewbox()).transform(
+//         new Matrix()
+//           .translate(-focusP.x, -focusP.y)
+//           .scale(zoomAmount, 0, 0)
+//           .translate(p.x, p.y),
+//       )
+//       restrictToMargins(box)
+//       this.viewbox(box)
+//       lastTouches = currentTouches
+//       this.dispatch("zoom", { box, focus: focusP })
+//     }
+//     const panStart = function (ev) {
+//       const isMouse = ev.type.indexOf("mouse") > -1
+//       // In case panStart is called with touch, ev.button is undefined
+//       if (isMouse && ev.button !== panButton && ev.which !== panButton + 1) {
+//         return
+//       }
+//       ev.preventDefault()
+//       this.off("mousedown.panZoom", panStart)
+//       lastTouches = normalizeEvent(ev)
+//       if (zoomInProgress) return
+//       this.dispatch("panStart", { event: ev })
+//       lastP = { x: lastTouches[0].clientX, y: lastTouches[0].clientY }
+//       on(document, "touchmove.panZoom mousemove.panZoom", panning, this, {
+//         passive: false,
+//       })
+//       on(document, "touchend.panZoom mouseup.panZoom", panStop, this, {
+//         passive: false,
+//       })
+//     }
+//     const panStop = function (ev) {
+//       ev.preventDefault()
+//       off(document, "touchmove.panZoom mousemove.panZoom", panning)
+//       off(document, "touchend.panZoom mouseup.panZoom", panStop)
+//       this.on("mousedown.panZoom", panStart)
+//       this.dispatch("panEnd", { event: ev })
+//     }
+//     const panning = function (ev) {
+//       ev.preventDefault()
+//       const currentTouches = normalizeEvent(ev)
+//       const currentP = {
+//         x: currentTouches[0].clientX,
+//         y: currentTouches[0].clientY,
+//       }
+//       const p1 = this.point(currentP.x, currentP.y)
+//       const p2 = this.point(lastP.x, lastP.y)
+//       const deltaP = [p2.x - p1.x, p2.y - p1.y]
+//       if (!deltaP[0] && !deltaP[1]) {
+//         return
+//       }
+//       const box = new Box(this.viewbox()).transform(
+//         new Matrix().translate(deltaP[0], deltaP[1]),
+//       )
+//       lastP = currentP
+//       restrictToMargins(box)
+//       if (this.dispatch("panning", { box, event: ev }).defaultPrevented) {
+//         return
+//       }
+//       this.viewbox(box)
+//     }
+//     if (doWheelZoom) {
+//       this.on("wheel.panZoom", wheelZoom, this, { passive: false })
+//     }
+//     if (doPinchZoom) {
+//       this.on("touchstart.panZoom", pinchZoomStart, this, { passive: false })
+//     }
+//     if (doPanning) {
+//       this.on("mousedown.panZoom", panStart, this, { passive: false })
+//     }
+//     return this
+//   },
+// })
 
 var createRenderCanvas = function createRenderCanvas(config) {
   var _window = window,
@@ -32853,7 +33670,7 @@ var Visualization = /*#__PURE__*/function () {
             switch (_context2.prev = _context2.next) {
               case 0:
                 if (!(graphOrConfigData instanceof Graph)) {
-                  _context2.next = 19;
+                  _context2.next = 23;
                   break;
                 }
 
@@ -32868,6 +33685,10 @@ var Visualization = /*#__PURE__*/function () {
                   if (layout instanceof RadialLayout) {
                     layout.setRenderDepth(config.renderDepth || layout.getRenderDepth());
                     layout.setRootId(config.rootId || layout.getRootId());
+                  }
+
+                  if (layout instanceof ContextualLayout) {
+                    layout.setFocusId(config.focusId || layout.getFocusId());
                   }
                 }
 
@@ -32907,31 +33728,40 @@ var Visualization = /*#__PURE__*/function () {
                 return layout.loadInitialGridDataAsync();
 
               case 15:
-                // const layouts = this.layouts.slice(0, this.layouts.indexOf(layout))
-                // const prevOffset = layouts.map((l) => l.layoutInfo.w).reduce((a, b) => a + b, 0)
-                // const offset = prevOffset + (this.config.layoutSpacing * (this.layouts.length - 1))
-                // layout.calculateLayout({ offset })
-                // layout.renderLayout({})
+                if (!(layout instanceof ContextualLayout)) {
+                  _context2.next = 20;
+                  break;
+                }
 
+                _context2.next = 18;
+                return layout.rebuildContextualLayoutAsync({
+                  removeOldData: false
+                });
 
+              case 18:
+                _context2.next = 20;
+                return layout.loadInitialContextualDataAsync();
+
+              case 20:
                 layout.updateLayoutsToTheRight({
                   isReRender: true
                 });
-                _context2.next = 43;
+                _context2.next = 51;
                 break;
 
-              case 19:
+              case 23:
                 conf = graphOrConfigData instanceof Graph ? config : graphOrConfigData;
                 reRenderOperations = [// tree
                 "animationSpeed", "orientation", "renderingSize", "showLeafIndications", "visibleNodeLimit", "leafIndicationLimit", "leafStrokeWidth", "leafStrokeColor", "leafMarker", // radial
                 "hAspect", "wAspect", "rootId", "renderDepth", // grid
-                "vSpacing", "hSpacing", "expanderTextColor", "expanderFontFamily", "expanderFontSize", "expanderFontWeight", "expanderFontStyle", "expanderTextBackground"];
+                "vSpacing", "hSpacing", "expanderTextColor", "expanderFontFamily", "expanderFontSize", "expanderFontWeight", "expanderFontStyle", "expanderTextBackground", // contextual
+                "focusId"];
                 requireRebuild = reRenderOperations.filter(function (r) {
                   return Object.keys(conf).includes(r);
                 }).length > 0;
 
                 if (!(layout instanceof TreeLayout)) {
-                  _context2.next = 29;
+                  _context2.next = 33;
                   break;
                 }
 
@@ -32940,18 +33770,18 @@ var Visualization = /*#__PURE__*/function () {
                 layout.setRootId(conf.rootId || layout.getRootId());
 
                 if (!(requireRebuild === true)) {
-                  _context2.next = 29;
+                  _context2.next = 33;
                   break;
                 }
 
-                _context2.next = 29;
+                _context2.next = 33;
                 return layout.rebuildTreeLayoutAsync({
                   removeOldData: true
                 });
 
-              case 29:
+              case 33:
                 if (!(layout instanceof RadialLayout)) {
-                  _context2.next = 36;
+                  _context2.next = 40;
                   break;
                 }
 
@@ -32960,40 +33790,53 @@ var Visualization = /*#__PURE__*/function () {
                 layout.setRootId(conf.rootId || layout.getRootId());
 
                 if (!(requireRebuild === true)) {
-                  _context2.next = 36;
+                  _context2.next = 40;
                   break;
                 }
 
-                _context2.next = 36;
+                _context2.next = 40;
                 return layout.rebuildRadialLayoutAsync({
                   removeOldData: true
                 });
 
-              case 36:
+              case 40:
                 if (!(layout instanceof GridLayout)) {
-                  _context2.next = 41;
+                  _context2.next = 45;
                   break;
                 }
 
                 layout.setConfig(_objectSpread2(_objectSpread2({}, layout.getConfig()), conf));
 
                 if (!(requireRebuild === true)) {
-                  _context2.next = 41;
+                  _context2.next = 45;
                   break;
                 }
 
-                _context2.next = 41;
+                _context2.next = 45;
                 return layout.rebuildGridLayoutAsync({
                   removeOldData: false
                 });
 
-              case 41:
+              case 45:
+                if (!(layout instanceof ContextualLayout)) {
+                  _context2.next = 50;
+                  break;
+                }
 
+                layout.setConfig(_objectSpread2(_objectSpread2({}, layout.getConfig()), conf));
+                layout.setFocusId(conf.focusId || layout.getFocusId()); // if (requireRebuild === true) { // TODO:
+
+                _context2.next = 50;
+                return layout.rebuildContextualLayoutAsync({
+                  removeOldData: false
+                });
+
+              case 50:
                 layout.updateLayoutsToTheRight({
                   isReRender: true
                 });
 
-              case 43:
+              case 51:
               case "end":
                 return _context2.stop();
             }
@@ -33152,4 +33995,4 @@ var Visualization = /*#__PURE__*/function () {
 }();
 
 export { AssetNode as Asset, BaseNode, BoldEdge, ContextualLayout, ControlNode as Control, CustomNode as Custom, CustomEdge, EdgeFactory, Graph, GridLayout, NodeFactory, RadialLayout, RequirementNode as Requirement, RiskNode as Risk, ThinEdge, TreeLayout, Visualization };
-//# sourceMappingURL=graphVisualization.js.map
+//# sourceMappingURL=visualization.js.map

@@ -11,6 +11,7 @@
  */
 class ContextualAssginedConnection {
   constructor(canvas, focusNode, assignedNode, config) {
+    this.svg = null
     this.canvas = canvas
     this.focusNode = focusNode
     this.assignedNode = assignedNode
@@ -162,7 +163,6 @@ class ContextualAssginedConnection {
     const translateX = this.config.riskConnectionLabelTranslateX
     const translateY = this.config.riskConnectionLabelTranslateY
     if (isParentOperation === true) {
-      console.log("TODO:")
       svg
         .get(1)
         .center(cx, cy - 25 - riskConnectionLineWidth / 2)
@@ -205,14 +205,29 @@ class ContextualAssginedConnection {
 
   /**
    * Removes the connection.
+   * @param {Object} [opts={ }] An object containing additional information.
+   * @param {Number} [opts.withAnimation=false] An indication whether to use an animation to remove the SVG object.
+   * @param {Number} [opts.X=this.finalX] The calculated final X position.
+   * @param {Number} [opts.X=this.finalY] The calculated final X position.
    */
-  removeSVG() {
-    if (this.isRendered()) {
+  removeSVG({ withAnimation = false, X = this.finalX, Y = this.finalY }) {
+    if (withAnimation === true) {
+      if (this.isRendered()) {
+        this
+          .svg
+          .animate({ duration: this.config.animationSpeed })
+          .center(X, Y)
+          .attr({ opacity: 0 })
+          .after(() => {
+            this.svg.remove()
+            this.svg = null
+          })
+      }
+    } else if (this.isRendered()) {
       this.svg.remove()
       this.svg = null
     }
   }
-
 
   /**
    * Determins if the SVG object is rendered.

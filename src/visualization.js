@@ -213,6 +213,7 @@ class Visualization {
     const offset = prevOffset + (this.config.layoutSpacing * (this.layouts.length - 1))
 
     layout.calculateLayout({ offset })
+
     layout.renderLayout({})
 
 
@@ -254,7 +255,7 @@ class Visualization {
         }
 
         if (layout instanceof ContextualLayout) {
-          // TODO:
+          layout.setFocusId(config.focusId || layout.getFocusId())
         }
       }
 
@@ -275,14 +276,10 @@ class Visualization {
       }
 
       if (layout instanceof ContextualLayout) {
-        // TODO:
+        await layout.rebuildContextualLayoutAsync({ removeOldData: false })
+        await layout.loadInitialContextualDataAsync()
       }
 
-      // const layouts = this.layouts.slice(0, this.layouts.indexOf(layout))
-      // const prevOffset = layouts.map((l) => l.layoutInfo.w).reduce((a, b) => a + b, 0)
-      // const offset = prevOffset + (this.config.layoutSpacing * (this.layouts.length - 1))
-      // layout.calculateLayout({ offset })
-      // layout.renderLayout({})
 
       layout.updateLayoutsToTheRight({ isReRender: true })
     } else {
@@ -317,7 +314,11 @@ class Visualization {
         "expanderFontStyle",
         "expanderTextBackground",
 
+        // contextual
+        "focusId",
+
       ]
+
       const requireRebuild = reRenderOperations.filter((r) => Object.keys(conf).includes(r)).length > 0
 
       if (layout instanceof TreeLayout) {
@@ -349,7 +350,11 @@ class Visualization {
       }
 
       if (layout instanceof ContextualLayout) {
-        // TODO:
+        layout.setConfig({ ...layout.getConfig(), ...conf })
+        layout.setFocusId(conf.focusId || layout.getFocusId())
+        // if (requireRebuild === true) { // TODO:
+        await layout.rebuildContextualLayoutAsync({ removeOldData: false })
+        // }
       }
 
       layout.updateLayoutsToTheRight({ isReRender: true })

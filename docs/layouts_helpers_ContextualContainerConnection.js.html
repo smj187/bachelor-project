@@ -133,16 +133,16 @@
  * @category Layouts
  * @subcategory Helpers
  * @property {Canvas} canvas The current canvas to render the element on.
- * @property {BaseNode} focusNode The currently active focus node.
+ * @property {BaseNode} connectedNode The currently active focus node.
  * @property {ContextualContainer} container The container which to connect to.
  * @property {Array.&lt;BaseNode>} containerNodes An array of nodes within the container.
  * @property {ContextualLayoutConfiguration} config An object containing visual restrictions.
  */
 class ContextualContainerConnection {
-  constructor(canvas, focusNode, container, containerNodes, config) {
+  constructor(canvas, connectedNode, container, containerNodes, config) {
     this.svg = null
     this.canvas = canvas
-    this.focusNode = focusNode
+    this.connectedNode = connectedNode
     this.container = container
     this.containerNodes = containerNodes
     this.config = config
@@ -173,19 +173,35 @@ class ContextualContainerConnection {
     let y1
 
     if (this.type === "parent") {
-      x0 = this.focusNode.getFinalX()
-      y0 = this.focusNode.getFinalY() - this.focusNode.getMaxHeight() / 2 - this.focusNode.config.offset / 2
+      x0 = this.connectedNode.getFinalX()
+      y0 = this.connectedNode.getFinalY() - this.connectedNode.getMaxHeight() / 2 - this.connectedNode.config.offset / 2
 
       x1 = containerInfo.maxcx
-      y1 = containerInfo.maxcy + containerInfo.maxHeight / 2 + this.focusNode.config.offset / 2
+      y1 = containerInfo.maxcy + containerInfo.maxHeight / 2 + this.connectedNode.config.offset / 2
     }
 
     if (this.type === "child") {
       x0 = containerInfo.maxcx
-      y0 = containerInfo.maxcy - containerInfo.maxHeight / 2 - this.focusNode.config.offset / 2
+      y0 = containerInfo.maxcy - containerInfo.maxHeight / 2 - this.connectedNode.config.offset / 2
 
-      x1 = this.focusNode.getFinalX()
-      y1 = this.focusNode.getFinalY() + this.focusNode.getMaxHeight() / 2 + this.focusNode.config.offset / 2
+      x1 = this.connectedNode.getFinalX()
+      y1 = this.connectedNode.getFinalY() + this.connectedNode.getMaxHeight() / 2 + this.connectedNode.config.offset / 2
+    }
+
+    if (this.type === "assignedChild") {
+      x0 = containerInfo.maxcx
+      y0 = containerInfo.maxcy - containerInfo.maxHeight / 2 - this.connectedNode.config.offset / 2
+
+      x1 = this.connectedNode.getFinalX()
+      y1 = this.connectedNode.getFinalY() + this.connectedNode.getMinHeight() / 2 + this.connectedNode.config.offset / 2
+    }
+
+    if (this.type === "assignedParent") {
+      x0 = this.connectedNode.getFinalX()
+      y0 = this.connectedNode.getFinalY() - this.connectedNode.getMinHeight() / 2 - this.connectedNode.config.offset / 2
+
+      x1 = containerInfo.maxcx
+      y1 = containerInfo.maxcy + containerInfo.maxHeight / 2 + this.connectedNode.config.offset / 2
     }
 
 
@@ -253,7 +269,18 @@ class ContextualContainerConnection {
     if (this.config.containerConnectionColor === "inherit") {
       if (this.type === "parent") {
         const toColor = this.config.parentContainerBorderStrokeColor
-        const fromColor = this.focusNode.config.borderStrokeColor
+        const fromColor = this.connectedNode.config.borderStrokeColor
+
+        const gradient = this.canvas.gradient("linear", (add) => {
+          add.stop(0, fromColor)
+          add.stop(1, toColor)
+        })
+        path.fill(gradient)
+      }
+
+      if (this.type === "assignedParent") {
+        const toColor = this.config.assignedParentContainerBorderStrokeColor
+        const fromColor = this.connectedNode.config.borderStrokeColor
 
         const gradient = this.canvas.gradient("linear", (add) => {
           add.stop(0, fromColor)
@@ -263,8 +290,19 @@ class ContextualContainerConnection {
       }
 
       if (this.type === "child") {
-        const toColor = this.focusNode.config.borderStrokeColor
+        const toColor = this.connectedNode.config.borderStrokeColor
         const fromColor = this.config.childContainerBorderStrokeColor
+
+        const gradient = this.canvas.gradient("linear", (add) => {
+          add.stop(0, fromColor)
+          add.stop(1, toColor)
+        })
+        path.fill(gradient)
+      }
+
+      if (this.type === "assignedChild") {
+        const toColor = this.connectedNode.config.borderStrokeColor
+        const fromColor = this.config.assignedChildContainerBorderStrokeColor
 
         const gradient = this.canvas.gradient("linear", (add) => {
           add.stop(0, fromColor)
@@ -294,11 +332,10 @@ class ContextualContainerConnection {
     // animate into final position
     svg
       .attr({ opacity: 0 })
-      .center(this.focusNode.getFinalX(), this.focusNode.getFinalY())
+      .center(this.connectedNode.getFinalX(), this.connectedNode.getFinalY())
       .animate({ duration: this.config.animationSpeed })
       .center(finalX, finalY)
       .attr({ opacity: 1 })
-
 
     this.svg = svg
   }
@@ -326,9 +363,25 @@ class ContextualContainerConnection {
 
   /**
    * Removes the container connection.
+   * @param {Object} [opts={ }] An object containing additional information.
+   * @param {Number} [opts.withAnimation=false] An indication whether to use an animation to remove the SVG object.
+   * @param {Number} [opts.X=this.finalX] The calculated final X position.
+   * @param {Number} [opts.X=this.finalY] The calculated final X position.
    */
-  removeSVG() {
-    if (this.isRendered()) {
+  removeSVG({ withAnimation = false, X = this.finalX, Y = this.finalY }) {
+    if (withAnimation === true) {
+      if (this.isRendered()) {
+        this
+          .svg
+          .animate({ duration: this.config.animationSpeed })
+          .center(X, Y)
+          .attr({ opacity: 0 })
+          .after(() => {
+            this.svg.remove()
+            this.svg = null
+          })
+      }
+    } else if (this.isRendered()) {
       this.svg.remove()
       this.svg = null
     }

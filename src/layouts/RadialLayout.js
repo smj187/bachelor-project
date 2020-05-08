@@ -16,6 +16,7 @@ import { calculateDistance } from "../utils/Calculations"
  *                                    Available options: {@link RadialLayoutConfiguration}
  * @param {Object} [customEvents={ }] Overrides event listener configuration properties.
  * @param {Object} [customNodes={ }] Overrides default node representation properties.
+ * @param {Object} [customEdges={ }] Overrides default edge representation properties.
  *
  * @see https://scholarworks.rit.edu/cgi/viewcontent.cgi?article=1355&context=theses
  */

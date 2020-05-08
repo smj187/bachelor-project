@@ -124,35 +124,107 @@
 
 <article>
     <h3>The basic example</h3>
-<p>This example illustrates how to visualize data with the contextual layout. This layout requires a root references, indicating the root of the underlying tree.</p>
-<pre class="prettyprint source lang-javascript"><code>import { Visualization, ContextualLayout } from &quot;./graphVisualization.js&quot;
+<p>This example illustrates how to visualize data with the contextual layout. This layout requires a focus id references, indicating the starting point for all calculations.</p>
+<pre class="prettyprint source lang-javascript"><code>import { Visualization, ContextualLayout } from &quot;./path/to/visualization.min.js&quot;
 
+const visualization = new Visualization({
+  databaseUrl: &quot;http://localhost:3001&quot;,
+  nodeEndpoint: &quot;node-data&quot;,
+  edgeEndpoint: &quot;edge-data&quot;,
+  contextualRelationshipEndpoint: &quot;contextual-relationships&quot;,
+  zoomLevel: 0.85
+})
+
+
+// create the underlying graph structure which holds references to our data
 const graph = visualization.createInitialGraph()
-for (let i = 16; i &lt;= 39; i += 1) {
+
+// add nodes
+for (let i = 0; i &lt;= 163; i += 1) {
   graph.includeNode(i)
 }
 
-graph.includeEdge(36, 34)
+// add edges
+ graph.includeEdge(36, 34)
+graph.includeEdge(36, 35)
 graph.includeEdge(37, 36)
+graph.includeEdge(72, 36)
+graph.includeEdge(36, 34)
+graph.includeEdge(111, 110)
+graph.includeEdge(112, 110)
+graph.includeEdge(113, 110)
+graph.includeEdge(119, 110)
+graph.includeEdge(163, 161)
 
+visualization.render(graph, new ContextualLayout({ focusId: 36 }))
 
-const contextual = new ContextualLayout({ focus: 36, animationSpeed: 1 })
-visualization.render(graph, contextual)
 </code></pre>
 <h3>Updating the underlying data</h3>
 <p>The underlying data can be updated by adding or removing nodes and edges from or to the initial graph. The layout updates when calling the &quot;update&quot; method. <em>Note: the following method calls are warped inside a setTimeout to simulate a database operation. Also, before calling update, the changes in the database must already exist.</em></p>
-<pre class="prettyprint source lang-javascript"><code>
+<pre class="prettyprint source lang-javascript"><code>// calling the update method to only update the underlying graph data structure
+setTimeout(() => {
+  graph.excludeNode(160)
+
+  visualization.update(contextual, graph)
+}, 2000)
+
+
+// or, update the underlying graph and also the some layout configuration
+setTimeout(() => {
+  graph.excludeNode(160)
+
+  visualization.update(contextual, graph, { focusId: 1300 })
+}, 2000)
 </code></pre>
 <h3>Updating the layout configuration</h3>
 <p>Updating the layout configuration can be achieved using the &quot;update&quot; method. Available configuration: <a href="./ContextualLayoutConfiguration.html">Contextual Layout Configuration</a></p>
-<pre class="prettyprint source lang-javascript"><code>
+<pre class="prettyprint source lang-javascript"><code>setTimeout(() => {
+
+    visualization.update(contextual, { animationSpeed: 1300  })
+  }, 2000)
 </code></pre>
 <h3>Change default mouse events</h3>
-<p>The default mouse events can be overridden by passing an array as the second argument to the constructor. Note: the contextual layout only has two events.</p>
-<pre class="prettyprint source lang-javascript"><code></code></pre>
+<p>There are two ways to override the default mouse event behaviour. First, by passing an array as constructor argument and second, by utilizing the addEventListener method. A method can be triggered by multiple different events. The following events are available:</p>
+<ul>
+<li>&quot;expandOrCollapseGridEvent&quot; - changes how many nodes within a container are visible.</li>
+<li>&quot;traverseInLayoutEvent&quot; - updates the layout based on the clicked node.</li>
+</ul>
+<pre class="prettyprint source lang-javascript"><code>
+visualization.addEventListener(contextual, &quot;dblclick&quot;, &quot;shiftKey&quot;, &quot;traverseInLayoutEvent&quot;)
+visualization.addEventListener(contextual, &quot;click&quot;, undefined, &quot;traverseInLayoutEvent&quot;)
+
+</code></pre>
 <h3>Override default node and edge representations</h3>
-<p>Changing the appearance of nodes can be achieved in two ways. The first option is individually for each node by filling the nodes &quot;config&quot; attribute. The second option requires to pass an object to the layout constructor.</p>
-<pre class="prettyprint source lang-javascript"><code></code></pre>
+<p>Changing the appearance of nodes can be achieved in three different ways. First by individually filling the nodes or edges &quot;config&quot; attribute in the database entry. Second, by passing an object to the constructure and lastly, by utilizing addCustomNodeRepresentation and addCustomEdgeRepresentation methods. The following representation changes are available:</p>
+<ul>
+<li>
+<p>&quot;asset&quot; - an object that contains configuration that overrides values from the <a href="./AssetNodeConfiguration.html">Asset Node Configuration</a> object</p>
+</li>
+<li>
+<p>&quot;control&quot; - an object that contains configuration that overrides values from the <a href="./ControlNodeConfiguration.html">Control Node Configuration</a> object</p>
+</li>
+<li>
+<p>&quot;custom&quot; - an object that contains configuration that overrides values from the <a href="./CustomNodeConfiguration.html">Custom Node Configuration</a> object</p>
+</li>
+<li>
+<p>&quot;requirement&quot; - an object that contains configuration that overrides values from the <a href="./RequirementNodeConfiguration.html">Requirement Node Configuration</a> object</p>
+</li>
+<li>
+<p>&quot;risk&quot; - an object that contains configuration that overrides values from the <a href="./RiskNodeConfiguration.html">Risk Node Configuration</a> object</p>
+</li>
+<li>
+<p>&quot;boldEdge&quot; - an object that contains configuration that overrides values from the <a href="./BoldEdgeConfiguration.html">Bold Edge Configuration</a> object</p>
+</li>
+<li>
+<p>&quot;customEdge&quot; - an object that contains configuration that overrides values from the <a href="./CustomEdgeConfiguration.html">Custom Edge Configuration</a> object</p>
+</li>
+<li>
+<p>&quot;thinEdge&quot; - an object that contains configuration that overrides values from the <a href="./ThinEdgeConfiguration.html">Thin Edge Configuration</a> object</p>
+</li>
+</ul>
+<pre class="prettyprint source lang-javascript"><code> visualization.addCustomNodeRepresentation(contextual, { control: { borderStrokeColor: &quot;#f0f&quot; } })
+  visualization.addCustomEdgeRepresentation(contextual, { boldEdge: { color: &quot;#f0f&quot; } })
+</code></pre>
 </article>
 
 </section>

@@ -83,8 +83,7 @@ class BaseNode {
    */
   createSVGElement() {
     // create the SVG object on the canvas.
-    const svg = this.canvas.group().draggable()
-    // const svg = this.canvas.group()
+    const svg = this.canvas.group()
 
     // attach some CSS and an ID
     svg.css("cursor", "pointer")
@@ -322,26 +321,25 @@ class BaseNode {
     const x = this.finalX
     const y = this.finalY
 
-    this.svg.back()
-
 
     if (isContextualNode === true) {
-      const offset = isContextualParentOperation ? -50 : 50
+      const offset = isContextualParentOperation ? 50 : -50
 
-      try { this.svg.remove() } catch (error) { }
-      this.svg = null
-      // this.svg
-      //   // .animate({ duration: this.config.animationSpeed })
-      //   .transform({ position: [x, y + offset] })
-      //   .attr({ opacity: 0 })
-      //   .after(() => {
-      //     try { this.svg.remove() } catch (error) { }
-      //     this.svg = null
-      //   })
+      if (this.isRendered() === false) return
+
+      this.svg
+        .animate({ duration: this.config.animationSpeed })
+        .transform({ position: [x, y + offset] })
+        .attr({ opacity: 0 })
+        .after(() => {
+          try { this.svg.remove() } catch (error) { }
+          this.svg = null
+        })
     } else {
       if (this.isRendered() === false) return
 
 
+      this.svg.back()
       this.svg
         .animate({ duration: this.config.animationSpeed })
         .transform({ scale: 0.001, position: [x, y + 100] })
@@ -349,6 +347,26 @@ class BaseNode {
           try { this.svg.remove() } catch (error) { }
           this.svg = null
         })
+    }
+  }
+
+
+
+  /**
+   * Evaluates the current zoom level with the provided threshold and hides labels, if necessary.
+   */
+  checkZoomLevel() {
+    const currentZoomLevel = this.canvas.parent().attr().zoomCurrent
+    const currenZoomThreshold = this.canvas.parent().attr().zoomThreshold
+
+    // check if the newley created labels should not be visible
+    if (currentZoomLevel <= currenZoomThreshold) {
+
+      const labels = document.querySelectorAll("#label")
+      labels.forEach((doc) => {
+        doc.style.opacity = "0"
+      })
+
     }
   }
 

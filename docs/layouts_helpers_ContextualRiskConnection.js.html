@@ -180,6 +180,7 @@ class ContextualRiskConnection {
     const x2 = this.assignedNode.getFinalX()
     const y2 = this.assignedNode.getFinalY() + this.config.riskConnectionLineWidth / 2
 
+
     const initialConnections = []
     const finalConnections = []
 
@@ -282,14 +283,29 @@ class ContextualRiskConnection {
 
   /**
    * Removes the risk connection.
+   * @param {Object} [opts={ }] An object containing additional information.
+   * @param {Number} [opts.withAnimation=false] An indication whether to use an animation to remove the SVG object.
+   * @param {Number} [opts.X=this.finalX] The calculated final X position.
+   * @param {Number} [opts.X=this.finalY] The calculated final X position.
    */
-  removeSVG() {
-    if (this.isRendered()) {
+  removeSVG({ withAnimation = false, X = this.finalX, Y = this.finalY }) {
+    if (withAnimation === true) {
+      if (this.isRendered()) {
+        this
+          .svg
+          .animate({ duration: this.config.animationSpeed })
+          .center(X, Y)
+          .attr({ opacity: 0 })
+          .after(() => {
+            this.svg.remove()
+            this.svg = null
+          })
+      }
+    } else if (this.isRendered()) {
       this.svg.remove()
       this.svg = null
     }
   }
-
 
   /**
    * Determins if the SVG object is rendered.

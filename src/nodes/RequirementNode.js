@@ -1,4 +1,5 @@
 import clamp from "clamp-js"
+import Filter from "@svgdotjs/svg.filter.js"
 import BaseNode from "./BaseNode"
 import RequirementNodeConfiguration from "../configuration/RequirementNodeConfiguration"
 
@@ -185,6 +186,7 @@ class RequirementNode extends BaseNode {
     this.coords.push([this.finalX, this.finalY])
 
 
+    this.checkZoomLevel()
     this.svg = svg
   }
 
@@ -236,6 +238,7 @@ class RequirementNode extends BaseNode {
     this.coords.push([this.finalX, this.finalY])
 
 
+    this.checkZoomLevel()
     this.svg = svg
   }
 
@@ -269,25 +272,38 @@ class RequirementNode extends BaseNode {
 
     // create new elements
     const text = this.createRequirementDetails()
-
     this.svg.add(text)
 
 
     // put new elements into position
+    let textBlurRemoved = false
+    const tw = text.bbox().w
+    const th = text.bbox().h
+
     text
-      .attr({ opacity: 0 })
+      .size(1, 1)
       .center(tx, ty)
-      .scale(0.001)
+      .attr({ opacity: 0 })
+      .filterWith((add) => { add.gaussianBlur(11, 11); add.id(`transformBlurText${this.id}`) })
       .animate({ duration: this.config.animationSpeed })
       .attr({ opacity: 1 })
-      .transform({ scale: 1, translate: [this.config.maxTextTranslateX, this.config.maxTextTranslateY] })
-
+      .size(tw, th)
+      .center(X + this.config.maxTextTranslateX, Y + this.config.maxTextTranslateY)
+      .during((time = this) => {
+        if (time > 0.85 && textBlurRemoved === false) {
+          textBlurRemoved = true
+          text.unfilter()
+          const filters = [...this.canvas.defs().node.childNodes].find((d) => d.id === `transformBlurText${this.id}`)
+          filters.remove()
+        }
+      })
 
     this.currentWidth = this.config.maxWidth
     this.currentHeight = this.config.maxHeight
     this.nodeSize = "max"
     this.currentX = X
     this.currentY = Y
+    this.checkZoomLevel()
   }
 
 
@@ -298,19 +314,24 @@ class RequirementNode extends BaseNode {
   * @param {Number} [opts.FX=this.finalY] The final X render position.
   * @param {Number} [opts.FY=this.finalY] The final Y render position.
   */
-  transformToMin({ X = this.finalX, Y = this.finalY }) {
+  transformToMin({
+    IX = this.initialX, IY = this.initialY, FX = this.finalX, FY = this.finalY,
+  }) {
     // update current elements
     this
       .svg
       .get(0)
+      .center(IX, IY)
       .animate({ duration: this.config.animationSpeed })
       .width(this.config.minWidth)
       .height(this.config.minHeight)
-      .center(X, Y)
+      .dmove(-this.config.minWidth / 2, -this.config.minHeight / 2)
+      .center(FX, FY)
 
     // old text position
     const tx = this.svg.get(1).bbox().cx
     const ty = this.svg.get(1).bbox().cy
+
 
     this
       .svg
@@ -320,26 +341,31 @@ class RequirementNode extends BaseNode {
 
     // create new elements
     const text = this.createLabel()
-
     this.svg.add(text)
-
-
-    // put new elements into position
+    let textBlurRemoved = false
     text
-      .attr({ opacity: 0 })
+      .size(1, 1)
       .center(tx, ty)
-      .scale(0.001)
-      .size(this.config.minTextWidth, text.children()[0].node.clientHeight)
+      .filterWith((add) => { add.gaussianBlur(11, 11); add.id(`transformBlurText${this.id}`) })
       .animate({ duration: this.config.animationSpeed })
-      .attr({ opacity: 1 })
-      .transform({ scale: 1, translate: [this.config.minTextTranslateX, this.config.minTextTranslateY] })
+      .size(this.config.minTextWidth, text.children()[0].node.clientHeight)
+      .center(FX + this.config.minTextTranslateX, FY + this.config.minTextTranslateY)
+      .during((time = this) => {
+        if (time > 0.85 && textBlurRemoved === false) {
+          textBlurRemoved = true
+          text.unfilter()
+          const filters = [...this.canvas.defs().node.childNodes].find((d) => d.id === `transformBlurText${this.id}`)
+          filters.remove()
+        }
+      })
 
 
     this.currentWidth = this.config.minWidth
     this.currentHeight = this.config.minHeight
     this.nodeSize = "min"
-    this.currentX = X
-    this.currentY = Y
+    this.currentX = FX
+    this.currentY = FY
+    this.checkZoomLevel()
   }
 }
 

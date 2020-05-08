@@ -6,8 +6,8 @@
 
 
 import {
-  Visualization, TreeLayout, ContextualLayout, GridLayout, RadialLayout, Control, Asset, Requirement, Custom, Risk
-} from "./graphVisualization.js"
+  Visualization, TreeLayout, ContextualLayout, GridLayout, RadialLayout
+} from "./visualization.js"
 
 
 const visualization = new Visualization({
@@ -23,148 +23,6 @@ const visualization = new Visualization({
 
 
 
-
-
-
-
-
-
-
-const updateGridLayout = () => {
-  const graph = visualization.createInitialGraph()
-
-  // add nodes
-  for (let i = 0; i < 30; i += 1) {
-    graph.includeNode(i)
-  }
-
-  // remove nodes
-  graph.excludeNode(4)
-  graph.excludeNode(5)
-
-  // create a grid layout with additional layout configuration
-  const grid = new GridLayout({ limitNodes: 10, limitColumns: 5 })
-
-  // render the layout
-  visualization.render(graph, grid)
-
-
-  // or update both, the underlying data and the layout configuration
-  setTimeout(() => {
-    // add nodes
-    graph.includeNode(4)
-    graph.includeNode(5)
-
-    // update the graph and the layout
-    visualization.update(grid, graph, { limitColumns: 8, limitNodes: null })
-  }, 1000)
-
-
-  setTimeout(() => {
-    // update the layout
-    visualization.update(grid, { limitNodes: 8, limitColumns: 4 })
-  }, 3000)
-}
-
-const changeGridMouseEvent = () => {
-  // create the underlying graph structure which holds references to our data
-  const graph = visualization.createInitialGraph()
-
-  // add nodes
-  for (let i = 0; i < 30; i += 1) {
-    graph.includeNode(i)
-  }
-
-  // remove nodes
-  graph.excludeNode(4)
-  graph.excludeNode(5)
-
-  // create a grid layout with additional layout configuration
-  const events = [{ name: "expandGridLayoutEvent", mouse: "dblclick", modifier: "shiftKey" }]
-  const grid = new GridLayout({ limitNodes: 10, limitColumns: 5 }, event)
-
-  // render the layout
-  visualization.render(graph, grid)
-}
-const evaltest = async () => {
-  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
-
-
-  for (let i = 0; i < 100; i += 1) {
-    const visualization = new Visualization({
-      databaseUrl: "http://localhost:3001",
-      nodeEndpoint: "node-data",
-      edgeEndpoint: "edge-data",
-    })
-    const graph1 = visualization.createInitialGraph()
-
-    for (let i = 0; i < 75; i += 1) { graph1.includeNode(i) }
-    for (let i = 142; i <= 160; i += 1) { graph1.includeNode(i) }
-    for (let i = 6; i <= 11; i += 1) { graph1.includeNode(i) }
-
-
-    const grid1 = new GridLayout({ limitNodes: null, animationSpeed: 300, limitColumns: 20 })
-    visualization.render(graph1, grid1)
-
-    await sleep(400)
-    const elem = document.getElementById("canvas")
-    elem.remove()
-    // await sleep(100);
-  }
-
-  console.log("done")
-}
-
-// evaltest()
-
-const multipleLayoutsSideBySide = () => {
-  const graph2 = visualization.createInitialGraph([0, 1, 2, 3])
-  const graph3 = visualization.createInitialGraph([13, 14, 15])
-  const graph4 = visualization.createInitialGraph([4, 5])
-  const graph5 = visualization.createInitialGraph([0, 1, 4, 8, 10, 14])
-  const grid2 = new GridLayout({ limitNodes: 4, limitColumns: 1, translateX: 0 })
-  const grid3 = new GridLayout(
-    { limitNodes: 1, limitColumns: 3, translateY: 0 },
-    [{ name: "expandGridLayoutEvent", mouse: "dblclick", modifier: "shiftKey" }],
-    { asset: { borderStrokeColor: "#fff", borderStrokeDasharray: "0" } },
-  )
-  const grid4 = new GridLayout({ limitNodes: null, limitColumns: 1, translateY: 0 })
-  const grid5 = new GridLayout({ limitNodes: null, limitColumns: 1, translateX: 0 })
-
-  visualization.render(graph3, grid3)
-  visualization.render(graph2, grid2)
-  visualization.render(graph4, grid4)
-  visualization.render(graph5, grid5)
-}
-
-
-
-const updateRadialLayout = () => {
-  const graph = visualization.createInitialGraph()
-
-  // add nodes
-  for (let i = 110; i <= 149; i += 1) {
-    graph.includeNode(i)
-  }
-
-  // add edges
-  graph.includeEdge(111, 110)
-  graph.includeEdge(112, 110)
-  graph.includeEdge(113, 110)
-
-  // create a radial layout with a root and a rendering depth
-  const radial = new RadialLayout({ root: 110, renderDepth: 3 })
-
-  // render the layout
-  visualization.render(graph, radial)
-
-  setTimeout(() => {
-    // update the layout
-    visualization.update(radial, {
-      translateX: 100, translateY: 0, radialRadius: 200, radiusDelta: 150, hAspect: 4 / 2,
-    })
-  }, 1000)
-}
 
 const gridLayout = async () => {
   // create the underlying graph structure that holds references to our data
@@ -316,14 +174,14 @@ const radialLayout = async () => {
   graph.includeEdge(123, 113)
 
   // create a radial layout with a root and a rendering depth
-  const radial1 = new RadialLayout({ rootId: 110, renderDepth: 1, animationSpeed: 1300 })
+  const radial1 = new RadialLayout({ rootId: 110, renderDepth: 1, animationSpeed: 300 })
   // const radial2 = new RadialLayout({ rootId: 16, renderDepth: 1 })
   // const radial3 = new RadialLayout({ rootId: 161, renderDepth: 1 })
-  const radial4 = new RadialLayout({ rootId: 137, renderDepth: 1, animationSpeed: 1300 })
+  const radial4 = new RadialLayout({ rootId: 137, renderDepth: 1, animationSpeed: 300 })
 
-  visualization.addEventListener(radial1, "dblclick", "shiftKey", "expandOrCollapseEvent")
-  visualization.addCustomNodeRepresentation(radial1, { control: { borderStrokeColor: "#f0f" } })
-  visualization.addCustomEdgeRepresentation(radial1, { thinEdge: { strokeColor: "#f0f" } })
+  // visualization.addEventListener(radial1, "dblclick", "shiftKey", "expandOrCollapseEvent")
+  // visualization.addCustomNodeRepresentation(radial1, { control: { borderStrokeColor: "#f0f" } })
+  // visualization.addCustomEdgeRepresentation(radial1, { thinEdge: { strokeColor: "#f0f" } })
   // render the layout
   await visualization.render(graph, radial1)
   // visualization.render(graph, radial2)
@@ -335,7 +193,7 @@ const radialLayout = async () => {
   // await visualization.render(graph, tree3)
 
   setTimeout(() => {
-    visualization.update(radial1, { showLeafIndications: false, renderDepth: 1 })
+    visualization.update(radial1, graph, { renderDepth: 2 })
   }, 1000)
 }
 
@@ -385,7 +243,7 @@ const treeLayout = async () => {
 
   // const tree3 = new TreeLayout({ rootId: 137, renderDepth: 1, animationSpeed: 300 })
   const tree3 = new TreeLayout({ rootId: 110, renderDepth: 1, animationSpeed: 300, orientation: "vertical" })
-  // await visualization.render(graph, tree3)
+  await visualization.render(graph, tree3)
 
 
 
@@ -393,18 +251,18 @@ const treeLayout = async () => {
   const tree5 = new TreeLayout({ rootId: 161, renderDepth: 1, animationSpeed: 300 })
   visualization.addCustomNodeRepresentation(tree5, { control: { borderStrokeColor: "#f0f" } })
   visualization.addCustomEdgeRepresentation(tree5, { thinEdge: { strokeColor: "#f0f" } })
-  await visualization.render(graph, tree5)
+  // await visualization.render(graph, tree5)
 
   // setTimeout(() => {
   //   // visualization.update(tree2, { rootId: 111, renderDepth: 1, visibleNodeLimit: 3 })
   //   console.log("update now")
   //   graph.excludeNode(160)
 
-  //   visualization.update(tree2, graph, { orientation: "horizontal", renderDepth: 2 })
+  //   visualization.update(tree3, graph, { orientation: "horizontal", renderDepth: 2 })
   // }, 1000)
 }
 
-const contextualLayout = () => {
+const contextualLayout = async () => {
   // create the underlying graph structure that holds references to our data
   const graph = visualization.createInitialGraph()
 
@@ -417,39 +275,43 @@ const contextualLayout = () => {
   graph.includeEdge(36, 34)
   graph.includeEdge(36, 35)
   graph.includeEdge(37, 36)
+  graph.includeEdge(72, 36)
+  graph.includeEdge(36, 34)
   graph.includeEdge(111, 110)
   graph.includeEdge(112, 110)
   graph.includeEdge(113, 110)
   graph.includeEdge(119, 110)
   graph.includeEdge(163, 161)
 
+  // containerConnectionColor: "#f0f"
+  const contextual1 = new ContextualLayout({ focusId: 19, animationSpeed: 300 })
+  const contextual2 = new ContextualLayout({ focusId: 36, animationSpeed: 300 })
+  const contextual3 = new ContextualLayout({ focusId: 36, animationSpeed: 300, showAssignedConnection: false })
 
-  const contextual1 = new ContextualLayout({ focusId: 36 })
-  visualization.render(graph, contextual1)
+  // visualization.addEventListener(contextual1, "dblclick", "shiftKey", "traverseInLayoutEvent")
+  // visualization.addCustomNodeRepresentation(contextual1, { control: { borderStrokeColor: "#f0f" } })
+  // visualization.addCustomEdgeRepresentation(contextual1, { boldEdge: { color: "#f0f" } })
+
+  // await visualization.render(graph, contextual1)
+  await visualization.render(graph, contextual2)
+  // await visualization.render(graph, contextual3)
+
+
+  setTimeout(() => {
+    // visualization.transform(contextual2, graph, new GridLayout({ limitColumns: 4, limitNodes: 12 }))
+    // visualization.update(contextual1, graph, { focusId: 36 })
+  }, 3000)
 }
 
 
 
 
-contextualLayout()
 // gridLayout()
 // radialLayout()
 // treeLayout()
+contextualLayout()
 
 // side_by_side_example()
 // transform_layout()
 
 
-// basicGridLayout()
-// changeGridMouseEvent()
-// updateGridLayout()
-
-// manyElementsRendered()
-
-// updateRadialLayout()
-
-
-// treeLayout()
-
-// multipleLayoutsSideBySide()
-// contextualLayout()

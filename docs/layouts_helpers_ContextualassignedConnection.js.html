@@ -7,7 +7,7 @@
   
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title> layouts/helpers/ContextualAssginedConnection.js</title>
+  <title> layouts/helpers/ContextualassignedConnection.js</title>
 
   <script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -116,7 +116,7 @@
             <div class="content">
                 <header class="page-title">
                     <p>Source</p>
-                    <h1>layouts/helpers/ContextualAssginedConnection.js</h1>
+                    <h1>layouts/helpers/ContextualassignedConnection.js</h1>
                 </header>
                 
 
@@ -337,7 +337,7 @@ class ContextualAssginedConnection {
    * @param {Number} [opts.X=this.finalX] The calculated final X position.
    * @param {Number} [opts.X=this.finalY] The calculated final X position.
    */
-  removeSVG({ withAnimation = false, X = this.finalX, Y = this.finalY }) {
+  removeSVG({ withAnimation = false, X = this.finalX, Y = this.finalY, }) {
     if (withAnimation === true) {
       if (this.isRendered()) {
         this
@@ -350,9 +350,11 @@ class ContextualAssginedConnection {
             this.svg = null
           })
       }
-    } else if (this.isRendered()) {
-      this.svg.remove()
-      this.svg = null
+    } else {
+      if (this.isRendered()) {
+        this.svg.remove()
+        this.svg = null
+      }
     }
   }
 

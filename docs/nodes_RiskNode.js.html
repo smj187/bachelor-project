@@ -184,11 +184,12 @@ class RiskNode extends BaseNode {
     label.style.fontWeight = this.config.labelFontWeight
     label.style.fontStyle = this.config.labelFontStyle
     if (this.state !== null) {
-      label.style.textAlign = "right"
+      label.style.textAlign = "left"
     } else {
       label.style.width = "inherit"
       label.style.textAlign = "center"
     }
+
 
     label.style.marginTop = `${this.config.offset}px`
     label.style.height = "fit-content"
@@ -286,11 +287,15 @@ class RiskNode extends BaseNode {
 
     if (this.getNodeSize() === "min") {
       this.svg.get(0).animate({ duration: this.config.animationSpeed }).center(X, Y)
-      this.svg.get(1).animate({ duration: this.config.animationSpeed }).center(X + this.config.minIconTranslateX, Y + this.config.minIconTranslateY)
+      const ix = X + this.config.minIconTranslateX
+      const iy = Y + this.config.minIconTranslateY
+      this.svg.get(1).animate({ duration: this.config.animationSpeed }).center(ix, iy)
       this.svg.get(2).animate({ duration: this.config.animationSpeed }).center(X, Y)
     } else {
       this.svg.get(0).animate({ duration: this.config.animationSpeed }).center(X, Y)
-      this.svg.get(1).animate({ duration: this.config.animationSpeed }).center(X + this.config.maxIconTranslateX, Y + this.config.maxIconTranslateY)
+      const ix = X + this.config.maxIconTranslateX
+      const iy = Y + this.config.maxIconTranslateY
+      this.svg.get(1).animate({ duration: this.config.animationSpeed }).center(ix, iy)
       this.svg.get(2).animate({ duration: this.config.animationSpeed }).center(X, Y)
     }
   }
@@ -356,6 +361,7 @@ class RiskNode extends BaseNode {
 
 
     this.svg = svg
+    this.checkZoomLevel()
   }
 
 
@@ -418,6 +424,7 @@ class RiskNode extends BaseNode {
 
 
     this.svg = svg
+    this.checkZoomLevel()
   }
 
 
@@ -466,23 +473,47 @@ class RiskNode extends BaseNode {
 
 
     // put new elements into position
+    let iconBlurRemoved = false
+    let textBlurRemoved = false
+
     icon
       .attr({ opacity: 0 })
+      .size(1, 1)
       .center(ix, iy)
+      .filterWith((add) => { add.gaussianBlur(25, 25); add.id(`transformBlurIcon${this.id}`) })
       .animate({ duration: this.config.animationSpeed })
       .attr({ opacity: this.config.maxIconOpacity })
       .size(this.config.maxIconSize, this.config.maxIconSize)
       .cx(X - this.config.maxIconSize / 2 + this.config.maxIconTranslateX + this.config.maxIconSize / 2)
       .cy(Y - this.config.maxIconSize / 2 + this.config.maxIconTranslateY + this.config.maxIconSize / 2)
+      .during((time = this) => {
+        if (time > 0.85 &amp;&amp; iconBlurRemoved === false) {
+          iconBlurRemoved = true
+          icon.unfilter()
+          const filters = [...this.canvas.defs().node.childNodes].find((d) => d.id === `transformBlurIcon${this.id}`)
+          filters.remove()
+        }
+      })
 
+    const tw = text.bbox().w
+    const th = text.bbox().h
     text
-      .attr({ opacity: 0 })
+      .size(1, 1)
       .center(tx, ty)
-      .scale(0.001)
+      .attr({ opacity: 0 })
+      .filterWith((add) => { add.gaussianBlur(11, 11); add.id(`transformBlurText${this.id}`) })
       .animate({ duration: this.config.animationSpeed })
       .attr({ opacity: 1 })
-      .transform({ scale: 1, translate: [this.config.maxTextTranslateX, this.config.maxTextTranslateY] })
-      .center(X, Y)
+      .size(tw, th)
+      .center(X + this.config.maxTextTranslateX, Y + this.config.maxTextTranslateY)
+      .during((time = this) => {
+        if (time > 0.85 &amp;&amp; textBlurRemoved === false) {
+          textBlurRemoved = true
+          text.unfilter()
+          const filters = [...this.canvas.defs().node.childNodes].find((d) => d.id === `transformBlurText${this.id}`)
+          filters.remove()
+        }
+      })
 
 
     this.currentWidth = this.config.minWidth
@@ -490,6 +521,7 @@ class RiskNode extends BaseNode {
     this.nodeSize = "max"
     this.currentX = X
     this.currentY = Y
+    this.checkZoomLevel()
   }
 
 
@@ -538,31 +570,54 @@ class RiskNode extends BaseNode {
 
 
     // put new elements into position
+    let iconBlurRemoved = false
     icon
-      .size(1, 1)
       .attr({ opacity: 0 })
+      .size(1, 1)
       .center(ix, iy)
+      .filterWith((add) => { add.gaussianBlur(25, 25); add.id(`transformBlurIcon${this.id}`) })
       .animate({ duration: this.config.animationSpeed })
       .attr({ opacity: this.config.minIconOpacity })
       .size(this.config.minIconSize, this.config.minIconSize)
-      .dx(-this.config.minIconSize / 2 + this.config.minIconTranslateX)
-      .dy(-this.config.minIconSize / 2 + this.config.minIconTranslateY)
+      .cx(X - this.config.minIconSize / 2 + this.config.minIconTranslateX + this.config.minIconSize / 2)
+      .cy(Y - this.config.minIconSize / 2 + this.config.minIconTranslateY + this.config.minIconSize / 2)
+      .during((time = this) => {
+        if (time > 0.85 &amp;&amp; iconBlurRemoved === false) {
+          iconBlurRemoved = true
+          icon.unfilter()
+          const filters = [...this.canvas.defs().node.childNodes].find((d) => d.id === `transformBlurIcon${this.id}`)
+          filters.remove()
+        }
+      })
+
+    let textBlurRemoved = false
+    const tw = this.config.minTextWidth
+    const th = text.children()[0].node.clientHeight
 
     text
-      .attr({ opacity: 0 })
+      .size(1, 1)
       .center(tx, ty)
-      .scale(0.001)
-      .size(this.config.minTextWidth, text.children()[0].node.clientHeight)
+      .attr({ opacity: 0 })
+      .filterWith((add) => { add.gaussianBlur(11, 11); add.id(`transformBlurText${this.id}`) })
       .animate({ duration: this.config.animationSpeed })
       .attr({ opacity: 1 })
-      .transform({ scale: 1, translate: [this.config.minTextTranslateX, this.config.minTextTranslateY] })
-
+      .size(tw, th)
+      .center(X + this.config.minTextTranslateX, Y + this.config.minTextTranslateY)
+      .during((time = this) => {
+        if (time > 0.85 &amp;&amp; textBlurRemoved === false) {
+          textBlurRemoved = true
+          text.unfilter()
+          const filters = [...this.canvas.defs().node.childNodes].find((d) => d.id === `transformBlurText${this.id}`)
+          filters.remove()
+        }
+      })
 
     this.currentWidth = this.config.minWidth
     this.currentHeight = this.config.minHeight
     this.nodeSize = "min"
     this.currentX = X
     this.currentY = Y
+    this.checkZoomLevel()
   }
 }
 

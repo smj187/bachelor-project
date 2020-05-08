@@ -132,7 +132,6 @@
  *
  * @category Layouts
  * @subcategory Customizations
- * @property {Number} layoutWidth=1500                            - The width used by the layout representation.
  * @property {Number} layoutHeight=900                            - The height used by the layout representation.
  *
  * @property {Number} riskConnectionLineWidth=20                  - Determines the thickness of the arrow.
@@ -167,6 +166,27 @@
  * @property {Number} parentContainerBorderStrokeWidth=1.25       - Determines the containers border width.
  * @property {String} parentContainerBackgroundColor=#ffffff      - Determines the containers background color.
  *
+ * @property {Number} assignedParentContainerNodeLimit=6                - Limits how many nodes the assigned parent container renderes.
+ * @property {Number} assignedParentContainerColumns=3                  - Limits how many columns the assigned parent container has.
+ * @property {Number} assignedParentContainerBorderRadius=5             - Determines the containers border radius.
+ * @property {String} assignedParentContainerBorderStrokeColor=#7daed6  - Determines the containers border color.
+ * @property {Number} assignedParentContainerBorderStrokeWidth=3        - Determines the containers border width.
+ * @property {String} assignedParentContainerBackgroundColor=#ffffff    - Determines the containers background color.
+ * @property {Boolean} showAssignedParentNodes=true                     - Determines if the assigned parent nodes are visible.
+ * @property {Boolean} showAssignedParentExpander=true                  - Determines if the assigned parent container has a visible expander.
+ * @property {Number} assignedParentConnectionDistance=200              - Determines the containers background color.
+ *
+ * @property {Number} assignedChildContainerNodeLimit=6                 - Limits how many nodes the assigned child container renderes.
+ * @property {Number} assignedChildContainerColumns=3                   - Limits how many columns the assigned child container has.
+ * @property {Number} assignedChildContainerBorderRadius=5              - Determines the containers border radius.
+ * @property {String} assignedChildContainerBorderStrokeColor=#7daed6   - Determines the containers border color.
+ * @property {Number} assignedChildContainerBorderStrokeWidth=3         - Determines the containers border width.
+ * @property {String} assignedChildContainerBackgroundColor=#ffffff      - Determines the containers background color.
+ * @property {Boolean} showAssignedChildNodes=true                      - Determines if the assigned child nodes are visible.
+ * @property {Boolean} showAssignedChildExpander=true                   - Determines if the assigned child container has a visible expander.
+ * @property {Number} assignedChildConnectionDistance=200               - Determines the containers background color.
+ *
+ *
  * @property {Number} riskContainerNodeLimit=4                    - Limits how many nodes the risk container renderes.
  * @property {Number} riskContainerColumns=2                      - Limits how many columns the risk container has.
  * @property {Number} riskContainderBorderRadius=5                - Determines the containers border radius.
@@ -175,32 +195,42 @@
  * @property {String} riskContainerBackgroundColor=#ff8e9e05      - Determines the containers background color.
  * @property {Number} riskNodeConnectionStrokeWidth=2             - Determines the stroke width of the connection between risks and the assigned connection.
  * @property {String} riskNodeConnectionStrokeColor=#dd415bcc     - Determines the stroke color of the connection between risks and the assigned connection.
- * @property {String} riskNodeConnectionStrokeDasharray="10 5"    - Determines the dash array of the connection between risks and the assigned connection.
+ * @property {String} riskNodeConnectionStrokeDasharray="5"       - Determines the dash array of the connection between risks and the assigned connection.
  *
- * @property {Number} containerConnectionLineWidth=25
- * @property {Number} containerConnectionArrowWidth=25
- * @property {Number} containerConnectionarrowHeight=25
- * @property {String} containerConnectionStrokeColor=25
- * @property {Number} containerConnectionStrokeWidth=1
- * @property {String} containerConnectionStrokeDasharray="0"
- * @property {String} containerConnectionColor=inherit
+ * @property {Number} containerConnectionLineWidth=25             - Determines the thickness of the container connection.
+ * @property {Number} containerConnectionArrowWidth=25            - Determines the arrow width of the container connection.
+ * @property {Number} containerConnectionarrowHeight=25           - Determines the arrow height of the container connection.
+ * @property {String} containerConnectionStrokeColor=inherit      - Determines the default arrow fill color. Available: "inherit" or hex value as String.
+ * @property {Number} containerConnectionStrokeWidth=1            - Determines the stroke width of the container connection.
+ * @property {String} containerConnectionStrokeDasharray="0"      - Determines the dash arrow of the container connection.
+ * @property {String} containerConnectionColor=inherit            - Determines the default arrow fill color. Available: "inherit" or hex value as String.
  *
- * @property {Number} translateX=-50                              - Adds additional X translation for all SVG elements before rendering.
+ * @property {Number} focusXShift=200                             - Determines how much the focus node is shifted on the X axis.
+ * @property {Number} riskFocusDistance=506                       - Determines the distance between risks nodes and focus node.
+ * @property {Number} riskConnectionDistance=75                   - Determines the distance between risk nodes and the assigned connection.
+ * @property {Number} childrenFocusDistance=80                    - Determines the distance between child nodes and focus node.
+ * @property {Number} parentFocusDistance=80                      - Determines the distance between parent nodes and focus node.
+ * @property {Number} focusAssignedDistance=900                   - Determines the distance between the focus and main assigned node.
+ *
+ * @property {String} expanderTextColor=#222                      - Determines the color for the text.
+ * @property {String} expanderFontFamily=Montserrat               - Determines the font family for the text.
+ * @property {String} expanderFontSize=12                         - Determines the font size for the text.
+ * @property {String} expanderFontWeight=600                      - Determines the font weight for the text.
+ * @property {String} expanderFontStyle=normal                    - Determines the font style for the text.
+ * @property {String} expanderTextBackground=#ccc                 - Determines the background color for the text.
+ * @property {Boolean} showParentExpander=true                    - Determines if the parent container has a visible expander.
+ * @property {Boolean} showChildExpander=true                     - Determines if the child container has a visible expander.
+ * @property {Boolean} showRiskExpander=true                      - Determines if the risk container has a visible expander.
+ *
+ * @property {Number} translateX=0                                - Adds additional X translation for all SVG elements before rendering.
  * @property {Number} translateY=0                                - Adds additional Y translation for all SVG elements before rendering.
  * @property {Number} animationSpeed=300                          - Determines how fast SVG elements animates inside the current layout.
- * @property {Boolean} hideOtherLayouts=false                     - If set to true, other layouts are not visible.
- * @property {Number} spacing=32                                  - Determines the minimal spacing between nodes.
- * @property {String} renderingSize=min                           - Determines the node render representation. Available: "min" or "max".
- * @property {Number} assignedFocusDistance=800                   - Determines the distance between the assigned and focus node.
- * @property {Number} riskFocusDistance=500                       - Determines the distance between all risk nodes and focus node.
- * @property {Number} parentFocusDistance=80                      - Determines the distance between all parent nodes and focus node.
- *
- *
- *
+ * @property {Number} contextualNodeSpacing=16                    - Determines the minimal spacing between nodes.
+ * 
+ * @property {Boolean} showAssignedConnection=true                - Determines if the assigned connection information is visible.
  */
 const ContextualLayoutConfiguration = {
 
-  layoutWidth: 1500,
   layoutHeight: 900,
 
   // assigned node connection
@@ -244,6 +274,29 @@ const ContextualLayoutConfiguration = {
   parentContainerBackgroundColor: "#ffffff",
 
 
+  // assigned parents container
+  assignedParentContainerNodeLimit: 6, // limits how many nodes are visible within the container
+  assignedParentContainerColumns: 3,
+  assignedParentContainerBorderRadius: 5,
+  assignedParentContainerBorderStrokeColor: "#7daed6",
+  assignedParentContainerBorderStrokeWidth: 3,
+  assignedParentContainerBackgroundColor: "#ffffff",
+  showAssignedParentNodes: true,
+  showAssignedParentExpander: true,
+  assignedParentConnectionDistance: 200,
+
+
+  // assigned child container
+  assignedChildContainerNodeLimit: 6,
+  assignedChildContainerColumns: 3,
+  assignedChildContainerBorderRadius: 15,
+  assignedChildContainerBorderStrokeColor: "#7daed6",
+  assignedChildContainerBorderStrokeWidth: 3,
+  assignedChildContainerBackgroundColor: "#ffffff",
+  showassignedChildNodes: true,
+  showassignedChildExpander: true,
+  assignedChildConnectionDistance: 200,
+
   // risk container
 
   riskContainerNodeLimit: 4,
@@ -269,11 +322,12 @@ const ContextualLayoutConfiguration = {
 
 
   // distances between nodes
-  focusXShift: -200,
-  riskFocusDistance: 617.5,
+  focusXShift: 300,
+  riskFocusDistance: 506,
   riskConnectionDistance: 75,
   childrenFocusDistance: 80,
   parentFocusDistance: 80,
+  focusAssignedDistance: 900,
 
 
   // expander
@@ -288,15 +342,12 @@ const ContextualLayoutConfiguration = {
   showRiskExpander: true,
 
 
-  // maxLayoutWidth: 1200,
-  // maxLayoutHeight: 800,
-  translateX: -50,
+  translateX: 0,
   translateY: 0,
-  animationSpeed: 1300,
-  spacing: 16,
-  renderingSize: "min",
+  animationSpeed: 300,
+  contextualNodeSpacing: 16,
 
-
+  showAssignedConnection: true,
 }
 
 

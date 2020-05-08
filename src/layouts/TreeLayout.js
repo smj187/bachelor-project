@@ -15,6 +15,7 @@ import { calculateDistance } from "../utils/Calculations"
  *                                    Available options: {@link TreeLayoutConfiguration}
  * @param {Object} [customEvents={ }] Overrides event listener configuration properties.
  * @param {Object} [customNodes={ }] Overrides default node representation properties.
+ * @param {Object} [customEdges={ }] Overrides default edge representation properties.
  *
  * @see https://rachel53461.wordpress.com/2014/04/20/algorithm-for-drawing-trees/
  */
@@ -494,7 +495,7 @@ class TreeLayout extends BaseLayout {
     }
 
 
-    // calculate the layout dimensions and move off screen objects into the screen
+    // calculate the layout dimensions and move objects that are not on the screen into the screen
     const calculateLayoutInfo = (tree) => {
       const toRender = [tree]
       const rendered = []

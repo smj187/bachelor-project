@@ -22,7 +22,7 @@ class GridLayout extends BaseLayout {
 
     // layout specific
     this.gridExpander = null
-    this.isLayoutExpended = false
+    this.isLayoutExpanded = false
 
 
     // events
@@ -45,7 +45,7 @@ class GridLayout extends BaseLayout {
    * @async
    */
   async expandGridLayoutEvent() {
-    if (this.isLayoutExpended === true) {
+    if (this.isLayoutExpanded === true) {
       // update the configuration to render all nodes provided by the initial graph
       this.config = { ...this.config, cachedLimit: this.config.limitNodes, limitNodes: this.nodeData.length }
     } else {
@@ -181,7 +181,7 @@ class GridLayout extends BaseLayout {
       const expander = this.gridExpander === null ? new GridExpander(this.canvas, this.config) : this.gridExpander
 
       expander.setLayoutId(this.layoutIdentifier)
-      expander.setIsLayoutExpended(this.isLayoutExpended)
+      expander.setIsLayoutExpanded(this.isLayoutExpanded)
 
       // get left-most X coordinate
       const minX = Math.min(...this.nodes.map((n) => n.getFinalX()))
@@ -324,15 +324,15 @@ class GridLayout extends BaseLayout {
         this.events.forEach((myevent) => {
           if (myevent.event === type && myevent.modifier === modifier) {
             // change the current expand state
-            this.isLayoutExpended = !this.isLayoutExpended
+            this.isLayoutExpanded = !this.isLayoutExpanded
 
             // update the expanders text
-            if (this.isLayoutExpended === true) {
+            if (this.isLayoutExpanded === true) {
               expander.changeToShowMoreText()
             } else {
               expander.changeToHideMoreText()
             }
-            this.expandGridLayoutEvent(this.isLayoutExpended)
+            this.expandGridLayoutEvent(this.isLayoutExpanded)
           }
         })
       })
@@ -351,7 +351,6 @@ class GridLayout extends BaseLayout {
 
           // or transform the existing node into position
         } else if (node.isRendered() === true) {
-          // console.log("trf", node)
           node.transformToFinalPosition({})
         }
       })

@@ -54,78 +54,63 @@ class BoldEdge extends BaseEdge {
 
 
     // color the edge
-    if (this.config.color === "inherit") {
-      const toColor = this.toNode.config.borderStrokeColor
-      const fromColor = this.fromNode.config.borderStrokeColor
+    if (isContextualBoldEdge === true) {
+      if (this.config.color === "inherit") {
+        const toColor = this.toNode.config.borderStrokeColor
+        const fromColor = this.fromNode.config.borderStrokeColor
 
-      const gradient = this.canvas.gradient("linear", (add) => {
-        add.stop(0, fromColor)
-        add.stop(1, toColor)
-      })
+        const gradient = this.canvas.gradient("linear", (add) => {
+          add.stop(0, fromColor)
+          add.stop(1, toColor)
+        })
 
-      // svgdotjs bug: if a gradient gets an id, there is no way to create a gradient with a different color pairing
-      // gradient.id("defaultBoldGradient")
-      path.fill(gradient)
+        // svgdotjs bug: if a gradient gets an id, there is no way to create a gradient with a different color pairing
+        // gradient.id("defaultBoldGradient")
+        path.fill(gradient)
+      } else {
+        path.fill(this.config.color)
+      }
+
+      // move the edge into its initial position
+      path.center((x0 + x1) / 2, (y0 + y1) / 2)
+      path.rotate(-90)
     } else {
-      path.fill(this.config.color)
+      if (this.config.color !== "inherit") {
+        path.fill(this.config.color)
+      } else {
+        const theta = Math.atan2(this.finalToY - this.finalFromY, this.finalToX - this.finalFromX)
+        path.rotate(-(theta) * (180 / Math.PI))
+        let c1 = this.fromNode.config.borderStrokeColor
+        let c2 = this.toNode.config.borderStrokeColor
+        if ((-(theta) * (180 / Math.PI)) > 90) {
+          const t = c1
+          c1 = c2
+          c2 = t
+        }
+        const gradient = this.canvas.gradient("linear", (add) => {
+          add.stop(0, c1)
+          add.stop(1, c2)
+        })
+
+        // svgdotjs bug: if a gradient gets an id, there is no way to create a gradient with a different color pairing
+        // gradient.id("defaultBoldGradient")
+        path.fill(gradient)
+        path.rotate((theta) * (180 / Math.PI))
+      }
+
+      path.center(X, Y)
     }
 
 
-    // move the edge into its initial position
-    path.center((x0 + x1) / 2, (y0 + y1) / 2)
-    path.rotate(-90)
-
-
-    // // custom color fill
-    // if (this.config.color !== null) {
-    //   path.fill(this.config.color)
-    // } else {
-    //   // gradient requires a rotation before filling since svgdotjs only offers linear (left->right) gradients
-    //   const theta = Math.atan2(this.finalToY - this.finalFromY, this.finalToX - this.finalFromX)
-    //   path.rotate(-(theta) * (180 / Math.PI))
-
-    //   // fill based on two provided colors
-    //   let c1 = this.fromNode.config.borderStrokeColor
-    //   let c2 = this.toNode.config.borderStrokeColor
-    //   if ((-(theta) * (180 / Math.PI)) > 90) {
-    //     const t = c1
-    //     c1 = c2
-    //     c2 = t
-    //   }
-    //   const gradient = this.canvas.gradient("linear", (add) => {
-    //     add.stop(0, c1)
-    //     add.stop(1, c2)
-    //   })
-
-    //   // svgdotjs bug: if a gradient gets an id, there is no way to create a gradient with a different color pairing
-    //   // gradient.id("defaultBoldGradient")
-    //   path.fill(gradient)
-
-    //   // reverse rotation
-    //   path.rotate((theta) * (180 / Math.PI))
-    // }
-
-
-    // /*
-    //   // TODO: implementation for finding a color for the attached container nodes
-    // */
-
-
-    // path.center(X, Y)
     svg.add(path)
 
 
     // add label
     if (this.label !== null) {
       const label = this.createLabel()
-      // label.center((x0 + x1) / 2, (y0 + y1) / 2)
       svg.add(label)
     }
 
-
-    // put new elements into position
-    // const cx = (this.finalFromX + this.finalToX) / 2
-    // const cy = (this.finalFromY + this.finalToY) / 2
 
     // final label position
     const cx = (x0 + x1) / 2
@@ -172,89 +157,14 @@ class BoldEdge extends BaseEdge {
             .attr({ opacity: 1 })
         }
       }
-    } else {
-      console.log("todo..")
+    } else if (this.label !== null) {
+      svg
+        .get(1)
+        .attr({ opacity: 0 })
+        .animate({ duration: this.config.animationSpeed })
+        .attr({ opacity: 1 })
+        .center(cx + this.config.labelTranslateX, cy + this.config.labelTranslateY)
     }
-
-
-    // if (isContextualBoldEdge === true) {
-    //   const dif = this.fromNode.getNodeSize() === "min"
-    //     ? this.fromNode.getFinalY() - this.toNode.getFinalY()
-    //     : this.fromNode.getMaxHeight() - this.fromNode.getFinalY()
-
-
-    //   // parent edge
-    //   if (this.fromNode.getNodeSize() === "max") {
-    //     svg
-    //       .get(0)
-    //       // .dx(dif)
-    //       // .center(this.fromNode.getFinalX(), this.fromNode.getFinalY())
-    //       .rotate(90)
-    //       // .transform({ origin: [100,100], rotate: 90 })
-    //       .attr({ opacity: 0 })
-    //       .animate({ duration: this.config.animationSpeed })
-    //       .attr({ opacity: 1 })
-    //     // .center(cx, cy)
-
-    //     // if (this.label !== null) {
-
-    //     //   const y = this.fromNode.getNodeSize() === "min"
-    //     //     ? this.toNode.getFinalY()
-    //     //     : this.fromNode.getFinalY()
-    //     //   svg
-    //     //     .get(1)
-    //     //     .center(cx, y)
-    //     //     .scale(0.001)
-    //     //     .attr({ opacity: 0 })
-    //     //     .animate({ duration: this.config.animationSpeed })
-    //     //     .transform({ scale: 1 })
-    //     //     .attr({ opacity: 1 })
-    //     //     .center(cx + this.config.labelTranslateX, cy + this.config.labelTranslateY)
-    //     // }
-    //   } else {
-    //     svg
-    //       .get(0)
-    //       .dx(dif)
-    //       .attr({ opacity: 0 })
-    //       .animate({ duration: this.config.animationSpeed })
-    //       .attr({ opacity: 1 })
-    //       .center(cx, cy)
-
-    //     if (this.label !== null) {
-
-    //       const y = this.fromNode.getNodeSize() === "min"
-    //         ? this.toNode.getFinalY()
-    //         : this.fromNode.getFinalY()
-    //       svg
-    //         .get(1)
-    //         .center(cx, y)
-    //         .scale(0.001)
-    //         .attr({ opacity: 0 })
-    //         .animate({ duration: this.config.animationSpeed })
-    //         .transform({ scale: 1 })
-    //         .attr({ opacity: 1 })
-    //         .center(cx + this.config.labelTranslateX, cy + this.config.labelTranslateY)
-    //     }
-    //   }
-
-
-    // } else {
-    //   svg
-    //     .get(0)
-    //     .attr({ opacity: 0 })
-    //     .animate({ duration: this.config.animationSpeed })
-    //     .attr({ opacity: 1 })
-    //     .center(cx, cy)
-
-    //   if (this.label !== null) {
-    //     svg
-    //       .get(1)
-    //       .attr({ opacity: 0 })
-    //       .animate({ duration: this.config.animationSpeed })
-    //       .attr({ opacity: 1 })
-    //       .center(cx + this.config.labelTranslateX, cy + this.config.labelTranslateY)
-    //   }
-    // }
 
 
     this.svg = svg
@@ -264,25 +174,40 @@ class BoldEdge extends BaseEdge {
   /**
    * Transforms the edge to its final rendered position.
    */
-  transformToFinalPosition() {
+  transformToFinalPosition({ isContextualBoldEdge = false }) {
     this.svg.back()
 
-    const plot = this.generateBoldArrow()
+
     const cx = (this.finalFromX + this.finalToX) / 2
     const cy = (this.finalFromY + this.finalToY) / 2
-
-    this
-      .svg
-      .get(0)
-      .animate({ duration: this.config.animationSpeed })
-      .plot(plot)
-
-    if (this.label !== null) {
+    if (isContextualBoldEdge === true) {
       this
         .svg
-        .get(1)
+        .get(0)
         .animate({ duration: this.config.animationSpeed })
-        .center(cx + this.config.labelTranslateX, cy + this.config.labelTranslateY)
+        .dy(cx - this.svg.bbox().cx)
+
+      if (this.label !== null) {
+        this
+          .svg
+          .get(1)
+          .animate({ duration: this.config.animationSpeed })
+          .center(cx + this.config.labelTranslateX, cy + this.config.labelTranslateY)
+      }
+    } else {
+      this
+        .svg
+        .get(0)
+        .animate({ duration: this.config.animationSpeed })
+        .plot(this.generateBoldArrow())
+
+      if (this.label !== null) {
+        this
+          .svg
+          .get(1)
+          .animate({ duration: this.config.animationSpeed })
+          .center(cx + this.config.labelTranslateX, cy + this.config.labelTranslateY)
+      }
     }
   }
 

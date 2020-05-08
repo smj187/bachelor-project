@@ -41,16 +41,15 @@ describe("requirement node test", () => {
         // default representation
         expect(min.getNodeSize()).to.equal("min")
         expect(min.getCurrentWidth()).to.equal(155)
-        expect(min.getCurrentHeight()).to.equal(80)
+        expect(min.getCurrentHeight()).to.equal(50)
         expect(min.getCurrentX()).to.equal(200)
         expect(min.getCurrentY()).to.equal(200)
 
 
         // svg
-        expect(min.getSVG().children().length).to.equal(3)
+        expect(min.getSVG().children().length).to.equal(2)
         expect(min.getSVG().children()[0] instanceof Rect).to.equal(true)
-        expect(min.getSVG().children()[1] instanceof Image).to.equal(true)
-        expect(min.getSVG().children()[2] instanceof ForeignObject).to.equal(true)
+        expect(min.getSVG().children()[1] instanceof ForeignObject).to.equal(true)
     }),
         it("renderAsMax()", () => {
             max.renderAsMax({ IX: 400, IY: 50, FX: 600, FY: 250 })
@@ -63,8 +62,8 @@ describe("requirement node test", () => {
 
             // default representation
             expect(max.getNodeSize()).to.equal("max")
-            expect(max.getCurrentWidth()).to.equal(3570)
-            expect(max.getCurrentHeight()).to.equal(225)
+            expect(max.getCurrentWidth()).to.equal(370)
+            expect(max.getCurrentHeight()).to.equal(200)
             expect(max.getCurrentX()).to.equal(600)
             expect(max.getCurrentY()).to.equal(250)
 
@@ -90,8 +89,8 @@ describe("requirement node test", () => {
 
                     // representation
                     expect(max.getNodeSize()).to.equal("min")
-                    expect(max.getCurrentX()).to.equal(200)
-                    expect(max.getCurrentY()).to.equal(200)
+                    expect(max.getCurrentX()).to.equal(0)
+                    expect(max.getCurrentY()).to.equal(0)
 
                     // svg
                     expect(max.getSVG().children().length).to.equal(2)
@@ -111,10 +110,9 @@ describe("requirement node test", () => {
                     expect(min.getCurrentY()).to.equal(250)
 
                     // svg
-                    expect(min.getSVG().children().length).to.equal(3)
+                    expect(min.getSVG().children().length).to.equal(2)
                     expect(min.getSVG().children()[0] instanceof Rect).to.equal(true)
-                    expect(min.getSVG().children()[1] instanceof Image).to.equal(true)
-                    expect(min.getSVG().children()[2] instanceof ForeignObject).to.equal(true)
+                    expect(min.getSVG().children()[1] instanceof ForeignObject).to.equal(true)
                 })
             })
         })

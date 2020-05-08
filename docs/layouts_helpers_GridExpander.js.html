@@ -146,7 +146,7 @@ class GridExpander {
 
     // general info
     this.layoutId = null
-    this.isLayoutExpended = false
+    this.isLayoutExpanded = false
     this.type = "grid"
   }
 
@@ -232,7 +232,7 @@ class GridExpander {
 
 
     // only one text representation is active at once
-    if (this.isLayoutExpended === false) {
+    if (this.isLayoutExpanded === false) {
       expand.attr({ opacity: 1 })
       collapse.attr({ opacity: 0 })
     } else {
@@ -268,6 +268,9 @@ class GridExpander {
       expand.transform({ scale: 0.975 })
     })
 
+
+    this.finalX = svg.bbox().cx
+    this.finalY = svg.bbox().cy
 
     this.svg = svg
   }
@@ -321,9 +324,25 @@ class GridExpander {
 
   /**
    * Removes the rendered SVG expander from the canvas.
+   * @param {Object} [opts={ }] An object containing additional information.
+   * @param {Number} [opts.withAnimation=false] An indication whether to use an animation to remove the SVG object.
+   * @param {Number} [opts.X=this.finalX] The calculated final X position.
+   * @param {Number} [opts.X=this.finalY] The calculated final X position.
    */
-  removeSVG() {
-    if (this.isRendered()) {
+  removeSVG({ withAnimation = false, X = this.finalX, Y = this.finalY }) {
+    if (withAnimation === true) {
+      if (this.isRendered()) {
+        this
+          .svg
+          .animate({ duration: this.config.animationSpeed })
+          .center(X, Y)
+          .attr({ opacity: 0 })
+          .after(() => {
+            this.svg.remove()
+            this.svg = null
+          })
+      }
+    } else if (this.isRendered()) {
       this.svg.remove()
       this.svg = null
     }
@@ -347,8 +366,8 @@ class GridExpander {
     return this.type
   }
 
-  setIsLayoutExpended(isLayoutExpended) {
-    this.isLayoutExpended = isLayoutExpended
+  setIsLayoutExpanded(isLayoutExpanded) {
+    this.isLayoutExpanded = isLayoutExpanded
   }
 
   setLayoutId(layoutId) {

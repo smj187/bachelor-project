@@ -104,7 +104,7 @@ if (process.env.BUILD === "ESM") {
   const devConfig = {
     input: "./src/index.js",
     output: {
-      file: "public/graphVisualization.js",
+      file: "public/visualization.js",
       format: "esm",
       sourcemap: true,
       name: "GraphVisualization",

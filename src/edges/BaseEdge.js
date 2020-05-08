@@ -1,6 +1,10 @@
 
 import clamp from "clamp-js"
-import { calculateNodeLineIntersection } from "../utils/Calculations"
+import {
+  calculateNodeLineIntersection, calculatContextualIntersection,
+
+
+} from "../utils/Calculations"
 
 /**
  * This is the base class for edges.
@@ -45,7 +49,7 @@ class BaseEdge {
    * @param {Number} [opts.isContextualParent=false] Determines if the current edge is a contextual parent edge.
    * @param {Number} [opts.isContextualChild=false] Determines if the current edge is a contextual child edge
    */
-  calculateEdge({ isContextualParent = false, isContextualChild = false }) {
+  calculateEdge({ isContextualParent = false, isContextualChild = false, isReRender = false }) {
     // the coordinates for the from node
     let fx = this.fromNode.getFinalX()
     const fy = this.fromNode.getFinalY()
@@ -63,8 +67,32 @@ class BaseEdge {
     }
 
     // calculate intersections
-    const fromIntersection = calculateNodeLineIntersection(fx, fy, tx, ty, this.fromNode)
-    const toIntersection = calculateNodeLineIntersection(tx, ty, fx, fy, this.toNode)
+    let toIntersection
+    let fromIntersection
+
+    if (isContextualParent === false && isContextualChild === false) {
+      fromIntersection = calculateNodeLineIntersection(fx, fy, tx, ty, this.fromNode)
+      toIntersection = calculateNodeLineIntersection(tx, ty, fx, fy, this.toNode)
+    }
+
+
+    if (isContextualParent) {
+      fromIntersection = calculatContextualIntersection(fx, fy, tx, ty, this.fromNode, this.canvas)
+      toIntersection = calculatContextualIntersection(tx, ty, fx, fy, this.toNode, this.canvas)
+      if (toIntersection.x === 0 && toIntersection.y === 0) {
+        this.isHidden = true
+      }
+    }
+
+
+    if (isContextualChild) {
+      fromIntersection = calculatContextualIntersection(fx, fy, tx, ty, this.fromNode, this.canvas)
+      toIntersection = calculatContextualIntersection(tx, ty, fx, fy, this.toNode, this.canvas)
+      if (toIntersection.x === 0 && toIntersection.y === 0) {
+        this.isHidden = true
+      }
+    }
+
 
     this.finalFromX = fromIntersection.x
     this.finalFromY = fromIntersection.y
@@ -80,7 +108,7 @@ class BaseEdge {
    */
   createSVGElement(id) {
     // create the SVG object on the canvas.
-    const svg = this.canvas.group().draggable()
+    const svg = this.canvas.group()
 
 
     // attach some CSS and an ID
@@ -97,20 +125,37 @@ class BaseEdge {
   /**
    * Removes the rendered SVG object from the canvas.
    */
-  removeSVG() {
-    if (this.isRendered() === false) return
+  removeSVG({ isContextualEdge = false, isContextualParentOperation = false }) {
+    if (isContextualEdge === true) {
+      const offset = isContextualParentOperation ? 50 : -50
 
-    // find the point where to fade the element out
-    const x = (this.finalFromX + this.finalToX) / 2
-    const y = ((this.finalFromY + this.finalToY) / 2) + 100
-    this.svg.back()
-    this.svg
-      .animate({ duration: this.config.animationSpeed })
-      .transform({ scale: 0.001, position: [x, y] })
-      .after(() => {
-        try { this.svg.remove() } catch (error) { }
-        this.svg = null
-      })
+      if (this.isRendered() === false) return
+
+
+      const x = (this.finalFromX + this.finalToX) / 2
+      const y = ((this.finalFromY + this.finalToY) / 2) + 100
+      this.svg.back()
+      this.svg
+        .animate({ duration: this.config.animationSpeed })
+        .transform({ scale: 0.001, position: [x, y + offset] })
+        .after(() => {
+          try { this.svg.remove() } catch (error) { }
+          this.svg = null
+        })
+    } else {
+      if (this.isRendered() === false) return
+
+      const x = (this.finalFromX + this.finalToX) / 2
+      const y = ((this.finalFromY + this.finalToY) / 2) + 100
+      this.svg.back()
+      this.svg
+        .animate({ duration: this.config.animationSpeed })
+        .transform({ scale: 0.001, position: [x, y] })
+        .after(() => {
+          try { this.svg.remove() } catch (error) { }
+          this.svg = null
+        })
+    }
   }
 
 

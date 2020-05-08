@@ -68,7 +68,6 @@ class CustomEdge extends BaseEdge {
 
 
     // add label
-    console.log(this)
     if (this.label !== null) {
       const label = this.createLabel()
       svg.add(label)
