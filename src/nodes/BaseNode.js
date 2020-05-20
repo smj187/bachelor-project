@@ -6,7 +6,6 @@ import FallbackAssetIcon from "../resources/fallbackAssetIcon.svg"
 import FallbackRiskIcon from "../resources/fallbackRiskIcon.svg"
 import FallbackCustomIcon from "../resources/fallbackCustomIcon.svg"
 
-
 /**
  * This is the base class for nodes.
  *
@@ -31,6 +30,7 @@ class BaseNode {
     this.keyValuePairs = data.keyValuePairs || []
     this.state = data.state || null
     this.attributes = new Map()
+    this.shape = "rect"
 
 
     // layout data
@@ -55,6 +55,8 @@ class BaseNode {
     this.currentY = 0
     this.x = 0
     this.y = 0
+    this.nextX = 0
+    this.nextY = 0
 
 
     // node info
@@ -351,7 +353,6 @@ class BaseNode {
   }
 
 
-
   /**
    * Evaluates the current zoom level with the provided threshold and hides labels, if necessary.
    */
@@ -361,12 +362,10 @@ class BaseNode {
 
     // check if the newley created labels should not be visible
     if (currentZoomLevel <= currenZoomThreshold) {
-
       const labels = document.querySelectorAll("#label")
       labels.forEach((doc) => {
         doc.style.opacity = "0"
       })
-
     }
   }
 
@@ -565,6 +564,27 @@ class BaseNode {
     this.initialY = initialY
   }
 
+  setNextXY(nextX, nextY) {
+    this.nextX = nextX
+    this.nextY = nextY
+  }
+
+  setNextX(nextX) {
+    this.nextX = nextX
+  }
+
+  setNextY(nextY) {
+    this.nextY = nextY
+  }
+
+  getNextX() {
+    return this.nextX
+  }
+
+  getNextY() {
+    return this.nextY
+  }
+
   setInitialXY(initialX, initialY) {
     this.initialX = initialX
     this.initialY = initialY
@@ -658,6 +678,10 @@ class BaseNode {
 
   getId() {
     return this.id
+  }
+
+  getShape() {
+    return this.shape
   }
 }
 

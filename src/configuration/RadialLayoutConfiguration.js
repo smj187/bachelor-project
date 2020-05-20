@@ -23,7 +23,7 @@ const RadialLayoutConfiguration = {
   translateX: 0,
   translateY: 0,
   animationSpeed: 300,
-  hAspect: 4 / 3,
+  hAspect: 4 / 2.5,
   wAspect: 4 / 4,
   rootId: null,
   renderDepth: 0,

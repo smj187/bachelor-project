@@ -1,29 +1,169 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
 
-<head lang='en'>
-	<meta charset="UTF-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	<meta http-equiv="X-UA-Compatible" content="ie=edge" />
-	<title>Example</title>
+<head lang="en">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+  <title>Demo</title>
 
+  <link href="https://fonts.googleapis.com/css?family=Montserrat&display=swap" rel="stylesheet" />
 
-	<link href="https://fonts.googleapis.com/css?family=Montserrat&display=swap" rel="stylesheet">
+  <style>
+    * {
+      padding: 0;
+      margin: 0;
+      box-sizing: border-box;
+    }
 
-	<style>
-		* {
-			padding: 0;
-			margin: 0;
-			box-sizing: border-box;
-		}
-	</style>
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    body {
+      font: normal 18px "Montserrat", sans-serif;
+      background: #fafafa;
+      color: #333;
+    }
+
+    main {
+      min-height: 70vh;
+    }
+
+    header {
+      background: white;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+    }
+
+    nav {
+      max-width: auto;
+      margin: auto;
+      display: flex;
+      flex-wrap: wrap;
+    }
+
+    nav a {
+      flex-grow: 1;
+      text-align: center;
+      padding: 1em 0.5em;
+      position: relative;
+    }
+
+    nav a::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      transform: scaleX(0);
+      background: #333;
+      transition: 0.7s transform cubic-bezier(0.06, 0.9, 0.28, 1);
+    }
+
+    nav a:hover::after {
+      transform: scaleX(1);
+    }
+
+    @media (max-width: 1160px) {
+      nav a {
+        padding: 1em 0.15em;
+      }
+    }
+
+    @media (max-width: 1070px) {
+
+      nav a:nth-child(7),
+      nav a:nth-child(8) {
+        display: none;
+      }
+    }
+
+    @media (max-width: 950px) {
+
+      nav a:nth-child(5),
+      nav a:nth-child(6) {
+        display: none;
+      }
+    }
+
+    .layout {
+      width: 100%;
+      height: 100vh;
+    }
+  </style>
 </head>
 
 <body>
+  <!-- <header>
+    <nav>
+      <a href="#grid" onclick="showContent('grid')">Grid Layout</a>
+      <a href="#contextual" onclick="showContent('contextual')">Contextual Layout</a>
+      <a href="#radial" onclick="showContent('radial')">Radial Layout</a>
+      <a href="#tree" onclick="showContent('tree')">Tree Layout</a>
+      <a href="#combination" onclick="showContent('combination')">Layout Combination</a>
+      <a href="#transformation" onclick="showContent('transformation')">Layout Transformation</a>
+      <a href="#nodes" onclick="showContent('nodes')">Nodes</a>
+      <a href="#edges" onclick="showContent('edges')">Edges</a>
+    </nav>
+  </header>
+
+  <div class="content" id="grid"></div>
+  <div class="content" id="contextual"></div>
+  <div class="content" id="radial"></div>
+  <div class="content" id="tree"></div>
+  <div class="content" id="combination"></div>
+  <div class="content" id="transformation"></div>
+  <div class="content" id="nodes"></div>
+  <div class="content" id="edges"></div>
+
+  <script>
+    function showContent(type) {
+      Array.from(document.getElementsByClassName("content")).forEach((element) => {
+        if (element.id !== type) {
+          element.style.visibility = "hidden"
+          element.style.display = "none"
+
+          if (document.scripts !== null) {
+            Array.from(document.scripts).forEach(script => {
+              if (script.src.toString().includes(element.id)) {
+
+                const toRemove = document.getElementById("visualization-canvas")
+                document.body.removeChild(toRemove)
+                console.log("111")
+                script.remove()
+              }
+            })
+          }
+
+        } else {
+          // console.log("load", element.id)
+          if (element.id === "grid") {
+            console.log("add ", `./demos/${element.id}.js`)
+            const script = document.createElement("script")
+            script.setAttribute("type", "module")
+            script.setAttribute("src", `./demos/${element.id}.js`)
+            console.log(Array.from(document.scripts).filter(s => s["outerHTML"].includes("demos")).map(s => s["outerHTML"]), "222")
+            document.body.appendChild(script)
+            console.log(document.body)
+          }
+
+          element.style.visibility = "unset"
+          element.style.display = "block"
+        }
+
+      })
+      console.log("--")
+    }
+    showContent("grid")
 
 
-	<script type="module" src="index.js"></script>
 
+    // console.log(document.getElementById(`./demos/${"grid"}.js`))
+  </script> -->
+
+  <script type="module" src="index.js"></script>
 </body>
 
 </html>

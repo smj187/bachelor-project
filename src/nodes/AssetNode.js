@@ -10,7 +10,8 @@ import AssetNodeConfiguration from "../configuration/AssetNodeConfiguration"
  * @subcategory Nodes
  * @property {Data} data The loaded data element from a database.
  * @property {Canvas} canvas The nested canvas to render the node on.
- * @property {Object} customRepresentation An optional object that contains information to override default representations.
+ * @property {Object} customRepresentation An optional object that contains information to override default
+ *                                        representations.
  *
  * @see AssetNodeConfiguration
  * @see https://svgjs.com/docs/3.0/container-elements/#svg-svg

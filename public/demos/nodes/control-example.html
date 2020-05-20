@@ -35,8 +35,8 @@
         const nodeData1 = { id: 6, label: "Control 6", description: "adipiscing eros tellus feugiat cursus porttitor dolor ante enim nibh tincidunt taciti justo ad", type: "control", attributes: null, tooltipText: null, parent: null, children: [], config: null }
         const nodeData2 = { id: 7, label: "Control 7", description: "adipiscing eros tellus feugiat cursus porttitor dolor ante enim nibh tincidunt taciti justo ad", type: "control", attributes: null, tooltipText: null, parent: null, children: [], config: null }
 
-        const min = new Control(nodeData1, visualization.canvas)
-        const max = new Control(nodeData2, visualization.canvas)
+        const min = new Control(nodeData1, canvas)
+        const max = new Control(nodeData2, canvas)
         max.renderAsMax({ IX: 300, IY: 100, FX: 500, FY: 200 })
         min.renderAsMin({ IX: 100, IY: 100, FX: 200, FY: 200 })
 

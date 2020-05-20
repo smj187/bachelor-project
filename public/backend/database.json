@@ -853,13 +853,8 @@
             "type": "control",
             "attributes": null,
             "tooltipText": null,
-            "parent": [
-                59,
-                58
-            ],
-            "children": [
-                61
-            ],
+            "parent": [],
+            "children": [],
             "config": null
         },
         {
@@ -1876,6 +1871,564 @@
             "parent": 131,
             "children": [],
             "config": null
+        },
+        {
+            "id": 170,
+            "label": "Control 1",
+            "description": "adipiscing eros tellus feugiat cursus porttitor dolor ante enim nibh tincidunt taciti justo ad",
+            "type": "control",
+            "attributes": null,
+            "tooltipText": null,
+            "parent": null,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 171,
+            "label": "Control 2",
+            "description": "adipiscing eros tellus feugiat cursus porttitor dolor ante enim nibh tincidunt taciti justo ad",
+            "type": "control",
+            "attributes": null,
+            "tooltipText": null,
+            "parent": null,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 172,
+            "label": "Control 2",
+            "description": "adipiscing eros tellus feugiat cursus porttitor dolor ante enim nibh tincidunt taciti justo ad",
+            "type": "control",
+            "attributes": null,
+            "tooltipText": null,
+            "parent": null,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 173,
+            "label": "Requirement 173",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "partially-FULFILLED",
+            "attributes": null,
+            "tooltipText": null,
+            "parent": null,
+            "children": [
+                174,
+                175,
+                176
+            ],
+            "config": null
+        },
+        {
+            "id": 174,
+            "label": "Requirement 174",
+            "description": "lorem ipsum ante enim nibh tincidunt taciti justo ad rhoncus sollicitudin consectetur ligula proin nam eget duis adipiscing eros tellus feugiat cursus porttitor dolor faucibus bibendum lobortis ut imperdiet metus",
+            "type": "requirement",
+            "state": "partially-FULFILLED",
+            "attributes": null,
+            "tooltipText": null,
+            "parent": 173,
+            "children": [
+                177,
+                178,
+                179,
+                180,
+                181,
+                182,
+                210,
+                211,
+                212,
+                213
+            ],
+            "config": null
+        },
+        {
+            "id": 175,
+            "label": "Requirement 175",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltipText": null,
+            "parent": 173,
+            "children": [
+                200,
+                201,
+                202,
+                203,
+                204,
+                205,
+                206,
+                207,
+                208,
+                209
+            ],
+            "config": null
+        },
+        {
+            "id": 176,
+            "label": "Requirement 176",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltipText": null,
+            "parent": 173,
+            "children": [
+                187,
+                188,
+                189,
+                190,
+                191,
+                192,
+                193,
+                194,
+                195,
+                196,
+                197,
+                198,
+                199
+            ],
+            "config": null
+        },
+        {
+            "id": 177,
+            "label": "Requirement 177",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltipText": null,
+            "parent": 174,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 178,
+            "label": "Requirement 178",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltipText": null,
+            "parent": 174,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 179,
+            "label": "Requirement 179",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltipText": null,
+            "parent": 174,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 180,
+            "label": "Requirement 180",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "NOT-FULFILLED",
+            "attributes": null,
+            "tooltipText": null,
+            "parent": 174,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 181,
+            "label": "Requirement 181",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "partially-FULFILLED",
+            "attributes": null,
+            "tooltipText": null,
+            "parent": 174,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 182,
+            "label": "Requirement 182",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "partially-FULFILLED",
+            "attributes": null,
+            "tooltipText": null,
+            "parent": 174,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 183,
+            "label": "Control 183",
+            "description": "amet dictum",
+            "type": "control",
+            "attributes": null,
+            "tooltipText": null,
+            "parent": [
+                184,
+                185
+            ],
+            "children": [
+                186
+            ],
+            "config": null
+        },
+        {
+            "id": 184,
+            "label": "Control 184",
+            "description": "amet dictum",
+            "type": "control",
+            "attributes": null,
+            "tooltipText": null,
+            "parent": null,
+            "children": [
+                183
+            ],
+            "config": null
+        },
+        {
+            "id": 185,
+            "label": "Control 185",
+            "description": "amet dictum",
+            "type": "control",
+            "attributes": null,
+            "tooltipText": null,
+            "parent": null,
+            "children": [
+                183
+            ],
+            "config": null
+        },
+        {
+            "id": 186,
+            "label": "Control 186",
+            "description": "amet dictum",
+            "type": "control",
+            "attributes": null,
+            "tooltipText": null,
+            "parent": 183,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 187,
+            "label": "Requirement 187",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltipText": null,
+            "parent": 176,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 188,
+            "label": "Requirement 188",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltipText": null,
+            "parent": 176,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 189,
+            "label": "Requirement 189",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltipText": null,
+            "parent": 176,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 191,
+            "label": "Requirement 191",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltipText": null,
+            "parent": 176,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 192,
+            "label": "Requirement 192",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltipText": null,
+            "parent": 176,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 193,
+            "label": "Requirement 193",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltipText": null,
+            "parent": 176,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 194,
+            "label": "Requirement 194",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltipText": null,
+            "parent": 176,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 195,
+            "label": "Requirement 195",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltipText": null,
+            "parent": 176,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 196,
+            "label": "Requirement 196",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltipText": null,
+            "parent": 176,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 197,
+            "label": "Requirement 197",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltipText": null,
+            "parent": 176,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 198,
+            "label": "Requirement 198",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltipText": null,
+            "parent": 176,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 199,
+            "label": "Requirement 199",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltipText": null,
+            "parent": 176,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 200,
+            "label": "Requirement 200",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltipText": null,
+            "parent": 175,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 201,
+            "label": "Requirement 201",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltipText": null,
+            "parent": 175,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 202,
+            "label": "Requirement 202",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltipText": null,
+            "parent": 175,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 203,
+            "label": "Requirement 203",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltipText": null,
+            "parent": 175,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 204,
+            "label": "Requirement 204",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltipText": null,
+            "parent": 175,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 205,
+            "label": "Requirement 205",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltipText": null,
+            "parent": 175,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 206,
+            "label": "Requirement 206",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltipText": null,
+            "parent": 175,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 207,
+            "label": "Requirement 207",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltipText": null,
+            "parent": 175,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 208,
+            "label": "Requirement 208",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltipText": null,
+            "parent": 175,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 209,
+            "label": "Requirement 209",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltipText": null,
+            "parent": 175,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 210,
+            "label": "Requirement 210",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltipText": null,
+            "parent": 174,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 211,
+            "label": "Requirement 211",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltipText": null,
+            "parent": 174,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 212,
+            "label": "Requirement 212",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltipText": null,
+            "parent": 174,
+            "children": [],
+            "config": null
+        },
+        {
+            "id": 213,
+            "label": "Requirement 213",
+            "description": "lorem ipsum",
+            "type": "requirement",
+            "state": "FULFILLED",
+            "attributes": null,
+            "tooltipText": null,
+            "parent": 174,
+            "children": [],
+            "config": null
         }
     ],
     "contextual-relationships": [
@@ -2100,6 +2653,13 @@
             "risks": [
                 66
             ]
+        },
+        {
+            "focus": 174,
+            "assigned": 183,
+            "risks": [
+                66
+            ]
         }
     ],
     "edge-data": [
@@ -2178,7 +2738,7 @@
         },
         {
             "id": 12,
-            "type": "bold",
+            "type": "solid",
             "fromNode": 113,
             "toNode": 110
         },
@@ -2218,12 +2778,12 @@
         {
             "id": 21,
             "type": "solid",
-            "label": "geht??",
             "fromNode": 123,
             "toNode": 113
         },
         {
             "id": 22,
+            "type": "solid",
             "fromNode": 113,
             "toNode": 110
         },

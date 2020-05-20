@@ -16242,7 +16242,8 @@ var BaseNode = /*#__PURE__*/function () {
     this.description = data.description || null;
     this.keyValuePairs = data.keyValuePairs || [];
     this.state = data.state || null;
-    this.attributes = new Map(); // layout data
+    this.attributes = new Map();
+    this.shape = "rect"; // layout data
 
     this.depth = 0;
     this.parent = null;
@@ -16261,7 +16262,9 @@ var BaseNode = /*#__PURE__*/function () {
     this.currentX = 0;
     this.currentY = 0;
     this.x = 0;
-    this.y = 0; // node info
+    this.y = 0;
+    this.nextX = 0;
+    this.nextY = 0; // node info
 
     this.nodeSize = "min";
     this.opacity = 1;
@@ -16809,6 +16812,32 @@ var BaseNode = /*#__PURE__*/function () {
       this.initialY = initialY;
     }
   }, {
+    key: "setNextXY",
+    value: function setNextXY(nextX, nextY) {
+      this.nextX = nextX;
+      this.nextY = nextY;
+    }
+  }, {
+    key: "setNextX",
+    value: function setNextX(nextX) {
+      this.nextX = nextX;
+    }
+  }, {
+    key: "setNextY",
+    value: function setNextY(nextY) {
+      this.nextY = nextY;
+    }
+  }, {
+    key: "getNextX",
+    value: function getNextX() {
+      return this.nextX;
+    }
+  }, {
+    key: "getNextY",
+    value: function getNextY() {
+      return this.nextY;
+    }
+  }, {
     key: "setInitialXY",
     value: function setInitialXY(initialX, initialY) {
       this.initialX = initialX;
@@ -16923,6 +16952,11 @@ var BaseNode = /*#__PURE__*/function () {
     key: "getId",
     value: function getId() {
       return this.id;
+    }
+  }, {
+    key: "getShape",
+    value: function getShape() {
+      return this.shape;
     }
   }]);
 
@@ -17617,7 +17651,8 @@ var AssetNodeConfiguration = {
  * @subcategory Nodes
  * @property {Data} data The loaded data element from a database.
  * @property {Canvas} canvas The nested canvas to render the node on.
- * @property {Object} customRepresentation An optional object that contains information to override default representations.
+ * @property {Object} customRepresentation An optional object that contains information to override default
+ *                                        representations.
  *
  * @see AssetNodeConfiguration
  * @see https://svgjs.com/docs/3.0/container-elements/#svg-svg
@@ -18629,7 +18664,7 @@ var RequirementNode = /*#__PURE__*/function (_BaseNode) {
  * @property {Number} minIconTranslateX=0           - Determines the horizontal adjustment for the icon in minimal representation.
  * @property {Number} minIconTranslateY=0           - Determines the vertical adjustment for the icon in minimal representation.
  * @property {Number} maxIconOpacity=0.4            - Determines the basic visibility of the icon in detailed representation.
- * @property {Number} maxIconSize=200               - Determines the width and height for the image icon in detailed representation.
+ * @property {Number} maxIconSize=160               - Determines the width and height for the image icon in detailed representation.
  * @property {Number} maxIconTranslateX=0           - Determines the horizontal adjustment for the icon in detailed representation.
  * @property {Number} maxIconTranslateY=0           - Determines the vertical adjustment for the icon in detailed representation.
  *
@@ -18641,7 +18676,6 @@ var RequirementNode = /*#__PURE__*/function (_BaseNode) {
  * @property {String} borderStrokeDasharray="0"     - Determines the nodes gaps used inside the border.
  * @property {String} backgroundColor=#ffffff       - Determines the nodes background color.
  *
- * @property {Number} minTextWidth=145              - Determines the text width for the label in minimal representation.
  * @property {Number} minLabelLineClamp=2           - Determines how many lines are visible for the label in minimal representation.
  * @property {Number} minTextTranslateX=0           - Determines the horizontal adjustment for the label in minimal representation.
  * @property {Number} minTextTranslateY=0           - Determines the vertical adjustment for the label in minimal representation.
@@ -18664,50 +18698,51 @@ var RequirementNode = /*#__PURE__*/function (_BaseNode) {
  * @property {String} detailsBackground=#ffffffcc   - Determines the background color for the details description.
  */
 var CustomNodeConfiguration = {
-  nodeType: "rect",
-  // rect, ellipse or path
-  svgPathElement: null,
-  // large node
-  maxWidth: 275,
-  maxHeight: 175,
-  // small node
-  minWidth: 200,
-  minHeight: 100,
-  // icon
-  iconUrl: null,
-  minIconOpacity: 0.3,
-  minIconSize: 70,
-  minIconTranslateX: 0,
-  minIconTranslateY: 0,
-  maxIconOpacity: 0.4,
-  maxIconSize: 200,
-  maxIconTranslateX: 0,
-  maxIconTranslateY: 0,
   // node
-  offset: 8,
-  animationSpeed: 300,
+  shape: "rect",
+  // rect (default), circle, ellipse, polyline or path
+  polyline: null,
+  // only needed if shape is set to polyline
+  path: null,
+  // only needed if shape is set to path
+  animationSpeed: 1300,
   borderRadius: 5,
   borderStrokeWidth: 1,
   borderStrokeColor: "#222222",
   borderStrokeDasharray: "0",
   backgroundColor: "#ffffff",
-  // text
-  minTextWidth: 145,
-  // recommended: min node width - some padding
+  iconUrl: null,
+  // minimal (small) node
+  minWidth: 200,
+  minHeight: 100,
+  minIconOpacity: 0.3,
+  minIconSize: 70,
+  minIconTranslateX: 0,
+  minIconTranslateY: 0,
   minLabelLineClamp: 2,
-  minTextTranslateX: 0,
-  minTextTranslateY: 0,
-  maxTextWidth: 260,
-  maxTextHeight: 220,
-  maxLabelLineClamp: 4,
-  maxTextTranslateX: 0,
-  maxTextTranslateY: 0,
-  labelColor: "#444444",
+  minLabelTranslateX: 0,
+  minLabelTranslateY: 0,
+  minLabelPadding: 6,
+  labelColor: "#222222",
   labelFontFamily: "Montserrat",
   labelFontSize: 16,
   labelFontWeight: 600,
   labelFontStyle: "normal",
-  labelBackground: "#ffffffcc",
+  labelBackground: "#ffffff33",
+  // detailed (large) node
+  maxWidth: 275,
+  maxHeight: 175,
+  maxIconOpacity: 0.4,
+  maxIconSize: 160,
+  maxIconTranslateX: 0,
+  maxIconTranslateY: 0,
+  maxLabelLineClamp: 4,
+  maxTextTranslateX: 0,
+  maxTextTranslateY: 0,
+  maxLabelPadding: 6,
+  maxLabelAlignment: "left",
+  detailsAlignment: "left",
+  detailsPadding: 6,
   detailsColor: "#444444",
   detailsFontFamily: "Montserrat",
   detailsFontSize: 12,
@@ -27224,7 +27259,8 @@ var BaseLayout = /*#__PURE__*/function () {
      * @async
      * @param {Object} [opts={ }] An object containing additional information.
      * @param {Boolean} [opts.removeOldData=true] Determines if the intial graph data should also be removed.
-     * @param {Boolean} [opts.delayTime=this.config.animationSpeed + 25] Determines the amount of how long the wait until all removal animations are completed.
+     * @param {Boolean} [opts.delayTime=this.config.animationSpeed + 25] Determines the amount of how long the wait
+     *                                                                   until all removal animations are completed.
      */
 
   }, {
@@ -27262,6 +27298,34 @@ var BaseLayout = /*#__PURE__*/function () {
                   this.gridExpander = null;
                 }
 
+                if (this.focusId !== undefined) {
+                  if (this.containers.length) {
+                    this.containers.forEach(function (container) {
+                      container.removeSVG({});
+                    });
+                  }
+
+                  if (this.containerConnections.length) {
+                    this.containerConnections.forEach(function (connection) {
+                      connection.removeSVG({});
+                    });
+                  }
+
+                  if (this.expanders.length) {
+                    this.expanders.forEach(function (expander) {
+                      expander.removeSVG({});
+                    });
+                  }
+
+                  if (this.assignedConnection) {
+                    this.assignedConnection.removeSVG({});
+                  }
+
+                  if (this.riskConnection) {
+                    this.riskConnection.removeSVG({});
+                  }
+                }
+
                 delay = function delay(time) {
                   return new Promise(function (resolve) {
                     return setTimeout(resolve, time);
@@ -27269,13 +27333,13 @@ var BaseLayout = /*#__PURE__*/function () {
                 }; // wait some time to see the SVG objects disappear
 
 
-                _context13.next = 12;
-                return delay(delayTime);
-
-              case 12:
-                this.canvas.clear();
+                _context13.next = 13;
+                return delay(delayTime / 2);
 
               case 13:
+                this.canvas.clear();
+
+              case 14:
               case "end":
                 return _context13.stop();
             }
@@ -27294,7 +27358,8 @@ var BaseLayout = /*#__PURE__*/function () {
      * @param {Object} [opts={ }] An object containing additional information.
      * @param {Array.<BaseNode>} [opts.nodes=[]] Existing SVG representations for nodes.
      * @param {Array.<BaseEdge>} [opts.edges=[]] Existing SVG representations for edges.
-     * @param {String} [opts.renderingSize=this.config.renderingSize] Determines the node render representation defined on layout level.
+     * @param {String} [opts.renderingSize=this.config.renderingSize] Determines the node render representation
+     *                                                                defined on layout level.
      */
 
   }, {
@@ -28652,7 +28717,7 @@ var RadialLayoutConfiguration = {
   translateX: 0,
   translateY: 0,
   animationSpeed: 300,
-  hAspect: 4 / 3,
+  hAspect: 4 / 2.5,
   wAspect: 4 / 4,
   rootId: null,
   renderDepth: 0,
@@ -31061,7 +31126,7 @@ var ContextualContainerConnection = /*#__PURE__*/function () {
  * @property {Number} translateY=0                                - Adds additional Y translation for all SVG elements before rendering.
  * @property {Number} animationSpeed=300                          - Determines how fast SVG elements animates inside the current layout.
  * @property {Number} contextualNodeSpacing=16                    - Determines the minimal spacing between nodes.
- * 
+ *
  * @property {Boolean} showAssignedConnection=true                - Determines if the assigned connection information is visible.
  */
 var ContextualLayoutConfiguration = {
@@ -31105,7 +31170,7 @@ var ContextualLayoutConfiguration = {
   assignedParentContainerColumns: 3,
   assignedParentContainerBorderRadius: 5,
   assignedParentContainerBorderStrokeColor: "#7daed6",
-  assignedParentContainerBorderStrokeWidth: 3,
+  assignedParentContainerBorderStrokeWidth: 2,
   assignedParentContainerBackgroundColor: "#ffffff",
   showAssignedParentNodes: true,
   showAssignedParentExpander: true,
@@ -31113,9 +31178,9 @@ var ContextualLayoutConfiguration = {
   // assigned child container
   assignedChildContainerNodeLimit: 6,
   assignedChildContainerColumns: 3,
-  assignedChildContainerBorderRadius: 15,
+  assignedChildContainerBorderRadius: 5,
   assignedChildContainerBorderStrokeColor: "#7daed6",
-  assignedChildContainerBorderStrokeWidth: 3,
+  assignedChildContainerBorderStrokeWidth: 2,
   assignedChildContainerBackgroundColor: "#ffffff",
   showassignedChildNodes: true,
   showassignedChildExpander: true,
@@ -31142,11 +31207,11 @@ var ContextualLayoutConfiguration = {
   // #cccccc
   // distances between nodes
   focusXShift: 300,
-  riskFocusDistance: 506,
+  riskFocusDistance: 353,
   riskConnectionDistance: 75,
   childrenFocusDistance: 80,
   parentFocusDistance: 80,
-  focusAssignedDistance: 900,
+  focusAssignedDistance: 600,
   // expander
   expanderTextColor: "#222",
   expanderFontFamily: "Montserrat",
@@ -32682,6 +32747,131 @@ var createTooltip = function createTooltip(element) {
   element.appendChild(tooltip);
 };
 
+const getCoordsFromEvent = (ev) => {
+  if (ev.changedTouches) {
+    ev = ev.changedTouches[0];
+  }
+  return { x: ev.clientX, y: ev.clientY }
+};
+
+// Creates handler, saves it
+class DragHandler {
+  constructor (el) {
+    el.remember('_draggable', this);
+    this.el = el;
+
+    this.drag = this.drag.bind(this);
+    this.startDrag = this.startDrag.bind(this);
+    this.endDrag = this.endDrag.bind(this);
+  }
+
+  // Enables or disabled drag based on input
+  init (enabled) {
+    if (enabled) {
+      this.el.on('mousedown.drag', this.startDrag);
+      this.el.on('touchstart.drag', this.startDrag);
+    } else {
+      this.el.off('mousedown.drag');
+      this.el.off('touchstart.drag');
+    }
+  }
+
+  // Start dragging
+  startDrag (ev) {
+    const isMouse = !ev.type.indexOf('mouse');
+
+    // Check for left button
+    if (isMouse && (ev.which || ev.buttons) !== 1) {
+      return
+    }
+
+    // Fire beforedrag event
+    if (this.el.dispatch('beforedrag', { event: ev, handler: this }).defaultPrevented) {
+      return
+    }
+
+    // Prevent browser drag behavior as soon as possible
+    ev.preventDefault();
+
+    // Prevent propagation to a parent that might also have dragging enabled
+    ev.stopPropagation();
+
+    // Make sure that start events are unbound so that one element
+    // is only dragged by one input only
+    this.init(false);
+
+    this.box = this.el.bbox();
+    this.lastClick = this.el.point(getCoordsFromEvent(ev));
+
+    // We consider the drag done, when a touch is canceled, too
+    const eventMove = (isMouse ? 'mousemove' : 'touchmove') + '.drag';
+    const eventEnd = (isMouse ? 'mouseup' : 'touchcancel.drag touchend') + '.drag';
+
+    // Bind drag and end events to window
+    on(window, eventMove, this.drag);
+    on(window, eventEnd, this.endDrag);
+
+    // Fire dragstart event
+    this.el.fire('dragstart', { event: ev, handler: this, box: this.box });
+  }
+
+  // While dragging
+  drag (ev) {
+
+    const { box, lastClick } = this;
+
+    const currentClick = this.el.point(getCoordsFromEvent(ev));
+    const x = box.x + (currentClick.x - lastClick.x);
+    const y = box.y + (currentClick.y - lastClick.y);
+    const newBox = new Box(x, y, box.w, box.h);
+
+    if (this.el.dispatch('dragmove', {
+      event: ev,
+      handler: this,
+      box: newBox
+    }).defaultPrevented) return
+
+    this.move(x, y);
+    return newBox
+  }
+
+  move (x, y) {
+    // Svg elements bbox depends on their content even though they have
+    // x, y, width and height - strange!
+    // Thats why we handle them the same as groups
+    if (this.el.type === 'svg') {
+      G.prototype.move.call(this.el, x, y);
+    } else {
+      this.el.move(x, y);
+    }
+  }
+
+  endDrag (ev) {
+    // final drag
+    const box = this.drag(ev);
+
+    // fire dragend event
+    this.el.fire('dragend', { event: ev, handler: this, box });
+
+    // unbind events
+    off(window, 'mousemove.drag');
+    off(window, 'touchmove.drag');
+    off(window, 'mouseup.drag');
+    off(window, 'touchend.drag');
+
+    // Rebind initial Events
+    this.init(true);
+  }
+}
+
+extend(Element, {
+  draggable (enable = true) {
+    const dragHandler = this.remember('_draggable') || new DragHandler(this);
+    dragHandler.init(enable);
+    return this
+  }
+});
+
 // a string of all valid unicode whitespaces
 // eslint-disable-next-line max-len
 var whitespaces$1 = '\u0009\u000A\u000B\u000C\u000D\u0020\u00A0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200A\u202F\u205F\u3000\u2028\u2029\uFEFF';
@@ -33993,5 +34183,618 @@ var Visualization = /*#__PURE__*/function () {
   return Visualization;
 }();
 
-export { AssetNode as Asset, BaseNode, BoldEdge, ContextualLayout, ControlNode as Control, CustomNode as Custom, CustomEdge, EdgeFactory, Graph, GridLayout, NodeFactory, RadialLayout, RequirementNode as Requirement, RiskNode as Risk, ThinEdge, TreeLayout, Visualization };
-//# sourceMappingURL=visualization.js.map
+var AssetNode$1 = /*#__PURE__*/function (_BaseNode) {
+  _inherits(AssetNode, _BaseNode);
+
+  var _super = _createSuper(AssetNode);
+
+  function AssetNode(data, canvas) {
+    var _this;
+
+    var customRepresentation = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+
+    _classCallCheck(this, AssetNode);
+
+    _this = _super.call(this, data, canvas);
+    _this.config = _objectSpread2(_objectSpread2(_objectSpread2({}, AssetNodeConfiguration), data.config), customRepresentation);
+    return _this;
+  }
+
+  _createClass(AssetNode, [{
+    key: "renderAsMin",
+    value: function renderAsMin() {
+      var initialX = this.initialX,
+          initialY = this.initialY,
+          finalX = this.finalX,
+          finalY = this.finalY;
+      console.log("renderAsMin");
+    }
+  }]);
+
+  return AssetNode;
+}(BaseNode);
+
+var createCustomNodeDetails = function createCustomNodeDetails(canvas, config, label, description) {
+  // create the foreign object which holds
+  var fobj = canvas.foreignObject(1, 1); // create the text background
+
+  var background = document.createElement("div");
+  background.style.padding = "".concat(config.maxLabelPadding, "px");
+  background.style.display = "flex";
+  background.style.flexDirection = "column";
+  background.style.justifyContent = "center";
+  background.style.alignItems = config.maxLabelAlignment;
+  background.style.width = "".concat(config.maxWidth - config.borderStrokeWidth / 2 - config.maxLabelPadding, "px");
+  background.style.height = "".concat(config.maxHeight - config.borderStrokeWidth / 2 - config.maxLabelPadding, "px"); // create the label background
+
+  var labelBackground = document.createElement("div");
+  labelBackground.style.background = config.labelBackground;
+  labelBackground.style.padding = "".concat(config.maxLabelPadding, "px");
+  labelBackground.style.textAlign = config.maxLabelAlignment;
+  labelBackground.style.width = "max-content";
+  labelBackground.setAttribute("id", "label"); // create the actual label text
+
+  var textLabel = document.createElement("div");
+  textLabel.innerText = label;
+  textLabel.style.color = config.labelColor;
+  textLabel.style.fontSize = "".concat(config.labelFontSize, "px");
+  textLabel.style.fontFamily = config.labelFontFamily;
+  textLabel.style.fontWeight = config.labelFontWeight;
+  textLabel.style.fontStyle = config.labelFontStyle; // adjust the the line size
+
+  clamp(textLabel, {
+    clamp: config.maxLabelLineClamp
+  }); // add the label to its background
+
+  labelBackground.appendChild(textLabel);
+  background.appendChild(labelBackground); // create the description background
+
+  var descriptionBackground = document.createElement("div");
+  descriptionBackground.style.background = config.detailsBackground;
+  descriptionBackground.style.padding = "".concat(config.detailsPadding, "px");
+  descriptionBackground.style.textAlign = config.detailsAlignment;
+  descriptionBackground.style.width = "".concat(config.maxWidth - config.borderStrokeWidth / 2 - config.maxLabelPadding, "px");
+  descriptionBackground.style.overflow = "hidden";
+  descriptionBackground.setAttribute("id", "label"); // create the description text
+
+  var descriptionText = document.createElement("div");
+  descriptionText.innerText = description;
+  descriptionText.style.color = config.detailsColor;
+  descriptionText.style.fontSize = "".concat(config.detailsFontSize, "px");
+  descriptionText.style.fontFamily = config.detailsFontFamily;
+  descriptionText.style.fontWeight = config.detailsFontWeight;
+  descriptionText.style.fontStyle = config.detailsFontStyle; // add the description to its background
+
+  descriptionBackground.appendChild(descriptionText);
+  background.appendChild(descriptionBackground); // add the HTML to the SVG
+
+  fobj.add(background); // adjust the the line size
+
+  clamp(descriptionText, {
+    clamp: "".concat(descriptionBackground.clientHeight - config.detailsPadding, "px")
+  }); // set the height
+
+  fobj.height(background.clientHeight);
+  fobj.width(background.clientWidth); // disable the user-select css property
+
+  fobj.css("user-select", "none");
+  return fobj;
+};
+
+var createMinHTMLLabel = function createMinHTMLLabel(canvas, config, label) {
+  // create the foreign object which holds the HTML
+  var fobj = canvas.foreignObject(1, 1); // simply return, if there is no label provided
+
+  if (label === "" || label === null) return fobj; // create the label background
+
+  var background = document.createElement("div");
+  background.style.background = config.labelBackground;
+  background.style.padding = "".concat(config.minLabelPadding, "px");
+  background.style.textAlign = "center";
+  background.style.width = "max-content";
+  background.setAttribute("id", "label"); // create the actual label text
+
+  var textLabel = document.createElement("div");
+  textLabel.innerText = label;
+  textLabel.style.color = config.labelColor;
+  textLabel.style.fontSize = "".concat(config.labelFontSize, "px");
+  textLabel.style.fontFamily = config.labelFontFamily;
+  textLabel.style.fontWeight = config.labelFontWeight;
+  textLabel.style.fontStyle = config.labelFontStyle; // adjust the the line size
+
+  clamp(textLabel, {
+    clamp: config.minLabelLineClamp
+  }); // add the label to the background element
+
+  background.appendChild(textLabel); // add the HTML to the SVG
+
+  fobj.add(background); // update the label so that it will fit inside the node
+
+  if (textLabel.clientWidth > config.minWidth) {
+    background.style.width = "".concat(config.minWidth - config.borderStrokeWidth / 2 - config.minLabelPadding, "px");
+  } // set the height
+
+
+  fobj.height(background.clientHeight);
+  fobj.width(background.clientWidth); // disable the user-select css property
+
+  fobj.css("user-select", "none");
+  return fobj;
+};
+
+var createSVGElement = function createSVGElement(canvas, config, id, nodeSize, tooltipText) {
+  // create the SVG object on the canvas.
+  var svg = canvas.group(); // attach some CSS and an ID
+
+  svg.css("cursor", "pointer");
+  svg.id("node#".concat(id));
+  svg.on("mouseover", function () {
+    svg.front();
+    var currentZoomLevel = canvas.parent().attr().zoomCurrent;
+    var currenZoomThreshold = canvas.parent().attr().zoomThreshold; // show tooltip only if text is set, the node is in minimal representation and the
+    // current zoom level is smaller then the threshold
+
+    if (tooltipText !== null && nodeSize === "min" && currentZoomLevel <= currenZoomThreshold) {
+      // add a show tooltip event
+      svg.on("mousemove", function (ev) {
+        var tooltip = document.getElementById("tooltip");
+        tooltip.innerHTML = tooltipText;
+        tooltip.style.display = "block";
+        tooltip.style.fontFamily = config.labelFontFamily;
+        tooltip.style.left = "".concat(ev.clientX - tooltip.clientWidth / 2, "px");
+        tooltip.style.top = "".concat(ev.clientY - tooltip.clientHeight - 15, "px");
+      });
+    } // remove border dasharray (this improves the visual appearance of a node has a dashed border)
+
+
+    var node = svg.get(0);
+    node.stroke({
+      width: config.borderStrokeWidth,
+      color: config.borderStrokeColor,
+      dasharray: 0
+    }); // find a color add a highlight based on that color
+
+    var toDark = config.borderStrokeColor.substr(1); // if (this.type === "requirement") {
+    //   toDark = this.config.backgroundColor.substr(1)
+    // }
+    // attach the drop shadow
+
+    node.filterWith(function (add) {
+      var blur = add.offset(0, 0).in(add.$source).gaussianBlur(3);
+      var color = add.composite(add.flood("#".concat(toDark)), blur, "in");
+      add.merge(color, add.$source);
+    });
+  }); // register an event that listens of the cursor leaves the nodes SVG object
+
+  svg.on("mouseout", function () {
+    // reset border stroke to its original value
+    var node = svg.get(0);
+    node.stroke({
+      width: config.borderStrokeWidth,
+      color: config.borderStrokeColor,
+      dasharray: config.borderStrokeDasharray
+    }); // remove the tooltip listener event
+
+    svg.off("mousemove", null); // remove the tooltip
+
+    var tooltip = document.getElementById("tooltip");
+    tooltip.style.display = "none"; // remove hover highlight
+
+    node.filterer().remove();
+  });
+  return svg;
+};
+
+var createSVGNode = function createSVGNode(canvas, config) {
+  var shape = config.shape,
+      polyline = config.polyline,
+      path = config.path,
+      backgroundColor = config.backgroundColor,
+      borderStrokeWidth = config.borderStrokeWidth,
+      borderStrokeColor = config.borderStrokeColor,
+      borderStrokeDasharray = config.borderStrokeDasharray,
+      borderRadius = config.borderRadius;
+  var node = null; // create the SVG shape
+
+  if (shape === "rect") {
+    node = canvas.rect(1, 1);
+  }
+
+  if (shape === "circle") {
+    node = canvas.circle(1);
+  }
+
+  if (shape === "ellipse") {
+    node = canvas.ellipse(1, 1);
+  }
+
+  if (shape === "polyline") {
+    node = canvas.polyline(polyline);
+  }
+
+  if (shape === "path") {
+    node = canvas.path(path);
+  } // the the background
+
+
+  node.fill(backgroundColor); // add some border stroke
+
+  node.stroke({
+    width: borderStrokeWidth,
+    color: borderStrokeColor,
+    dasharray: borderStrokeDasharray
+  }); // add a radius
+
+  if (shape !== "polyline" && shape !== "path") {
+    node.radius(borderRadius);
+  } // create a re-usable drop shadow
+
+
+  var defId = "defaultNodeBorderFilter";
+  var i = _toConsumableArray(canvas.defs().node.childNodes).findIndex(function (d) {
+    return d.id === defId;
+  }) || -1;
+
+  if (i === -1) {
+    var filter = new Filter();
+    filter.id(defId);
+    var blur = filter.offset(0, 0).in(filter.$source).gaussianBlur(2);
+    var color = filter.composite(filter.flood("#fff"), blur, "in");
+    filter.merge(color, filter.$source);
+  }
+
+  return node;
+};
+
+var createSVGIcon = function createSVGIcon(canvas, config, type) {
+  var icon = null; // use a default icon
+
+  if (config.iconUrl === null) {
+    if (type === "control") {
+      icon = canvas.image(FallbackControlIcon);
+    }
+
+    if (type === "risk") {
+      icon = canvas.image(FallbackRiskIcon);
+    }
+
+    if (type === "asset") {
+      icon = canvas.image(FallbackAssetIcon);
+    }
+
+    if (type === "custom") {
+      icon = canvas.image(FallbackCustomIcon);
+    }
+  } else {
+    // or a provided one
+    icon = canvas.image(config.iconUrl);
+  } // set the starting size (Note: 0 is not accepted by the library)
+
+
+  icon.size(1, 1);
+  return icon;
+};
+
+var CustomNode$1 = /*#__PURE__*/function (_BaseNode) {
+  _inherits(CustomNode, _BaseNode);
+
+  var _super = _createSuper(CustomNode);
+
+  function CustomNode(data, canvas) {
+    var _this;
+
+    var customRepresentation = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+
+    _classCallCheck(this, CustomNode);
+
+    _this = _super.call(this, data, canvas);
+    _this.config = _objectSpread2(_objectSpread2(_objectSpread2({}, CustomNodeConfiguration), data.config), customRepresentation);
+    return _this;
+  }
+
+  _createClass(CustomNode, [{
+    key: "transformToPosition",
+    value: function transformToPosition() {
+      var nextX = this.nextX,
+          nextY = this.nextY;
+      var animationSpeed = this.config.animationSpeed; // update local references
+
+      this.currentX = nextX;
+      this.currentY = nextY;
+      this.coords.push([nextX, nextY]); // transform into the next position
+
+      this.svg.animate({
+        duration: animationSpeed
+      }).transform({
+        position: [nextX, nextY]
+      });
+    }
+  }, {
+    key: "renderAsMax",
+    value: function renderAsMax() {
+      var initialX = this.initialX,
+          initialY = this.initialY,
+          nextX = this.nextX,
+          nextY = this.nextY;
+      var _this$config = this.config,
+          shape = _this$config.shape,
+          maxWidth = _this$config.maxWidth,
+          maxHeight = _this$config.maxHeight,
+          animationSpeed = _this$config.animationSpeed,
+          maxIconSize = _this$config.maxIconSize,
+          maxIconOpacity = _this$config.maxIconOpacity,
+          maxIconTranslateX = _this$config.maxIconTranslateX,
+          maxIconTranslateY = _this$config.maxIconTranslateY,
+          maxTextTranslateX = _this$config.maxTextTranslateX,
+          maxTextTranslateY = _this$config.maxTextTranslateY; // create svg elements
+
+      var svg = createSVGElement(this.canvas, this.config, this.id, this.nodeSize, this.tooltipText);
+      var node = createSVGNode(this.canvas, this.config);
+      var icon = createSVGIcon(this.canvas, this.config, this.type);
+      var text = createCustomNodeDetails(this.canvas, this.config, this.label, this.description);
+      svg.add(node);
+      svg.add(icon);
+      svg.add(text); // transform into position
+
+      node.size(maxWidth, maxHeight);
+      icon.size(maxIconSize, maxIconSize).attr({
+        opacity: maxIconOpacity
+      }).center(node.bbox().cx, node.bbox().cy).dmove(maxIconTranslateX, maxIconTranslateY);
+      text.center(node.bbox().cx, node.bbox().cy).dmove(maxTextTranslateX, maxTextTranslateY);
+      svg.center(initialX, initialY).scale(0.001).animate({
+        duration: animationSpeed
+      }).transform({
+        position: [nextX, nextY],
+        scale: 1
+      }); // update local references
+
+      this.shape = shape;
+      this.currentWidth = maxWidth;
+      this.currentHeight = maxHeight;
+      this.nodeSize = "max";
+      this.currentX = nextX;
+      this.currentY = nextY;
+      this.coords.push([nextX, nextY]);
+      this.svg = svg;
+    }
+  }, {
+    key: "renderAsMin",
+    value: function renderAsMin() {
+      var initialX = this.initialX,
+          initialY = this.initialY,
+          nextX = this.nextX,
+          nextY = this.nextY;
+      var _this$config2 = this.config,
+          shape = _this$config2.shape,
+          minWidth = _this$config2.minWidth,
+          minHeight = _this$config2.minHeight,
+          animationSpeed = _this$config2.animationSpeed,
+          minIconSize = _this$config2.minIconSize,
+          minIconOpacity = _this$config2.minIconOpacity,
+          minIconTranslateX = _this$config2.minIconTranslateX,
+          minIconTranslateY = _this$config2.minIconTranslateY,
+          minLabelTranslateX = _this$config2.minLabelTranslateX,
+          minLabelTranslateY = _this$config2.minLabelTranslateY; // create svg elements
+
+      var svg = createSVGElement(this.canvas, this.config, this.id, this.nodeSize, this.tooltipText);
+      var node = createSVGNode(this.canvas, this.config);
+      var icon = createSVGIcon(this.canvas, this.config, this.type);
+      var text = createMinHTMLLabel(this.canvas, this.config, this.label);
+      svg.add(node);
+      svg.add(icon);
+      svg.add(text); // transform into position
+
+      node.size(minWidth, minHeight);
+      icon.size(minIconSize, minIconSize).attr({
+        opacity: minIconOpacity
+      }).center(node.bbox().cx, node.bbox().cy).dmove(minIconTranslateX, minIconTranslateY);
+      text.center(node.bbox().cx, node.bbox().cy).dmove(minLabelTranslateX, minLabelTranslateY);
+      svg.center(initialX, initialY).scale(0.001).animate({
+        duration: animationSpeed
+      }).transform({
+        position: [nextX, nextY],
+        scale: 1
+      }); // update local references
+
+      this.shape = shape;
+      this.currentWidth = minWidth;
+      this.currentHeight = minHeight;
+      this.nodeSize = "min";
+      this.currentX = nextX;
+      this.currentY = nextY;
+      this.coords.push([nextX, nextY]);
+      this.svg = svg;
+    }
+  }, {
+    key: "transformToMax",
+    value: function transformToMax() {
+      var _this2 = this;
+
+      var currentX = this.currentX,
+          currentY = this.currentY,
+          nextX = this.nextX,
+          nextY = this.nextY;
+      var _this$config3 = this.config,
+          maxWidth = _this$config3.maxWidth,
+          maxHeight = _this$config3.maxHeight,
+          animationSpeed = _this$config3.animationSpeed,
+          maxIconSize = _this$config3.maxIconSize,
+          maxIconOpacity = _this$config3.maxIconOpacity,
+          maxIconTranslateX = _this$config3.maxIconTranslateX,
+          maxIconTranslateY = _this$config3.maxIconTranslateY,
+          maxTextTranslateX = _this$config3.maxTextTranslateX,
+          maxTextTranslateY = _this$config3.maxTextTranslateY; // transform the current node into a detailed version
+
+      this.svg.get(0).animate({
+        duration: animationSpeed
+      }).width(maxWidth).height(maxHeight).center(currentX, currentY); // remove old svg elements
+
+      this.svg.get(2).remove();
+      this.svg.get(1).remove(); // create the new svg elements
+
+      var icon = createSVGIcon(this.canvas, this.config, this.type);
+      var text = createCustomNodeDetails(this.canvas, this.config, this.label, this.description);
+      this.svg.add(icon);
+      this.svg.add(text); // move new svg elements into position
+
+      icon.attr({
+        opacity: 0
+      }).size(maxIconSize, maxIconSize).filterWith(function (add) {
+        add.gaussianBlur(25, 25);
+        add.id("transformBlurIcon".concat(_this2.id));
+      }).center(this.svg.get(0).bbox().cx, this.svg.get(0).bbox().cy).dmove(maxIconTranslateX, maxIconTranslateY).animate({
+        duration: animationSpeed
+      }).attr({
+        opacity: maxIconOpacity
+      }).during(function () {
+        var time = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this2;
+
+        if (time > 0.85 && icon.filterer() !== null) {
+          icon.unfilter();
+
+          var filters = _toConsumableArray(_this2.canvas.defs().node.childNodes).find(function (d) {
+            return d.id === "transformBlurIcon".concat(_this2.id);
+          });
+
+          filters.remove();
+        }
+      });
+      text.attr({
+        opacity: 0
+      }).center(this.svg.get(0).bbox().cx, this.svg.get(0).bbox().cy).dmove(maxTextTranslateX, maxTextTranslateY).filterWith(function (add) {
+        add.gaussianBlur(11, 11);
+        add.id("transformBlurText".concat(_this2.id));
+      }).animate({
+        duration: animationSpeed
+      }).attr({
+        opacity: 1
+      }).during(function () {
+        var time = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this2;
+
+        if (time > 0.85 && text.filterer() !== null) {
+          text.unfilter();
+
+          var filters = _toConsumableArray(_this2.canvas.defs().node.childNodes).find(function (d) {
+            return d.id === "transformBlurText".concat(_this2.id);
+          });
+
+          filters.remove();
+        }
+      }); // move the node into the next position
+
+      this.svg.animate({
+        duration: animationSpeed
+      }).transform({
+        position: [nextX, nextY]
+      }); // update local references
+
+      this.currentWidth = maxWidth;
+      this.currentHeight = maxHeight;
+      this.nodeSize = "max";
+
+      if (this.currentX !== nextX && this.currentY !== nextY) {
+        this.currentX = nextX;
+        this.currentY = nextY;
+        this.coords.push([nextX, nextY]);
+      }
+    }
+  }, {
+    key: "transformToMin",
+    value: function transformToMin() {
+      var _this3 = this;
+
+      var currentX = this.currentX,
+          currentY = this.currentY,
+          nextX = this.nextX,
+          nextY = this.nextY;
+      var _this$config4 = this.config,
+          animationSpeed = _this$config4.animationSpeed,
+          minWidth = _this$config4.minWidth,
+          minHeight = _this$config4.minHeight,
+          minIconSize = _this$config4.minIconSize,
+          minIconOpacity = _this$config4.minIconOpacity,
+          minIconTranslateX = _this$config4.minIconTranslateX,
+          minIconTranslateY = _this$config4.minIconTranslateY,
+          minLabelTranslateX = _this$config4.minLabelTranslateX,
+          minLabelTranslateY = _this$config4.minLabelTranslateY; // transform the current node into a minimal version
+
+      this.svg.get(0).animate({
+        duration: animationSpeed
+      }).width(minWidth).height(minHeight).center(currentX, currentY); // remove old svg elements
+
+      this.svg.get(2).remove();
+      this.svg.get(1).remove(); // create the new svg elements
+
+      var icon = createSVGIcon(this.canvas, this.config, this.type);
+      var text = createMinHTMLLabel(this.canvas, this.config, this.label);
+      this.svg.add(icon);
+      this.svg.add(text); // move new svg elements into position
+
+      icon.attr({
+        opacity: 0
+      }).size(minIconSize, minIconSize).filterWith(function (add) {
+        add.gaussianBlur(25, 25);
+        add.id("transformBlurIcon".concat(_this3.id));
+      }).center(this.svg.get(0).bbox().cx, this.svg.get(0).bbox().cy).dmove(minIconTranslateX, minIconTranslateY).animate({
+        duration: animationSpeed
+      }).attr({
+        opacity: minIconOpacity
+      }).during(function () {
+        var time = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this3;
+
+        if (time > 0.85 && icon.filterer() !== null) {
+          icon.unfilter();
+
+          var filters = _toConsumableArray(_this3.canvas.defs().node.childNodes).find(function (d) {
+            return d.id === "transformBlurIcon".concat(_this3.id);
+          });
+
+          filters.remove();
+        }
+      });
+      text.attr({
+        opacity: 0
+      }).center(this.svg.get(0).bbox().cx, this.svg.get(0).bbox().cy).dmove(minLabelTranslateX, minLabelTranslateY).filterWith(function (add) {
+        add.gaussianBlur(11, 11);
+        add.id("transformBlurText".concat(_this3.id));
+      }).animate({
+        duration: animationSpeed
+      }).attr({
+        opacity: 1
+      }).during(function () {
+        var time = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this3;
+
+        if (time > 0.85 && text.filterer() !== null) {
+          text.unfilter();
+
+          var filters = _toConsumableArray(_this3.canvas.defs().node.childNodes).find(function (d) {
+            return d.id === "transformBlurText".concat(_this3.id);
+          });
+
+          filters.remove();
+        }
+      }); // move the node into the next position
+
+      this.svg.animate({
+        duration: animationSpeed
+      }).transform({
+        position: [nextX, nextY]
+      }); // update local references
+
+      this.currentWidth = minWidth;
+      this.currentHeight = minHeight;
+      this.nodeSize = "min";
+
+      if (this.currentX !== nextX && this.currentY !== nextY) {
+        this.currentX = nextX;
+        this.currentY = nextY;
+        this.coords.push([nextX, nextY]);
+      }
+    }
+  }]);
+
+  return CustomNode;
+}(BaseNode);
+
+export { AssetNode as Asset, AssetNode$1 as Asset1, BaseNode, BoldEdge, ContextualLayout, ControlNode as Control, CustomNode as Custom, CustomNode$1 as Custom1, CustomEdge, EdgeFactory, Graph, GridLayout, NodeFactory, RadialLayout, RequirementNode as Requirement, RiskNode as Risk, ThinEdge, TreeLayout, Visualization };
+//# sourceMappingURL=visualization.dev.js.map

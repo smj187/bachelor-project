@@ -126,9 +126,6 @@ class ContextualLayout extends BaseLayout {
       const currentLimit = parentNodes.filter((n) => n.isRendered() === true).length
       addOrRemoveNodes(upperLimit, currentLimit, offset, parentNodes)
       updateContainer("parent", { areParentsExpanded: this.areParentsExpanded })
-
-
-
     }
 
     if (type === "child") {

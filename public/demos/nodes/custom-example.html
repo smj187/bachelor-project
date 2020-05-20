@@ -21,7 +21,7 @@
 
 <body>
     <script type="module">
-        import { Visualization, Custom } from "../../dist/visualization.esm.min.js"
+        import { Visualization, Custom1 } from "../../dist/visualization.dev.js"
 
 
         const { canvas } = new Visualization({
@@ -29,21 +29,186 @@
             nodeEndpoint: "node-data",
             edgeEndpoint: "edge-data",
             contextualRelationshipEndpoint: "contextual-relationships",
-            zoomLevel: 0.85
         })
 
-        const nodeData1 = { id: 101, label: "Custom 101", description: "lorem ipsum", type: "custom", state: "unknown", attributes: null, tooltipText: null, parent: 36, children: [], config: null }
-        const nodeData2 = { id: 102, label: "Custom 102", description: "lorem ipsum", type: "custom", state: "some other state", attributes: null, tooltipText: null, parent: 37, children: [], config: null }
+        const minimalData = {
+            id: 101,
+            label: "Custom 101",
+            description: "lorem ipsum",
+            type: "custom",
+            state: "unknown",
+            attributes: null,
+            tooltipText: null,
+            parent: 36,
+            children: [],
+            config: {
+                minIconTranslateY: 0,
+                minTextTranslateY: 0
+            }
+        }
 
-        const min = new Custom(nodeData1, canvas)
-        const max = new Custom(nodeData2, canvas)
-        max.renderAsMax({ IX: 300, IY: 100, FX: 500, FY: 200 })
-        min.renderAsMin({ IX: 100, IY: 100, FX: 200, FY: 200 })
+        const detailedData = {
+            id: 102,
+            label: "Custom 102",
+            description: "lorem ipsum asklfj lk akljfkal jk akl fafa q ü<ölö< <ölkj d<kls <l <sjlk< jölsmgwpojglknm< < goj0it209jsd lg <kls<gjo< 9woejg g o jkalfj kla iaj foaif joiaf ja faoif aoiwfj ioaf jaf jaofj oafj oija  afj akljf klafj klasj 120948104  lkasjflk aj 09128509 90ß8503  alskfj a kjakfjaoiafjaoifjoia joia  09809809890 30953058 2095 f90a 9 555 666",
+            type: "custom",
+            state: "some other state",
+            attributes: null,
+            tooltipText: null,
+            parent: 37,
+            children: [],
+            config: null
+        }
+
+        const circleData = {
+            id: 103,
+            label: "Custom Circle Node",
+            description: "lorem ipsum asklfj lk akljfkal jk akl jkalfj kla iaj foaif joiaf ja faoif aoiwfj ioaf jaf jaofj oafj oija  afj akljf klafj klasj ",
+            type: "custom",
+            attributes: null,
+            tooltipText: "custom circle tooltip",
+            parent: null,
+            children: [],
+            config: {
+                shape: "circle",
+                minWidth: 150,
+                minHeight: 150,
+                maxWidth: 300,
+                maxHeight: 300,
+                minLabelPadding: 8,
+                minIconOpacity: 0,
+                borderStrokeColor: "#75f",
+                labelColor: "#75f",
+                labelFontSize: 20,
+                labelBackground: "transparent",
+                detailsColor: "#75f",
+                maxIconOpacity: 0,
+                detailsBackground: "transparent",
+            }
+        }
+
+        const ellipseData = {
+            id: 104,
+            label: "Custom Ellipse Node",
+            description: "lorem ipsum asklfj lk akljfkal jk akl jkalfj kla iaj foaif joiaf ja faoif aoiwfj ioaf jaf jaofj oafj oija  afj akljf klafj klasj ",
+            type: "custom",
+            attributes: null,
+            tooltipText: "custom ellipse tooltip",
+            parent: null,
+            children: [],
+            config: {
+                shape: "ellipse",
+                minWidth: 150,
+                minHeight: 100,
+                maxWidth: 300,
+                maxHeight: 200,
+                minLabelPadding: 8,
+                minIconOpacity: 0,
+                borderStrokeColor: "#75f",
+                labelColor: "#75f",
+                labelFontSize: 20,
+                labelBackground: "transparent",
+                detailsColor: "#75f",
+                maxIconOpacity: 0,
+                detailsBackground: "transparent",
+            }
+        }
+
+        const polylineData = {
+            id: 105,
+            label: "Custom Polyline Node",
+            description: "lorem ipsum asklfj lk akljfkal jk akl jkalfj kla iaj foaif joiaf ja faoif aoiwfj ioaf jaf jaofj oafj oija  afj akljf klafj klasj ",
+            type: "custom",
+            attributes: null,
+            tooltipText: "custom polyline tooltip",
+            parent: null,
+            children: [],
+            config: {
+                shape: "polyline",
+                polyline: "50,0 60,40 100,50 60,60 50,100 40,60 0,50 40,40 50,0",
+                minWidth: 250,
+                minHeight: 150,
+                maxWidth: 300,
+                maxHeight: 200,
+                minLabelPadding: 8,
+                minIconOpacity: 0,
+                borderStrokeColor: "#22222266",
+                labelColor: "#222",
+                labelFontSize: 20,
+                labelBackground: "#ffffff66",
+                detailsColor: "#222",
+                maxIconOpacity: 0,
+                detailsBackground: "#ffffff66",
+            }
+        }
+
+        const pathData = {
+            id: 106,
+            label: "Custom Path Node",
+            description: "lorem ipsum asklfj lk akljfkal jk akl jkalfj kla iaj foaif joiaf ja faoif aoiwfj ioaf jaf jaofj oafj oija  afj akljf klafj klasj ",
+            type: "custom",
+            attributes: null,
+            tooltipText: "custom path tooltip",
+            parent: null,
+            children: [],
+            config: {
+                shape: "path",
+                path: "M 0,0 m -50,0 a 50,50 0 1,0 100,0 a 50,50 0 1,0 -100,0",
+                minWidth: 100,
+                minHeight: 100,
+                maxWidth: 200,
+                maxHeight: 200,
+                minLabelPadding: 8,
+                minIconOpacity: 0,
+                borderStrokeColor: "#75f",
+                labelColor: "#75f",
+                labelFontSize: 20,
+                labelBackground: "transparent",
+                detailsColor: "#75f",
+                maxIconOpacity: 0,
+                detailsBackground: "transparent",
+            }
+        }
+
+
+
+
+
+        const detailedNode = new Custom1(detailedData, canvas)
+        detailedNode.setInitialXY(150, 150)
+        detailedNode.setNextXY(150, 150)
+        detailedNode.renderAsMax()
+
+        const minimalNode = new Custom1(minimalData, canvas)
+        minimalNode.setInitialXY(400, 200)
+        minimalNode.setNextXY(400, 200)
+        minimalNode.renderAsMin()
+
 
         setTimeout(() => {
-            max.transformToMin({ X: 200, Y: 200 })
-            min.transformToMax({ X: 600, Y: 250 })
-        }, 1000)
+            detailedNode.transformToMin()
+            minimalNode.transformToMax()
+        }, 1500)
+
+
+        setTimeout(() => {
+            detailedNode.transformToMax()
+            minimalNode.transformToMin()
+        }, 3000)
+
+        setTimeout(() => {
+            minimalNode.setNextXY(150, 150)
+            detailedNode.setNextXY(400, 200)
+            detailedNode.transformToPosition()
+            minimalNode.transformToPosition()
+        }, 5500)
+
+        setTimeout(() => {
+            minimalNode.setNextXY(400, 200)
+            detailedNode.setNextXY(150, 150)
+            detailedNode.transformToPosition()
+            minimalNode.transformToPosition()
+        }, 7000)
 
 
     </script>

@@ -18,7 +18,7 @@
  * @property {Number} minIconTranslateX=0           - Determines the horizontal adjustment for the icon in minimal representation.
  * @property {Number} minIconTranslateY=0           - Determines the vertical adjustment for the icon in minimal representation.
  * @property {Number} maxIconOpacity=0.4            - Determines the basic visibility of the icon in detailed representation.
- * @property {Number} maxIconSize=200               - Determines the width and height for the image icon in detailed representation.
+ * @property {Number} maxIconSize=160               - Determines the width and height for the image icon in detailed representation.
  * @property {Number} maxIconTranslateX=0           - Determines the horizontal adjustment for the icon in detailed representation.
  * @property {Number} maxIconTranslateY=0           - Determines the vertical adjustment for the icon in detailed representation.
  *
@@ -30,7 +30,6 @@
  * @property {String} borderStrokeDasharray="0"     - Determines the nodes gaps used inside the border.
  * @property {String} backgroundColor=#ffffff       - Determines the nodes background color.
  *
- * @property {Number} minTextWidth=145              - Determines the text width for the label in minimal representation.
  * @property {Number} minLabelLineClamp=2           - Determines how many lines are visible for the label in minimal representation.
  * @property {Number} minTextTranslateX=0           - Determines the horizontal adjustment for the label in minimal representation.
  * @property {Number} minTextTranslateY=0           - Determines the vertical adjustment for the label in minimal representation.
@@ -55,57 +54,54 @@
 
 const CustomNodeConfiguration = {
 
-  nodeType: "rect", // rect, ellipse or path
-  svgPathElement: null,
-
-  // large node
-  maxWidth: 275,
-  maxHeight: 175,
-
-
-  // small node
-  minWidth: 200,
-  minHeight: 100,
-
-
-  // icon
-  iconUrl: null,
-  minIconOpacity: 0.3,
-  minIconSize: 70,
-  minIconTranslateX: 0,
-  minIconTranslateY: 0,
-  maxIconOpacity: 0.4,
-  maxIconSize: 200,
-  maxIconTranslateX: 0,
-  maxIconTranslateY: 0,
-
-
   // node
-  offset: 8,
-  animationSpeed: 300,
+  shape: "rect", // rect (default), circle, ellipse, polyline or path
+  polyline: null, // only needed if shape is set to polyline
+  path: null, // only needed if shape is set to path
+  animationSpeed: 1300,
   borderRadius: 5,
   borderStrokeWidth: 1,
   borderStrokeColor: "#222222",
   borderStrokeDasharray: "0",
   backgroundColor: "#ffffff",
+  iconUrl: null,
 
 
-  // text
-  minTextWidth: 145, // recommended: min node width - some padding
+  // minimal (small) node
+  minWidth: 200,
+  minHeight: 100,
+  minIconOpacity: 0.3,
+  minIconSize: 70,
+  minIconTranslateX: 0,
+  minIconTranslateY: 0,
   minLabelLineClamp: 2,
-  minTextTranslateX: 0,
-  minTextTranslateY: 0,
-  maxTextWidth: 260,
-  maxTextHeight: 220,
-  maxLabelLineClamp: 4,
-  maxTextTranslateX: 0,
-  maxTextTranslateY: 0,
-  labelColor: "#444444",
+  minLabelTranslateX: 0,
+  minLabelTranslateY: 0,
+  minLabelPadding: 6,
+
+  labelColor: "#222222",
   labelFontFamily: "Montserrat",
   labelFontSize: 16,
   labelFontWeight: 600,
   labelFontStyle: "normal",
-  labelBackground: "#ffffffcc",
+  labelBackground: "#ffffff33",
+
+
+  // detailed (large) node
+  maxWidth: 275,
+  maxHeight: 175,
+  maxIconOpacity: 0.4,
+  maxIconSize: 160,
+  maxIconTranslateX: 0,
+  maxIconTranslateY: 0,
+  maxLabelLineClamp: 4,
+  maxTextTranslateX: 0,
+  maxTextTranslateY: 0,
+  maxLabelPadding: 6,
+  maxLabelAlignment: "left",
+
+  detailsAlignment: "left",
+  detailsPadding: 6,
   detailsColor: "#444444",
   detailsFontFamily: "Montserrat",
   detailsFontSize: 12,

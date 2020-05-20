@@ -34,7 +34,7 @@
 
         const graph = visualization.createInitialGraph()
 
-        for (let i = 0; i <= 163; i += 1) {
+        for (let i = 0; i <= 300; i += 1) {
             graph.includeNode(i)
         }
 
@@ -49,7 +49,7 @@
         graph.includeEdge(119, 110)
         graph.includeEdge(163, 161)
 
-        visualization.render(graph, new ContextualLayout({ focusId: 36, animationSpeed: 300 }))
+        visualization.render(graph, new ContextualLayout({ focusId: 200, animationSpeed: 300 }))
 
 
     </script>

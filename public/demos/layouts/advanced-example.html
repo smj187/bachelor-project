@@ -53,12 +53,12 @@
 
         const radial = new RadialLayout({ rootId: 137, renderDepth: 1 })
         const tree = new TreeLayout({ rootId: 110, renderDepth: 1, orientation: "vertical" })
-        const grid = new GridLayout({ limitColumns: 2, limitNodes: 5 })
+        const grid = new GridLayout({ limitColumns: 7, limitNodes: 50 })
 
         const render = async () => {
             await visualization.render(treeData, radial)
-            await visualization.render(treeData, tree)
-            await visualization.render(gridData, grid)
+            // await visualization.render(treeData, tree)
+            // await visualization.render(treeData, grid)
         }
 
         render()
@@ -66,11 +66,11 @@
 
         // transform a layout into another layout
         setTimeout(() => {
-            visualization.transform(radial, treeData, new GridLayout({ limitColumns: 2, limitNodes: 5 }))
+            visualization.transform(radial, treeData, new GridLayout({ limitColumns: 10, limitNodes: null }))
         }, 4000)
 
         setTimeout(() => {
-            visualization.transform(tree, treeData, new RadialLayout({ rootId: 110, renderDepth: 0 }))
+            // visualization.transform(tree, treeData, new RadialLayout({ rootId: 110, renderDepth: 0 }))
         }, 5000)
 
 

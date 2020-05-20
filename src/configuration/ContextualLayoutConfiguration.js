@@ -99,7 +99,7 @@
  * @property {Number} translateY=0                                - Adds additional Y translation for all SVG elements before rendering.
  * @property {Number} animationSpeed=300                          - Determines how fast SVG elements animates inside the current layout.
  * @property {Number} contextualNodeSpacing=16                    - Determines the minimal spacing between nodes.
- * 
+ *
  * @property {Boolean} showAssignedConnection=true                - Determines if the assigned connection information is visible.
  */
 const ContextualLayoutConfiguration = {
@@ -152,7 +152,7 @@ const ContextualLayoutConfiguration = {
   assignedParentContainerColumns: 3,
   assignedParentContainerBorderRadius: 5,
   assignedParentContainerBorderStrokeColor: "#7daed6",
-  assignedParentContainerBorderStrokeWidth: 3,
+  assignedParentContainerBorderStrokeWidth: 2,
   assignedParentContainerBackgroundColor: "#ffffff",
   showAssignedParentNodes: true,
   showAssignedParentExpander: true,
@@ -162,9 +162,9 @@ const ContextualLayoutConfiguration = {
   // assigned child container
   assignedChildContainerNodeLimit: 6,
   assignedChildContainerColumns: 3,
-  assignedChildContainerBorderRadius: 15,
+  assignedChildContainerBorderRadius: 5,
   assignedChildContainerBorderStrokeColor: "#7daed6",
-  assignedChildContainerBorderStrokeWidth: 3,
+  assignedChildContainerBorderStrokeWidth: 2,
   assignedChildContainerBackgroundColor: "#ffffff",
   showassignedChildNodes: true,
   showassignedChildExpander: true,
@@ -196,11 +196,11 @@ const ContextualLayoutConfiguration = {
 
   // distances between nodes
   focusXShift: 300,
-  riskFocusDistance: 506,
+  riskFocusDistance: 353,
   riskConnectionDistance: 75,
   childrenFocusDistance: 80,
   parentFocusDistance: 80,
-  focusAssignedDistance: 900,
+  focusAssignedDistance: 600,
 
 
   // expander

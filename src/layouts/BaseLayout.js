@@ -1003,7 +1003,8 @@ class BaseLayout {
    * @async
    * @param {Object} [opts={ }] An object containing additional information.
    * @param {Boolean} [opts.removeOldData=true] Determines if the intial graph data should also be removed.
-   * @param {Boolean} [opts.delayTime=this.config.animationSpeed + 25] Determines the amount of how long the wait until all removal animations are completed.
+   * @param {Boolean} [opts.delayTime=this.config.animationSpeed + 25] Determines the amount of how long the wait
+   *                                                                   until all removal animations are completed.
    */
   async removeLayoutAsync({ removeOldData = true, delayTime = this.config.animationSpeed + 25 }) {
     if (removeOldData === true) {
@@ -1026,13 +1027,36 @@ class BaseLayout {
       this.gridExpander = null
     }
 
+    if (this.focusId !== undefined) {
+      if (this.containers.length) {
+        this.containers.forEach((container) => {
+          container.removeSVG({})
+        })
+      }
+      if (this.containerConnections.length) {
+        this.containerConnections.forEach((connection) => {
+          connection.removeSVG({})
+        })
+      }
+      if (this.expanders.length) {
+        this.expanders.forEach((expander) => {
+          expander.removeSVG({})
+        })
+      }
+      if (this.assignedConnection) {
+        this.assignedConnection.removeSVG({})
+      }
+      if (this.riskConnection) {
+        this.riskConnection.removeSVG({})
+      }
+    }
+
 
     const delay = (time) => new Promise((resolve) => setTimeout(resolve, time))
 
     // wait some time to see the SVG objects disappear
-    await delay(delayTime)
+    await delay(delayTime / 2)
     this.canvas.clear()
-
   }
 
 
@@ -1041,7 +1065,8 @@ class BaseLayout {
    * @param {Object} [opts={ }] An object containing additional information.
    * @param {Array.<BaseNode>} [opts.nodes=[]] Existing SVG representations for nodes.
    * @param {Array.<BaseEdge>} [opts.edges=[]] Existing SVG representations for edges.
-   * @param {String} [opts.renderingSize=this.config.renderingSize] Determines the node render representation defined on layout level.
+   * @param {String} [opts.renderingSize=this.config.renderingSize] Determines the node render representation
+   *                                                                defined on layout level.
    */
   createRepresentations({ nodes = [], edges = [], renderingSize = this.config.renderingSize }) {
     // load the current zoom from the SVG DOM storage

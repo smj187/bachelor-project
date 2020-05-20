@@ -1,4 +1,5 @@
 import { SVG } from "@svgdotjs/svg.js"
+import "@svgdotjs/svg.draggable.js"
 import "../extensions/panzoom"
 
 
